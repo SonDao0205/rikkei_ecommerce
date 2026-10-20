@@ -1,0 +1,25 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5173:80"
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?Thiếu biến MYSQL_ROOT_PASSWORD cho MySQL}"
+      MYSQL_DATABASE: "${DB_NAME:?Thiếu biến DB_NAME cho MySQL}"
+      MYSQL_USER: "${DB_USERNAME:?Thiếu biến DB_USERNAME cho MySQL}"
+      MYSQL_PASSWORD: "${DB_PASSWORD:?Thiếu biến DB_PASSWORD cho MySQL}"
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/scriptDb.sql:/docker-entrypoint-initdb.d/01-scriptDb.sql:ro
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
