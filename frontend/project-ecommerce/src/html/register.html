@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>MarketPulse - Create Your Account</title>
+    <!-- Google Fonts: Plus Jakarta Sans / Inter -->
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap"
+        rel="stylesheet">
+    <!-- Tailwind CSS CDN with plugins -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            800: '#3730a3',
+                            900: '#312e81',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- BEGIN: Custom Stylesheet -->
+    <style data-purpose="base-typography">
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+    </style>
+    <style data-purpose="custom-scrollbars">
+        /* Subtle custom scrollbar for right panel on smaller viewports */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f8fafc;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+    <!-- END: Custom Stylesheet -->
+</head>
+
+<body class="bg-white text-slate-900 min-h-screen antialiased flex flex-col justify-center">
+    <!-- BEGIN: MainContainer -->
+    <main class="w-full min-h-screen grid grid-cols-1 lg:grid-cols-12 overflow-x-hidden">
+        <!-- BEGIN: LeftHeroPanel -->
+        <section
+            class="relative lg:col-span-5 xl:col-span-6 bg-slate-950 text-white p-8 lg:p-14 xl:p-16 flex flex-col justify-between overflow-hidden min-h-[640px] lg:min-h-screen">
+            <!-- Background Image with Ambient Marketplace Lifestyle -->
+            <div class="absolute inset-0 z-0">
+                <img alt="Happy boutique shopper holding shopping bags"
+                    class="w-full h-full object-cover object-top opacity-35 filter brightness-90 saturate-110"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuAV5dpGziMYHyxE2zdk8-54DQuhxG1b7vwlv7aYfFsMk02Ro7vdkplzVZhvXfd_2xdQkCBShW66S1ixybUVBY2GQKNkaMS6mkpj_nMZ0vjNJ7mLRak1nymobmBQH5YhE1dHo70ox7H09fNxIe9UTbku91C8ABGLac6dLEoxvjUnOnFJoVEu_mu546Uo-lQG3zyZumWQbsx-Xm9Yf1nn58R4L-C8mmL4ExW05Xox2iBcCrDC8fl6QVAk">
+                <!-- Atmospheric Vignette & Gradient Overlays -->
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/75 to-slate-900/40"></div>
+                <div class="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/50 to-transparent"></div>
+            </div>
+            <!-- Top Branding & Status Pill -->
+            <header class="relative z-10 flex items-center justify-between">
+                <div class="flex items-center space-x-3.5">
+                    <div class="w-10 h-10 rounded-xl bg-white shadow-md flex items-center justify-center p-2">
+                        <svg class="w-6 h-6 text-brand-700" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                        </svg>
+                    </div>
+                    <span class="text-xl font-bold tracking-tight text-white">MarketPulse</span>
+                </div>
+                <div
+                    class="flex items-center space-x-2 bg-white/10 backdrop-blur-md border border-white/15 px-3.5 py-1.5 rounded-full text-xs font-medium text-slate-200">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>Multi-Store Hub</span>
+                </div>
+            </header>
+            <!-- Center Copy & Feature Cards -->
+            <div class="relative z-10 my-auto py-10 max-w-xl">
+                <!-- Notification Tag Matching Sign-in Screen -->
+                <div
+                    class="inline-flex items-center space-x-2 bg-white/15 backdrop-blur-md border border-white/20 px-3.5 py-1 rounded-full text-xs font-semibold text-slate-100 mb-6 shadow-sm">
+                    <span>✨</span>
+                    <span>Discover over 12,000+ verified artisan vendors</span>
+                </div>
+                <h1 class="text-3xl sm:text-4xl xl:text-5xl font-extrabold tracking-tight text-white leading-tight">
+                    Join MarketPulse <br class="hidden sm:inline">
+                    <span
+                        class="text-transparent bg-clip-text bg-gradient-to-r from-purple-200 via-indigo-200 to-white">in
+                        one place.</span>
+                </h1>
+                <p class="mt-4 text-slate-300 text-sm sm:text-base leading-relaxed">
+                    Access thousands of curated independent brands, direct-to-consumer storefronts, and unified
+                    cross-vendor checkout with single-click tracking.
+                </p>
+                <!-- Value Propositions Stack -->
+                <div class="mt-8 space-y-3.5">
+                    <!-- Feature 1 -->
+                    <div
+                        class="flex items-center space-x-3.5 p-3 rounded-2xl bg-white/[0.07] border border-white/10 backdrop-blur-sm transition-all hover:bg-white/[0.12]">
+                        <div
+                            class="flex-shrink-0 w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-300 border border-indigo-400/20 flex items-center justify-center">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path
+                                    d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                                    stroke-linecap="round" stroke-linejoin="round"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold text-white">Thousands of verified shops</p>
+                            <p class="text-xs text-slate-300">Hand-picked independent artisans, designers &amp; local
+                                vendors</p>
+                        </div>
+                    </div>
+                    <!-- Feature 2 -->
+                    <div
+                        class="flex items-center space-x-3.5 p-3 rounded-2xl bg-white/[0.07] border border-white/10 backdrop-blur-sm transition-all hover:bg-white/[0.12]">
+                        <div
+                            class="flex-shrink-0 w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-300 border border-indigo-400/20 flex items-center justify-center">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path
+                                    d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                                    stroke-linecap="round" stroke-linejoin="round"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold text-white">Secure payments &amp; COD</p>
+                            <p class="text-xs text-slate-300">Unified secure escrow with flexible cash-on-delivery
+                                options</p>
+                        </div>
+                    </div>
+                    <!-- Feature 3 -->
+                    <div
+                        class="flex items-center space-x-3.5 p-3 rounded-2xl bg-white/[0.07] border border-white/10 backdrop-blur-sm transition-all hover:bg-white/[0.12]">
+                        <div
+                            class="flex-shrink-0 w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-300 border border-indigo-400/20 flex items-center justify-center">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-linecap="round" stroke-linejoin="round">
+                                </path>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold text-white">Fast delivery &amp; buyer protection</p>
+                            <p class="text-xs text-slate-300">Live package tracking &amp; hassle-free 100% money-back
+                                warranty</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Bottom Metric Counters matching Reference -->
+            <footer class="relative z-10 pt-6 border-t border-white/15 grid grid-cols-3 gap-4">
+                <div>
+                    <div class="text-xl sm:text-2xl font-bold tracking-tight text-white">4.9/5</div>
+                    <div class="text-xs text-slate-400 mt-0.5">Customer Rating</div>
+                </div>
+                <div>
+                    <div class="text-xl sm:text-2xl font-bold tracking-tight text-white">2.4M+</div>
+                    <div class="text-xs text-slate-400 mt-0.5">Orders Delivered</div>
+                </div>
+                <div>
+                    <div class="text-xl sm:text-2xl font-bold tracking-tight text-white">100%</div>
+                    <div class="text-xs text-slate-400 mt-0.5">Buyer Protection</div>
+                </div>
+            </footer>
+        </section>
+        <!-- END: LeftHeroPanel -->
+        <!-- BEGIN: RightAuthPanel -->
+        <section
+            class="lg:col-span-7 xl:col-span-6 bg-white px-6 py-10 sm:px-12 md:px-16 lg:px-14 xl:px-20 flex flex-col justify-center items-center">
+            <div class="w-full max-w-[480px]">
+                <!-- Welcome Badge & Headers -->
+                <div class="mb-7">
+                    <span
+                        class="inline-block px-3 py-1 bg-indigo-50 text-brand-700 text-xs font-semibold rounded-full mb-3">
+                        Get started for free
+                    </span>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+                        Create Your Account
+                    </h2>
+                    <p class="mt-2 text-sm text-slate-500">
+                        Join millions of shoppers and explore top verified stores
+                    </p>
+                </div>
+                <!-- Social Register Buttons -->
+                <div class="grid grid-cols-2 gap-3.5 mb-6">
+                    <!-- Google Button -->
+                    <button
+                        class="flex items-center justify-center space-x-2.5 py-2.5 px-4 rounded-xl border border-slate-200 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:border-slate-300 active:scale-[0.98] transition"
+                        type="button">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24">
+                            <path
+                                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                                fill="#4285F4"></path>
+                            <path
+                                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                                fill="#34A853"></path>
+                            <path
+                                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                                fill="#FBBC05"></path>
+                            <path
+                                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                                fill="#EA4335"></path>
+                        </svg>
+                        <span class="font-medium text-xs sm:text-sm">Google</span>
+                    </button>
+                    <!-- Facebook Button -->
+                    <button
+                        class="flex items-center justify-center space-x-2.5 py-2.5 px-4 rounded-xl border border-slate-200 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:border-slate-300 active:scale-[0.98] transition"
+                        type="button">
+                        <svg class="w-4 h-4 text-[#1877F2] fill-current" viewBox="0 0 24 24">
+                            <path
+                                d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z">
+                            </path>
+                        </svg>
+                        <span class="font-medium text-xs sm:text-sm">Facebook</span>
+                    </button>
+                </div>
+                <!-- Section Divider -->
+                <div class="relative flex items-center justify-center my-6">
+                    <div class="border-t border-slate-200 w-full"></div>
+                    <span
+                        class="bg-white px-3 text-[11px] font-semibold tracking-wider text-slate-400 uppercase whitespace-nowrap">
+                        OR REGISTER WITH YOUR DETAILS
+                    </span>
+                    <div class="border-t border-slate-200 w-full"></div>
+                </div>
+                <!-- Registration Form -->
+                <form class="space-y-4" data-purpose="registration-form" onsubmit="event.preventDefault();">
+                    <!-- Full Name Field -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1.5" for="fullName">
+                            Full Name
+                        </label>
+                        <div class="relative rounded-xl shadow-sm">
+                            <div
+                                class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                                        stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+                                </svg>
+                            </div>
+                            <input
+                                class="block w-full pl-10 pr-3.5 py-2.5 text-sm rounded-xl border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-brand-600 focus:border-brand-600 outline-none transition"
+                                id="fullName" name="fullName" placeholder="Nguyen Van A" required="" type="text">
+                        </div>
+                    </div>
+                    <!-- Email Address Field -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1.5" for="email">
+                            Email Address
+                        </label>
+                        <div class="relative rounded-xl shadow-sm">
+                            <div
+                                class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path
+                                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                                        stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+                                </svg>
+                            </div>
+                            <input
+                                class="block w-full pl-10 pr-3.5 py-2.5 text-sm rounded-xl border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-brand-600 focus:border-brand-600 outline-none transition"
+                                id="email" name="email" placeholder="name@example.com" required="" type="email">
+                        </div>
+                    </div>
+                    <!-- Phone Number with Vietnam/Int Prefix Field -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1.5" for="phone">
+                            Phone Number
+                        </label>
+                        <div class="relative flex rounded-xl shadow-sm">
+                            <div
+                                class="inline-flex items-center px-3 rounded-l-xl border border-r-0 border-slate-200 bg-slate-50 text-slate-600 text-xs font-medium space-x-1">
+                                <span>🇻🇳</span>
+                                <span class="font-semibold">+84</span>
+                            </div>
+                            <div class="relative w-full">
+                                <input
+                                    class="block w-full rounded-r-xl border border-slate-200 py-2.5 px-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-brand-600 focus:border-brand-600 outline-none transition"
+                                    id="phone" name="phone" placeholder="912 345 678" type="tel">
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Password Field with Strength Indicator -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1.5" for="password">
+                            Password
+                        </label>
+                        <div class="relative rounded-xl shadow-sm">
+                            <div
+                                class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path
+                                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                                        stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+                                </svg>
+                            </div>
+                            <input
+                                class="block w-full pl-10 pr-10 py-2.5 text-sm rounded-xl border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-brand-600 focus:border-brand-600 outline-none transition"
+                                id="password" name="password" placeholder="At least 8 characters" required=""
+                                type="password">
+                            <!-- Eye View Icon -->
+                            <button
+                                class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none"
+                                type="button">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round"
+                                        stroke-linejoin="round" stroke-width="2"></path>
+                                    <path
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                        stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <!-- Password Strength Bar Visual -->
+                        <div class="mt-2" data-purpose="password-strength">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-[11px] text-slate-500 font-medium">Password strength</span>
+                                <span class="text-[11px] text-emerald-600 font-semibold">Good</span>
+                            </div>
+                            <div class="grid grid-cols-4 gap-1.5 h-1">
+                                <div class="bg-emerald-500 rounded-full h-full"></div>
+                                <div class="bg-emerald-500 rounded-full h-full"></div>
+                                <div class="bg-emerald-500 rounded-full h-full"></div>
+                                <div class="bg-slate-200 rounded-full h-full"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Confirm Password Field -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1.5" for="confirmPassword">
+                            Confirm Password
+                        </label>
+                        <div class="relative rounded-xl shadow-sm">
+                            <div
+                                class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round"
+                                        stroke-linejoin="round" stroke-width="2"></path>
+                                </svg>
+                            </div>
+                            <input
+                                class="block w-full pl-10 pr-3.5 py-2.5 text-sm rounded-xl border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-brand-600 focus:border-brand-600 outline-none transition"
+                                id="confirmPassword" name="confirmPassword" placeholder="Re-enter password" required=""
+                                type="password">
+                        </div>
+                    </div>
+                    <!-- Terms and Policies Checkbox -->
+                    <div class="flex items-start pt-1">
+                        <div class="flex items-center h-5">
+                            <input
+                                class="h-4 w-4 text-brand-600 focus:ring-brand-500 border-slate-300 rounded cursor-pointer"
+                                id="terms" name="terms" required="" type="checkbox">
+                        </div>
+                        <div class="ml-2.5 text-xs text-slate-600 leading-normal">
+                            <label class="cursor-pointer" for="terms">
+                                I agree to MarketPulse's
+                                <a class="font-semibold text-brand-700 hover:text-brand-800 underline" href="#">Terms of
+                                    Service</a>
+                                and
+                                <a class="font-semibold text-brand-700 hover:text-brand-800 underline" href="#">Privacy
+                                    Policy</a>
+                            </label>
+                        </div>
+                    </div>
+                    <!-- Primary Submit Button -->
+                    <div class="pt-2">
+                        <button
+                            class="w-full flex items-center justify-center space-x-2 py-3 px-4 rounded-xl shadow-md bg-brand-700 hover:bg-brand-800 focus:ring-4 focus:ring-brand-100 text-white font-semibold text-sm transition-all duration-150 transform active:scale-[0.99]"
+                            type="submit">
+                            <span>Create Account</span>
+                            <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" stroke-width="2.5"
+                                viewBox="0 0 24 24">
+                                <path d="M14 5l7 7m0 0l-7 7m7-7H3" stroke-linecap="round" stroke-linejoin="round">
+                                </path>
+                            </svg>
+                        </button>
+                    </div>
+                </form>
+                <!-- Footer Redirection Links -->
+                <div class="mt-7 text-center space-y-4">
+                    <p class="text-xs sm:text-sm text-slate-600">
+                        Already have an account?
+                        <a class="font-semibold text-brand-700 hover:text-brand-800 hover:underline" href="#">
+                            Sign In
+                        </a>
+                    </p>
+                    <!-- Trust & Security Badges -->
+                    <div
+                        class="flex items-center justify-center space-x-2 text-[11px] text-slate-400 pt-2 border-t border-slate-100">
+                        <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path
+                                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                                stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+                        </svg>
+                        <span>256-bit SSL Encrypted</span>
+                        <span>•</span>
+                        <a class="hover:text-slate-600 transition" href="#">Privacy Policy</a>
+                        <span>•</span>
+                        <a class="hover:text-slate-600 transition" href="#">Terms of Service</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- END: RightAuthPanel -->
+    </main>
+    <!-- END: MainContainer -->
+    <!-- BEGIN: Simple Interactive UI Handlers -->
+    <script data-purpose="toggle-password-visibility">
+        document.addEventListener('DOMContentLoaded', () => {
+            const passwordInput = document.getElementById('password');
+            const toggleBtn = passwordInput?.nextElementSibling;
+
+            if (toggleBtn && passwordInput) {
+                toggleBtn.addEventListener('click', () => {
+                    const isPassword = passwordInput.getAttribute('type') === 'password';
+                    passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
+                });
+            }
+        });
+    </script>
+    <!-- END: Simple Interactive UI Handlers -->
+</body>
+
+</html>
