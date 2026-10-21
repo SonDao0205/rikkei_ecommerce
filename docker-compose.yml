@@ -19,6 +19,29 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
       - ./database/scriptDb.sql:/docker-entrypoint-initdb.d/01-scriptDb.sql:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'mysqladmin ping -h 127.0.0.1 -uroot -p"$${MYSQL_ROOT_PASSWORD}" --silent',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
     restart: unless-stopped
 
   cloudflared:
@@ -30,3 +53,4 @@ services:
 
 volumes:
   mysql_data:
+  redis_data:
