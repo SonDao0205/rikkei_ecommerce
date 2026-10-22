@@ -1,5 +1,7 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAppDispatch, useAppSelector } from "../../redux/store";
+import { loginUser, clearAuthError } from "../../redux/slices/authSlice";
 
 // ─── Icons ──────────────────────────────────────────────────────────────────────
 
@@ -77,6 +79,10 @@ const inputClass = (hasError: boolean, extra = "") =>
 
 
 const LoginForm = () => {
+  const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const { loading, error: authError } = useAppSelector((state) => state.auth);
+
   const [formData, setFormData] = useState<LoginFormData>({
     identifier: "",
     password: "",
@@ -90,13 +96,19 @@ const LoginForm = () => {
     const newValue = type === "checkbox" ? checked : value;
     setFormData((prev) => ({ ...prev, [name]: newValue }));
 
-    // Xóa lỗi của field đang sửa
     if (errors[name as keyof LoginFormData]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
+    if (authError) {
+      dispatch(clearAuthError());
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    dispatch(clearAuthError());
+  }, [dispatch]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const validationErrors = validate(formData);
     if (Object.keys(validationErrors).length > 0) {
@@ -104,8 +116,16 @@ const LoginForm = () => {
       return;
     }
     setErrors({});
-    // TODO: dispatch loginThunk(formData) khi tích hợp Redux
-    console.log("Login form submitted:", formData);
+
+    const resultAction = await dispatch(loginUser(formData));
+    if (loginUser.fulfilled.match(resultAction)) {
+      const userRole = resultAction.payload.user.role;
+      if (userRole === "admin") {
+        navigate("/admin/products");
+      } else {
+        navigate("/home");
+      }
+    }
   };
 
   return (
@@ -139,6 +159,16 @@ const LoginForm = () => {
             Enter your account credentials to continue shopping or managing your orders
           </p>
         </div>
+
+        {/* Auth Error Banner */}
+        {authError && authError !== "No active session found." && (
+          <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2">
+            <svg className="w-4 h-4 flex-shrink-0 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            <span>{authError}</span>
+          </div>
+        )}
 
         {/* Social Auth Buttons */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -200,12 +230,12 @@ const LoginForm = () => {
               <label htmlFor="password" className="block text-xs font-semibold text-slate-700">
                 Password
               </label>
-              <a
-                href="#"
+              <Link
+                to="/forgot-password"
                 className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 hover:underline transition-colors"
               >
                 Forgot password?
-              </a>
+              </Link>
             </div>
             <div className="relative rounded-[11px] shadow-sm">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -265,12 +295,25 @@ const LoginForm = () => {
           <div className="pt-2">
             <button
               type="submit"
-              className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-[11px] bg-brand-600 hover:bg-brand-700 active:bg-brand-800 text-white font-bold text-sm shadow-md shadow-indigo-600/20 hover:shadow-lg hover:shadow-indigo-600/30 transition-all duration-150 transform active:scale-[0.99] focus:outline-none focus:ring-4 focus:ring-indigo-200 cursor-pointer"
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-[11px] bg-brand-600 hover:bg-brand-700 active:bg-brand-800 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-sm shadow-md shadow-indigo-600/20 hover:shadow-lg hover:shadow-indigo-600/30 transition-all duration-150 transform active:scale-[0.99] focus:outline-none focus:ring-4 focus:ring-indigo-200 cursor-pointer"
             >
-              <span>Sign In</span>
-              <svg className="w-4 h-4 ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-              </svg>
+              {loading ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                  </svg>
+                  <span>Signing in...</span>
+                </>
+              ) : (
+                <>
+                  <span>Sign In</span>
+                  <svg className="w-4 h-4 ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  </svg>
+                </>
+              )}
             </button>
           </div>
         </form>
