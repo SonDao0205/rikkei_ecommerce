@@ -3,8 +3,16 @@ name: Frontend CI/CD
 on:
   push:
     branches: [main, build]
+    paths:
+      - "frontend/project-ecommerce/**"
+      - "nginx.frontend.conf"
+      - ".github/workflows/frontend-cicd.yml"
   pull_request:
     branches: [main, build]
+    paths:
+      - "frontend/project-ecommerce/**"
+      - "nginx.frontend.conf"
+      - ".github/workflows/frontend-cicd.yml"
 
 permissions:
   contents: read
@@ -70,7 +78,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./Dockerfile
+          file: ./frontend/project-ecommerce/Dockerfile
           push: true
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/project-ecommerce-frontend:latest

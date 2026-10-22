@@ -2,9 +2,31 @@ services:
   frontend:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: frontend/project-ecommerce/Dockerfile
     ports:
       - "5173:80"
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      HTTP_ADDR: ":8080"
+      DATABASE_DSN: "${DB_USERNAME:?Cần đặt DB_USERNAME}:${DB_PASSWORD:?Cần đặt DB_PASSWORD}@tcp(mysql:3306)/${DB_NAME:-rikkei_ecommerce}?parseTime=true"
+      JWT_SECRET: ${JWT_SECRET:?Cần đặt JWT_SECRET}
+      ACCESS_TOKEN_TTL: ${ACCESS_TOKEN_TTL:-15m}
+      REFRESH_TOKEN_TTL: ${REFRESH_TOKEN_TTL:-168h}
+      OTP_TTL: ${OTP_TTL:-10m}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      AUTO_MIGRATE: ${AUTO_MIGRATE:-true}
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
     restart: unless-stopped
 
   mysql:
@@ -15,7 +37,7 @@ services:
       MYSQL_USER: "${DB_USERNAME:?Thiếu biến DB_USERNAME cho MySQL}"
       MYSQL_PASSWORD: "${DB_PASSWORD:?Thiếu biến DB_PASSWORD cho MySQL}"
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./database/scriptDb.sql:/docker-entrypoint-initdb.d/01-scriptDb.sql:ro
@@ -44,12 +66,12 @@ services:
       start_period: 10s
     restart: unless-stopped
 
-  cloudflared:
-    image: cloudflare/cloudflared:latest
-    command: tunnel --no-autoupdate run
-    environment:
-      TUNNEL_TOKEN: "${TUNNEL_TOKEN:?Thiếu TUNNEL_TOKEN}"
-    restart: unless-stopped
+  # cloudflared:
+  #   image: cloudflare/cloudflared:latest
+  #   command: tunnel --no-autoupdate run
+  #   environment:
+  #     TUNNEL_TOKEN: "${TUNNEL_TOKEN:?Thiếu TUNNEL_TOKEN}"
+  #   restart: unless-stopped
 
 volumes:
   mysql_data:
