@@ -31,6 +31,8 @@ services:
 
   mysql:
     image: mysql:8.4
+    mem_limit: 600m
+    mem_reservation: 300m
     environment:
       MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?Thiếu biến MYSQL_ROOT_PASSWORD cho MySQL}"
       MYSQL_DATABASE: "${DB_NAME:?Thiếu biến DB_NAME cho MySQL}"
@@ -66,12 +68,12 @@ services:
       start_period: 10s
     restart: unless-stopped
 
-  # cloudflared:
-  #   image: cloudflare/cloudflared:latest
-  #   command: tunnel --no-autoupdate run
-  #   environment:
-  #     TUNNEL_TOKEN: "${TUNNEL_TOKEN:?Thiếu TUNNEL_TOKEN}"
-  #   restart: unless-stopped
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: "${TUNNEL_TOKEN:?Thiếu TUNNEL_TOKEN}"
+    restart: unless-stopped
 
 volumes:
   mysql_data:
