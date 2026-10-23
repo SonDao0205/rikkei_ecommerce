@@ -31,8 +31,8 @@ services:
 
   mysql:
     image: mysql:8.4
-    mem_limit: 400m
-    mem_reservation: 256m
+    mem_limit: 600m
+    mem_reservation: 300m
     environment:
       MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?Thiếu biến MYSQL_ROOT_PASSWORD cho MySQL}"
       MYSQL_DATABASE: "${DB_NAME:?Thiếu biến DB_NAME cho MySQL}"
