@@ -1,0 +1,994 @@
+<!DOCTYPE html><html lang="en" style="width: 1510px; height: 1571px; overflow: hidden; position: relative;"><head>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"></head><body class="bg-background font-body-md text-body-md text-on-surface"><svg aria-hidden="true" class="inline-defs-container" style="position:absolute;width:0;height:0;overflow:hidden"></svg><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_dashboard" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Plus+Jakarta+Sans:wght@600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "tertiary": "#7b0022",
+          "on-error": "#ffffff",
+          "error-container": "#ffdad6",
+          "surface-tint": "#5148d7",
+          "surface-variant": "#dae2fd",
+          "on-surface": "#131b2e",
+          "primary-container": "#4338ca",
+          "on-secondary-fixed": "#001d31",
+          "on-tertiary": "#ffffff",
+          "on-secondary": "#ffffff",
+          "tertiary-container": "#a60031",
+          "secondary-container": "#5bb8fe",
+          "on-primary-container": "#c1beff",
+          "inverse-primary": "#c3c0ff",
+          "secondary-fixed-dim": "#93ccff",
+          "on-error-container": "#93000a",
+          "primary": "#2a14b4",
+          "surface-dim": "#d2d9f4",
+          "surface-container-high": "#e2e7ff",
+          "secondary-fixed": "#cce5ff",
+          "tertiary-fixed": "#ffdadb",
+          "on-background": "#131b2e",
+          "on-surface-variant": "#464554",
+          "inverse-on-surface": "#eef0ff",
+          "on-primary-fixed-variant": "#372abf",
+          "background": "#faf8ff",
+          "on-tertiary-container": "#ffb0b5",
+          "inverse-surface": "#283044",
+          "on-primary-fixed": "#100069",
+          "outline-variant": "#c7c4d7",
+          "on-secondary-container": "#00476e",
+          "surface-container-highest": "#dae2fd",
+          "on-primary": "#ffffff",
+          "surface-container": "#eaedff",
+          "outline": "#777586",
+          "surface-bright": "#faf8ff",
+          "on-tertiary-fixed-variant": "#92002a",
+          "secondary": "#006398",
+          "surface-container-lowest": "#ffffff",
+          "surface-container-low": "#f2f3ff",
+          "on-tertiary-fixed": "#40000d",
+          "tertiary-fixed-dim": "#ffb2b7",
+          "error": "#ba1a1a",
+          "on-secondary-fixed-variant": "#004b73",
+          "primary-fixed-dim": "#c3c0ff",
+          "primary-fixed": "#e3dfff",
+          "surface": "#faf8ff"
+        },
+        "borderRadius": {
+          "DEFAULT": "0.25rem",
+          "lg": "0.5rem",
+          "xl": "0.75rem",
+          "full": "9999px"
+        },
+        "spacing": {
+          "margin": "2rem",
+          "space-sm": "0.5rem",
+          "space-xs": "0.25rem",
+          "space-lg": "1.5rem",
+          "gutter-sm": "1rem",
+          "margin-lg": "3rem",
+          "gutter": "1.5rem",
+          "margin-sm": "1rem",
+          "space-md": "1rem",
+          "space-xl": "2.5rem"
+        },
+        "fontFamily": {
+          "headline-xl": [
+            "Plus Jakarta Sans"
+          ],
+          "body-lg": [
+            "Inter"
+          ],
+          "body-sm": [
+            "Inter"
+          ],
+          "headline-lg": [
+            "Plus Jakarta Sans"
+          ],
+          "headline-xl-mobile": [
+            "Plus Jakarta Sans"
+          ],
+          "headline-md": [
+            "Plus Jakarta Sans"
+          ],
+          "label-sm": [
+            "Plus Jakarta Sans"
+          ],
+          "display-lg": [
+            "Plus Jakarta Sans"
+          ],
+          "label-lg": [
+            "Plus Jakarta Sans"
+          ],
+          "body-md": [
+            "Inter"
+          ],
+          "display-lg-mobile": [
+            "Plus Jakarta Sans"
+          ],
+          "label-md": [
+            "Plus Jakarta Sans"
+          ]
+        },
+        "fontSize": {
+          "headline-xl": [
+            "36px",
+            {
+              "lineHeight": "44px",
+              "letterSpacing": "-0.02em",
+              "fontWeight": "700"
+            }
+          ],
+          "body-lg": [
+            "16px",
+            {
+              "lineHeight": "24px",
+              "letterSpacing": "-0.005em",
+              "fontWeight": "400"
+            }
+          ],
+          "body-sm": [
+            "12px",
+            {
+              "lineHeight": "16px",
+              "letterSpacing": "0.005em",
+              "fontWeight": "400"
+            }
+          ],
+          "headline-lg": [
+            "24px",
+            {
+              "lineHeight": "32px",
+              "letterSpacing": "-0.015em",
+              "fontWeight": "600"
+            }
+          ],
+          "headline-xl-mobile": [
+            "26px",
+            {
+              "lineHeight": "34px",
+              "letterSpacing": "-0.015em",
+              "fontWeight": "600"
+            }
+          ],
+          "headline-md": [
+            "20px",
+            {
+              "lineHeight": "28px",
+              "letterSpacing": "-0.01em",
+              "fontWeight": "600"
+            }
+          ],
+          "label-sm": [
+            "11px",
+            {
+              "lineHeight": "14px",
+              "letterSpacing": "0.04em",
+              "fontWeight": "700"
+            }
+          ],
+          "display-lg": [
+            "48px",
+            {
+              "lineHeight": "56px",
+              "letterSpacing": "-0.025em",
+              "fontWeight": "700"
+            }
+          ],
+          "label-lg": [
+            "14px",
+            {
+              "lineHeight": "20px",
+              "letterSpacing": "0.01em",
+              "fontWeight": "600"
+            }
+          ],
+          "body-md": [
+            "14px",
+            {
+              "lineHeight": "20px",
+              "letterSpacing": "0",
+              "fontWeight": "400"
+            }
+          ],
+          "display-lg-mobile": [
+            "32px",
+            {
+              "lineHeight": "40px",
+              "letterSpacing": "-0.02em",
+              "fontWeight": "700"
+            }
+          ],
+          "label-md": [
+            "12px",
+            {
+              "lineHeight": "16px",
+              "letterSpacing": "0.02em",
+              "fontWeight": "600"
+            }
+          ]
+        }
+      },
+    },
+  }</script><aside class="fixed left-0 top-0 h-full w-72 bg-inverse-surface text-inverse-on-surface z-50 flex flex-col justify-between py-6 px-4 shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex flex-col gap-6"><div class="flex items-center gap-3 px-3 py-2"><div class="w-10 h-10 rounded-xl bg-primary-container flex items-center justify-center text-on-primary shadow-sm"><span class="material-symbols-outlined text-[24px]">storefront</span></div><div><h1 class="font-headline-md text-headline-md leading-none text-white tracking-tight"><h1 class="font-headline-md text-headline-md leading-none text-white tracking-tight" style="--tw-border-spacing-y: 0; --tw-translate-x: 0; --tw-translate-y: 0; --tw-rotate: 0; --tw-skew-x: 0; --tw-skew-y: 0; --tw-scale-x: 1; --tw-scale-y: 1; --tw-pan-x: ; --tw-pan-y: ; --tw-pinch-zoom: ; --tw-scroll-snap-strictness: proximity; --tw-gradient-from-position: ; --tw-gradient-via-position: ; --tw-gradient-to-position: ; --tw-ordinal: ; --tw-slashed-zero: ; --tw-numeric-figure: ; --tw-numeric-spacing: ; --tw-numeric-fraction: ; --tw-ring-inset: ; --tw-ring-offset-width: 0px; --tw-ring-offset-color: #fff; --tw-ring-color: rgb(59 130 246 / 0.5); --tw-ring-offset-shadow: 0 0 #0000; --tw-ring-shadow: 0 0 #0000; --tw-shadow: 0 0 #0000; --tw-shadow-colored: 0 0 #0000; --tw-blur: ; --tw-brightness: ; --tw-contrast: ; --tw-grayscale: ; --tw-hue-rotate: ; --tw-invert: ; --tw-saturate: ; --tw-sepia: ; --tw-drop-shadow: ; --tw-backdrop-blur: ; --tw-backdrop-brightness: ; --tw-backdrop-contrast: ; --tw-backdrop-grayscale: ; --tw-backdrop-hue-rotate: ; --tw-backdrop-invert: ; --tw-backdrop-opacity: ; --tw-backdrop-saturate: ; --tw-backdrop-sepia: ; --tw-contain-size: ; --tw-contain-layout: ; --tw-contain-paint: ; --tw-contain-style: ; --tw-text-opacity: 1; color: rgb(255, 255, 255); outline: none !important; box-shadow: none !important;">MarketPulse</h1></h1><p class="font-label-sm text-label-sm uppercase tracking-wider text-surface-variant/70 mt-1">MarketPulse Admin</p></div></div><nav class="flex flex-col gap-1.5" data-active-classes="bg-primary-container text-on-primary font-label-lg font-bold shadow-sm"><a class="flex items-center gap-3 px-3.5 py-3 rounded-xl font-label-lg text-label-lg text-inverse-on-surface/75 hover:bg-inverse-surface/80 hover:text-white transition-all" data-path="dashboard" href="#"><span class="material-symbols-outlined text-[22px]">space_dashboard</span><span class="">Dashboard</span></a><a class="flex items-center gap-3 px-3.5 py-3 rounded-xl font-label-lg text-label-lg bg-primary-container text-on-primary font-bold shadow-sm transition-all" data-path="products" href="#"><span class="material-symbols-outlined text-[22px] text-white">inventory_2</span><span class="">Products</span></a><a class="flex items-center gap-3 px-3.5 py-3 rounded-xl font-label-lg text-label-lg text-inverse-on-surface/75 hover:bg-inverse-surface/80 hover:text-white transition-all" data-path="orders" href="#"><span class="material-symbols-outlined text-[22px]">local_shipping</span><span class="">Orders</span></a><a class="flex items-center gap-3 px-3.5 py-3 rounded-xl font-label-lg text-label-lg text-inverse-on-surface/75 hover:bg-inverse-surface/80 hover:text-white transition-all" data-path="customers" href="#"><span class="material-symbols-outlined text-[22px]">group</span><span class="">Customers / Users</span></a><a class="flex items-center gap-3 px-3.5 py-3 rounded-xl font-label-lg text-label-lg text-inverse-on-surface/75 hover:bg-inverse-surface/80 hover:text-white transition-all" data-path="settings" href="#"><span class="material-symbols-outlined text-[22px]">settings</span><span class="">Settings</span></a></nav></div><div class="pt-4"><div class="bg-surface-container-highest/10 rounded-xl p-3 flex items-center justify-between"><div class="flex items-center gap-3 min-w-0"><div class="w-9 h-9 rounded-full bg-primary-container flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-on-primary text-[20px]">admin_panel_settings</span></div><div class="min-w-0 flex-1"><p class="font-label-md text-label-md text-white truncate font-medium">Nguyen Admin</p><p class="font-label-sm text-label-sm text-surface-variant/60 truncate">Super Admin</p></div></div><a class="p-1.5 text-inverse-on-surface/60 hover:text-white hover:bg-inverse-surface/80 rounded-lg transition-colors" data-path="login" href="#" title="Sign out"><span class="material-symbols-outlined text-[20px]">logout</span></a></div></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-16 bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 flex items-center justify-between px-gutter"><div class="flex items-center gap-2 font-label-md text-label-md text-on-surface-variant"><span class="font-medium text-on-surface-variant">Admin</span><span class="material-symbols-outlined text-[16px]">chevron_right</span><span class="font-semibold text-on-surface">Dashboard</span></div><div class="flex items-center gap-5"><div class="relative hidden sm:block w-72"><span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span><input class="w-full h-10 pl-9 pr-14 bg-surface-container-lowest rounded-xl font-body-sm text-body-sm text-on-surface placeholder:text-outline focus:outline-none shadow-[0_1px_3px_0_rgba(15,23,42,0.04)]" placeholder="Search catalog, orders..." type="text"><kbd class="absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">Ctrl+K</kbd></div><div class="flex items-center gap-2"><button class="relative p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-full transition-colors" type="button"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-error"></span></button><button class="p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-full transition-colors" type="button"><span class="material-symbols-outlined text-[22px]">help_outline</span></button></div><div class="flex items-center pl-2"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full pt-16 bg-background px-gutter min-h-screen"><div class="flex flex-col w-full pb-16">
+<!-- Top Breadcrumb / Page Status Header -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 py-6 border-b border-outline-variant/30">
+<div class="flex flex-col gap-1.5">
+<div class="flex items-center gap-2 font-label-md text-label-md text-on-surface-variant">
+<span class="">Admin</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span class="">Products</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span class="text-primary font-semibold">Inventory Catalog</span>
+</div>
+<div class="flex items-center gap-3">
+<h1 class="font-headline-xl text-headline-xl text-on-surface tracking-tight">Product Inventory Management</h1>
+
+
+</div>
+</div>
+<!-- Catalog Quick Actions -->
+<div class="flex items-center gap-2.5">
+<button class="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-surface-container-lowest text-on-surface hover:bg-surface-container transition-colors shadow-sm font-label-lg text-label-lg" type="button">
+<span class="material-symbols-outlined text-[20px]">download</span>
+<span class="">Export CSV</span>
+</button>
+<button class="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-surface-container-lowest text-on-surface hover:bg-surface-container transition-colors shadow-sm font-label-lg text-label-lg" type="button">
+<span class="material-symbols-outlined text-[20px]">upload_file</span>
+<span class="">Bulk Import</span>
+</button>
+<button class="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary-container text-on-primary hover:bg-primary transition-all shadow-md font-label-lg text-label-lg active:scale-95" type="button">
+<span class="material-symbols-outlined text-[20px]">add</span>
+<span class="">Add New Product</span>
+</button>
+</div>
+</div>
+<!-- Telemetry / Inventory Health Mini-Strip -->
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 py-6">
+<!-- Card 1: Total SKUs -->
+<div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm flex items-center justify-between">
+<div class="flex flex-col gap-1">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Total Products</span>
+<div class="flex items-baseline gap-2">
+<span class="font-headline-lg text-headline-lg font-bold text-on-surface">124 SKUs</span>
+<span class="font-label-sm text-label-sm text-secondary font-medium">+12 this month</span>
+</div>
+</div>
+<div class="w-12 h-12 rounded-xl bg-primary-fixed flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[26px]">inventory</span>
+</div>
+</div>
+<!-- Card 2: Active Listings -->
+<div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm flex items-center justify-between">
+<div class="flex flex-col gap-1">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Active Listings</span>
+<div class="flex items-baseline gap-2">
+<span class="font-headline-lg text-headline-lg font-bold text-on-surface">118 Live</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">95.1% catalog</span>
+</div>
+</div>
+<div class="w-12 h-12 rounded-xl bg-secondary-fixed flex items-center justify-center text-on-secondary-fixed-variant">
+<span class="material-symbols-outlined text-[26px]">check_circle</span>
+</div>
+</div>
+<!-- Card 3: Low Stock Warning -->
+<div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm flex items-center justify-between relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-amber-500"></div>
+<div class="flex flex-col gap-1 pl-1">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Low Stock Alert</span>
+<div class="flex items-baseline gap-2">
+<span class="font-headline-lg text-headline-lg font-bold text-amber-700">4 SKUs</span>
+<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-label-sm text-label-sm font-semibold">Restock Urgent</span>
+</div>
+</div>
+<div class="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center text-amber-700">
+<span class="material-symbols-outlined text-[26px]">warning</span>
+</div>
+</div>
+<!-- Card 4: Out of Stock -->
+<div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm flex items-center justify-between relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-error"></div>
+<div class="flex flex-col gap-1 pl-1">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Out of Stock</span>
+<div class="flex items-baseline gap-2">
+<span class="font-headline-lg text-headline-lg font-bold text-error">2 SKUs</span>
+<span class="px-2 py-0.5 rounded-full bg-error-container text-on-error-container font-label-sm text-label-sm font-semibold">Depleted</span>
+</div>
+</div>
+<div class="w-12 h-12 rounded-xl bg-error-container flex items-center justify-center text-error">
+<span class="material-symbols-outlined text-[26px]">production_quantity_limits</span>
+</div>
+</div>
+</div>
+<!-- Filter & Command Center -->
+<div class="bg-surface-container-lowest rounded-xl p-4 shadow-sm mb-5 flex flex-col gap-4">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-center">
+<!-- Search Input (Spans 5 cols) -->
+<div class="lg:col-span-4 relative">
+<span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">search</span>
+<input class="w-full h-11 pl-11 pr-4 bg-surface-container-low rounded-lg font-body-md text-body-md text-on-surface placeholder:text-outline focus:outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary-container transition-all" id="productSearchInput" placeholder="Search by product name, SKU, or shop..." type="text">
+</div>
+<!-- Filter Dropdowns (Spans 8 cols) -->
+<div class="lg:col-span-8 flex flex-wrap sm:flex-nowrap items-center gap-2.5">
+<select class="h-11 px-3 bg-surface-container-low text-on-surface font-body-md text-body-md rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-container transition-all cursor-pointer flex-1">
+<option value="">All Categories</option>
+<option value="Footwear">Footwear</option>
+<option value="Fashion &amp; Apparel">Apparel &amp; Textiles</option>
+<option value="Accessories">Accessories</option>
+<option value="Artisan Craft">Artisan Crafts</option>
+<option value="Home &amp; Living">Home &amp; Living</option>
+</select>
+<select class="h-11 px-3 bg-surface-container-low text-on-surface font-body-md text-body-md rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-container transition-all cursor-pointer flex-1">
+<option value="">All Stock Status</option>
+<option value="in_stock">In Stock (&gt;5)</option>
+<option value="low_stock">Low Stock (≤5)</option>
+<option value="out_of_stock">Out of Stock (0)</option>
+</select>
+<select class="h-11 px-3 bg-surface-container-low text-on-surface font-body-md text-body-md rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-container transition-all cursor-pointer flex-1">
+<option value="">All Vendors</option>
+<option value="UrbanStep">UrbanStep</option>
+<option value="Crafted Saigon">Crafted Saigon</option>
+<option value="Terra Living Lab">Terra Living Lab</option>
+<option value="Vietnam Silk Co.">Vietnam Silk Co.</option>
+</select>
+<select class="h-11 px-3 bg-surface-container-low text-on-surface font-body-md text-body-md rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-container transition-all cursor-pointer flex-1">
+<option value="newest">Newest First</option>
+<option value="stock_asc">Stock: Low to High</option>
+<option value="stock_desc">Stock: High to Low</option>
+<option value="price_desc">Price: High to Low</option>
+</select>
+</div>
+</div>
+<!-- Active Selection & Bulk Bar -->
+<div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-surface-container">
+<div class="flex items-center gap-3">
+<div class="flex items-center gap-2">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Bulk Controls:</span>
+<select class="h-9 px-3 bg-surface-container text-on-surface font-body-sm text-body-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-container" id="bulkActionSelect">
+<option value="">Choose Bulk Action...</option>
+<option value="deactivate">Deactivate Selected</option>
+<option value="activate">Activate Selected</option>
+<option value="category">Assign Category</option>
+<option value="delete">Delete Selected</option>
+</select>
+<button class="h-9 px-4 bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-label-md text-label-md rounded-lg transition-colors" id="applyBulkBtn" type="button">
+            Apply
+          </button>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant hidden" id="selectedCountText">0 selected</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Showing active filters:</span>
+<span class="px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm flex items-center gap-1">
+          All Warehouses
+          <span class="material-symbols-outlined text-[14px] cursor-pointer hover:text-error">close</span>
+</span>
+<button class="text-primary hover:underline font-label-sm text-label-sm ml-2" type="button">Clear all</button>
+</div>
+</div>
+</div>
+<!-- Dedicated Full-Width Inventory Data Table -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden flex flex-col">
+<div class="w-full overflow-x-auto">
+<table class="w-full text-left border-collapse min-w-[1080px]">
+<thead>
+<tr class="bg-surface-container-low text-on-surface-variant font-label-md text-label-md uppercase tracking-wider border-b border-surface-container">
+<th class="py-4 px-4 w-12 text-center">
+<input class="w-4 h-4 rounded text-primary-container border-outline focus:ring-primary-container cursor-pointer accent-primary-container" id="masterSelectCheckbox" type="checkbox">
+</th>
+<th class="py-4 px-4">Product &amp; SKU</th>
+<th class="py-4 px-4">Shop / Vendor</th>
+<th class="py-4 px-4">Category</th>
+<th class="py-4 px-4">Retail Price</th>
+<th class="py-4 px-4">Stock Level</th>
+<th class="py-4 px-4 text-center">Status</th>
+<th class="py-4 px-4 text-right pr-6">Catalog Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container font-body-md text-body-md text-on-surface">
+<!-- Row 1: Low Stock Alert (Light Amber Tint) -->
+<tr class="bg-amber-50/50 hover:bg-amber-100/50 transition-colors">
+<td class="py-4 px-4 text-center">
+<input class="product-row-checkbox w-4 h-4 rounded border-outline cursor-pointer accent-primary-container" type="checkbox">
+</td>
+<td class="py-4 px-4">
+<div class="flex items-center gap-3.5">
+<img class="w-12 h-12 rounded-lg object-cover bg-surface-container flex-shrink-0" data-alt="Close up studio product shot of Retro Runner V2 Sneaker featuring breathable cream mesh, dynamic orange accents, and clean aerodynamic rubber sole against neutral background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDbF_gW6K2oNWgAqEIbWZJMbSTMyLoNXTO-QAVEiv8Ujt9tYLKraFTmhg43ZBTayq4KGdwys1Yi5a5B8z8qtxAiuM1QdPp_lHbv3h5eJ3PG1W5gJjsCJ9k40QBYEyiGDKnS0S2R2PQs0mMDmfECpZvOGY6gIoDbHtCHRzblusHhQhCLo9dtK78iyTOzRgekYMZ10rYmg7wknMtOYcVDI6mkYZSR8tGaE_0AjQVJzHS0iv8BhG1O2FIm">
+<div class="flex flex-col min-w-0">
+<a class="font-headline-md text-[15px] font-semibold text-on-surface hover:text-primary transition-colors truncate" href="#">Retro Runner V2 Sneaker</a>
+<span class="font-mono text-xs text-on-surface-variant tracking-tight">SKU-VN-8841</span>
+</div>
+</div>
+</td>
+<td class="py-4 px-4">
+<div class="flex items-center gap-2">
+<span class="font-medium text-on-surface">UrbanStep</span>
+<span class="px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed-variant font-label-sm text-[10px] font-bold">MALL</span>
+</div>
+</td>
+<td class="py-4 px-4">
+<span class="px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm">Footwear</span>
+</td>
+<td class="py-4 px-4 font-mono font-semibold text-on-surface">
+              1.250.000 ₫
+            </td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 font-label-sm text-label-sm font-bold">
+<span class="material-symbols-outlined text-[14px]">warning</span>
+                3 left
+              </span>
+</td>
+<td class="py-4 px-4 text-center">
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</td>
+<td class="py-4 px-4 text-right pr-6">
+<div class="flex items-center justify-end gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-lg transition-colors" title="Edit Catalog Entry" type="button">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-surface-container rounded-lg transition-colors" title="Duplicate SKU" type="button">
+<span class="material-symbols-outlined text-[18px]">content_copy</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-error hover:bg-error-container rounded-lg transition-colors" title="Delete Product" type="button">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2: In Stock -->
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-4 px-4 text-center">
+<input class="product-row-checkbox w-4 h-4 rounded border-outline cursor-pointer accent-primary-container" type="checkbox">
+</td>
+<td class="py-4 px-4">
+<div class="flex items-center gap-3.5">
+<img class="w-12 h-12 rounded-lg object-cover bg-surface-container flex-shrink-0" data-alt="Pack of Cushioned Bamboo Athletic Socks in charcoal grey and off-white roll folded neatly against a clean minimalist studio backdrop" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCK-JFdB_64SlYHfC6mKpGa4elPAoJ68RZ-jKJS8WDId1iCsZ62DUKXE47e2OE7AapWzAs8aKrglf2IYcas8NPqcZZDstr5L8v7enTpwCxqZx_6JfdRf13JMzq9jJho6Xcq1FKu71ogmN8YBbURHir3YkSR2AsZUU02BgZF6SpfH4u_dPdacZJIz_0zegk45v_x_ejHtenZ7cDZYpOq34wJK2add2612crmxelm7owLXJAuPf4JZl0H">
+<div class="flex flex-col min-w-0">
+<a class="font-headline-md text-[15px] font-semibold text-on-surface hover:text-primary transition-colors truncate" href="#">Cushioned Bamboo Athletic Socks</a>
+<span class="font-mono text-xs text-on-surface-variant tracking-tight">SKU-SOX-102</span>
+</div>
+</div>
+</td>
+<td class="py-4 px-4">
+<div class="flex items-center gap-2">
+<span class="font-medium text-on-surface">UrbanStep</span>
+<span class="px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed-variant font-label-sm text-[10px] font-bold">MALL</span>
+</div>
+</td>
+<td class="py-4 px-4">
+<span class="px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm">Accessories</span>
+</td>
+<td class="py-4 px-4 font-mono font-semibold text-on-surface">
+              120.000 ₫
+            </td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 font-label-sm text-label-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                85 in stock
+              </span>
+</td>
+<td class="py-4 px-4 text-center">
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</td>
+<td class="py-4 px-4 text-right pr-6">
+<div class="flex items-center justify-end gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-lg transition-colors" title="Edit Catalog Entry" type="button">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-surface-container rounded-lg transition-colors" title="Duplicate SKU" type="button">
+<span class="material-symbols-outlined text-[18px]">content_copy</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-error hover:bg-error-container rounded-lg transition-colors" title="Delete Product" type="button">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3: Out of Stock Alert (Light Red Tint) -->
+<tr class="bg-rose-50/40 hover:bg-rose-100/40 transition-colors">
+<td class="py-4 px-4 text-center">
+<input class="product-row-checkbox w-4 h-4 rounded border-outline cursor-pointer accent-primary-container" type="checkbox">
+</td>
+<td class="py-4 px-4">
+<div class="flex items-center gap-3.5">
+<img class="w-12 h-12 rounded-lg object-cover bg-surface-container flex-shrink-0" data-alt="Minimalist vegetable-tanned leather cardholder in warm tan patina showing subtle edge stitching and smooth grain leather under bright daylight" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBe3_BArY2ZqxL9i2URLB7FWT1g4AXxpzQjjM-2pc23C7HcEJ0URIdkh2ssnWH-6mZhEWD-1n_36CgjWQoEpRXrRdKaOsSdHp79LAF2W8pX7OBAApLvrLF3wlHScjxdzBcAasyWTfzTyh2nc5fU5NkOpEku6vdojPfw_e2PyRnHOjw0HXn2RcLLtJY3EQqqsHIxZza86F1S3KbTvCJclpQ6icLZKmHvAuP-MImmRVuJrCJtv7uChXm4">
+<div class="flex flex-col min-w-0">
+<a class="font-headline-md text-[15px] font-semibold text-on-surface hover:text-primary transition-colors truncate" href="#">Minimalist Veg-Tanned Cardholder</a>
+<span class="font-mono text-xs text-on-surface-variant tracking-tight">SKU-CRD-770</span>
+</div>
+</div>
+</td>
+<td class="py-4 px-4">
+<div class="flex items-center gap-2">
+<span class="font-medium text-on-surface">Crafted Saigon</span>
+<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 font-label-sm text-[10px] font-bold">ARTISAN</span>
+</div>
+</td>
+<td class="py-4 px-4">
+<span class="px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm">Artisan</span></td>
+<td class="py-4 px-4 font-mono font-semibold text-on-surface">
+              450.000 ₫
+            </td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-error-container text-on-error-container font-label-sm text-label-sm font-bold">
+<span class="material-symbols-outlined text-[14px]">cancel</span>
+                Out of stock (0)
+              </span>
+</td>
+<td class="py-4 px-4 text-center">
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox">
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</td>
+<td class="py-4 px-4 text-right pr-6">
+<div class="flex items-center justify-end gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-lg transition-colors" title="Edit Catalog Entry" type="button">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-surface-container rounded-lg transition-colors" title="Duplicate SKU" type="button">
+<span class="material-symbols-outlined text-[18px]">content_copy</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-error hover:bg-error-container rounded-lg transition-colors" title="Delete Product" type="button">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4: In Stock -->
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-4 px-4 text-center">
+<input class="product-row-checkbox w-4 h-4 rounded border-outline cursor-pointer accent-primary-container" type="checkbox">
+</td>
+<td class="py-4 px-4">
+<div class="flex items-center gap-3.5">
+<img class="w-12 h-12 rounded-lg object-cover bg-surface-container flex-shrink-0" data-alt="Heavyweight natural cotton canvas everyday tote bag with reinforced dual-stitch handles styled over textured wooden table" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPa170i9EmnYBnZ5YLeBkflsNNloX6dKRBe2sYZXQWKMJItXYNUeR-DcB1u4gv_tbO_3a7oaphNcdTHUkqRt5b0uRbPkBrxSRICYbWr1h8chJMFchOTvRva_kCFcl-4Sb2PCMJhXGKNcVY3ojHNwlkiyTLUP6dgx8ozQ-QqSc2sbT7GcXXVirYcT7BU42CWEi9hriilmZK5kIOEhUOQCxFItS3qftB32QFDSIKHuioVS92bEkGel1o">
+<div class="flex flex-col min-w-0">
+<a class="font-headline-md text-[15px] font-semibold text-on-surface hover:text-primary transition-colors truncate" href="#">Canvas Everyday Tote</a>
+<span class="font-mono text-xs text-on-surface-variant tracking-tight">SKU-TOT-509</span>
+</div>
+</div>
+</td>
+<td class="py-4 px-4">
+<div class="flex items-center gap-2">
+<span class="font-medium text-on-surface">Terra Living Lab</span>
+<span class="px-2 py-0.5 rounded-full bg-teal-100 text-teal-800 font-label-sm text-[10px] font-bold">VERIFIED</span>
+</div>
+</td>
+<td class="py-4 px-4">
+<span class="px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm">Accessories</span>
+</td>
+<td class="py-4 px-4 font-mono font-semibold text-on-surface">
+              240.000 ₫
+            </td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 font-label-sm text-label-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                42 in stock
+              </span>
+</td>
+<td class="py-4 px-4 text-center">
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</td>
+<td class="py-4 px-4 text-right pr-6">
+<div class="flex items-center justify-end gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-lg transition-colors" title="Edit Catalog Entry" type="button">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-surface-container rounded-lg transition-colors" title="Duplicate SKU" type="button">
+<span class="material-symbols-outlined text-[18px]">content_copy</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-error hover:bg-error-container rounded-lg transition-colors" title="Delete Product" type="button">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 5: Low Stock Alert -->
+<tr class="bg-amber-50/50 hover:bg-amber-100/50 transition-colors">
+<td class="py-4 px-4 text-center">
+<input class="product-row-checkbox w-4 h-4 rounded border-outline cursor-pointer accent-primary-container" type="checkbox">
+</td>
+<td class="py-4 px-4">
+<div class="flex items-center gap-3.5">
+<img class="w-12 h-12 rounded-lg object-cover bg-surface-container flex-shrink-0" data-alt="Handcrafted ceramic matte stone coffee cup with subtle speckled earthy glaze and organic tactile ergonomic rim" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDHfI2XHBqQkikm4tBWF1j-qaaA48-4cug5C9ocsFJvcszHXMV3fxx9v8maU2AqwjMmxD_XKdGtaN8dcba4Zuw8axlO5pFhMSBTfo9T3KrUz4s34-3fyWUYP_Te9ZlpRoeI5wgfqvpcMRHoeSao9Xcl7bGzehtqm_ojxQXTJNot9ydw7s4aeDrKVqmhgCGPI9-kQhtI9q-TOU4sM1tq_rEvoy5eS9XoMOwcWAXs2S7BtGhgYdU2N8WT">
+<div class="flex flex-col min-w-0">
+<a class="font-headline-md text-[15px] font-semibold text-on-surface hover:text-primary transition-colors truncate" href="#">Ceramic Handcrafted Cup</a>
+<span class="font-mono text-xs text-on-surface-variant tracking-tight">SKU-POT-312</span>
+</div>
+</div>
+</td>
+<td class="py-4 px-4">
+<div class="flex items-center gap-2">
+<span class="font-medium text-on-surface">Crafted Saigon</span>
+<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 font-label-sm text-[10px] font-bold">ARTISAN</span>
+</div>
+</td>
+<td class="py-4 px-4">
+<span class="px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm">Home</span></td>
+<td class="py-4 px-4 font-mono font-semibold text-on-surface">
+              195.000 ₫
+            </td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 font-label-sm text-label-sm font-bold">
+<span class="material-symbols-outlined text-[14px]">warning</span>
+                2 left
+              </span>
+</td>
+<td class="py-4 px-4 text-center">
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</td>
+<td class="py-4 px-4 text-right pr-6">
+<div class="flex items-center justify-end gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-lg transition-colors" title="Edit Catalog Entry" type="button">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-surface-container rounded-lg transition-colors" title="Duplicate SKU" type="button">
+<span class="material-symbols-outlined text-[18px]">content_copy</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-error hover:bg-error-container rounded-lg transition-colors" title="Delete Product" type="button">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 6: In Stock -->
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-4 px-4 text-center">
+<input class="product-row-checkbox w-4 h-4 rounded border-outline cursor-pointer accent-primary-container" type="checkbox">
+</td>
+<td class="py-4 px-4">
+<div class="flex items-center gap-3.5">
+<img class="w-12 h-12 rounded-lg object-cover bg-surface-container flex-shrink-0" data-alt="Light breathable beige organic linen relaxed fit button up shirt hung on minimal brushed brass hanger" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAPGfFo1UG5IYgytBrJv-NIaJwbHxxKZhSr_Ljyz9OvqljbXP-9CAZdZ_8bZaY8acSAjEMawrWReKfeTq3QfXtcGLBZ1KEDsdqGreRigmH9xbZ-K1YzbX-xc0UjtQWR8tZTV8nNv3v2oEuory-mGZoBU4-dgrQLXYkuy1oP6YUEn6YC6OPHdvO6zBMSB1bQ2w2D_L6WUXvrmd0Ls5DsTvd8Za1wNp8UH4eUHID3fZ6LQQ30AjSqAONj">
+<div class="flex flex-col min-w-0">
+<a class="font-headline-md text-[15px] font-semibold text-on-surface hover:text-primary transition-colors truncate" href="#">Embroidered Linen Shirt</a>
+<span class="font-mono text-xs text-on-surface-variant tracking-tight">SKU-LIN-404</span>
+</div>
+</div>
+</td>
+<td class="py-4 px-4">
+<div class="flex items-center gap-2">
+<span class="font-medium text-on-surface">Vietnam Silk Co.</span>
+<span class="px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed-variant font-label-sm text-[10px] font-bold">MALL</span>
+</div>
+</td>
+<td class="py-4 px-4">
+<span class="px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm">Fashionl</span>
+</td>
+<td class="py-4 px-4 font-mono font-semibold text-on-surface">
+              680.000 ₫
+            </td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 font-label-sm text-label-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                64 in stock
+              </span>
+</td>
+<td class="py-4 px-4 text-center">
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</td>
+<td class="py-4 px-4 text-right pr-6">
+<div class="flex items-center justify-end gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-lg transition-colors" title="Edit Catalog Entry" type="button">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-surface-container rounded-lg transition-colors" title="Duplicate SKU" type="button">
+<span class="material-symbols-outlined text-[18px]">content_copy</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-error hover:bg-error-container rounded-lg transition-colors" title="Delete Product" type="button">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 7: In Stock High-End -->
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-4 px-4 text-center">
+<input class="product-row-checkbox w-4 h-4 rounded border-outline cursor-pointer accent-primary-container" type="checkbox">
+</td>
+<td class="py-4 px-4">
+<div class="flex items-center gap-3.5">
+<img class="w-12 h-12 rounded-lg object-cover bg-surface-container flex-shrink-0" data-alt="Handcrafted deep chestnut full grain leather Chelsea boots with pull tabs and sleek welted soles resting on polished concrete floor" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDkRylgtdCsmjJ5vQXYndgs9OMMrXvX6iQNUu2p20aa7VXy3SixRJOGUFDzR44Xo66v8e-YRF2sT-q-1mvXTJxfG1oih4xB19YqhLYhJp26ODNaoi79ER_O7lF_k79Wpg1VWzY1vgEMMs6Z3bq8DyMN7mWm3PTpGqCNqFIxVOha4ajPCror-ZmUZZmstgqFQY9O81vo_SXYRInd4a_I9HDd033z4uGfQNWzT2_BBr1yBQf064NCXI65">
+<div class="flex flex-col min-w-0">
+<a class="font-headline-md text-[15px] font-semibold text-on-surface hover:text-primary transition-colors truncate" href="#">Handmade Leather Chelsea Boots</a>
+<span class="font-mono text-xs text-on-surface-variant tracking-tight">SKU-BOT-901</span>
+</div>
+</div>
+</td>
+<td class="py-4 px-4">
+<div class="flex items-center gap-2">
+<span class="font-medium text-on-surface">UrbanStep</span>
+<span class="px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed-variant font-label-sm text-[10px] font-bold">MALL</span>
+</div>
+</td>
+<td class="py-4 px-4">
+<span class="px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm">Footwear</span>
+</td>
+<td class="py-4 px-4 font-mono font-semibold text-on-surface">
+              1.890.000 ₫
+            </td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 font-label-sm text-label-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                18 in stock
+              </span>
+</td>
+<td class="py-4 px-4 text-center">
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</td>
+<td class="py-4 px-4 text-right pr-6">
+<div class="flex items-center justify-end gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-lg transition-colors" title="Edit Catalog Entry" type="button">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-surface-container rounded-lg transition-colors" title="Duplicate SKU" type="button">
+<span class="material-symbols-outlined text-[18px]">content_copy</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-error hover:bg-error-container rounded-lg transition-colors" title="Delete Product" type="button">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 8: In Stock -->
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-4 px-4 text-center">
+<input class="product-row-checkbox w-4 h-4 rounded border-outline cursor-pointer accent-primary-container" type="checkbox">
+</td>
+<td class="py-4 px-4">
+<div class="flex items-center gap-3.5">
+<img class="w-12 h-12 rounded-lg object-cover bg-surface-container flex-shrink-0" data-alt="Amber glass jar soy candle with wooden wick and textured botanical label in warm cozy ambient twilight lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCRIf6hJDLkbby9qVlgQUdm4NSTjjgobeN9xr0GmZeUeIPThtQLBr1iW4qKAka_9Bv5IC2AV8cJ8TVW5KuX9oAkbNmiVRpR9z-O9wD1liJBhtVjMw6P3rZDa-qpkmxe-PThI-J84Fe-_3Zfc6muwofkb5T0Kta0TUX5G2UTeaYHF7zqC7AIqDx9am0lVMVQjsQkwpbZ_x5ETva5vvKTFy3OfDrckBN8efKIqzN_ck2oVsYa_AulrD78">
+<div class="flex flex-col min-w-0">
+<a class="font-headline-md text-[15px] font-semibold text-on-surface hover:text-primary transition-colors truncate" href="#">Natural Soy Scented Candle</a>
+<span class="font-mono text-xs text-on-surface-variant tracking-tight">SKU-CND-019</span>
+</div>
+</div>
+</td>
+<td class="py-4 px-4">
+<div class="flex items-center gap-2">
+<span class="font-medium text-on-surface">Terra Living Lab</span>
+<span class="px-2 py-0.5 rounded-full bg-teal-100 text-teal-800 font-label-sm text-[10px] font-bold">VERIFIED</span>
+</div>
+</td>
+<td class="py-4 px-4">
+<span class="px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm">Home</span></td>
+<td class="py-4 px-4 font-mono font-semibold text-on-surface">
+              280.000 ₫
+            </td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 font-label-sm text-label-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                120 in stock
+              </span>
+</td>
+<td class="py-4 px-4 text-center">
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</td>
+<td class="py-4 px-4 text-right pr-6">
+<div class="flex items-center justify-end gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-lg transition-colors" title="Edit Catalog Entry" type="button">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-surface-container rounded-lg transition-colors" title="Duplicate SKU" type="button">
+<span class="material-symbols-outlined text-[18px]">content_copy</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-error hover:bg-error-container rounded-lg transition-colors" title="Delete Product" type="button">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 9: Low Stock Alert -->
+<tr class="bg-amber-50/50 hover:bg-amber-100/50 transition-colors">
+<td class="py-4 px-4 text-center">
+<input class="product-row-checkbox w-4 h-4 rounded border-outline cursor-pointer accent-primary-container" type="checkbox">
+</td>
+<td class="py-4 px-4">
+<div class="flex items-center gap-3.5">
+<img class="w-12 h-12 rounded-lg object-cover bg-surface-container flex-shrink-0" data-alt="Traditional artisan woven bamboo cylinder table lamp radiating soft warm incandescent amber glow onto wooden side table" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCCGnhZgEcWv91tsXngHyrHDZecZhtJzz2jh574dS80eV813bYUVbPRxCPXn55QY-R2MYGIwO0uZ87sgFhOqq9sa69oNgqZxJhJepY9uPPnvEgdJa_KMew0KzN4Q3ql5FX4jVbtUsFoTDDxjtUTVd_4jz-yaBZoDe0JDXhjUmr0aR0R-xL2DH8Xx_uKAmd-Em2iraWA-8c3ORCL0c7T1CoG0HazbUBFuNzh84o-QIGSn_H6e3Z6P1hV">
+<div class="flex flex-col min-w-0">
+<a class="font-headline-md text-[15px] font-semibold text-on-surface hover:text-primary transition-colors truncate" href="#">Woven Bamboo Table Lamp</a>
+<span class="font-mono text-xs text-on-surface-variant tracking-tight">SKU-LMP-812</span>
+</div>
+</div>
+</td>
+<td class="py-4 px-4">
+<div class="flex items-center gap-2">
+<span class="font-medium text-on-surface">Crafted Saigon</span>
+<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 font-label-sm text-[10px] font-bold">ARTISAN</span>
+</div>
+</td>
+<td class="py-4 px-4">
+<span class="px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm">Artisan</span></td>
+<td class="py-4 px-4 font-mono font-semibold text-on-surface">
+              850.000 ₫
+            </td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 font-label-sm text-label-sm font-bold">
+<span class="material-symbols-outlined text-[14px]">warning</span>
+                4 left
+              </span>
+</td>
+<td class="py-4 px-4 text-center">
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</td>
+<td class="py-4 px-4 text-right pr-6">
+<div class="flex items-center justify-end gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-lg transition-colors" title="Edit Catalog Entry" type="button">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-surface-container rounded-lg transition-colors" title="Duplicate SKU" type="button">
+<span class="material-symbols-outlined text-[18px]">content_copy</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-error hover:bg-error-container rounded-lg transition-colors" title="Delete Product" type="button">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 10: Out of Stock Alert -->
+<tr class="bg-rose-50/40 hover:bg-rose-100/40 transition-colors">
+<td class="py-4 px-4 text-center">
+<input class="product-row-checkbox w-4 h-4 rounded border-outline cursor-pointer accent-primary-container" type="checkbox">
+</td>
+<td class="py-4 px-4">
+<div class="flex items-center gap-3.5">
+<img class="w-12 h-12 rounded-lg object-cover bg-surface-container flex-shrink-0" data-alt="Kraft paper coffee bag of organic Da Lat Arabica specialty whole bean coffee surrounded by roasted coffee beans on dark surface" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDqkt6rkZcRHRuQmgjTJS37tJJgAQT4CcqEu__38PaaQ77AoTBEQxIQBTL-CgvuqeKh8l76oyWJV_DhEmViXrhHNTTesKLiJURCy6J_DlrV6kAw07zKGH5xie5VSMXvMiIRMxu_jhY8pvxhf2Wt_c2TycjV2gxvXvlXhzofNawxLh6hsicv6ZWsCd6pQGAfykiny4ketG-W48DksTHleb3HO7HMQX-MAEthBA8Zj20WY1PDWdx33BdJ">
+<div class="flex flex-col min-w-0">
+<a class="font-headline-md text-[15px] font-semibold text-on-surface hover:text-primary transition-colors truncate" href="#">Organic Arabica Coffee Beans</a>
+<span class="font-mono text-xs text-on-surface-variant tracking-tight">SKU-COF-250</span>
+</div>
+</div>
+</td>
+<td class="py-4 px-4">
+<div class="flex items-center gap-2">
+<span class="font-medium text-on-surface">Terra Living Lab</span>
+<span class="px-2 py-0.5 rounded-full bg-teal-100 text-teal-800 font-label-sm text-[10px] font-bold">VERIFIED</span>
+</div>
+</td>
+<td class="py-4 px-4">
+<span class="px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm">Home</span></td>
+<td class="py-4 px-4 font-mono font-semibold text-on-surface">
+              210.000 ₫
+            </td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-error-container text-on-error-container font-label-sm text-label-sm font-bold">
+<span class="material-symbols-outlined text-[14px]">cancel</span>
+                Out of stock (0)
+              </span>
+</td>
+<td class="py-4 px-4 text-center">
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox">
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</td>
+<td class="py-4 px-4 text-right pr-6">
+<div class="flex items-center justify-end gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-lg transition-colors" title="Edit Catalog Entry" type="button">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-surface-container rounded-lg transition-colors" title="Duplicate SKU" type="button">
+<span class="material-symbols-outlined text-[18px]">content_copy</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-error hover:bg-error-container rounded-lg transition-colors" title="Delete Product" type="button">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Footer & Standard Pagination -->
+<div class="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t border-surface-container bg-surface-container-lowest">
+<div class="font-body-md text-body-md text-on-surface-variant">
+        Showing <span class="font-semibold text-on-surface">1</span> to <span class="font-semibold text-on-surface">10</span> of <span class="font-semibold text-on-surface">124</span> products
+      </div>
+<nav aria-label="Catalog pagination" class="flex items-center gap-1">
+<button class="flex items-center justify-center w-9 h-9 rounded-lg text-outline cursor-not-allowed hover:bg-transparent" disabled="" type="button">
+<span class="material-symbols-outlined text-[18px]">chevron_left</span>
+</button>
+<button class="w-9 h-9 rounded-lg bg-primary-container text-on-primary font-label-md text-label-md font-bold shadow-sm" type="button">1</button>
+<button class="w-9 h-9 rounded-lg text-on-surface hover:bg-surface-container font-label-md text-label-md transition-colors" type="button">2</button>
+<button class="w-9 h-9 rounded-lg text-on-surface hover:bg-surface-container font-label-md text-label-md transition-colors" type="button">3</button>
+<span class="w-8 text-center text-outline">...</span>
+<button class="w-9 h-9 rounded-lg text-on-surface hover:bg-surface-container font-label-md text-label-md transition-colors" type="button">13</button>
+<button class="flex items-center justify-center w-9 h-9 rounded-lg text-on-surface hover:bg-surface-container transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</nav>
+</div>
+</div>
+</div>
+<script>
+  // DOM Micro-interactions for Catalog Selection & Bulk Controls
+  document.addEventListener('DOMContentLoaded', () => {
+    const masterCheckbox = document.getElementById('masterSelectCheckbox');
+    const rowCheckboxes = document.querySelectorAll('.product-row-checkbox');
+    const selectedCountText = document.getElementById('selectedCountText');
+    const bulkActionSelect = document.getElementById('bulkActionSelect');
+    const applyBulkBtn = document.getElementById('applyBulkBtn');
+    const searchInput = document.getElementById('productSearchInput');
+
+    function updateSelectionStatus() {
+      const checkedCount = Array.from(rowCheckboxes).filter(cb => cb.checked).length;
+      if (checkedCount > 0) {
+        selectedCountText.classList.remove('hidden');
+        selectedCountText.textContent = `${checkedCount} SKU${checkedCount > 1 ? 's' : ''} selected`;
+      } else {
+        selectedCountText.classList.add('hidden');
+      }
+      masterCheckbox.checked = checkedCount === rowCheckboxes.length && rowCheckboxes.length > 0;
+      masterCheckbox.indeterminate = checkedCount > 0 && checkedCount < rowCheckboxes.length;
+    }
+
+    if (masterCheckbox) {
+      masterCheckbox.addEventListener('change', (e) => {
+        rowCheckboxes.forEach(cb => {
+          cb.checked = e.target.checked;
+        });
+        updateSelectionStatus();
+      });
+    }
+
+    rowCheckboxes.forEach(cb => {
+      cb.addEventListener('change', updateSelectionStatus);
+    });
+
+    if (applyBulkBtn) {
+      applyBulkBtn.addEventListener('click', () => {
+        const action = bulkActionSelect.value;
+        const checkedCount = Array.from(rowCheckboxes).filter(cb => cb.checked).length;
+        if (!action) {
+          alert('Please choose a bulk action first.');
+          return;
+        }
+        if (checkedCount === 0) {
+          alert('Please select at least one product row to apply bulk actions.');
+          return;
+        }
+        alert(`Applied "${bulkActionSelect.options[bulkActionSelect.selectedIndex].text}" to ${checkedCount} products.`);
+      });
+    }
+
+    // Dynamic row search filter
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        const val = e.target.value.toLowerCase().trim();
+        const rows = document.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+          const text = row.innerText.toLowerCase();
+          row.style.display = text.includes(val) ? '' : 'none';
+        });
+      });
+    }
+  });
+</script></main></div>
+
+
+
+</body></html>
