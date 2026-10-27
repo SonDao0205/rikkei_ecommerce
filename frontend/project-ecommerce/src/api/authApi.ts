@@ -24,6 +24,7 @@ export interface BackendUser {
   phone: string;
   role: string;
   status: string;
+  email_verified?: number | boolean;
   created_at: string;
 }
 
@@ -33,6 +34,8 @@ export interface BackendAuthData {
   token_type: string;
   expires_in: number;
 }
+
+export type AuthUser = UserProfile;
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -49,7 +52,7 @@ export const mapBackendUser = (u: BackendUser): UserProfile => ({
   phone: u.phone,
   full_name: u.full_name,
   avatar_url: null,
-  email_verified: 1,
+  email_verified: u.email_verified ? 1 : 0,
   status: u.status === "LOCKED" ? "LOCKED" : "ACTIVE",
   role: u.role ? (u.role.toLowerCase() as UserRole) : "client",
   created_at: u.created_at || new Date().toISOString(),
@@ -269,9 +272,14 @@ export const authApi = {
       throw new Error("Mã OTP phải gồm chính xác 6 chữ số.");
     }
 
+    const res = await axiosClient.post<{ success: boolean; message: string }>(
+      "/api/v1/auth/verify-reset-otp",
+      { identifier: payload.identity.trim(), otp: trimmedOtp },
+    );
+
     return {
       success: true,
-      message: "Mã OTP hợp lệ.",
+      message: res.data.message || "OTP valid.",
       resetToken: trimmedOtp,
     };
   },
@@ -325,20 +333,12 @@ export const authApi = {
   /**
    * Danh sách tài khoản demo
    */
-  getDemoAccounts: () => [
-    {
-      role: "admin",
-      identifier: "admin@example.com",
-      password: "SecurePass123",
-      name: "Admin User",
-    },
-    {
-      role: "client",
-      identifier: "customer@example.com",
-      password: "SecurePass123",
-      name: "Nguyen Van A (Buyer Client)",
-    },
-  ],
+
+  // Compatibility methods for legacy standalone pages retained under src.
+  restoreSession: async (): Promise<UserProfile> => (await authApi.refreshToken()).user,
+  changePassword: async (currentPassword: string, newPassword: string, confirmPassword: string): Promise<void> => {
+    await axiosClient.put("/api/v1/auth/password", { current_password: currentPassword, new_password: newPassword, confirm_password: confirmPassword });
+  },
 };
 
 export default authApi;

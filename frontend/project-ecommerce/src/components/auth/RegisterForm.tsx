@@ -1,15 +1,9 @@
-<<<<<<< HEAD
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { authApi } from "../../api/authApi";
-=======
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../redux/store";
 import { registerUser, clearAuthError } from "../../redux/slices/authSlice";
->>>>>>> d39ab1246432014645f9f417d4f8c5a819a6c1be
 
-// â”€â”€â”€ Sub-components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Sub-components ─────────────────────────────────────────────────────────────
 
 const GoogleIcon = () => (
   <svg className="w-4 h-4" viewBox="0 0 24 24">
@@ -26,13 +20,13 @@ const FacebookIcon = () => (
   </svg>
 );
 
-// â”€â”€â”€ Password Strength â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Password Strength ──────────────────────────────────────────────────────────
 
 type StrengthLevel = "Weak" | "Fair" | "Good" | "Strong";
 
 const getPasswordStrength = (password: string): { level: StrengthLevel; filled: number; color: string } => {
   const checks = [
-    password.length >= 10,
+    password.length >= 8,
     /[A-Z]/.test(password),
     /[0-9]/.test(password),
     /[^A-Za-z0-9]/.test(password),
@@ -50,7 +44,7 @@ const strengthTextColor: Record<StrengthLevel, string> = {
   Strong: "text-emerald-700",
 };
 
-// â”€â”€â”€ Error Message Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Error Message Component ────────────────────────────────────────────────────
 
 const ErrorMessage = ({ message }: { message?: string }) => {
   if (!message) return null;
@@ -64,7 +58,7 @@ const ErrorMessage = ({ message }: { message?: string }) => {
   );
 };
 
-// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Types ──────────────────────────────────────────────────────────────────────
 
 interface RegisterFormData {
   fullName: string;
@@ -77,7 +71,7 @@ interface RegisterFormData {
 
 type FormErrors = Partial<Record<keyof RegisterFormData, string>>;
 
-// â”€â”€â”€ Validation Logic â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Validation Logic ───────────────────────────────────────────────────────────
 
 const validate = (data: RegisterFormData): FormErrors => {
   const errors: FormErrors = {};
@@ -96,21 +90,16 @@ const validate = (data: RegisterFormData): FormErrors => {
 
   if (!data.phone.trim()) {
     errors.phone = "Phone number is required.";
-  } else if (!/^\+?\d{9,15}$/.test(data.phone.trim().replace(/[\s\-()]/g, ""))) {
-    errors.phone = "Please enter a valid phone number (9â€“15 digits).";
+  } else if (!/^[0-9\s\-+()]{9,15}$/.test(data.phone.trim())) {
+    errors.phone = "Please enter a valid phone number (9–15 digits).";
   }
 
   if (!data.password) {
     errors.password = "Password is required.";
-<<<<<<< HEAD
-  } else if (!/(?=.*[A-Za-z])(?=.*\d).{10,72}/.test(data.password)) {
-    errors.password = "Use 10–72 characters with at least one letter and one number.";
-=======
   } else if (data.password.length < 10) {
     errors.password = "Password must be at least 10 characters.";
   } else if (!/[A-Za-z]/.test(data.password) || !/[0-9]/.test(data.password)) {
     errors.password = "Password must contain at least one letter and one number.";
->>>>>>> d39ab1246432014645f9f417d4f8c5a819a6c1be
   }
 
   if (!data.confirmPassword) {
@@ -126,7 +115,7 @@ const validate = (data: RegisterFormData): FormErrors => {
   return errors;
 };
 
-// â”€â”€â”€ Input class helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Input class helper ─────────────────────────────────────────────────────────
 
 const inputClass = (hasError: boolean, extra = "") =>
   `block w-full py-2.5 text-sm rounded-xl border text-slate-900 placeholder:text-slate-400 outline-none transition focus:ring-2 ${
@@ -135,16 +124,13 @@ const inputClass = (hasError: boolean, extra = "") =>
       : "border-slate-200 focus:ring-brand-600 focus:border-brand-600"
   } ${extra}`;
 
-// â”€â”€â”€ Main Form Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Main Form Component ────────────────────────────────────────────────────────
 
 const RegisterForm = () => {
   const navigate = useNavigate();
-<<<<<<< HEAD
-=======
   const dispatch = useAppDispatch();
   const { loading, error: authError } = useAppSelector((state) => state.auth);
 
->>>>>>> d39ab1246432014645f9f417d4f8c5a819a6c1be
   const [formData, setFormData] = useState<RegisterFormData>({
     fullName: "",
     email: "",
@@ -156,8 +142,6 @@ const RegisterForm = () => {
   const [errors, setErrors] = useState<FormErrors>({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [apiError, setApiError] = useState("");
-  const [submitting, setSubmitting] = useState(false);
 
   const strength = formData.password ? getPasswordStrength(formData.password) : null;
 
@@ -166,10 +150,6 @@ const RegisterForm = () => {
     const newValue = type === "checkbox" ? checked : value;
     setFormData((prev) => ({ ...prev, [name]: newValue }));
 
-<<<<<<< HEAD
-    // XÃ³a lá»—i cá»§a field Ä‘ang sá»­a ngay láº­p tá»©c
-=======
->>>>>>> d39ab1246432014645f9f417d4f8c5a819a6c1be
     if (errors[name as keyof RegisterFormData]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
@@ -178,13 +158,10 @@ const RegisterForm = () => {
     }
   };
 
-<<<<<<< HEAD
-=======
   useEffect(() => {
     dispatch(clearAuthError());
   }, [dispatch]);
 
->>>>>>> d39ab1246432014645f9f417d4f8c5a819a6c1be
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const validationErrors = validate(formData);
@@ -193,17 +170,6 @@ const RegisterForm = () => {
       return;
     }
     setErrors({});
-<<<<<<< HEAD
-    setApiError("");
-    setSubmitting(true);
-    try {
-      await authApi.register({ fullName: formData.fullName, email: formData.email, phone: formData.phone, password: formData.password });
-      navigate("/account", { replace: true });
-    } catch (error) {
-      setApiError(error instanceof Error ? error.message : "Registration failed.");
-    } finally {
-      setSubmitting(false);
-=======
 
     const resultAction = await dispatch(
       registerUser({
@@ -217,7 +183,6 @@ const RegisterForm = () => {
 
     if (registerUser.fulfilled.match(resultAction)) {
       navigate("/home");
->>>>>>> d39ab1246432014645f9f417d4f8c5a819a6c1be
     }
   };
 
@@ -265,7 +230,6 @@ const RegisterForm = () => {
 
       {/* Registration Form */}
       <form className="space-y-4" onSubmit={handleSubmit} noValidate>
-        {apiError && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{apiError}</p>}
 
         {/* Full Name */}
         <div>
@@ -322,7 +286,7 @@ const RegisterForm = () => {
           </label>
           <div className={`relative flex rounded-xl shadow-sm ${errors.phone ? "ring-1 ring-red-400 rounded-xl" : ""}`}>
             <div className="inline-flex items-center px-3 rounded-l-xl border border-r-0 border-slate-200 bg-slate-50 text-slate-600 text-xs font-medium space-x-1 select-none">
-              <span>ðŸ‡»ðŸ‡³</span>
+              <span>🇻🇳</span>
               <span className="font-semibold">+84</span>
             </div>
             <input
@@ -357,7 +321,7 @@ const RegisterForm = () => {
               id="password"
               name="password"
               type={showPassword ? "text" : "password"}
-              placeholder="10+ characters, letter and number"
+              placeholder="At least 8 characters"
               value={formData.password}
               onChange={handleChange}
               className={inputClass(!!errors.password, "pl-10 pr-10")}
@@ -473,15 +437,6 @@ const RegisterForm = () => {
         <div className="pt-2">
           <button
             type="submit"
-<<<<<<< HEAD
-            disabled={submitting}
-            className="w-full flex items-center justify-center space-x-2 py-3 px-4 rounded-xl shadow-md bg-brand-700 hover:bg-brand-800 focus:ring-4 focus:ring-brand-100 text-white font-semibold text-sm transition-all duration-150 transform active:scale-[0.99] cursor-pointer"
-          >
-            <span>{submitting ? "Creating account…" : "Create Account"}</span>
-            <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-              <path d="M14 5l7 7m0 0l-7 7m7-7H3" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-=======
             disabled={loading}
             className="w-full flex items-center justify-center space-x-2 py-3 px-4 rounded-xl shadow-md bg-brand-700 hover:bg-brand-800 disabled:opacity-60 disabled:cursor-not-allowed focus:ring-4 focus:ring-brand-100 text-white font-semibold text-sm transition-all duration-150 transform active:scale-[0.99] cursor-pointer"
           >
@@ -501,7 +456,6 @@ const RegisterForm = () => {
                 </svg>
               </>
             )}
->>>>>>> d39ab1246432014645f9f417d4f8c5a819a6c1be
           </button>
         </div>
       </form>
@@ -520,9 +474,9 @@ const RegisterForm = () => {
             <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
           </svg>
           <span>256-bit SSL Encrypted</span>
-          <span>â€¢</span>
+          <span>•</span>
           <a href="#" className="hover:text-slate-600 transition">Privacy Policy</a>
-          <span>â€¢</span>
+          <span>•</span>
           <a href="#" className="hover:text-slate-600 transition">Terms of Service</a>
         </div>
       </div>

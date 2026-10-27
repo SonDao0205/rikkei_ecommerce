@@ -40,8 +40,8 @@ export const profileApi = {
         full_name: u.full_name,
         username: cachedProfileExt.username || u.email?.split("@")[0] || "user",
         avatar_url: cachedProfileExt.avatar_url || null,
-        email_verified: 1,
-        phone_verified: 1,
+        email_verified: u.email_verified ? 1 : 0,
+        phone_verified: 0,
         status: u.status === "LOCKED" ? "LOCKED" : "ACTIVE",
         role: (u.role ? (u.role.toLowerCase() as UserRole) : "client"),
         date_of_birth: cachedProfileExt.date_of_birth,
@@ -104,10 +104,11 @@ export const profileApi = {
       throw new Error("Xác nhận mật khẩu mới không khớp.");
     }
 
-    return {
-      success: true,
-      message: "Đổi mật khẩu thành công!",
-    };
+    const res = await axiosClient.put<{ success: boolean; message?: string }>(
+      "/api/v1/auth/password",
+      { current_password: payload.currentPassword, new_password: payload.newPassword, confirm_password: payload.confirmPassword },
+    );
+    return { success: true, message: res.data.message || "Password changed. Please sign in again." };
   },
 
   /**
