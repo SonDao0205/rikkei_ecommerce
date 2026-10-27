@@ -1,0 +1,341 @@
+package catalog
+
+import (
+	"database/sql"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"strconv"
+	"strings"
+)
+
+type handler struct{ db *sql.DB }
+
+type apiError struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+type apiResponse struct {
+	Success bool       `json:"success"`
+	Data    any        `json:"data,omitempty"`
+	Message string     `json:"message,omitempty"`
+	Errors  []apiError `json:"errors,omitempty"`
+}
+
+type category struct {
+	ID        int64   `json:"id"`
+	ParentID  *int64  `json:"parent_id"`
+	Name      string  `json:"name"`
+	Slug      string  `json:"slug"`
+	ImageURL  *string `json:"image_url"`
+	SortOrder int     `json:"sort_order"`
+	IsActive  int     `json:"is_active"`
+}
+
+type product struct {
+	ID           int64   `json:"id"`
+	ShopID       int64   `json:"shop_id"`
+	CategoryID   int64   `json:"category_id"`
+	BrandID      *int64  `json:"brand_id"`
+	Name         string  `json:"name"`
+	Slug         string  `json:"slug"`
+	Description  *string `json:"description"`
+	ThumbnailURL *string `json:"thumbnail_url"`
+	Price        float64 `json:"price"`
+	SoldCount    int64   `json:"sold_count"`
+	RatingAvg    float64 `json:"rating_avg"`
+	RatingCount  int64   `json:"rating_count"`
+	Status       string  `json:"status"`
+	RejectReason *string `json:"reject_reason"`
+	IsDeleted    int     `json:"is_deleted"`
+	ShopName     string  `json:"shop_name"`
+	CategoryName string  `json:"category_name"`
+	Stock        int64   `json:"stock"`
+	IsFlashSale  bool    `json:"is_flash_sale"`
+}
+
+type adminProduct struct {
+	ID           int64   `json:"id"`
+	Name         string  `json:"name"`
+	SKU          string  `json:"sku"`
+	ThumbnailURL *string `json:"thumbnail_url"`
+	ShopName     string  `json:"shop_name"`
+	ShopBadge    string  `json:"shop_badge"`
+	CategoryName string  `json:"category_name"`
+	Price        float64 `json:"price"`
+	Stock        int64   `json:"stock"`
+	Status       string  `json:"status"`
+	IsActive     bool    `json:"is_active"`
+}
+
+func (h handler) categories(w http.ResponseWriter, r *http.Request) {
+	rows, err := h.db.QueryContext(r.Context(), `SELECT id,parent_id,name,slug,image_url,sort_order,is_active FROM categories WHERE is_active=1 ORDER BY sort_order,id`)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal_error", "Could not load categories")
+		return
+	}
+	defer rows.Close()
+	items := []category{{ID: 0, Name: "Tất cả", Slug: "all", SortOrder: 0, IsActive: 1}}
+	for rows.Next() {
+		var item category
+		if err = rows.Scan(&item.ID, &item.ParentID, &item.Name, &item.Slug, &item.ImageURL, &item.SortOrder, &item.IsActive); err != nil {
+			writeError(w, http.StatusInternalServerError, "internal_error", "Could not load categories")
+			return
+		}
+		items = append(items, item)
+	}
+	if err = rows.Err(); err != nil {
+		writeError(w, http.StatusInternalServerError, "internal_error", "Could not load categories")
+		return
+	}
+	writeJSON(w, http.StatusOK, apiResponse{Success: true, Data: items})
+}
+
+func (h handler) products(w http.ResponseWriter, r *http.Request) {
+	categoryID, err := strconv.ParseInt(r.URL.Query().Get("category_id"), 10, 64)
+	if err != nil && r.URL.Query().Get("category_id") != "" {
+		writeError(w, http.StatusBadRequest, "invalid_category", "category_id must be a positive integer")
+		return
+	}
+	page, limit := boundedPage(r.URL.Query().Get("page"), r.URL.Query().Get("limit"))
+	where := `p.status='ACTIVE' AND p.is_deleted=0 AND s.status='ACTIVE' AND (?=0 OR p.category_id=?)`
+	countQuery := `SELECT COUNT(*) FROM products p JOIN shops s ON s.id=p.shop_id WHERE ` + where
+	var total int
+	if err = h.db.QueryRowContext(r.Context(), countQuery, categoryID, categoryID).Scan(&total); err != nil {
+		writeError(w, http.StatusInternalServerError, "internal_error", "Could not load products")
+		return
+	}
+	order := productOrder(r.URL.Query().Get("sort"))
+	query := `SELECT p.id,p.shop_id,p.category_id,p.brand_id,p.name,p.slug,p.description,p.thumbnail_url,p.price,p.sold_count,p.rating_avg,p.rating_count,p.status,p.reject_reason,p.is_deleted,s.name,c.name,
+		(SELECT COALESCE(SUM(v.stock),0) FROM product_variants v WHERE v.product_id=p.id AND v.status='ACTIVE')
+		FROM products p JOIN shops s ON s.id=p.shop_id JOIN categories c ON c.id=p.category_id WHERE ` + where + ` ORDER BY ` + order + ` LIMIT ? OFFSET ?`
+	rows, err := h.db.QueryContext(r.Context(), query, categoryID, categoryID, limit, (page-1)*limit)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal_error", "Could not load products")
+		return
+	}
+	defer rows.Close()
+	items := []product{}
+	for rows.Next() {
+		var item product
+		if err = rows.Scan(&item.ID, &item.ShopID, &item.CategoryID, &item.BrandID, &item.Name, &item.Slug, &item.Description, &item.ThumbnailURL, &item.Price, &item.SoldCount, &item.RatingAvg, &item.RatingCount, &item.Status, &item.RejectReason, &item.IsDeleted, &item.ShopName, &item.CategoryName, &item.Stock); err != nil {
+			writeError(w, http.StatusInternalServerError, "internal_error", "Could not load products")
+			return
+		}
+		items = append(items, item)
+	}
+	if err = rows.Err(); err != nil {
+		writeError(w, http.StatusInternalServerError, "internal_error", "Could not load products")
+		return
+	}
+	writeJSON(w, http.StatusOK, apiResponse{Success: true, Data: map[string]any{"products": items, "total": total}})
+}
+
+func (h handler) adminProducts(w http.ResponseWriter, r *http.Request) {
+	search := strings.TrimSpace(r.URL.Query().Get("search"))
+	category := strings.TrimSpace(r.URL.Query().Get("category"))
+	stockStatus := strings.TrimSpace(r.URL.Query().Get("stock_status"))
+	vendor := strings.TrimSpace(r.URL.Query().Get("vendor"))
+	query := `SELECT p.id,p.name,COALESCE(v.sku,''),p.thumbnail_url,s.name,IF(s.status='ACTIVE','VERIFIED','ARTISAN'),c.name,p.price,
+		(SELECT COALESCE(SUM(v2.stock),0) FROM product_variants v2 WHERE v2.product_id=p.id AND v2.status='ACTIVE'),p.status
+		FROM products p JOIN shops s ON s.id=p.shop_id JOIN categories c ON c.id=p.category_id
+		LEFT JOIN product_variants v ON v.id=(SELECT MIN(v1.id) FROM product_variants v1 WHERE v1.product_id=p.id AND v1.status='ACTIVE')
+		WHERE p.is_deleted=0 AND (?='' OR p.name LIKE CONCAT('%',?,'%') OR v.sku LIKE CONCAT('%',?,'%') OR s.name LIKE CONCAT('%',?,'%'))
+		AND (?='' OR c.name=?) AND (?='' OR s.name LIKE CONCAT('%',?,'%'))
+		AND (?='' OR (?='in_stock' AND (SELECT COALESCE(SUM(v3.stock),0) FROM product_variants v3 WHERE v3.product_id=p.id AND v3.status='ACTIVE')>5)
+		OR (?='low_stock' AND (SELECT COALESCE(SUM(v4.stock),0) FROM product_variants v4 WHERE v4.product_id=p.id AND v4.status='ACTIVE') BETWEEN 1 AND 5)
+		OR (?='out_of_stock' AND (SELECT COALESCE(SUM(v5.stock),0) FROM product_variants v5 WHERE v5.product_id=p.id AND v5.status='ACTIVE')=0)) ORDER BY ` + adminProductOrder(r.URL.Query().Get("sort_by"))
+	args := []any{search, search, search, search, category, category, vendor, vendor, stockStatus, stockStatus, stockStatus, stockStatus}
+	rows, err := h.db.QueryContext(r.Context(), query, args...)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal_error", "Could not load inventory")
+		return
+	}
+	defer rows.Close()
+	items := []adminProduct{}
+	for rows.Next() {
+		var item adminProduct
+		if err = rows.Scan(&item.ID, &item.Name, &item.SKU, &item.ThumbnailURL, &item.ShopName, &item.ShopBadge, &item.CategoryName, &item.Price, &item.Stock, &item.Status); err != nil {
+			writeError(w, http.StatusInternalServerError, "internal_error", "Could not load inventory")
+			return
+		}
+		item.IsActive = item.Status == "ACTIVE"
+		if !item.IsActive {
+			item.Status = "INACTIVE"
+		}
+		items = append(items, item)
+	}
+	if err = rows.Err(); err != nil {
+		writeError(w, http.StatusInternalServerError, "internal_error", "Could not load inventory")
+		return
+	}
+	writeJSON(w, http.StatusOK, apiResponse{Success: true, Data: map[string]any{"products": items, "total": len(items)}})
+}
+
+func (h handler) inventoryStats(w http.ResponseWriter, r *http.Request) {
+	var stats struct {
+		TotalSkus        int `json:"totalSkus"`
+		NewThisMonth     int `json:"newThisMonth"`
+		ActiveListings   int `json:"activeListings"`
+		ActivePercentage int `json:"activePercentage"`
+		LowStockCount    int `json:"lowStockCount"`
+		OutOfStockCount  int `json:"outOfStockCount"`
+	}
+	query := `SELECT COUNT(*),COALESCE(SUM(v.created_at>=DATE_FORMAT(UTC_TIMESTAMP(),'%Y-%m-01')),0) FROM product_variants v JOIN products p ON p.id=v.product_id WHERE p.is_deleted=0`
+	if err := h.db.QueryRowContext(r.Context(), query).Scan(&stats.TotalSkus, &stats.NewThisMonth); err != nil {
+		writeError(w, http.StatusInternalServerError, "internal_error", "Could not load inventory statistics")
+		return
+	}
+	var totalProducts int
+	if err := h.db.QueryRowContext(r.Context(), `SELECT COUNT(*),COALESCE(SUM(status='ACTIVE'),0) FROM products WHERE is_deleted=0`).Scan(&totalProducts, &stats.ActiveListings); err != nil {
+		writeError(w, http.StatusInternalServerError, "internal_error", "Could not load inventory statistics")
+		return
+	}
+	if totalProducts > 0 {
+		stats.ActivePercentage = stats.ActiveListings * 100 / totalProducts
+	}
+	if err := h.db.QueryRowContext(r.Context(), `SELECT COALESCE(SUM(stock>0 AND stock<=5),0),COALESCE(SUM(stock=0),0) FROM product_variants v JOIN products p ON p.id=v.product_id WHERE p.is_deleted=0 AND v.status='ACTIVE'`).Scan(&stats.LowStockCount, &stats.OutOfStockCount); err != nil {
+		writeError(w, http.StatusInternalServerError, "internal_error", "Could not load inventory statistics")
+		return
+	}
+	writeJSON(w, http.StatusOK, apiResponse{Success: true, Data: stats})
+}
+
+func (h handler) updateProductStatus(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil || id <= 0 {
+		writeError(w, http.StatusBadRequest, "invalid_product_id", "Product ID is invalid")
+		return
+	}
+	var request struct {
+		IsActive bool `json:"is_active"`
+	}
+	if json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&request) != nil {
+		writeError(w, http.StatusBadRequest, "invalid_request", "is_active is required")
+		return
+	}
+	status := "HIDDEN"
+	if request.IsActive {
+		status = "ACTIVE"
+	}
+	result, err := h.db.ExecContext(r.Context(), `UPDATE products SET status=? WHERE id=? AND is_deleted=0`, status, id)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal_error", "Could not update product status")
+		return
+	}
+	if count, _ := result.RowsAffected(); count == 0 {
+		writeError(w, http.StatusNotFound, "product_not_found", "Product was not found")
+		return
+	}
+	writeJSON(w, http.StatusOK, apiResponse{Success: true, Data: map[string]any{"id": id, "is_active": request.IsActive, "status": status}})
+}
+
+func (h handler) deleteProduct(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil || id <= 0 {
+		writeError(w, http.StatusBadRequest, "invalid_product_id", "Product ID is invalid")
+		return
+	}
+	result, err := h.db.ExecContext(r.Context(), `UPDATE products SET is_deleted=1 WHERE id=? AND is_deleted=0`, id)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal_error", "Could not delete product")
+		return
+	}
+	if count, _ := result.RowsAffected(); count == 0 {
+		writeError(w, http.StatusNotFound, "product_not_found", "Product was not found")
+		return
+	}
+	writeJSON(w, http.StatusOK, apiResponse{Success: true, Data: map[string]any{"id": id}})
+}
+
+func (h handler) bulkProducts(w http.ResponseWriter, r *http.Request) {
+	var request struct {
+		Action     string  `json:"action"`
+		ProductIDs []int64 `json:"product_ids"`
+	}
+	if json.NewDecoder(http.MaxBytesReader(w, r.Body, 16*1024)).Decode(&request) != nil || len(request.ProductIDs) == 0 || len(request.ProductIDs) > 100 {
+		writeError(w, http.StatusBadRequest, "invalid_bulk_request", "Provide between 1 and 100 product IDs")
+		return
+	}
+	if request.Action != "activate" && request.Action != "deactivate" && request.Action != "delete" {
+		writeError(w, http.StatusBadRequest, "invalid_bulk_action", "Action must be activate, deactivate, or delete")
+		return
+	}
+	placeholders := make([]string, len(request.ProductIDs))
+	args := make([]any, 0, len(request.ProductIDs))
+	for i, id := range request.ProductIDs {
+		if id <= 0 {
+			writeError(w, http.StatusBadRequest, "invalid_product_id", "Product IDs must be positive")
+			return
+		}
+		placeholders[i] = "?"
+		args = append(args, id)
+	}
+	field, value := "status", "ACTIVE"
+	if request.Action == "deactivate" {
+		value = "HIDDEN"
+	} else if request.Action == "delete" {
+		field, value = "is_deleted", "1"
+	}
+	statement := fmt.Sprintf("UPDATE products SET %s=? WHERE is_deleted=0 AND id IN (%s)", field, strings.Join(placeholders, ","))
+	result, err := h.db.ExecContext(r.Context(), statement, append([]any{value}, args...)...)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal_error", "Could not apply bulk action")
+		return
+	}
+	count, _ := result.RowsAffected()
+	writeJSON(w, http.StatusOK, apiResponse{Success: true, Data: map[string]any{"action": request.Action, "count": count}})
+}
+
+func productOrder(value string) string {
+	switch value {
+	case "price_asc", "Price: Low → High":
+		return "p.price ASC,p.id ASC"
+	case "price_desc", "Price: High → Low":
+		return "p.price DESC,p.id DESC"
+	case "best_selling", "Best Selling":
+		return "p.sold_count DESC,p.id DESC"
+	case "latest", "Latest Arrivals":
+		return "p.created_at DESC,p.id DESC"
+	default:
+		return "p.created_at DESC,p.id DESC"
+	}
+}
+
+func adminProductOrder(value string) string {
+	switch value {
+	case "stock_asc":
+		return "stock ASC,p.id DESC"
+	case "stock_desc":
+		return "stock DESC,p.id DESC"
+	case "price_desc":
+		return "p.price DESC,p.id DESC"
+	default:
+		return "p.created_at DESC,p.id DESC"
+	}
+}
+
+func boundedPage(pageValue, limitValue string) (page, limit int) {
+	page, limit = 1, 100
+	if value, err := strconv.Atoi(pageValue); err == nil && value > 0 {
+		page = value
+	}
+	if value, err := strconv.Atoi(limitValue); err == nil && value > 0 {
+		limit = value
+	}
+	if limit > 100 {
+		limit = 100
+	}
+	return page, limit
+}
+
+func writeJSON(w http.ResponseWriter, status int, response any) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(response)
+}
+
+func writeError(w http.ResponseWriter, status int, code, message string) {
+	writeJSON(w, status, apiResponse{Success: false, Message: message, Errors: []apiError{{Code: code, Message: message}}})
+}

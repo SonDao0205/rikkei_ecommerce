@@ -38,7 +38,11 @@ Seed dùng các ID cố định khai báo trong file và có thể chạy lại;
 | Tài khoản khóa | `seed-locked@local.test` | client, bị khóa để thử đăng nhập |
 | Chưa xác minh email | `seed-unverified@local.test` | client, `email_verified=0` |
 
-Seed tạo dữ liệu liên kết cho địa chỉ, shop, danh mục, thương hiệu, thuộc tính, sản phẩm/biến thể, kho, giỏ hàng, wishlist, voucher, phương thức giao hàng/thanh toán, đơn hàng, thanh toán, hoàn tiền, đánh giá, thông báo và audit log. Script không chèn vào `refresh_tokens`, `auth_refresh_history`, `password_reset_otps` vì đây là trạng thái phiên/OTP sống; không nên seed token giả. Dữ liệu này chuẩn bị cho các API thương mại về sau; hiện tại `productApi.ts` ở FE vẫn dùng dữ liệu giả lập.
+Seed tạo dữ liệu liên kết cho địa chỉ, shop, danh mục, thương hiệu, thuộc tính, sản phẩm/biến thể, kho, giỏ hàng, wishlist, voucher, phương thức giao hàng/thanh toán, đơn hàng, thanh toán, hoàn tiền, đánh giá, thông báo và audit log. Script không chèn vào `refresh_tokens`, `auth_refresh_history`, `password_reset_otps` vì đây là trạng thái phiên/OTP sống; không nên seed token giả.
+
+FE hiện lấy danh mục và sản phẩm từ `GET /api/v1/categories` và `GET /api/v1/products`. Hồ sơ auth dùng `GET /api/v1/auth/me` và `PUT /api/v1/auth/profile`; đổi mật khẩu dùng `PUT /api/v1/auth/password`. Trang quản trị sản phẩm dùng `GET /api/v1/admin/products`, `GET /api/v1/admin/inventory-stats`, `PATCH /api/v1/admin/products/{id}/status`, `DELETE /api/v1/admin/products/{id}` và `POST /api/v1/admin/products/bulk`; các route quản trị yêu cầu role `ADMIN`. Giỏ hàng, tạo/sửa sản phẩm, checkout và các nghiệp vụ đơn hàng chưa có API để demo end-to-end.
+
+Seed chỉ thay đổi dữ liệu DB local; các workflow CI/CD không theo dõi `database/**` hay `docs/**`. Các thay đổi code BE và FE vẫn kích hoạt workflow tương ứng khi push vào nhánh `build`.
 
 Chỉ dùng các mật khẩu và tài khoản này với database local. Không chạy seed trên môi trường nhóm dùng chung hoặc production.
 

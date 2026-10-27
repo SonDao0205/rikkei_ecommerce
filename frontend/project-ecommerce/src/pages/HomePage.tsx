@@ -12,7 +12,6 @@ import {
   setSelectedCategory,
   setSortBy,
 } from "../redux/slices/productSlice";
-import type { ProductItem } from "../types/ecommerce";
 
 const HomePage: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -41,11 +40,6 @@ const HomePage: React.FC = () => {
     dispatch(getCatalogProducts({ categoryId: selectedCategoryId, sort: newSort }));
   };
 
-  const handleQuickAdd = (product: ProductItem) => {
-    // Quick Add handler (placeholder for cart integration)
-    console.log("Quick added product:", product.name);
-  };
-
   const handleLoadMore = () => {
     dispatch(getCatalogProducts({ categoryId: selectedCategoryId, sort: sortBy }));
   };
@@ -62,10 +56,9 @@ const HomePage: React.FC = () => {
         onSelectCategory={handleSelectCategory}
       />
 
-      {/* SECTION 2: Curated Flash Sale Drops with Countdown */}
+      {/* SECTION 2: Featured products from the backend */}
       <FlashSaleSection
         products={flashSaleProducts}
-        onQuickAdd={handleQuickAdd}
       />
 
       {/* SECTION 3: Full Marketplace Filter & Browsing Catalog */}
@@ -74,7 +67,6 @@ const HomePage: React.FC = () => {
         totalProducts={totalCatalogProducts}
         sortBy={sortBy}
         onSortChange={handleSortChange}
-        onAddToCart={handleQuickAdd}
         onLoadMore={handleLoadMore}
       />
     </CustomerLayout>

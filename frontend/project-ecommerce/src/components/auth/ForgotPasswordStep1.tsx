@@ -6,7 +6,7 @@ import {
 } from "../../redux/slices/authSlice";
 
 interface ForgotPasswordStep1Props {
-  onSuccessStep?: (identity: string, mode: "email" | "phone", otp?: string) => void;
+  onSuccessStep?: (identity: string, mode: "email" | "phone") => void;
 }
 
 export const ForgotPasswordStep1 = ({ onSuccessStep }: ForgotPasswordStep1Props) => {
@@ -15,7 +15,6 @@ export const ForgotPasswordStep1 = ({ onSuccessStep }: ForgotPasswordStep1Props)
     resetPasswordLoading,
     resetPasswordError,
     resetPasswordSuccess,
-    resetPasswordSession,
   } = useAppSelector((state) => state.auth);
 
   const [mode, setMode] = useState<"email" | "phone">("email");
@@ -81,7 +80,7 @@ export const ForgotPasswordStep1 = ({ onSuccessStep }: ForgotPasswordStep1Props)
 
     if (sendPasswordResetOtp.fulfilled.match(resultAction)) {
       if (onSuccessStep) {
-        onSuccessStep(val, mode, resultAction.payload.otp);
+        onSuccessStep(val, mode);
       }
     }
   };
@@ -273,16 +272,6 @@ export const ForgotPasswordStep1 = ({ onSuccessStep }: ForgotPasswordStep1Props)
               </span>
               <span>{resetPasswordSuccess}</span>
             </div>
-            {resetPasswordSession?.otp && (
-              <div className="p-2.5 rounded-lg bg-white border border-emerald-300 font-mono text-center">
-                <span className="text-slate-500 text-[11px] block">
-                  Mã OTP mô phỏng để thử nghiệm:
-                </span>
-                <span className="text-lg font-bold text-emerald-700 tracking-widest">
-                  {resetPasswordSession.otp}
-                </span>
-              </div>
-            )}
             <p className="text-[11px] text-emerald-700 italic">
               Đã hoàn thành bước 1. Bạn đã sẵn sàng để tiếp tục xác thực OTP ở bước 2.
             </p>

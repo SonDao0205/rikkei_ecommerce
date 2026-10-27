@@ -112,7 +112,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
                   <td className="py-4 px-4">
                     <div className="flex items-center gap-3.5">
                       <img
-                        src={product.thumbnail_url}
+                        src={product.thumbnail_url || undefined}
                         alt={product.name}
                         className="w-12 h-12 rounded-lg object-cover bg-surface-container shrink-0"
                       />

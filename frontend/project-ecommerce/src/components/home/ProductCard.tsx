@@ -79,16 +79,12 @@ const ProductCard: React.FC<ProductCardProps> = ({
           </span>
         </button>
 
-        {/* Quick Add / Add to Cart Button Overlay on Hover */}
-        <div className="absolute inset-x-2 bottom-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          <button
-            onClick={handleQuickAddClick}
-            className="w-full py-2.5 rounded-lg bg-primary text-on-primary font-label-md text-label-md flex items-center justify-center gap-1.5 shadow-md hover:bg-primary-container transition-colors cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-[18px]">add_shopping_cart</span>
-            <span>{product.is_flash_sale ? "Quick Add" : "Add to Cart"}</span>
+        {/* Cart action appears only when a real cart handler is wired. */}
+        {onQuickAdd && <div className="absolute inset-x-2 bottom-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <button onClick={handleQuickAddClick} className="w-full py-2.5 rounded-lg bg-primary text-on-primary font-label-md text-label-md flex items-center justify-center gap-1.5 shadow-md hover:bg-primary-container transition-colors cursor-pointer">
+            <span className="material-symbols-outlined text-[18px]">add_shopping_cart</span><span>Thêm vào giỏ</span>
           </button>
-        </div>
+        </div>}
       </div>
 
       {/* Details Box */}

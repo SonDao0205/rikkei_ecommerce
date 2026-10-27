@@ -26,17 +26,10 @@ export const ForgotPasswordStep2 = ({
   // 6 individual digit inputs
   const [otpDigits, setOtpDigits] = useState<string[]>(["", "", "", "", "", ""]);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const [formError, setFormError] = useState<string | null>(null);
 
   // Countdown timer in seconds (defaults to 48s as in step2.html)
-  const [countdown, setCountdown] = useState<number>(48);
-
-  // Pre-fill demo OTP if available or default
-  useEffect(() => {
-    if (resetPasswordSession?.otp && resetPasswordSession.otp.length === 6) {
-      // Auto-focus first input
-      inputRefs.current[0]?.focus();
-    }
-  }, [resetPasswordSession]);
+  const [countdown, setCountdown] = useState<number>(60);
 
   // Timer interval
   useEffect(() => {
@@ -100,17 +93,10 @@ export const ForgotPasswordStep2 = ({
     inputRefs.current[nextIndex]?.focus();
   };
 
-  // Autofill current demo OTP
-  const handleFillDemoOtp = () => {
-    const targetOtp = resetPasswordSession?.otp || "849201";
-    setOtpDigits(targetOtp.split("").slice(0, 6));
-    inputRefs.current[5]?.focus();
-  };
-
   // Resend OTP action
   const handleResend = async () => {
     if (countdown > 0 || !resetPasswordSession) return;
-    setCountdown(48);
+    setCountdown(60);
     await dispatch(
       sendPasswordResetOtp({
         identity: resetPasswordSession.identity,
@@ -127,7 +113,12 @@ export const ForgotPasswordStep2 = ({
     e.preventDefault();
     if (!isComplete) return;
 
-    const identity = resetPasswordSession?.identity || "user123@gmail.com";
+    const identity = resetPasswordSession?.identity;
+    if (!identity) {
+      setFormError("Yêu cầu khôi phục đã hết. Hãy bắt đầu lại từ bước nhập email hoặc số điện thoại.");
+      return;
+    }
+    setFormError(null);
     const resultAction = await dispatch(
       verifyPasswordResetOtp({ identity, otp: fullOtp })
     );
@@ -236,7 +227,7 @@ export const ForgotPasswordStep2 = ({
               {resetPasswordSession?.mode === "phone" ? "smartphone" : "mail"}
             </span>
             <span className="font-mono text-sm font-semibold text-slate-800 truncate">
-              {resetPasswordSession?.identity || "user123@gmail.com"}
+              {resetPasswordSession?.identity || ""}
             </span>
           </div>
           <button
@@ -249,26 +240,11 @@ export const ForgotPasswordStep2 = ({
         </div>
       </div>
 
-      {/* Demo OTP Quick Autofill Helper */}
-      {resetPasswordSession?.otp && (
-        <div className="p-3 rounded-xl bg-indigo-50/70 border border-indigo-200 text-xs flex items-center justify-between">
-          <div className="flex items-center gap-1.5 text-indigo-900">
-            <span className="material-symbols-outlined text-[16px] text-indigo-600">
-              key
-            </span>
-            <span>
-              Mã OTP mô phỏng: <strong className="font-mono font-bold tracking-wider">{resetPasswordSession.otp}</strong>
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={handleFillDemoOtp}
-            className="px-2.5 py-1 rounded-lg bg-white border border-indigo-300 font-semibold text-brand-700 hover:bg-brand-50 transition shadow-xs cursor-pointer text-[11px]"
-          >
-            Nhập nhanh
-          </button>
-        </div>
-      )}
+      <p className="rounded-lg bg-amber-50 p-3 text-xs text-amber-800">
+        Khi chạy local, mã OTP được ghi trong log backend. Mở `docker compose logs -f backend` để lấy mã mới nhất.
+      </p>
+
+      {formError && <p role="alert" className="rounded-lg bg-red-50 p-3 text-xs text-red-700">{formError}</p>}
 
       {/* Global Error Banner */}
       {resetPasswordError && (
@@ -369,7 +345,7 @@ export const ForgotPasswordStep2 = ({
                   r="14"
                   stroke="currentColor"
                   strokeDasharray="88"
-                  strokeDashoffset={countdown > 0 ? (88 * (48 - countdown)) / 48 : 88}
+                  strokeDashoffset={countdown > 0 ? (88 * (60 - countdown)) / 60 : 88}
                   strokeLinecap="round"
                   strokeWidth="3"
                 />

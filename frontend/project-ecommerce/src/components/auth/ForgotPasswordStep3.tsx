@@ -76,7 +76,11 @@ export const ForgotPasswordStep3 = ({
       return;
     }
 
-    const identity = resetPasswordSession?.identity || "user123@gmail.com";
+    const identity = resetPasswordSession?.identity;
+    if (!identity) {
+      setFormError("Yêu cầu khôi phục đã hết. Hãy bắt đầu lại từ bước nhập email hoặc số điện thoại.");
+      return;
+    }
     const resultAction = await dispatch(
       resetPasswordWithToken({
         identity,
