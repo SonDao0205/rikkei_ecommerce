@@ -134,9 +134,10 @@ export const profileSlice = createSlice({
         state.passwordError = null;
         state.passwordSuccessMessage = null;
       })
-      .addCase(changeUserPassword.fulfilled, (state, action) => {
+      .addCase(changeUserPassword.fulfilled, (state) => {
         state.passwordLoading = false;
-        state.passwordSuccessMessage = action.payload.message;
+        state.passwordSuccessMessage =
+          "Đổi mật khẩu thành công, bạn có thể đăng nhập lại bằng mật khẩu mới";
       })
       .addCase(changeUserPassword.rejected, (state, action) => {
         state.passwordLoading = false;

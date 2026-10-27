@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../redux/store";
-import { changeUserPassword } from "../../redux/slices/profileSlice";
+import { changeUserPassword, clearProfileStatus } from "../../redux/slices/profileSlice";
 import { logoutUser } from "../../redux/slices/authSlice";
 
 export const ProfileSecurityForm: React.FC = () => {
@@ -9,6 +9,13 @@ export const ProfileSecurityForm: React.FC = () => {
   const dispatch = useAppDispatch();
   const { passwordLoading, passwordSuccessMessage, passwordError } =
     useAppSelector((state) => state.profile);
+
+  useEffect(() => {
+    dispatch(clearProfileStatus());
+    return () => {
+      dispatch(clearProfileStatus());
+    };
+  }, [dispatch]);
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -80,8 +87,9 @@ export const ProfileSecurityForm: React.FC = () => {
     );
 
     if (changeUserPassword.fulfilled.match(res)) {
-      await dispatch(logoutUser());
-      navigate("/login?password=changed", { replace: true });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
     } else if (changeUserPassword.rejected.match(res)) {
       const errMsg = (res.payload as string) || "Đổi mật khẩu thất bại.";
       if (
@@ -132,13 +140,16 @@ export const ProfileSecurityForm: React.FC = () => {
             <div>
               <p className="font-bold text-emerald-900 text-sm">{passwordSuccessMessage}</p>
               <p className="text-emerald-700 mt-0.5">
-                Các phiên đăng nhập cũ đã được thu hồi an toàn. Bạn có thể đăng nhập lại ngay bằng mật khẩu mới.
+                Các phiên đăng nhập trên thiết bị khác đã được thu hồi an toàn.
               </p>
             </div>
           </div>
           <button
             type="button"
-            onClick={() => navigate("/login")}
+            onClick={async () => {
+              await dispatch(logoutUser());
+              navigate("/login", { replace: true });
+            }}
             className="shrink-0 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition-colors cursor-pointer text-xs"
           >
             Đăng nhập lại
