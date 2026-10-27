@@ -29,21 +29,21 @@ Náº¿u Ä‘Ã£ cÃ i MySQL trá»±c tiáº¿p trÃªn mÃ¡y, chá»‰ c�
 
 `cmd/api` vÃ  `cmd/migrate` Ä‘á»c `.env` tá»« thÆ° má»¥c lÃ m viá»‡c hiá»‡n táº¡i; biáº¿n mÃ´i trÆ°á»ng cá»§a há»‡ thá»‘ng Ä‘Æ°á»£c Æ°u tiÃªn hÆ¡n `.env`.
 
-| Biáº¿n | Má»¥c Ä‘Ã­ch | Máº·c Ä‘á»‹nh / yÃªu cáº§u |
-|---|---|---|
-| `APP_ENV` | Cháº¿ Ä‘á»™ cháº¡y | `development`; production dÃ¹ng `production` |
-| `HTTP_ADDR` | Äá»‹a chá»‰ HTTP | `:8080` |
-| `DATABASE_DSN` | Káº¿t ná»‘i MySQL | Báº¯t buá»™c; schema pháº£i tá»“n táº¡i |
-| `JWT_SECRET` | KÃ½ JWT vÃ  HMAC OTP | Báº¯t buá»™c, tá»‘i thiá»ƒu 32 kÃ½ tá»±; dÃ¹ng secret ngáº«u nhiÃªn riÃªng |
-| `ACCESS_TOKEN_TTL` | Tuá»•i thá» access token | `15m`; cho phÃ©p 1 phÃºt Ä‘áº¿n 1 giá» |
-| `REFRESH_TOKEN_TTL` | Tuá»•i thá» phiÃªn refresh | `168h` (7 ngÃ y); tá»‘i thiá»ƒu 1 giá» |
-| `OTP_TTL` | Tuá»•i thá» mÃ£ OTP | `10m`; cho phÃ©p 1â€“30 phÃºt |
-| `CORS_ALLOWED_ORIGINS` | Allowlist origin FE, phÃ¢n cÃ¡ch báº±ng dáº¥u pháº©y | Local máº«u: `http://localhost:5173`; production chá»‰ dÃ¹ng origin HTTPS tÆ°á»ng minh |
-| `COOKIE_SECURE` | Chá»‰ gá»­i cookie qua HTTPS | `false` local; báº¯t buá»™c `true` production |
-| `AUTO_MIGRATE` | Tá»± Ã¡p dá»¥ng migration khi API cháº¡y | `true` development; production báº¯t buá»™c `false` |
-| `SMTP_HOST`, `SMTP_PORT` | MÃ¡y chá»§ gá»­i OTP qua STARTTLS | Host do há»‡ thá»‘ng mail cung cáº¥p; port máº·c Ä‘á»‹nh `587` |
-| `SMTP_USER`, `SMTP_PASSWORD` | XÃ¡c thá»±c SMTP náº¿u nhÃ  cung cáº¥p yÃªu cáº§u | Cáº¥u hÃ¬nh theo nhÃ  cung cáº¥p; khÃ´ng commit secret |
-| `SMTP_FROM` | Äá»‹a chá»‰ gá»­i OTP | Báº¯t buá»™c trong production, pháº£i lÃ  email há»£p lá»‡ |
+| Biáº¿n                       | Má»¥c Ä‘Ã­ch                                         | Máº·c Ä‘á»‹nh / yÃªu cáº§u                                                             |
+| ---------------------------- | ---------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `APP_ENV`                    | Cháº¿ Ä‘á»™ cháº¡y                                   | `development`; production dÃ¹ng `production`                                           |
+| `HTTP_ADDR`                  | Äá»‹a chá»‰ HTTP                                     | `:8080`                                                                                |
+| `DATABASE_DSN`               | Káº¿t ná»‘i MySQL                                    | Báº¯t buá»™c; schema pháº£i tá»“n táº¡i                                                |
+| `JWT_SECRET`                 | KÃ½ JWT vÃ  HMAC OTP                                 | Báº¯t buá»™c, tá»‘i thiá»ƒu 32 kÃ½ tá»±; dÃ¹ng secret ngáº«u nhiÃªn riÃªng             |
+| `ACCESS_TOKEN_TTL`           | Tuá»•i thá» access token                             | `15m`; cho phÃ©p 1 phÃºt Ä‘áº¿n 1 giá»                                                 |
+| `REFRESH_TOKEN_TTL`          | Tuá»•i thá» phiÃªn refresh                           | `168h` (7 ngÃ y); tá»‘i thiá»ƒu 1 giá»                                                 |
+| `OTP_TTL`                    | Tuá»•i thá» mÃ£ OTP                                  | `10m`; cho phÃ©p 1â€“30 phÃºt                                                          |
+| `CORS_ALLOWED_ORIGINS`       | Allowlist origin FE, phÃ¢n cÃ¡ch báº±ng dáº¥u pháº©y | Local máº«u: `http://localhost:5173`; production chá»‰ dÃ¹ng origin HTTPS tÆ°á»ng minh |
+| `COOKIE_SECURE`              | Chá»‰ gá»­i cookie qua HTTPS                         | `false` local; báº¯t buá»™c `true` production                                          |
+| `AUTO_MIGRATE`               | Tá»± Ã¡p dá»¥ng migration khi API cháº¡y             | `true` development; production báº¯t buá»™c `false`                                    |
+| `SMTP_HOST`, `SMTP_PORT`     | MÃ¡y chá»§ gá»­i OTP qua STARTTLS                    | Host do há»‡ thá»‘ng mail cung cáº¥p; port máº·c Ä‘á»‹nh `587`                         |
+| `SMTP_USER`, `SMTP_PASSWORD` | XÃ¡c thá»±c SMTP náº¿u nhÃ  cung cáº¥p yÃªu cáº§u    | Cáº¥u hÃ¬nh theo nhÃ  cung cáº¥p; khÃ´ng commit secret                                 |
+| `SMTP_FROM`                  | Äá»‹a chá»‰ gá»­i OTP                                | Báº¯t buá»™c trong production, pháº£i lÃ  email há»£p lá»‡                             |
 
 KhÃ´ng Ä‘Æ°a `.env`, DSN/password database, SMTP credential hay JWT secret vÃ o Git, image Docker, log hoáº·c tÃ i liá»‡u dÃ¹ng chung. Cáº¥p quyá»n DB tá»‘i thiá»ƒu cáº§n thiáº¿t cho API; chá»‰ tÃ i khoáº£n cháº¡y migration cáº§n quyá»n DDL.
 
@@ -115,7 +115,10 @@ Request cÃ³ body pháº£i dÃ¹ng `Content-Type: application/json`. Response 
   "success": false,
   "message": "Email/phone or password is incorrect",
   "errors": [
-    { "code": "invalid_credentials", "message": "Email/phone or password is incorrect" }
+    {
+      "code": "invalid_credentials",
+      "message": "Email/phone or password is incorrect"
+    }
   ]
 }
 ```
@@ -208,17 +211,17 @@ OTP máº·c Ä‘á»‹nh háº¿t háº¡n sau 10 phÃºt, tá»‘i Ä‘a 5
 
 ### Danh sÃ¡ch API vÃ  status
 
-| Method | Endpoint | XÃ¡c thá»±c | MÃ´ táº£ |
-|---|---|---|---|
-| `GET` | `/healthz` | KhÃ´ng | Kiá»ƒm tra káº¿t ná»‘i DB |
-| `POST` | `/api/v1/auth/register` | KhÃ´ng | Táº¡o tÃ i khoáº£n CLIENT |
-| `POST` | `/api/v1/auth/login` | KhÃ´ng | ÄÄƒng nháº­p, tráº£ access token vÃ  refresh cookie |
-| `POST` | `/api/v1/auth/refresh` | Refresh cookie | Xoay phiÃªn, tráº£ access token má»›i |
-| `POST` | `/api/v1/auth/logout` | Bearer | Thu há»“i phiÃªn hiá»‡n táº¡i |
-| `GET` | `/api/v1/auth/me` | Bearer | Há»“ sÆ¡ hiá»‡n táº¡i |
-| `POST` | `/api/v1/auth/forgot-password` | KhÃ´ng | YÃªu cáº§u OTP |
-| `POST` | `/api/v1/auth/reset-password` | KhÃ´ng | Äá»•i máº­t kháº©u báº±ng OTP |
-| `GET` | `/api/v1/admin/users` | ADMIN | Tá»‘i Ä‘a 100 user, route minh há»a RBAC |
+| Method | Endpoint                       | XÃ¡c thá»±c    | MÃ´ táº£                                            |
+| ------ | ------------------------------ | -------------- | --------------------------------------------------- |
+| `GET`  | `/healthz`                     | KhÃ´ng         | Kiá»ƒm tra káº¿t ná»‘i DB                           |
+| `POST` | `/api/v1/auth/register`        | KhÃ´ng         | Táº¡o tÃ i khoáº£n CLIENT                           |
+| `POST` | `/api/v1/auth/login`           | KhÃ´ng         | ÄÄƒng nháº­p, tráº£ access token vÃ  refresh cookie |
+| `POST` | `/api/v1/auth/refresh`         | Refresh cookie | Xoay phiÃªn, tráº£ access token má»›i               |
+| `POST` | `/api/v1/auth/logout`          | Bearer         | Thu há»“i phiÃªn hiá»‡n táº¡i                       |
+| `GET`  | `/api/v1/auth/me`              | Bearer         | Há»“ sÆ¡ hiá»‡n táº¡i                               |
+| `POST` | `/api/v1/auth/forgot-password` | KhÃ´ng         | YÃªu cáº§u OTP                                      |
+| `POST` | `/api/v1/auth/reset-password`  | KhÃ´ng         | Äá»•i máº­t kháº©u báº±ng OTP                       |
+| `GET`  | `/api/v1/admin/users`          | ADMIN          | Tá»‘i Ä‘a 100 user, route minh há»a RBAC            |
 
 ## Bá»• sung báº£o máº­t vÃ  tÃ­ch há»£p FE
 
@@ -234,15 +237,39 @@ Route HTTP táº­p trung táº¡i `internal/auth/routes.go`; handlers trong `ap
 
 `PUT /api/v1/auth/password` yÃªu cáº§u Bearer access token. Body gá»“m `current_password`, `new_password`, `confirm_password`. Backend xÃ¡c minh máº­t kháº©u hiá»‡n táº¡i, Ã¡p chÃ­nh sÃ¡ch máº­t kháº©u, tá»« chá»‘i dÃ¹ng láº¡i máº­t kháº©u cÅ©, Ä‘á»•i máº­t kháº©u vÃ  thu há»“i má»i refresh session trong cÃ¹ng transaction. FE yÃªu cáº§u Ä‘Äƒng nháº­p láº¡i sau khi Ä‘á»•i.
 
-| Method | Endpoint | XÃ¡c thá»±c | Chá»©c nÄƒng |
-|---|---|---|---|
-| `POST` | `/api/v1/auth/verify-reset-otp` | KhÃ´ng | XÃ¡c minh mÃ£ OTP á»Ÿ BE, Ã¡p giá»›i háº¡n thá»­ |
-| `POST` | `/api/v1/auth/reset-password` | OTP | Äáº·t láº¡i máº­t kháº©u vÃ  thu há»“i phiÃªn |
-| `PUT` | `/api/v1/auth/password` | Bearer | Äá»•i máº­t kháº©u tá»« phiÃªn hiá»‡n táº¡i |
+| Method | Endpoint                        | XÃ¡c thá»±c | Chá»©c nÄƒng                                     |
+| ------ | ------------------------------- | ----------- | ------------------------------------------------ |
+| `POST` | `/api/v1/auth/verify-reset-otp` | KhÃ´ng      | XÃ¡c minh mÃ£ OTP á»Ÿ BE, Ã¡p giá»›i háº¡n thá»­ |
+| `POST` | `/api/v1/auth/reset-password`   | OTP         | Äáº·t láº¡i máº­t kháº©u vÃ  thu há»“i phiÃªn    |
+| `PUT`  | `/api/v1/auth/password`         | Bearer      | Äá»•i máº­t kháº©u tá»« phiÃªn hiá»‡n táº¡i      |
 
 ### Run the FE and BE stack with Compose
 
 The root of this checkout contains `docker-compose.yml`. Create `.env` from the sample, replace local passwords, and set a unique JWT secret of at least 32 characters:
+
+## Bổ sung bảo mật và tích hợp FE
+
+### Tổ chức auth/security
+
+Route HTTP tập trung tại `internal/auth/routes.go`; handlers trong `app.go` và `security_handlers.go` kiểm tra request/response, còn SQL được thực hiện theo luồng handler hiện tại. `security_handlers.go` chứa đổi mật khẩu và xác minh OTP. Đây là ranh giới đầu tiên để tách tiếp service/repository khi mở rộng nghiệp vụ; tránh thêm route rải rác trong entrypoint.
+
+### API quản lý mật khẩu
+
+`POST /api/v1/auth/verify-reset-otp` xác minh OTP thực sự ở server. Body nhận `identifier` (email hoặc điện thoại) và `otp`; response không trả lại OTP hoặc email được tra cứu. Endpoint reset vẫn xác minh lại OTP trong transaction, vì vậy bước verify trên client không thay thế xác minh ở thao tác thay đổi mật khẩu.
+
+`POST /api/v1/auth/reset-password` nhận `identifier`, `otp`, `new_password`; trường `email` cũ vẫn được nhận để tương thích client cũ. Email hoặc số điện thoại đều được hỗ trợ; OTP có hạn dùng, giới hạn lần thử và cooldown. Mật khẩu được hash bằng bcrypt và các refresh session được thu hồi.
+
+`PUT /api/v1/auth/password` yêu cầu Bearer access token. Body gồm `current_password`, `new_password`, `confirm_password`. Backend xác minh mật khẩu hiện tại, áp chính sách mật khẩu, từ chối dùng lại mật khẩu cũ, đổi mật khẩu và thu hồi mọi refresh session trong cùng transaction. FE yêu cầu đăng nhập lại sau khi đổi.
+
+| Method | Endpoint                        | Xác thực | Chức năng                             |
+| ------ | ------------------------------- | -------- | ------------------------------------- |
+| `POST` | `/api/v1/auth/verify-reset-otp` | Không    | Xác minh mã OTP ở BE, áp giới hạn thử |
+| `POST` | `/api/v1/auth/reset-password`   | OTP      | Đặt lại mật khẩu và thu hồi phiên     |
+| `PUT`  | `/api/v1/auth/password`         | Bearer   | Đổi mật khẩu từ phiên hiện tại        |
+
+### Chạy stack FE/BE bằng Compose
+
+Repo `project-ojt/fe/rikkei_ecommerce` là compose root vì chứa cả source FE và backend mà compose build. Tạo `.env` từ `.env.example`, đổi các mật khẩu local mẫu và đặt JWT secret ngẫu nhiên ít nhất 32 ký tự, sau đó chạy:
 
 ```powershell
 Copy-Item .env.example .env
@@ -254,17 +281,31 @@ $env:API_BASE_URL = 'http://localhost:8080'
 ```
 
 The FE is served at `http://localhost:5173`; Nginx proxies `/api/` and `/healthz` to the backend over the Compose network. The API and MySQL ports are bound to loopback at `8080` and `3307`. Cloudflare Tunnel starts only with the `tunnel` profile and a configured `TUNNEL_TOKEN`. In development, the OTP appears in backend logs for testing. Production sends OTP by SMTP with STARTTLS.
+
 ### CÃ i dependency vÃ  kiá»ƒm tra
 
 Go modules khai bÃ¡o táº¡i `go.mod`/`go.sum`; táº£i vÃ  kiá»ƒm tra báº±ng:
+
+````
+
+FE được serve tại `http://localhost:5173`; Nginx proxy `/api/` và `/healthz` qua service `backend`, dùng same-origin cookie. API port `8080` và MySQL port `3307` chỉ bind loopback để kiểm tra local. Compose không cần Redis vì backend hiện không dùng Redis. `.env` là cấu hình local không commit.
+
+Để dùng backend riêng ở `project-ojt/be`, đặt `DATABASE_DSN` theo MySQL chạy trên host (mặc định compose local dùng port `3306` ở repo BE riêng) và chạy `go run ./cmd/api`. Không chạy đồng thời hai backend trên cùng host port `8080`. FE Compose build backend từ repo FE; đồng bộ thay đổi backend riêng sang `fe/rikkei_ecommerce/backend` trước khi build/push FE repo.
+
+### Cài dependency và kiểm tra
+
+Go modules khai báo tại `go.mod`/`go.sum`; tải và kiểm tra bằng:
 
 ```powershell
 go mod download
 go test ./...
 go vet ./...
 go build ./cmd/api
-```
+````
 
 Frontend dÃ¹ng lockfile; cÃ i Ä‘Ãºng phiÃªn báº£n báº±ng `npm ci`, sau Ä‘Ã³ `npm run lint` vÃ  `npm run build` táº¡i `frontend/project-ecommerce`. Khi stack Ä‘ang cháº¡y, `./backend/scripts/smoke-api.ps1` kiá»ƒm tra health, register/login, refresh replay, RBAC vÃ  logout. Smoke script cÃ³ thá»ƒ táº¡o tÃ i khoáº£n thá»­ trong DB local.
 
 CÃ¡c status FE thÆ°á»ng cáº§n xá»­ lÃ½: `400` dá»¯ liá»‡u khÃ´ng há»£p lá»‡, `401` xÃ¡c thá»±c sai/háº¿t háº¡n, `403` origin hoáº·c role bá»‹ tá»« chá»‘i, `409` email/phone Ä‘Ã£ Ä‘Æ°á»£c dÃ¹ng, `415` Content-Type khÃ´ng Ä‘Ãºng, `429` vÆ°á»£t rate limit, `503` DB chÆ°a sáºµn sÃ ng. Body JSON tá»‘i Ä‘a 1 MiB; JSON lá»—i, field láº¡ hoáº·c nhiá»u JSON value bá»‹ tá»« chá»‘i.
+Frontend dùng lockfile; cài đúng phiên bản bằng `npm ci`, sau đó `npm run lint` và `npm run build` tại `frontend/project-ecommerce`. Khi stack đang chạy, `./backend/scripts/smoke-api.ps1` kiểm tra health, register/login, refresh replay, RBAC và logout. Smoke script có thể tạo tài khoản thử trong DB local.
+
+Các status FE thường cần xử lý: `400` dữ liệu không hợp lệ, `401` xác thực sai/hết hạn, `403` origin hoặc role bị từ chối, `409` email/phone đã được dùng, `415` Content-Type không đúng, `429` vượt rate limit, `503` DB chưa sẵn sàng. Body JSON tối đa 1 MiB; JSON lỗi, field lạ hoặc nhiều JSON value bị từ chối.
