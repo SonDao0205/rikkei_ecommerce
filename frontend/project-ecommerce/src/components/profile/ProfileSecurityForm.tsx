@@ -1,8 +1,10 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../redux/store";
 import { changeUserPassword } from "../../redux/slices/profileSlice";
 
 export const ProfileSecurityForm: React.FC = () => {
+  const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { passwordLoading, passwordSuccessMessage, passwordError } =
     useAppSelector((state) => state.profile);
@@ -21,9 +23,9 @@ export const ProfileSecurityForm: React.FC = () => {
   const getPasswordStrength = (pass: string) => {
     if (!pass) return { score: 0, label: "", color: "" };
     let score = 0;
-    if (pass.length >= 6) score += 1;
     if (pass.length >= 8) score += 1;
-    if (/[A-Z]/.test(pass) || /[0-9]/.test(pass)) score += 1;
+    if (pass.length >= 10) score += 1;
+    if (/[A-Za-z]/.test(pass) && /[0-9]/.test(pass)) score += 1;
     if (/[^A-Za-z0-9]/.test(pass)) score += 1;
 
     if (score <= 1) return { score: 1, label: "Weak", color: "bg-red-500", text: "text-red-600" };
@@ -42,8 +44,16 @@ export const ProfileSecurityForm: React.FC = () => {
       setValidationError("Vui lòng nhập mật khẩu hiện tại.");
       return;
     }
-    if (!newPassword || newPassword.length < 6) {
-      setValidationError("Mật khẩu mới phải có ít nhất 6 ký tự.");
+    if (!newPassword || newPassword.length < 10) {
+      setValidationError("Mật khẩu mới phải có tối thiểu 10 ký tự.");
+      return;
+    }
+    if (!/[A-Za-z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
+      setValidationError("Mật khẩu mới phải chứa ít nhất một chữ cái và một chữ số.");
+      return;
+    }
+    if (newPassword === currentPassword) {
+      setValidationError("Mật khẩu mới không được trùng với mật khẩu hiện tại.");
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -95,11 +105,25 @@ export const ProfileSecurityForm: React.FC = () => {
 
       {/* Messages */}
       {passwordSuccessMessage && (
-        <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center gap-2">
-          <span className="material-symbols-outlined text-emerald-600 text-[18px]">
-            check_circle
-          </span>
-          <span>{passwordSuccessMessage}</span>
+        <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <span className="material-symbols-outlined text-emerald-600 text-[22px] shrink-0">
+              check_circle
+            </span>
+            <div>
+              <p className="font-bold text-emerald-900 text-sm">{passwordSuccessMessage}</p>
+              <p className="text-emerald-700 mt-0.5">
+                Các phiên đăng nhập cũ đã được thu hồi an toàn. Bạn có thể đăng nhập lại ngay bằng mật khẩu mới.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate("/login")}
+            className="shrink-0 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition-colors cursor-pointer text-xs"
+          >
+            Đăng nhập lại
+          </button>
         </div>
       )}
       {(passwordError || validationError) && (

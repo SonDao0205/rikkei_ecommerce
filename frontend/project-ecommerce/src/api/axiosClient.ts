@@ -51,11 +51,25 @@ axiosClient.interceptors.response.use(
       error.message ||
       "An unexpected error occurred";
 
+    const errorCode = data?.errors?.[0]?.code || data?.code;
+
     if (
       message.includes("Email/phone or password is incorrect") ||
-      data?.errors?.[0]?.code === "invalid_credentials"
+      errorCode === "invalid_credentials"
     ) {
       message = "Thông tin tài khoản hoặc mật khẩu không chính xác.";
+    } else if (errorCode === "invalid_or_expired_otp") {
+      message = "Mã OTP không chính xác hoặc đã hết hạn.";
+    } else if (errorCode === "invalid_current_password") {
+      message = "Mật khẩu hiện tại không chính xác.";
+    } else if (errorCode === "password_reused") {
+      message = "Mật khẩu mới không được trùng với mật khẩu hiện tại.";
+    } else if (errorCode === "invalid_password_request") {
+      message = "Vui lòng nhập mật khẩu hiện tại và mật khẩu mới hợp lệ (tối thiểu 10 ký tự, có cả chữ và số).";
+    } else if (errorCode === "invalid_reset_request") {
+      message = "Mã OTP và mật khẩu mới hợp lệ là bắt buộc.";
+    } else if (errorCode === "rate_limited" || error.response?.status === 429) {
+      message = "Thao tác quá nhanh. Vui lòng thử lại sau giây lát.";
     }
 
     const enhancedError = Object.assign(new Error(message), {

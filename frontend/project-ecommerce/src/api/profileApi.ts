@@ -1,5 +1,5 @@
 import axiosClient from "./axiosClient";
-import type { BackendUser, ApiResponse } from "./authApi";
+import authApi, { type BackendUser, type ApiResponse } from "./authApi";
 import type {
   UserProfileDetails,
   UpdateProfilePayload,
@@ -89,25 +89,12 @@ export const profileApi = {
   },
 
   /**
-   * Đổi mật khẩu tài khoản
+   * Đổi mật khẩu tài khoản (PUT /api/v1/auth/password)
    */
   changePassword: async (
     payload: ChangePasswordPayload
   ): Promise<{ success: boolean; message: string }> => {
-    if (!payload.currentPassword) {
-      throw new Error("Vui lòng nhập mật khẩu hiện tại.");
-    }
-    if (!payload.newPassword || payload.newPassword.length < 10) {
-      throw new Error("Mật khẩu mới phải có tối thiểu 10 ký tự, có chữ và số.");
-    }
-    if (payload.newPassword !== payload.confirmPassword) {
-      throw new Error("Xác nhận mật khẩu mới không khớp.");
-    }
-
-    return {
-      success: true,
-      message: "Đổi mật khẩu thành công!",
-    };
+    return await authApi.changePassword(payload);
   },
 
   /**
