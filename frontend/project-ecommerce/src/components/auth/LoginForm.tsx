@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../redux/store";
 import { loginUser, clearAuthError } from "../../redux/slices/authSlice";
+import { APP_CONFIG } from "../../config/appConfig";
 
 // ─── Icons ──────────────────────────────────────────────────────────────────────
 
@@ -131,7 +132,8 @@ const LoginForm = () => {
         navigate("/home");
       }
     } else if (loginUser.rejected.match(resultAction)) {
-      setLoginErrorMessage("Tài khoản hoặc mật khẩu không chính xác");
+      const errorMsg = "Tài khoản hoặc mật khẩu không chính xác.";
+      setLoginErrorMessage(errorMsg);
     }
   };
 
@@ -147,7 +149,7 @@ const LoginForm = () => {
                 <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
               </svg>
             </div>
-            <span className="text-base font-bold tracking-tight text-slate-900">MarketPulse</span>
+            <span className="text-base font-bold tracking-tight text-slate-900">{APP_CONFIG.appName}</span>
           </div>
           <a href="#" className="text-xs font-semibold text-indigo-600 hover:text-indigo-700">
             Need help?
@@ -160,7 +162,7 @@ const LoginForm = () => {
             Welcome back
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Sign In to MarketPulse
+            Sign In to {APP_CONFIG.appName}
           </h1>
           <p className="text-sm text-slate-500 font-normal">
             Enter your account credentials to continue shopping or managing your orders

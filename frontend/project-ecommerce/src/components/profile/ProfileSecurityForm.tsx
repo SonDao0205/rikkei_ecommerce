@@ -18,21 +18,29 @@ export const ProfileSecurityForm: React.FC = () => {
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
+  const [fieldErrors, setFieldErrors] = useState<{
+    currentPassword?: string;
+    newPassword?: string;
+    confirmPassword?: string;
+  }>({});
   const [validationError, setValidationError] = useState<string | null>(null);
 
   // Calculate password strength
   const getPasswordStrength = (pass: string) => {
-    if (!pass) return { score: 0, label: "", color: "" };
+    if (!pass || pass.length === 0) return { score: 0, label: "", color: "", text: "" };
+    if (pass.length < 6) {
+      return { score: 1, label: "Yếu", color: "bg-red-500", text: "text-red-600" };
+    }
     let score = 0;
     if (pass.length >= 8) score += 1;
     if (pass.length >= 10) score += 1;
     if (/[A-Za-z]/.test(pass) && /[0-9]/.test(pass)) score += 1;
     if (/[^A-Za-z0-9]/.test(pass)) score += 1;
 
-    if (score <= 1) return { score: 1, label: "Weak", color: "bg-red-500", text: "text-red-600" };
-    if (score === 2) return { score: 2, label: "Fair", color: "bg-amber-500", text: "text-amber-600" };
-    if (score === 3) return { score: 3, label: "Good", color: "bg-blue-500", text: "text-blue-600" };
-    return { score: 4, label: "Strong", color: "bg-green-500", text: "text-green-700" };
+    if (score <= 1) return { score: 1, label: "Yếu", color: "bg-red-500", text: "text-red-600" };
+    if (score === 2) return { score: 2, label: "Trung bình", color: "bg-amber-500", text: "text-amber-600" };
+    if (score === 3) return { score: 3, label: "Mạnh", color: "bg-blue-500", text: "text-blue-600" };
+    return { score: 4, label: "Rất mạnh", color: "bg-green-500", text: "text-green-700" };
   };
 
   const strength = getPasswordStrength(newPassword);
@@ -40,25 +48,26 @@ export const ProfileSecurityForm: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setValidationError(null);
+    setFieldErrors({});
 
     if (!currentPassword) {
-      setValidationError("Vui lòng nhập mật khẩu hiện tại.");
+      setFieldErrors({ currentPassword: "Vui lòng nhập mật khẩu hiện tại." });
       return;
     }
     if (!newPassword || newPassword.length < 10) {
-      setValidationError("Mật khẩu mới phải có tối thiểu 10 ký tự.");
+      setFieldErrors({ newPassword: "Mật khẩu mới phải có tối thiểu 10 ký tự." });
       return;
     }
     if (!/[A-Za-z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
-      setValidationError("Mật khẩu mới phải chứa ít nhất một chữ cái và một chữ số.");
+      setFieldErrors({ newPassword: "Mật khẩu mới phải chứa ít nhất một chữ cái và một chữ số." });
       return;
     }
     if (newPassword === currentPassword) {
-      setValidationError("Mật khẩu mới không được trùng với mật khẩu hiện tại.");
+      setFieldErrors({ newPassword: "Mật khẩu mới không được trùng với mật khẩu hiện tại." });
       return;
     }
     if (newPassword !== confirmPassword) {
-      setValidationError("Mật khẩu xác nhận không khớp với mật khẩu mới.");
+      setFieldErrors({ confirmPassword: "Mật khẩu xác nhận không khớp với mật khẩu mới." });
       return;
     }
 
@@ -73,6 +82,16 @@ export const ProfileSecurityForm: React.FC = () => {
     if (changeUserPassword.fulfilled.match(res)) {
       await dispatch(logoutUser());
       navigate("/login?password=changed", { replace: true });
+    } else if (changeUserPassword.rejected.match(res)) {
+      const errMsg = (res.payload as string) || "Đổi mật khẩu thất bại.";
+      if (
+        errMsg.toLowerCase().includes("mật khẩu hiện tại") ||
+        errMsg.toLowerCase().includes("current password")
+      ) {
+        setFieldErrors({ currentPassword: "Mật khẩu hiện tại không chính xác." });
+      } else if (errMsg.toLowerCase().includes("trùng") || errMsg.toLowerCase().includes("reused")) {
+        setFieldErrors({ newPassword: "Mật khẩu mới không được trùng với mật khẩu hiện tại." });
+      }
     }
   };
 
@@ -150,11 +169,21 @@ export const ProfileSecurityForm: React.FC = () => {
                 key
               </span>
               <input
-                className="w-full h-11 pl-10 pr-10 rounded-xl bg-surface-container-lowest border border-outline-variant text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 transition-all shadow-sm"
+                className={`w-full h-11 pl-10 pr-10 rounded-xl bg-surface-container-lowest border text-on-surface font-body-md text-body-md focus:outline-none transition-all shadow-sm ${
+                  fieldErrors.currentPassword
+                    ? "border-red-400 focus:ring-2 focus:ring-red-100 bg-red-50/20"
+                    : "border-outline-variant focus:border-primary-container focus:ring-2 focus:ring-primary-container/20"
+                }`}
                 placeholder="••••••••••••"
                 type={showCurrent ? "text" : "password"}
                 value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
+                onChange={(e) => {
+                  setCurrentPassword(e.target.value);
+                  if (fieldErrors.currentPassword) {
+                    setFieldErrors((prev) => ({ ...prev, currentPassword: undefined }));
+                  }
+                  if (validationError) setValidationError(null);
+                }}
                 required
               />
               <button
@@ -168,6 +197,12 @@ export const ProfileSecurityForm: React.FC = () => {
                 </span>
               </button>
             </div>
+            {fieldErrors.currentPassword && (
+              <p className="mt-1 text-xs text-red-500 flex items-center gap-1 font-medium">
+                <span className="material-symbols-outlined text-[14px]">error</span>
+                <span>{fieldErrors.currentPassword}</span>
+              </p>
+            )}
           </div>
 
           {/* New Password */}
@@ -182,11 +217,21 @@ export const ProfileSecurityForm: React.FC = () => {
                 lock
               </span>
               <input
-                className="w-full h-11 pl-10 pr-10 rounded-xl bg-surface-container-lowest border border-outline-variant text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 transition-all shadow-sm"
-                placeholder="Min. 8 characters"
+                className={`w-full h-11 pl-10 pr-10 rounded-xl bg-surface-container-lowest border text-on-surface font-body-md text-body-md focus:outline-none transition-all shadow-sm ${
+                  fieldErrors.newPassword
+                    ? "border-red-400 focus:ring-2 focus:ring-red-100 bg-red-50/20"
+                    : "border-outline-variant focus:border-primary-container focus:ring-2 focus:ring-primary-container/20"
+                }`}
+                placeholder="Tối thiểu 10 ký tự"
                 type={showNew ? "text" : "password"}
                 value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
+                onChange={(e) => {
+                  setNewPassword(e.target.value);
+                  if (fieldErrors.newPassword) {
+                    setFieldErrors((prev) => ({ ...prev, newPassword: undefined }));
+                  }
+                  if (validationError) setValidationError(null);
+                }}
                 required
               />
               <button
@@ -200,6 +245,12 @@ export const ProfileSecurityForm: React.FC = () => {
                 </span>
               </button>
             </div>
+            {fieldErrors.newPassword && (
+              <p className="mt-1 text-xs text-red-500 flex items-center gap-1 font-medium">
+                <span className="material-symbols-outlined text-[14px]">error</span>
+                <span>{fieldErrors.newPassword}</span>
+              </p>
+            )}
 
             {/* Password Strength Meter */}
             {newPassword && (
@@ -231,11 +282,21 @@ export const ProfileSecurityForm: React.FC = () => {
                 check_circle
               </span>
               <input
-                className="w-full h-11 pl-10 pr-10 rounded-xl bg-surface-container-lowest border border-outline-variant text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 transition-all shadow-sm"
-                placeholder="Re-enter password"
+                className={`w-full h-11 pl-10 pr-10 rounded-xl bg-surface-container-lowest border text-on-surface font-body-md text-body-md focus:outline-none transition-all shadow-sm ${
+                  fieldErrors.confirmPassword
+                    ? "border-red-400 focus:ring-2 focus:ring-red-100 bg-red-50/20"
+                    : "border-outline-variant focus:border-primary-container focus:ring-2 focus:ring-primary-container/20"
+                }`}
+                placeholder="Nhập lại mật khẩu mới"
                 type={showConfirm ? "text" : "password"}
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value);
+                  if (fieldErrors.confirmPassword) {
+                    setFieldErrors((prev) => ({ ...prev, confirmPassword: undefined }));
+                  }
+                  if (validationError) setValidationError(null);
+                }}
                 required
               />
               <button
@@ -249,6 +310,12 @@ export const ProfileSecurityForm: React.FC = () => {
                 </span>
               </button>
             </div>
+            {fieldErrors.confirmPassword && (
+              <p className="mt-1 text-xs text-red-500 flex items-center gap-1 font-medium">
+                <span className="material-symbols-outlined text-[14px]">error</span>
+                <span>{fieldErrors.confirmPassword}</span>
+              </p>
+            )}
           </div>
         </div>
 

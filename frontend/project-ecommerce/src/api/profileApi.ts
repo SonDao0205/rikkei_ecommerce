@@ -1,5 +1,5 @@
 import axiosClient from "./axiosClient";
-import authApi, { type BackendUser, type ApiResponse } from "./authApi";
+import type { BackendUser, ApiResponse } from "./authApi";
 import type {
   UserProfileDetails,
   UpdateProfilePayload,

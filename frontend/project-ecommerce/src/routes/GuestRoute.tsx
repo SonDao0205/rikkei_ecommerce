@@ -12,12 +12,12 @@ interface GuestRouteProps {
  * - Nếu đang tải / kiểm tra phiên: Hiển thị trạng thái chờ xác thực để tránh giật giao diện.
  */
 export const GuestRoute: React.FC<GuestRouteProps> = ({ children }) => {
-  const { isAuthenticated, role, isInitialized, loading } = useAppSelector(
+  const { isAuthenticated, role, isInitialized } = useAppSelector(
     (state) => state.auth
   );
 
   // Khi mới mở ứng dụng hoặc refresh trang, đợi phục hồi phiên xác thực
-  if (!isInitialized || loading) {
+  if (!isInitialized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">

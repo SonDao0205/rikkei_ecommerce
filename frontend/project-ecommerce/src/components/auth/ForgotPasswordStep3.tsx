@@ -42,19 +42,20 @@ export const ForgotPasswordStep3 = ({
   const metCount = Object.values(criteria).filter(Boolean).length;
 
   const getStrengthInfo = () => {
-    if (!newPassword) {
+    if (!newPassword || newPassword.length === 0) {
       return { text: "Chưa nhập", color: "text-slate-400", level: 0 };
     }
+    if (newPassword.length < 6 || metCount <= 1) {
+      return { text: "Yếu", color: "text-red-500", level: 1 };
+    }
     switch (metCount) {
-      case 1:
-        return { text: "Yếu", color: "text-red-500", level: 1 };
       case 2:
         return { text: "Trung bình", color: "text-orange-500", level: 2 };
       case 3:
         return { text: "Mạnh", color: "text-indigo-600", level: 3 };
       case 4:
       default:
-        return { text: "Rất mạnh (Khuyên dùng)", color: "text-secondary", level: 4 };
+        return { text: "Rất mạnh (Khuyên dùng)", color: "text-emerald-600", level: 4 };
     }
   };
 

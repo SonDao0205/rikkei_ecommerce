@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import ForgotPasswordStep1 from "../components/auth/ForgotPasswordStep1";
 import ForgotPasswordStep2 from "../components/auth/ForgotPasswordStep2";
 import ForgotPasswordStep3 from "../components/auth/ForgotPasswordStep3";
+import { APP_CONFIG } from "../config/appConfig";
 
 const ForgotPassword = () => {
   const [currentStep, setCurrentStep] = useState<number>(1);
@@ -21,7 +22,7 @@ const ForgotPassword = () => {
               </div>
               <div className="flex flex-col">
                 <span className="font-headline-lg text-xl sm:text-2xl font-bold text-on-surface tracking-tight group-hover:text-primary transition-colors">
-                  MarketPulse
+                  {APP_CONFIG.appName}
                 </span>
                 <span className="font-label-sm text-[10px] font-bold text-secondary uppercase tracking-wider -mt-1">
                   Secure Commerce
@@ -171,7 +172,7 @@ const ForgotPassword = () => {
 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-4 text-xs text-on-surface-variant">
             <span className="text-center sm:text-left">
-              © 2025 MarketPulse Technologies, Inc. All customer credentials encrypted at rest.
+              © {new Date().getFullYear()} {APP_CONFIG.appName} Technologies, Inc. All customer credentials encrypted at rest.
             </span>
             <div className="flex items-center gap-1.5 font-label-sm">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
