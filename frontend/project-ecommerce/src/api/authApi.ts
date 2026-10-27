@@ -25,6 +25,7 @@ export interface BackendUser {
   phone: string;
   role: string;
   status: string;
+  email_verified?: number | boolean;
   created_at: string;
 }
 
@@ -34,6 +35,8 @@ export interface BackendAuthData {
   token_type: string;
   expires_in: number;
 }
+
+export type AuthUser = UserProfile;
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -50,9 +53,9 @@ export const mapBackendUser = (u: BackendUser): UserProfile => ({
   phone: u.phone,
   full_name: u.full_name,
   avatar_url: null,
-  email_verified: 1,
+  email_verified: u.email_verified ? 1 : 0,
   status: u.status === "LOCKED" ? "LOCKED" : "ACTIVE",
-  role: (u.role ? (u.role.toLowerCase() as UserRole) : "client"),
+  role: u.role ? (u.role.toLowerCase() as UserRole) : "client",
   created_at: u.created_at || new Date().toISOString(),
   updated_at: u.created_at || new Date().toISOString(),
 });
@@ -96,17 +99,26 @@ export const authApi = {
 
     // 1. Gọi API tạo tài khoản CLIENT
     try {
-      await axiosClient.post<ApiResponse<BackendUser>>("/api/v1/auth/register", {
-        email: payload.email.trim().toLowerCase(),
-        password: payload.password,
-        full_name: payload.fullName.trim(),
-        phone: cleanPhone,
-      });
+      await axiosClient.post<ApiResponse<BackendUser>>(
+        "/api/v1/auth/register",
+        {
+          email: payload.email.trim().toLowerCase(),
+          password: payload.password,
+          full_name: payload.fullName.trim(),
+          phone: cleanPhone,
+        },
+      );
     } catch (err: unknown) {
       // Nếu tài khoản đã tồn tại (ví dụ đã được tạo ở lần bấm trước trước khi lỗi client xảy ra),
       // thử đăng nhập ngay bằng chính thông tin người dùng vừa nhập
-      const errorObj = err as { response?: { status?: number }; message?: string };
-      if (errorObj?.response?.status === 409 || errorObj?.message?.toLowerCase().includes("already exists")) {
+      const errorObj = err as {
+        response?: { status?: number };
+        message?: string;
+      };
+      if (
+        errorObj?.response?.status === 409 ||
+        errorObj?.message?.toLowerCase().includes("already exists")
+      ) {
         try {
           return await authApi.login({
             identifier: payload.email.trim().toLowerCase(),
@@ -125,7 +137,7 @@ export const authApi = {
       {
         identifier: payload.email.trim().toLowerCase(),
         password: payload.password,
-      }
+      },
     );
 
     const authData = loginRes.data.data;
@@ -148,7 +160,7 @@ export const authApi = {
       {
         identifier: payload.identifier.trim(),
         password: payload.password,
-      }
+      },
     );
 
     const authData = res.data.data;
@@ -174,7 +186,7 @@ export const authApi = {
     activeRefreshPromise = (async () => {
       try {
         const res = await axiosClient.post<ApiResponse<BackendAuthData>>(
-          "/api/v1/auth/refresh"
+          "/api/v1/auth/refresh",
         );
 
         const authData = res.data.data;
@@ -219,9 +231,8 @@ export const authApi = {
    * Lấy hồ sơ tài khoản hiện tại (GET /api/v1/auth/me)
    */
   getMe: async (): Promise<UserProfile> => {
-    const res = await axiosClient.get<ApiResponse<BackendUser>>(
-      "/api/v1/auth/me"
-    );
+    const res =
+      await axiosClient.get<ApiResponse<BackendUser>>("/api/v1/auth/me");
 
     return mapBackendUser(res.data.data);
   },
@@ -231,7 +242,7 @@ export const authApi = {
    * Nhận email hoặc số điện thoại; OTP được gửi đến email đăng ký
    */
   requestPasswordResetOtp: async (
-    payload: RequestPasswordResetPayload
+    payload: RequestPasswordResetPayload,
   ): Promise<RequestPasswordResetResponse> => {
     const res = await axiosClient.post<{
       success: boolean;
@@ -255,24 +266,21 @@ export const authApi = {
    * Nhận identifier (email hoặc số điện thoại) và mã OTP 6 chữ số
    */
   verifyPasswordResetOtp: async (
-    payload: VerifyPasswordResetOtpPayload
+    payload: VerifyPasswordResetOtpPayload,
   ): Promise<VerifyPasswordResetOtpResponse> => {
     const trimmedOtp = payload.otp.trim();
     if (!/^\d{6}$/.test(trimmedOtp)) {
       throw new Error("Mã OTP phải gồm chính xác 6 chữ số.");
     }
 
-    const res = await axiosClient.post<{
-      success: boolean;
-      message: string;
-    }>("/api/v1/auth/verify-reset-otp", {
-      identifier: payload.identity.trim(),
-      otp: trimmedOtp,
-    });
+    const res = await axiosClient.post<{ success: boolean; message: string }>(
+      "/api/v1/auth/verify-reset-otp",
+      { identifier: payload.identity.trim(), otp: trimmedOtp },
+    );
 
     return {
       success: true,
-      message: res.data.message || "Mã OTP hợp lệ.",
+      message: res.data.message || "OTP valid.",
       resetToken: trimmedOtp,
     };
   },
@@ -282,7 +290,7 @@ export const authApi = {
    * Nhận identifier (email hoặc số điện thoại), otp 6 chữ số và mật khẩu mới (10–72 ký tự, có chữ và số)
    */
   resetPassword: async (
-    payload: ResetPasswordPayload
+    payload: ResetPasswordPayload,
   ): Promise<ResetPasswordResponse> => {
     const res = await axiosClient.post<{
       success: boolean;
@@ -331,7 +339,7 @@ export const authApi = {
    */
   getAdminUsers: async (): Promise<UserProfile[]> => {
     const res = await axiosClient.get<ApiResponse<BackendUser[]>>(
-      "/api/v1/admin/users"
+      "/api/v1/admin/users",
     );
 
     return res.data.data.map(mapBackendUser);
@@ -341,9 +349,8 @@ export const authApi = {
    * Kiểm tra sức khỏe dịch vụ (GET /healthz)
    */
   checkHealth: async (): Promise<{ status: string }> => {
-    const res = await axiosClient.get<ApiResponse<{ status: string }>>(
-      "/healthz"
-    );
+    const res =
+      await axiosClient.get<ApiResponse<{ status: string }>>("/healthz");
 
     return res.data.data;
   },
@@ -351,20 +358,12 @@ export const authApi = {
   /**
    * Danh sách tài khoản demo
    */
-  getDemoAccounts: () => [
-    {
-      role: "admin",
-      identifier: "admin@example.com",
-      password: "SecurePass123",
-      name: "Admin User",
-    },
-    {
-      role: "client",
-      identifier: "customer@example.com",
-      password: "SecurePass123",
-      name: "Nguyen Van A (Buyer Client)",
-    },
-  ],
+
+  // Compatibility methods for legacy standalone pages retained under src.
+  restoreSession: async (): Promise<UserProfile> => (await authApi.refreshToken()).user,
+  // changePassword: async (currentPassword: string, newPassword: string, confirmPassword: string): Promise<void> => {
+  //   await axiosClient.put("/api/v1/auth/password", { current_password: currentPassword, new_password: newPassword, confirm_password: confirmPassword });
+  // },
 };
 
 export default authApi;

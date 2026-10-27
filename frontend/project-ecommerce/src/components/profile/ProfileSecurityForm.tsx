@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../redux/store";
 import { changeUserPassword } from "../../redux/slices/profileSlice";
+import { logoutUser } from "../../redux/slices/authSlice";
 
 export const ProfileSecurityForm: React.FC = () => {
   const navigate = useNavigate();
@@ -70,9 +71,8 @@ export const ProfileSecurityForm: React.FC = () => {
     );
 
     if (changeUserPassword.fulfilled.match(res)) {
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
+      await dispatch(logoutUser());
+      navigate("/login?password=changed", { replace: true });
     }
   };
 

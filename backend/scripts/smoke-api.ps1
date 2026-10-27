@@ -93,4 +93,20 @@ if ($logout.Status -ne 200) { throw "Logout failed with HTTP $($logout.Status)" 
 $afterLogout = Invoke-Api GET '/api/v1/auth/me' $null $null $phoneToken
 if ($afterLogout.Status -ne 401) { throw 'Logged-out session still accessed /me' }
 
-Write-Host 'API smoke checks passed: health, register, email/phone login, refresh rotation/replay, RBAC denial, and logout revocation.'
+# Password change requires authentication and revokes all refresh sessions.
+$unauthorizedChange = Invoke-Api PUT '/api/v1/auth/password' @{ current_password = $password; new_password = 'ChangedSmoke123'; confirm_password = 'ChangedSmoke123' }
+if ($unauthorizedChange.Status -ne 401) { throw 'Password change unexpectedly allowed without authentication' }
+$changeCookies = New-Object System.Net.CookieContainer
+$changeLogin = Invoke-Api POST '/api/v1/auth/login' @{ identifier = $email; password = $password } $changeCookies
+if ($changeLogin.Status -ne 200) { throw 'Could not log in before password change' }
+$changeToken = $changeLogin.Json.data.access_token
+$changed = Invoke-Api PUT '/api/v1/auth/password' @{ current_password = $password; new_password = 'ChangedSmoke123'; confirm_password = 'ChangedSmoke123' } $null $changeToken
+if ($changed.Status -ne 200) { throw "Password change failed with HTTP $($changed.Status)" }
+$oldPassword = Invoke-Api POST '/api/v1/auth/login' @{ identifier = $email; password = $password }
+if ($oldPassword.Status -ne 401) { throw 'Old password remained valid after password change' }
+$newPassword = Invoke-Api POST '/api/v1/auth/login' @{ identifier = $email; password = 'ChangedSmoke123' }
+if ($newPassword.Status -ne 200) { throw 'New password did not work after password change' }
+$invalidOTP = Invoke-Api POST '/api/v1/auth/verify-reset-otp' @{ identifier = $email; otp = 'abcdef' }
+if ($invalidOTP.Status -ne 400) { throw 'Malformed OTP was not rejected' }
+
+Write-Host 'API smoke checks passed: health, register, email/phone login, refresh rotation/replay, RBAC, logout, password change, and malformed OTP rejection.'
