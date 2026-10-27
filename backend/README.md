@@ -220,4 +220,52 @@ OTP mặc định hết hạn sau 10 phút, tối đa 5 lần nhập sai, cooldo
 | `POST` | `/api/v1/auth/reset-password` | Không | Đổi mật khẩu bằng OTP |
 | `GET` | `/api/v1/admin/users` | ADMIN | Tối đa 100 user, route minh họa RBAC |
 
+## Bổ sung bảo mật và tích hợp FE
+
+### Tổ chức auth/security
+
+Route HTTP tập trung tại `internal/auth/routes.go`; handlers trong `app.go` và `security_handlers.go` kiểm tra request/response, còn SQL được thực hiện theo luồng handler hiện tại. `security_handlers.go` chứa đổi mật khẩu và xác minh OTP. Đây là ranh giới đầu tiên để tách tiếp service/repository khi mở rộng nghiệp vụ; tránh thêm route rải rác trong entrypoint.
+
+### API quản lý mật khẩu
+
+`POST /api/v1/auth/verify-reset-otp` xác minh OTP thực sự ở server. Body nhận `identifier` (email hoặc điện thoại) và `otp`; response không trả lại OTP hoặc email được tra cứu. Endpoint reset vẫn xác minh lại OTP trong transaction, vì vậy bước verify trên client không thay thế xác minh ở thao tác thay đổi mật khẩu.
+
+`POST /api/v1/auth/reset-password` nhận `identifier`, `otp`, `new_password`; trường `email` cũ vẫn được nhận để tương thích client cũ. Email hoặc số điện thoại đều được hỗ trợ; OTP có hạn dùng, giới hạn lần thử và cooldown. Mật khẩu được hash bằng bcrypt và các refresh session được thu hồi.
+
+`PUT /api/v1/auth/password` yêu cầu Bearer access token. Body gồm `current_password`, `new_password`, `confirm_password`. Backend xác minh mật khẩu hiện tại, áp chính sách mật khẩu, từ chối dùng lại mật khẩu cũ, đổi mật khẩu và thu hồi mọi refresh session trong cùng transaction. FE yêu cầu đăng nhập lại sau khi đổi.
+
+| Method | Endpoint | Xác thực | Chức năng |
+|---|---|---|---|
+| `POST` | `/api/v1/auth/verify-reset-otp` | Không | Xác minh mã OTP ở BE, áp giới hạn thử |
+| `POST` | `/api/v1/auth/reset-password` | OTP | Đặt lại mật khẩu và thu hồi phiên |
+| `PUT` | `/api/v1/auth/password` | Bearer | Đổi mật khẩu từ phiên hiện tại |
+
+### Chạy stack FE/BE bằng Compose
+
+Repo `project-ojt/fe/rikkei_ecommerce` là compose root vì chứa cả source FE và backend mà compose build. Tạo `.env` từ `.env.example`, đổi các mật khẩu local mẫu và đặt JWT secret ngẫu nhiên ít nhất 32 ký tự, sau đó chạy:
+
+```powershell
+Copy-Item .env.example .env
+docker compose up --build -d
+docker compose ps
+Invoke-WebRequest http://localhost:5173/healthz
+```
+
+FE được serve tại `http://localhost:5173`; Nginx proxy `/api/` và `/healthz` qua service `backend`, dùng same-origin cookie. API port `8080` và MySQL port `3307` chỉ bind loopback để kiểm tra local. Compose không cần Redis vì backend hiện không dùng Redis. `.env` là cấu hình local không commit.
+
+Để dùng backend riêng ở `project-ojt/be`, đặt `DATABASE_DSN` theo MySQL chạy trên host (mặc định compose local dùng port `3306` ở repo BE riêng) và chạy `go run ./cmd/api`. Không chạy đồng thời hai backend trên cùng host port `8080`. FE Compose build backend từ repo FE; đồng bộ thay đổi backend riêng sang `fe/rikkei_ecommerce/backend` trước khi build/push FE repo.
+
+### Cài dependency và kiểm tra
+
+Go modules khai báo tại `go.mod`/`go.sum`; tải và kiểm tra bằng:
+
+```powershell
+go mod download
+go test ./...
+go vet ./...
+go build ./cmd/api
+```
+
+Frontend dùng lockfile; cài đúng phiên bản bằng `npm ci`, sau đó `npm run lint` và `npm run build` tại `frontend/project-ecommerce`. Khi stack đang chạy, `./backend/scripts/smoke-api.ps1` kiểm tra health, register/login, refresh replay, RBAC và logout. Smoke script có thể tạo tài khoản thử trong DB local.
+
 Các status FE thường cần xử lý: `400` dữ liệu không hợp lệ, `401` xác thực sai/hết hạn, `403` origin hoặc role bị từ chối, `409` email/phone đã được dùng, `415` Content-Type không đúng, `429` vượt rate limit, `503` DB chưa sẵn sàng. Body JSON tối đa 1 MiB; JSON lỗi, field lạ hoặc nhiều JSON value bị từ chối.
