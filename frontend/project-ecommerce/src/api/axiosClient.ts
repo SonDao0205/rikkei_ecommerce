@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
 
 // In-memory token storage (isolated in JavaScript memory, not persisted in localStorage)
 let inMemoryAccessToken: string | null = null;
@@ -29,6 +29,36 @@ export const axiosClient = axios.create({
     timeout: 15000,
 });
 
+interface RefreshSession {
+  accessToken: string;
+  user: unknown;
+}
+
+let refreshSessionPromise: Promise<RefreshSession> | null = null;
+
+export const refreshSession = (): Promise<RefreshSession> => {
+  if (!refreshSessionPromise) {
+    refreshSessionPromise = axiosClient
+      .post<{ data: { access_token: string; user: unknown } }>(
+        "/api/v1/auth/refresh",
+        undefined,
+        { headers: { Authorization: undefined } },
+      )
+      .then((response) => {
+        const session = {
+          accessToken: response.data.data.access_token,
+          user: response.data.data.user,
+        };
+        setInMemoryAccessToken(session.accessToken);
+        return session;
+      })
+      .finally(() => {
+        refreshSessionPromise = null;
+      });
+  }
+  return refreshSessionPromise;
+};
+
 axiosClient.interceptors.request.use(
     (config) => {
         // Read access token strictly from memory
@@ -43,15 +73,41 @@ axiosClient.interceptors.request.use(
 
 axiosClient.interceptors.response.use(
     (response) => response,
-    (error) => {
+  async (error: AxiosError<{ message?: string; code?: string; errors?: { code?: string; message?: string }[] }>) => {
         const data = error.response?.data;
+    const code = data?.errors?.[0]?.code || data?.code;
+    const original = error.config as (InternalAxiosRequestConfig & { _authRetry?: boolean }) | undefined;
+    const url = original?.url || "";
+
+    if (
+      error.response?.status === 401 &&
+      (code === "unauthorized" || code === "invalid_session") &&
+      original &&
+      !original._authRetry &&
+      !url.includes("/api/v1/auth/refresh") &&
+      !url.includes("/api/v1/auth/login") &&
+      !url.includes("/api/v1/auth/register")
+    ) {
+      original._authRetry = true;
+      try {
+        const session = await refreshSession();
+        original.headers.set("Authorization", `Bearer ${session.accessToken}`);
+        return await axiosClient.request(original);
+      } catch {
+        setInMemoryAccessToken(null);
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("auth:session-expired"));
+        }
+      }
+    }
+
         let message =
             data?.message ||
             (Array.isArray(data?.errors) && data.errors[0]?.message) ||
             error.message ||
             "An unexpected error occurred";
 
-        const errorCode = data?.errors?.[0]?.code || data?.code;
+        const errorCode = code;
 
         if (
             message.includes("Email/phone or password is incorrect") ||

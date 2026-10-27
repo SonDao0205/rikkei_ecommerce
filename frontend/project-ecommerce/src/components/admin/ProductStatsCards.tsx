@@ -7,12 +7,12 @@ interface ProductStatsCardsProps {
 
 const ProductStatsCards: React.FC<ProductStatsCardsProps> = ({ stats }) => {
   const defaultStats: InventoryStats = {
-    totalSkus: 124,
-    newThisMonth: 12,
-    activeListings: 118,
-    activePercentage: 95.1,
-    lowStockCount: 4,
-    outOfStockCount: 2,
+    totalSkus: 0,
+    newThisMonth: 0,
+    activeListings: 0,
+    activePercentage: 0,
+    lowStockCount: 0,
+    outOfStockCount: 0,
   };
 
   const data = stats || defaultStats;

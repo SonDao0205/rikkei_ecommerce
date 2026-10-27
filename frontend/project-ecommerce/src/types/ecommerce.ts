@@ -99,7 +99,6 @@ export interface RequestPasswordResetResponse {
   message: string;
   identity: string;
   mode: "email" | "phone";
-  otp?: string;
 }
 
 export interface VerifyPasswordResetOtpPayload {
@@ -186,6 +185,8 @@ export interface Product {
  * Extended Product item for UI rendering with relational & presentation data
  */
 export interface ProductItem extends Product {
+  category_name?: string;
+  stock?: number;
   original_price?: number;
   discount_percent?: number;
   shop_name: string;
@@ -201,7 +202,7 @@ export interface AdminProductItem {
   id: number;
   name: string;
   sku: string;
-  thumbnail_url: string;
+  thumbnail_url: string | null;
   shop_name: string;
   shop_badge: 'MALL' | 'ARTISAN' | 'VERIFIED' | 'OFFICIAL';
   category_name: string;

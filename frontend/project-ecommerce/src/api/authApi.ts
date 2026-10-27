@@ -1,4 +1,4 @@
-import axiosClient from "./axiosClient";
+import axiosClient, { refreshSession } from "./axiosClient";
 import type {
   UserProfile,
   UserRole,
@@ -59,32 +59,6 @@ export const mapBackendUser = (u: BackendUser): UserProfile => ({
   created_at: u.created_at || new Date().toISOString(),
   updated_at: u.created_at || new Date().toISOString(),
 });
-
-/**
- * Kept for backward compatibility if any legacy code checks localStorage
- */
-const CLIENT_RT_KEY = "mp_client_refresh_token";
-export const getStoredClientRefreshToken = (): string | null => {
-  try {
-    return localStorage.getItem(CLIENT_RT_KEY);
-  } catch {
-    return null;
-  }
-};
-
-export const setStoredClientRefreshToken = (token: string | null) => {
-  try {
-    if (token) {
-      localStorage.setItem(CLIENT_RT_KEY, token);
-    } else {
-      localStorage.removeItem(CLIENT_RT_KEY);
-    }
-  } catch {
-    void 0;
-  }
-};
-
-let activeRefreshPromise: Promise<RefreshTokenResponse> | null = null;
 
 /**
  * Real API client matching Rikkei E-Commerce Backend (Section 2 - FE Guide)
@@ -179,27 +153,11 @@ export const authApi = {
    * Sử dụng deduplication để tránh gửi 2 request song song làm backend kích hoạt replay detection thu hồi phiên.
    */
   refreshToken: async (): Promise<RefreshTokenResponse> => {
-    if (activeRefreshPromise) {
-      return activeRefreshPromise;
-    }
-
-    activeRefreshPromise = (async () => {
-      try {
-        const res = await axiosClient.post<ApiResponse<BackendAuthData>>(
-          "/api/v1/auth/refresh",
-        );
-
-        const authData = res.data.data;
-        return {
-          accessToken: authData.access_token,
-          user: mapBackendUser(authData.user),
-        };
-      } finally {
-        activeRefreshPromise = null;
-      }
-    })();
-
-    return activeRefreshPromise;
+    const session = await refreshSession();
+    return {
+      accessToken: session.accessToken,
+      user: mapBackendUser(session.user as BackendUser),
+    };
   },
 
   /**
@@ -207,24 +165,15 @@ export const authApi = {
    * Yêu cầu Bearer access token; backend thu hồi phiên và xóa refresh cookie
    */
   logout: async (): Promise<{ success: boolean; message: string }> => {
-    try {
-      const res = await axiosClient.post<{
-        success: boolean;
-        message?: string;
-      }>("/api/v1/auth/logout");
+    const res = await axiosClient.post<{
+      success: boolean;
+      message?: string;
+    }>("/api/v1/auth/logout");
 
-      return {
-        success: true,
-        message: res.data.message || "Đăng xuất thành công.",
-      };
-    } catch {
-      return {
-        success: true,
-        message: "Phiên làm việc đã kết thúc.",
-      };
-    } finally {
-      setStoredClientRefreshToken(null);
-    }
+    return {
+      success: true,
+      message: res.data.message || "Đăng xuất thành công.",
+    };
   },
 
   /**

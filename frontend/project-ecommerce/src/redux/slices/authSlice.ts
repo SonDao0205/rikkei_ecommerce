@@ -32,7 +32,6 @@ interface AuthState {
     identity: string;
     mode: "email" | "phone";
     step: number;
-    otp?: string;
   } | null;
   resetToken: string | null;
   resetPasswordLoading: boolean;
@@ -212,10 +211,15 @@ export const resetPasswordWithToken = createAsyncThunk<
  */
 export const logoutUser = createAsyncThunk(
   "auth/logoutUser",
-  async () => {
-    await authApi.logout();
-    setInMemoryAccessToken(null);
-    return true;
+  async (_, { rejectWithValue }) => {
+    try {
+      await authApi.logout();
+      return true;
+    } catch (err: unknown) {
+      return rejectWithValue(err instanceof Error ? err.message : "Logout request failed");
+    } finally {
+      setInMemoryAccessToken(null);
+    }
   }
 );
 
@@ -225,6 +229,22 @@ export const authSlice = createSlice({
   reducers: {
     clearAuthError: (state) => {
       state.error = null;
+    },
+    sessionExpired: (state) => {
+      state.user = null;
+      state.role = null;
+      state.accessToken = null;
+      state.refreshToken = null;
+      state.isAuthenticated = false;
+      state.isInitialized = true;
+      state.loading = false;
+      state.error = null;
+      setInMemoryAccessToken(null);
+      try {
+        localStorage.removeItem(CACHED_USER_KEY);
+      } catch {
+        void 0;
+      }
     },
     clearAuthSuccess: (state) => {
       state.successMessage = null;
@@ -359,10 +379,21 @@ export const authSlice = createSlice({
           void 0;
         }
       })
-      .addCase(logoutUser.rejected, (state) => {
+      .addCase(logoutUser.rejected, (state, action) => {
+        state.user = null;
+        state.role = null;
+        state.accessToken = null;
+        state.refreshToken = null;
+        state.isAuthenticated = false;
         state.loading = false;
         state.isInitialized = true;
         state.isLogoutModalOpen = false;
+        state.error = action.payload as string || "The server could not confirm logout.";
+        try {
+          localStorage.removeItem(CACHED_USER_KEY);
+        } catch {
+          void 0;
+        }
       })
 
       // Send Password Reset OTP (Step 1)
@@ -379,7 +410,6 @@ export const authSlice = createSlice({
           identity: action.payload.identity,
           mode: action.payload.mode,
           step: 1,
-          otp: action.payload.otp,
         };
       })
       .addCase(sendPasswordResetOtp.rejected, (state, action) => {
@@ -431,6 +461,7 @@ export const authSlice = createSlice({
 
 export const {
   clearAuthError,
+  sessionExpired,
   clearAuthSuccess,
   dismissLoginToast,
   openLogoutModal,
