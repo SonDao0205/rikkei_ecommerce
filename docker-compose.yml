@@ -3,6 +3,14 @@ services:
     build:
       context: .
       dockerfile: frontend/project-ecommerce/Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
+        VITE_BACKEND_HOST: ${VITE_BACKEND_HOST:-http://localhost:8080}
+        VITE_APP_NAME: ${VITE_APP_NAME:-MarketPulse}
+        VITE_APP_ENV: ${VITE_APP_ENV:-development}
+        VITE_DEFAULT_AVATAR_SERVICE_URL: ${VITE_DEFAULT_AVATAR_SERVICE_URL:-https://ui-avatars.com/api/}
+        VITE_SUPPORT_HOTLINE: ${VITE_SUPPORT_HOTLINE:-+84 1900 6868}
+        VITE_SUPPORT_EMAIL: ${VITE_SUPPORT_EMAIL:-support@marketpulse.vn}
     ports:
       - "127.0.0.1:5173:80"
     depends_on:
