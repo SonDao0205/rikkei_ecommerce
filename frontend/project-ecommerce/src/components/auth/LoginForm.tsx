@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../redux/store";
 import { loginUser, clearAuthError } from "../../redux/slices/authSlice";
+import { APP_CONFIG } from "../../config/appConfig";
 
 // ─── Icons ──────────────────────────────────────────────────────────────────────
 
@@ -79,6 +80,8 @@ const inputClass = (hasError: boolean, extra = "") =>
 
 const LoginForm = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isResetSuccess = searchParams.get("reset") === "success";
   const dispatch = useAppDispatch();
   const { loading, error: authError } = useAppSelector((state) => state.auth);
 
@@ -131,7 +134,8 @@ const LoginForm = () => {
         navigate("/home");
       }
     } else if (loginUser.rejected.match(resultAction)) {
-      setLoginErrorMessage("Tài khoản hoặc mật khẩu không chính xác");
+      const errorMsg = "Tài khoản hoặc mật khẩu không chính xác.";
+      setLoginErrorMessage(errorMsg);
     }
   };
 
@@ -147,7 +151,7 @@ const LoginForm = () => {
                 <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
               </svg>
             </div>
-            <span className="text-base font-bold tracking-tight text-slate-900">MarketPulse</span>
+            <span className="text-base font-bold tracking-tight text-slate-900">{APP_CONFIG.appName}</span>
           </div>
           <a href="#" className="text-xs font-semibold text-indigo-600 hover:text-indigo-700">
             Need help?
@@ -160,7 +164,7 @@ const LoginForm = () => {
             Welcome back
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Sign In to MarketPulse
+            Sign In to {APP_CONFIG.appName}
           </h1>
           <p className="text-sm text-slate-500 font-normal">
             Enter your account credentials to continue shopping or managing your orders
@@ -196,6 +200,27 @@ const LoginForm = () => {
 
         {/* Login Form */}
         <form className="space-y-4" onSubmit={handleSubmit} noValidate>
+          {/* Thông báo thành công khi khôi phục mật khẩu */}
+          {isResetSuccess && (
+            <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs sm:text-sm text-emerald-800 flex items-start gap-2.5 transition-all">
+              <svg className="w-5 h-5 flex-shrink-0 text-emerald-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <div className="flex-1">
+                <p className="font-semibold text-emerald-900">
+                  Khôi phục mật khẩu thành công!
+                </p>
+                <p className="text-xs text-emerald-700 mt-0.5 leading-relaxed">
+                  Vui lòng đăng nhập lại bằng mật khẩu mới của bạn.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Thông báo lỗi khi đăng nhập thất bại */}
           {(loginErrorMessage || (authError && authError !== "No active session found.")) && (
             <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs sm:text-sm text-red-700 flex items-start gap-2.5 transition-all">

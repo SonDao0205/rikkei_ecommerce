@@ -17,12 +17,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
   allowedRoles,
 }) => {
-  const { isAuthenticated, role, isInitialized, loading } = useAppSelector(
+  const { isAuthenticated, role, isInitialized } = useAppSelector(
     (state) => state.auth
   );
 
   // Khi mới mở tab hoặc tải lại trang, chờ phục hồi phiên làm việc qua refresh token
-  if (!isInitialized || loading) {
+  if (!isInitialized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">

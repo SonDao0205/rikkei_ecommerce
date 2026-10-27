@@ -12,6 +12,7 @@ import type {
   VerifyPasswordResetOtpResponse,
   ResetPasswordPayload,
   ResetPasswordResponse,
+  ChangePasswordPayload,
 } from "../types/ecommerce";
 
 /**
@@ -261,8 +262,8 @@ export const authApi = {
   },
 
   /**
-   * Xác thực mã OTP (bước 2)
-   * Kiểm tra định dạng 6 chữ số trước khi tiếp tục
+   * Xác thực mã OTP ở server (POST /api/v1/auth/verify-reset-otp)
+   * Nhận identifier (email hoặc số điện thoại) và mã OTP 6 chữ số
    */
   verifyPasswordResetOtp: async (
     payload: VerifyPasswordResetOtpPayload,
@@ -286,7 +287,7 @@ export const authApi = {
 
   /**
    * Đặt lại mật khẩu (POST /api/v1/auth/reset-password)
-   * Nhận email, otp 6 chữ số và mật khẩu mới (tối thiểu 10 ký tự, có chữ và số)
+   * Nhận identifier (email hoặc số điện thoại), otp 6 chữ số và mật khẩu mới (10–72 ký tự, có chữ và số)
    */
   resetPassword: async (
     payload: ResetPasswordPayload,
@@ -295,7 +296,7 @@ export const authApi = {
       success: boolean;
       message: string;
     }>("/api/v1/auth/reset-password", {
-      email: payload.identity.trim().toLowerCase(),
+      identifier: payload.identity.trim(),
       otp: payload.resetToken?.trim() || "",
       new_password: payload.newPassword,
     });
@@ -305,6 +306,30 @@ export const authApi = {
       message:
         res.data.message ||
         "Thiết lập mật khẩu mới thành công! Vui lòng đăng nhập lại.",
+    };
+  },
+
+  /**
+   * Đổi mật khẩu tài khoản đang đăng nhập (PUT /api/v1/auth/password)
+   * Yêu cầu Bearer access token; backend thu hồi toàn bộ phiên refresh session
+   */
+  changePassword: async (
+    payload: ChangePasswordPayload
+  ): Promise<{ success: boolean; message: string }> => {
+    const res = await axiosClient.put<{
+      success: boolean;
+      message: string;
+    }>("/api/v1/auth/password", {
+      current_password: payload.currentPassword,
+      new_password: payload.newPassword,
+      confirm_password: payload.confirmPassword,
+    });
+
+    return {
+      success: true,
+      message:
+        res.data.message ||
+        "Đổi mật khẩu thành công! Vui lòng đăng nhập lại bằng mật khẩu mới.",
     };
   },
 
@@ -336,9 +361,9 @@ export const authApi = {
 
   // Compatibility methods for legacy standalone pages retained under src.
   restoreSession: async (): Promise<UserProfile> => (await authApi.refreshToken()).user,
-  changePassword: async (currentPassword: string, newPassword: string, confirmPassword: string): Promise<void> => {
-    await axiosClient.put("/api/v1/auth/password", { current_password: currentPassword, new_password: newPassword, confirm_password: confirmPassword });
-  },
+  // changePassword: async (currentPassword: string, newPassword: string, confirmPassword: string): Promise<void> => {
+  //   await axiosClient.put("/api/v1/auth/password", { current_password: currentPassword, new_password: newPassword, confirm_password: confirmPassword });
+  // },
 };
 
 export default authApi;

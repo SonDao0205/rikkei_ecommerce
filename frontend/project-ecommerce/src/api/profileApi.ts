@@ -89,7 +89,7 @@ export const profileApi = {
   },
 
   /**
-   * Đổi mật khẩu tài khoản
+   * Đổi mật khẩu tài khoản (PUT /api/v1/auth/password)
    */
   changePassword: async (
     payload: ChangePasswordPayload

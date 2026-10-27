@@ -2,6 +2,7 @@ import React, { type ReactNode } from "react";
 import { Link, useLocation, Navigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../redux/store";
 import { openLogoutModal } from "../redux/slices/authSlice";
+import { APP_CONFIG } from "../config/appConfig";
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -43,10 +44,10 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             </div>
             <div>
               <h1 className="font-headline-md text-headline-md leading-none text-white tracking-tight font-bold">
-                MarketPulse
+                {APP_CONFIG.appName}
               </h1>
               <p className="font-label-sm text-label-sm uppercase tracking-wider text-surface-variant/70 mt-1 font-semibold">
-                MarketPulse Admin
+                {APP_CONFIG.appName} Admin
               </p>
             </div>
           </div>
