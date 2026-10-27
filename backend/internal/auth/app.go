@@ -48,21 +48,10 @@ var dummyPasswordHash, _ = bcrypt.GenerateFromPassword([]byte("unmatched-login-d
 
 func NewApp(c Config, db *sql.DB, l *log.Logger) *App {
 	a := &App{cfg: c, db: db, logger: l, mux: http.NewServeMux(), rates: map[string]rateWindow{}}
-	a.routes()
+	RegisterRoutes(a)
 	return a
 }
 func (a *App) Handler() http.Handler { return a.securityHeaders(a.cors(a.mux)) }
-func (a *App) routes() {
-	a.mux.HandleFunc("GET /healthz", a.health)
-	a.mux.HandleFunc("POST /api/v1/auth/register", a.register)
-	a.mux.HandleFunc("POST /api/v1/auth/login", a.login)
-	a.mux.HandleFunc("POST /api/v1/auth/refresh", a.refresh)
-	a.mux.HandleFunc("POST /api/v1/auth/logout", a.requireAuth(a.logout))
-	a.mux.HandleFunc("GET /api/v1/auth/me", a.requireAuth(a.me))
-	a.mux.HandleFunc("POST /api/v1/auth/forgot-password", a.forgotPassword)
-	a.mux.HandleFunc("POST /api/v1/auth/reset-password", a.resetPassword)
-	a.mux.HandleFunc("GET /api/v1/admin/users", a.requireRole("ADMIN", a.listUsers))
-}
 func (a *App) health(w http.ResponseWriter, r *http.Request) {
 	ctx, c := context.WithTimeout(r.Context(), 2*time.Second)
 	defer c()
@@ -149,14 +138,14 @@ func (a *App) login(w http.ResponseWriter, r *http.Request) {
 	if identifier == "" {
 		identifier = strings.TrimSpace(q.Email)
 	}
-	identifier = strings.ToLower(identifier)
-	lookup := `SELECT id,COALESCE(email,''),password_hash,full_name,phone,role,status,created_at FROM users WHERE phone=?`
+	identifier = (resetOTPRequest{Identifier: identifier}).normalizedIdentifier()
+	lookup := `SELECT id,COALESCE(email,''),password_hash,full_name,phone,role,status,email_verified,created_at FROM users WHERE phone=?`
 	if strings.Contains(identifier, "@") {
-		lookup = `SELECT id,COALESCE(email,''),password_hash,full_name,phone,role,status,created_at FROM users WHERE email=?`
+		lookup = `SELECT id,COALESCE(email,''),password_hash,full_name,phone,role,status,email_verified,created_at FROM users WHERE email=?`
 	}
 	var u User
 	var hash string
-	err := a.db.QueryRowContext(r.Context(), lookup, identifier).Scan(&u.ID, &u.Email, &hash, &u.FullName, &u.Phone, &u.Role, &u.Status, &u.CreatedAt)
+	err := a.db.QueryRowContext(r.Context(), lookup, identifier).Scan(&u.ID, &u.Email, &hash, &u.FullName, &u.Phone, &u.Role, &u.Status, &u.EmailVerified, &u.CreatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		_ = bcrypt.CompareHashAndPassword(dummyPasswordHash, []byte(q.Password))
 		writeError(w, 401, "invalid_credentials", "Email/phone or password is incorrect")
@@ -256,7 +245,7 @@ func (a *App) refresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var u User
-	err = tx.QueryRowContext(r.Context(), `SELECT id,COALESCE(email,''),full_name,phone,role,status,created_at FROM users WHERE id=?`, uid).Scan(&u.ID, &u.Email, &u.FullName, &u.Phone, &u.Role, &u.Status, &u.CreatedAt)
+	err = tx.QueryRowContext(r.Context(), `SELECT id,COALESCE(email,''),full_name,phone,role,status,email_verified,created_at FROM users WHERE id=?`, uid).Scan(&u.ID, &u.Email, &u.FullName, &u.Phone, &u.Role, &u.Status, &u.EmailVerified, &u.CreatedAt)
 	if err != nil {
 		a.serverError(w, r, err)
 		return
@@ -302,7 +291,7 @@ func (a *App) logout(w http.ResponseWriter, r *http.Request) {
 func (a *App) me(w http.ResponseWriter, r *http.Request) {
 	u := current(r)
 	var v User
-	e := a.db.QueryRowContext(r.Context(), `SELECT id,email,full_name,phone,role,status,created_at FROM users WHERE id=?`, u.ID).Scan(&v.ID, &v.Email, &v.FullName, &v.Phone, &v.Role, &v.Status, &v.CreatedAt)
+	e := a.db.QueryRowContext(r.Context(), `SELECT id,email,full_name,phone,role,status,email_verified,created_at FROM users WHERE id=?`, u.ID).Scan(&v.ID, &v.Email, &v.FullName, &v.Phone, &v.Role, &v.Status, &v.EmailVerified, &v.CreatedAt)
 	if errors.Is(e, sql.ErrNoRows) {
 		writeError(w, 401, "invalid_session", "Session is invalid")
 		return
@@ -315,7 +304,7 @@ func (a *App) me(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, 200, map[string]any{"success": true, "data": v})
 }
 func (a *App) listUsers(w http.ResponseWriter, r *http.Request) {
-	rows, e := a.db.QueryContext(r.Context(), `SELECT id,email,full_name,phone,role,status,created_at FROM users ORDER BY created_at DESC LIMIT 100`)
+	rows, e := a.db.QueryContext(r.Context(), `SELECT id,email,full_name,phone,role,status,email_verified,created_at FROM users ORDER BY created_at DESC LIMIT 100`)
 	if e != nil {
 		a.serverError(w, r, e)
 		return
@@ -324,7 +313,7 @@ func (a *App) listUsers(w http.ResponseWriter, r *http.Request) {
 	users := []User{}
 	for rows.Next() {
 		var u User
-		if e = rows.Scan(&u.ID, &u.Email, &u.FullName, &u.Phone, &u.Role, &u.Status, &u.CreatedAt); e != nil {
+		if e = rows.Scan(&u.ID, &u.Email, &u.FullName, &u.Phone, &u.Role, &u.Status, &u.EmailVerified, &u.CreatedAt); e != nil {
 			a.serverError(w, r, e)
 			return
 		}
@@ -397,16 +386,22 @@ func (a *App) resetPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var q struct {
-		Email    string `json:"email"`
-		OTP      string `json:"otp"`
-		Password string `json:"new_password"`
+		Identifier string `json:"identifier"`
+		Email      string `json:"email"` // Backward compatible with older clients.
+		OTP        string `json:"otp"`
+		Password   string `json:"new_password"`
 	}
 	if !decode(w, r, &q) {
 		return
 	}
-	q.Email = strings.ToLower(strings.TrimSpace(q.Email))
-	if len(q.OTP) != 6 || !validPassword(q.Password) {
+	identifier := (resetOTPRequest{Identifier: q.Identifier, Email: q.Email}).normalizedIdentifier()
+	if identifier == "" || !validOTP(q.OTP) || !validPassword(q.Password) {
 		writeError(w, 400, "invalid_reset_request", "A six digit OTP and a strong new password are required")
+		return
+	}
+	email, err := a.resetEmailForIdentifier(r, identifier)
+	if err != nil {
+		writeError(w, 400, "invalid_or_expired_otp", "Verification code is invalid or expired")
 		return
 	}
 	tx, e := a.db.BeginTx(r.Context(), nil)
@@ -418,11 +413,11 @@ func (a *App) resetPassword(w http.ResponseWriter, r *http.Request) {
 	var hash string
 	var expires time.Time
 	var attempts int
-	e = tx.QueryRowContext(r.Context(), `SELECT otp_hash,expires_at,attempts FROM password_reset_otps WHERE email=? FOR UPDATE`, q.Email).Scan(&hash, &expires, &attempts)
+	e = tx.QueryRowContext(r.Context(), `SELECT otp_hash,expires_at,attempts FROM password_reset_otps WHERE email=? FOR UPDATE`, email).Scan(&hash, &expires, &attempts)
 	valid := e == nil && attempts < 5 && time.Now().Before(expires) && hmac.Equal([]byte(hash), []byte(hmacDigest(a.cfg.JWTSecret, q.OTP)))
 	if !valid {
 		if e == nil && attempts < 5 {
-			if _, updateErr := tx.ExecContext(r.Context(), `UPDATE password_reset_otps SET attempts=attempts+1 WHERE email=?`, q.Email); updateErr != nil {
+			if _, updateErr := tx.ExecContext(r.Context(), `UPDATE password_reset_otps SET attempts=attempts+1 WHERE email=?`, email); updateErr != nil {
 				a.serverError(w, r, updateErr)
 				return
 			}
@@ -439,15 +434,15 @@ func (a *App) resetPassword(w http.ResponseWriter, r *http.Request) {
 		a.serverError(w, r, e)
 		return
 	}
-	if _, e = tx.ExecContext(r.Context(), `UPDATE users SET password_hash=? WHERE email=?`, string(pw), q.Email); e != nil {
+	if _, e = tx.ExecContext(r.Context(), `UPDATE users SET password_hash=? WHERE email=?`, string(pw), email); e != nil {
 		a.serverError(w, r, e)
 		return
 	}
-	if _, e = tx.ExecContext(r.Context(), `DELETE FROM refresh_tokens WHERE user_id=(SELECT id FROM users WHERE email=?)`, q.Email); e != nil {
+	if _, e = tx.ExecContext(r.Context(), `UPDATE refresh_tokens SET revoked=1 WHERE user_id=(SELECT id FROM users WHERE email=?) AND revoked=0`, email); e != nil {
 		a.serverError(w, r, e)
 		return
 	}
-	if _, e = tx.ExecContext(r.Context(), `DELETE FROM password_reset_otps WHERE email=?`, q.Email); e != nil {
+	if _, e = tx.ExecContext(r.Context(), `DELETE FROM password_reset_otps WHERE email=?`, email); e != nil {
 		a.serverError(w, r, e)
 		return
 	}
