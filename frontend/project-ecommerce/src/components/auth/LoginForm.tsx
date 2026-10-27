@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { authApi } from "../../api/authApi";
 
-// ─── Icons ──────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Icons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const GoogleIcon = () => (
   <svg className="w-4 h-4" viewBox="0 0 24 24">
@@ -18,7 +19,7 @@ const FacebookIcon = () => (
   </svg>
 );
 
-// ─── Error Message ───────────────────────────────────────────────────────────────
+// â”€â”€â”€ Error Message â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const ErrorMessage = ({ message }: { message?: string }) => {
   if (!message) return null;
@@ -32,7 +33,7 @@ const ErrorMessage = ({ message }: { message?: string }) => {
   );
 };
 
-// ─── Types & Validation ──────────────────────────────────────────────────────────
+// â”€â”€â”€ Types & Validation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 interface LoginFormData {
   identifier: string;
@@ -64,7 +65,7 @@ const validate = (data: LoginFormData): FormErrors => {
   return errors;
 };
 
-// ─── Input class helper ──────────────────────────────────────────────────────────
+// â”€â”€â”€ Input class helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const inputClass = (hasError: boolean, extra = "") =>
   `block w-full py-2.5 text-sm rounded-[11px] border bg-white text-slate-900 placeholder:text-slate-400 transition-all outline-none focus:ring-4 ${
@@ -73,10 +74,11 @@ const inputClass = (hasError: boolean, extra = "") =>
       : "border-slate-200 focus:border-brand-600 focus:ring-indigo-100"
   } ${extra}`;
 
-// ─── Main Component ──────────────────────────────────────────────────────────────
+// â”€â”€â”€ Main Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 const LoginForm = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState<LoginFormData>({
     identifier: "",
     password: "",
@@ -84,19 +86,21 @@ const LoginForm = () => {
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [showPassword, setShowPassword] = useState(false);
+  const [apiError, setApiError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
     const newValue = type === "checkbox" ? checked : value;
     setFormData((prev) => ({ ...prev, [name]: newValue }));
 
-    // Xóa lỗi của field đang sửa
+    // XÃ³a lá»—i cá»§a field Ä‘ang sá»­a
     if (errors[name as keyof LoginFormData]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const validationErrors = validate(formData);
     if (Object.keys(validationErrors).length > 0) {
@@ -104,15 +108,23 @@ const LoginForm = () => {
       return;
     }
     setErrors({});
-    // TODO: dispatch loginThunk(formData) khi tích hợp Redux
-    console.log("Login form submitted:", formData);
+    setApiError("");
+    setSubmitting(true);
+    try {
+      await authApi.login(formData.identifier, formData.password);
+      navigate("/account", { replace: true });
+    } catch (error) {
+      setApiError(error instanceof Error ? error.message : "Sign in failed.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
     <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-10 lg:p-16 bg-white min-h-[600px] lg:min-h-screen">
       <div className="w-full max-w-md mx-auto space-y-7">
 
-        {/* Mobile Header — chỉ hiện trên màn hình nhỏ */}
+        {/* Mobile header */}
         <div className="flex lg:hidden items-center justify-between pb-2 border-b border-slate-100">
           <div className="flex items-center space-x-2.5">
             <div className="w-8 h-8 rounded-lg bg-brand-700 shadow-md flex items-center justify-center p-1.5">
@@ -169,6 +181,7 @@ const LoginForm = () => {
 
         {/* Login Form */}
         <form className="space-y-4" onSubmit={handleSubmit} noValidate>
+          {apiError && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{apiError}</p>}
 
           {/* Email / Phone */}
           <div className="space-y-1.5">
@@ -200,12 +213,12 @@ const LoginForm = () => {
               <label htmlFor="password" className="block text-xs font-semibold text-slate-700">
                 Password
               </label>
-              <a
-                href="#"
+              <Link
+                to="/forgot-password"
                 className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 hover:underline transition-colors"
               >
                 Forgot password?
-              </a>
+              </Link>
             </div>
             <div className="relative rounded-[11px] shadow-sm">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -217,7 +230,7 @@ const LoginForm = () => {
                 id="password"
                 name="password"
                 type={showPassword ? "text" : "password"}
-                placeholder="••••••••••••"
+                placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                 value={formData.password}
                 onChange={handleChange}
                 className={inputClass(!!errors.password, "pl-10 pr-10")}
@@ -265,9 +278,10 @@ const LoginForm = () => {
           <div className="pt-2">
             <button
               type="submit"
+              disabled={submitting}
               className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-[11px] bg-brand-600 hover:bg-brand-700 active:bg-brand-800 text-white font-bold text-sm shadow-md shadow-indigo-600/20 hover:shadow-lg hover:shadow-indigo-600/30 transition-all duration-150 transform active:scale-[0.99] focus:outline-none focus:ring-4 focus:ring-indigo-200 cursor-pointer"
             >
-              <span>Sign In</span>
+              <span>{submitting ? "Signing in…" : "Sign In"}</span>
               <svg className="w-4 h-4 ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
               </svg>
@@ -296,9 +310,9 @@ const LoginForm = () => {
             </svg>
             256-bit SSL Encrypted
           </span>
-          <span>•</span>
+          <span>â€¢</span>
           <a href="#" className="hover:text-slate-600 transition-colors">Privacy Policy</a>
-          <span>•</span>
+          <span>â€¢</span>
           <a href="#" className="hover:text-slate-600 transition-colors">Terms of Service</a>
         </div>
 

@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { authApi } from "../../api/authApi";
 
-// ─── Sub-components ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ Sub-components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const GoogleIcon = () => (
   <svg className="w-4 h-4" viewBox="0 0 24 24">
@@ -18,13 +19,13 @@ const FacebookIcon = () => (
   </svg>
 );
 
-// ─── Password Strength ──────────────────────────────────────────────────────────
+// â”€â”€â”€ Password Strength â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 type StrengthLevel = "Weak" | "Fair" | "Good" | "Strong";
 
 const getPasswordStrength = (password: string): { level: StrengthLevel; filled: number; color: string } => {
   const checks = [
-    password.length >= 8,
+    password.length >= 10,
     /[A-Z]/.test(password),
     /[0-9]/.test(password),
     /[^A-Za-z0-9]/.test(password),
@@ -42,7 +43,7 @@ const strengthTextColor: Record<StrengthLevel, string> = {
   Strong: "text-emerald-700",
 };
 
-// ─── Error Message Component ────────────────────────────────────────────────────
+// â”€â”€â”€ Error Message Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const ErrorMessage = ({ message }: { message?: string }) => {
   if (!message) return null;
@@ -56,7 +57,7 @@ const ErrorMessage = ({ message }: { message?: string }) => {
   );
 };
 
-// ─── Types ──────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 interface RegisterFormData {
   fullName: string;
@@ -69,7 +70,7 @@ interface RegisterFormData {
 
 type FormErrors = Partial<Record<keyof RegisterFormData, string>>;
 
-// ─── Validation Logic ───────────────────────────────────────────────────────────
+// â”€â”€â”€ Validation Logic â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const validate = (data: RegisterFormData): FormErrors => {
   const errors: FormErrors = {};
@@ -88,14 +89,14 @@ const validate = (data: RegisterFormData): FormErrors => {
 
   if (!data.phone.trim()) {
     errors.phone = "Phone number is required.";
-  } else if (!/^[0-9\s\-+()]{9,15}$/.test(data.phone.trim())) {
-    errors.phone = "Please enter a valid phone number (9–15 digits).";
+  } else if (!/^\+?\d{9,15}$/.test(data.phone.trim().replace(/[\s\-()]/g, ""))) {
+    errors.phone = "Please enter a valid phone number (9â€“15 digits).";
   }
 
   if (!data.password) {
     errors.password = "Password is required.";
-  } else if (data.password.length < 8) {
-    errors.password = "Password must be at least 8 characters.";
+  } else if (!/(?=.*[A-Za-z])(?=.*\d).{10,72}/.test(data.password)) {
+    errors.password = "Use 10–72 characters with at least one letter and one number.";
   }
 
   if (!data.confirmPassword) {
@@ -111,7 +112,7 @@ const validate = (data: RegisterFormData): FormErrors => {
   return errors;
 };
 
-// ─── Input class helper ─────────────────────────────────────────────────────────
+// â”€â”€â”€ Input class helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const inputClass = (hasError: boolean, extra = "") =>
   `block w-full py-2.5 text-sm rounded-xl border text-slate-900 placeholder:text-slate-400 outline-none transition focus:ring-2 ${
@@ -120,9 +121,10 @@ const inputClass = (hasError: boolean, extra = "") =>
       : "border-slate-200 focus:ring-brand-600 focus:border-brand-600"
   } ${extra}`;
 
-// ─── Main Form Component ────────────────────────────────────────────────────────
+// â”€â”€â”€ Main Form Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const RegisterForm = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState<RegisterFormData>({
     fullName: "",
     email: "",
@@ -134,6 +136,8 @@ const RegisterForm = () => {
   const [errors, setErrors] = useState<FormErrors>({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [apiError, setApiError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const strength = formData.password ? getPasswordStrength(formData.password) : null;
 
@@ -142,13 +146,13 @@ const RegisterForm = () => {
     const newValue = type === "checkbox" ? checked : value;
     setFormData((prev) => ({ ...prev, [name]: newValue }));
 
-    // Xóa lỗi của field đang sửa ngay lập tức
+    // XÃ³a lá»—i cá»§a field Ä‘ang sá»­a ngay láº­p tá»©c
     if (errors[name as keyof RegisterFormData]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const validationErrors = validate(formData);
     if (Object.keys(validationErrors).length > 0) {
@@ -156,8 +160,16 @@ const RegisterForm = () => {
       return;
     }
     setErrors({});
-    // TODO: dispatch registerThunk(formData) khi tích hợp Redux
-    console.log("Register form submitted:", formData);
+    setApiError("");
+    setSubmitting(true);
+    try {
+      await authApi.register({ fullName: formData.fullName, email: formData.email, phone: formData.phone, password: formData.password });
+      navigate("/account", { replace: true });
+    } catch (error) {
+      setApiError(error instanceof Error ? error.message : "Registration failed.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -194,6 +206,7 @@ const RegisterForm = () => {
 
       {/* Registration Form */}
       <form className="space-y-4" onSubmit={handleSubmit} noValidate>
+        {apiError && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{apiError}</p>}
 
         {/* Full Name */}
         <div>
@@ -250,7 +263,7 @@ const RegisterForm = () => {
           </label>
           <div className={`relative flex rounded-xl shadow-sm ${errors.phone ? "ring-1 ring-red-400 rounded-xl" : ""}`}>
             <div className="inline-flex items-center px-3 rounded-l-xl border border-r-0 border-slate-200 bg-slate-50 text-slate-600 text-xs font-medium space-x-1 select-none">
-              <span>🇻🇳</span>
+              <span>ðŸ‡»ðŸ‡³</span>
               <span className="font-semibold">+84</span>
             </div>
             <input
@@ -285,7 +298,7 @@ const RegisterForm = () => {
               id="password"
               name="password"
               type={showPassword ? "text" : "password"}
-              placeholder="At least 8 characters"
+              placeholder="10+ characters, letter and number"
               value={formData.password}
               onChange={handleChange}
               className={inputClass(!!errors.password, "pl-10 pr-10")}
@@ -401,9 +414,10 @@ const RegisterForm = () => {
         <div className="pt-2">
           <button
             type="submit"
+            disabled={submitting}
             className="w-full flex items-center justify-center space-x-2 py-3 px-4 rounded-xl shadow-md bg-brand-700 hover:bg-brand-800 focus:ring-4 focus:ring-brand-100 text-white font-semibold text-sm transition-all duration-150 transform active:scale-[0.99] cursor-pointer"
           >
-            <span>Create Account</span>
+            <span>{submitting ? "Creating account…" : "Create Account"}</span>
             <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
               <path d="M14 5l7 7m0 0l-7 7m7-7H3" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
@@ -425,9 +439,9 @@ const RegisterForm = () => {
             <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
           </svg>
           <span>256-bit SSL Encrypted</span>
-          <span>•</span>
+          <span>â€¢</span>
           <a href="#" className="hover:text-slate-600 transition">Privacy Policy</a>
-          <span>•</span>
+          <span>â€¢</span>
           <a href="#" className="hover:text-slate-600 transition">Terms of Service</a>
         </div>
       </div>

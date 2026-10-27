@@ -84,6 +84,44 @@ func TestProtectedRouteRequiresAccessToken(t *testing.T) {
 	}
 }
 
+func TestPasswordSecurityRoutesAreRegisteredAndProtected(t *testing.T) {
+	a := testApp()
+	for _, path := range []string{"/api/v1/auth/password", "/api/v1/auth/verify-reset-otp"} {
+		t.Run(path, func(t *testing.T) {
+			method := http.MethodPut
+			if path == "/api/v1/auth/verify-reset-otp" {
+				method = http.MethodPost
+			}
+			req := httptest.NewRequest(method, path, bytes.NewBufferString(`{"identifier":"test@example.com","otp":"123"}`))
+			req.Header.Set("Content-Type", "application/json")
+			rec := httptest.NewRecorder()
+			a.Handler().ServeHTTP(rec, req)
+			if path == "/api/v1/auth/password" && rec.Code != http.StatusUnauthorized {
+				t.Fatalf("password change must require authentication, got %d", rec.Code)
+			}
+			if path == "/api/v1/auth/verify-reset-otp" && rec.Code != http.StatusBadRequest {
+				t.Fatalf("malformed OTP must be rejected before storage access, got %d", rec.Code)
+			}
+		})
+	}
+}
+
+func TestOTPFormatAndPhoneNormalization(t *testing.T) {
+	for _, value := range []string{"000000", "123456"} {
+		if !validOTP(value) {
+			t.Errorf("valid OTP %q rejected", value)
+		}
+	}
+	for _, value := range []string{"", "12345", "1234567", "12a456", "１２３４５６"} {
+		if validOTP(value) {
+			t.Errorf("invalid OTP %q accepted", value)
+		}
+	}
+	if got := (resetOTPRequest{Identifier: "+84 (90) 123-4567"}).normalizedIdentifier(); got != "+84901234567" {
+		t.Fatalf("normalized phone=%q", got)
+	}
+}
+
 func TestCORSRejectsUnknownOrigin(t *testing.T) {
 	a := testApp()
 	a.cfg.Origins = []string{"https://shop.example"}
