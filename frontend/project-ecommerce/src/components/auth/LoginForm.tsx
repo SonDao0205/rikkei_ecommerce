@@ -1,6 +1,13 @@
+<<<<<<< HEAD
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { authApi } from "../../api/authApi";
+=======
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAppDispatch, useAppSelector } from "../../redux/store";
+import { loginUser, clearAuthError } from "../../redux/slices/authSlice";
+>>>>>>> d39ab1246432014645f9f417d4f8c5a819a6c1be
 
 // â”€â”€â”€ Icons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -47,19 +54,19 @@ const validate = (data: LoginFormData): FormErrors => {
   const errors: FormErrors = {};
 
   if (!data.identifier.trim()) {
-    errors.identifier = "Email or phone number is required.";
+    errors.identifier = "Vui lòng nhập email hoặc số điện thoại.";
   } else {
     const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.identifier.trim());
     const isPhone = /^[0-9\s\-+()]{9,15}$/.test(data.identifier.trim());
     if (!isEmail && !isPhone) {
-      errors.identifier = "Please enter a valid email address or phone number.";
+      errors.identifier = "Vui lòng nhập email hoặc số điện thoại hợp lệ.";
     }
   }
 
   if (!data.password) {
-    errors.password = "Password is required.";
+    errors.password = "Vui lòng nhập mật khẩu.";
   } else if (data.password.length < 6) {
-    errors.password = "Password must be at least 6 characters.";
+    errors.password = "Mật khẩu phải có ít nhất 6 ký tự.";
   }
 
   return errors;
@@ -70,15 +77,20 @@ const validate = (data: LoginFormData): FormErrors => {
 const inputClass = (hasError: boolean, extra = "") =>
   `block w-full py-2.5 text-sm rounded-[11px] border bg-white text-slate-900 placeholder:text-slate-400 transition-all outline-none focus:ring-4 ${
     hasError
-      ? "border-red-400 focus:ring-red-100 focus:border-red-400"
+      ? "border-red-400 focus:ring-red-100 focus:border-red-400 bg-red-50/20"
       : "border-slate-200 focus:border-brand-600 focus:ring-indigo-100"
   } ${extra}`;
 
 // â”€â”€â”€ Main Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-
 const LoginForm = () => {
   const navigate = useNavigate();
+<<<<<<< HEAD
+=======
+  const dispatch = useAppDispatch();
+  const { loading, error: authError } = useAppSelector((state) => state.auth);
+
+>>>>>>> d39ab1246432014645f9f417d4f8c5a819a6c1be
   const [formData, setFormData] = useState<LoginFormData>({
     identifier: "",
     password: "",
@@ -86,28 +98,51 @@ const LoginForm = () => {
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [showPassword, setShowPassword] = useState(false);
+<<<<<<< HEAD
   const [apiError, setApiError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+=======
+  const [loginErrorMessage, setLoginErrorMessage] = useState<string | null>(null);
+>>>>>>> d39ab1246432014645f9f417d4f8c5a819a6c1be
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
     const newValue = type === "checkbox" ? checked : value;
     setFormData((prev) => ({ ...prev, [name]: newValue }));
 
+<<<<<<< HEAD
     // XÃ³a lá»—i cá»§a field Ä‘ang sá»­a
+=======
+>>>>>>> d39ab1246432014645f9f417d4f8c5a819a6c1be
     if (errors[name as keyof LoginFormData]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
+    if (loginErrorMessage) {
+      setLoginErrorMessage(null);
+    }
+    if (authError) {
+      dispatch(clearAuthError());
+    }
   };
 
+<<<<<<< HEAD
+=======
+  useEffect(() => {
+    dispatch(clearAuthError());
+  }, [dispatch]);
+
+>>>>>>> d39ab1246432014645f9f417d4f8c5a819a6c1be
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoginErrorMessage(null);
+
     const validationErrors = validate(formData);
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
     }
     setErrors({});
+<<<<<<< HEAD
     setApiError("");
     setSubmitting(true);
     try {
@@ -117,6 +152,19 @@ const LoginForm = () => {
       setApiError(error instanceof Error ? error.message : "Sign in failed.");
     } finally {
       setSubmitting(false);
+=======
+
+    const resultAction = await dispatch(loginUser(formData));
+    if (loginUser.fulfilled.match(resultAction)) {
+      const userRole = resultAction.payload.user.role;
+      if (userRole === "admin") {
+        navigate("/admin/products");
+      } else {
+        navigate("/home");
+      }
+    } else if (loginUser.rejected.match(resultAction)) {
+      setLoginErrorMessage("Tài khoản hoặc mật khẩu không chính xác");
+>>>>>>> d39ab1246432014645f9f417d4f8c5a819a6c1be
     }
   };
 
@@ -181,7 +229,28 @@ const LoginForm = () => {
 
         {/* Login Form */}
         <form className="space-y-4" onSubmit={handleSubmit} noValidate>
+<<<<<<< HEAD
           {apiError && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{apiError}</p>}
+=======
+          {/* Thông báo lỗi khi đăng nhập thất bại */}
+          {(loginErrorMessage || (authError && authError !== "No active session found.")) && (
+            <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs sm:text-sm text-red-700 flex items-start gap-2.5 transition-all">
+              <svg className="w-5 h-5 flex-shrink-0 text-red-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <div className="flex-1">
+                <p className="font-semibold text-red-800">Đăng nhập không thành công</p>
+                <p className="text-xs text-red-600 mt-0.5 leading-relaxed">
+                  Tài khoản hoặc mật khẩu không chính xác
+                </p>
+              </div>
+            </div>
+          )}
+>>>>>>> d39ab1246432014645f9f417d4f8c5a819a6c1be
 
           {/* Email / Phone */}
           <div className="space-y-1.5">
@@ -278,6 +347,7 @@ const LoginForm = () => {
           <div className="pt-2">
             <button
               type="submit"
+<<<<<<< HEAD
               disabled={submitting}
               className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-[11px] bg-brand-600 hover:bg-brand-700 active:bg-brand-800 text-white font-bold text-sm shadow-md shadow-indigo-600/20 hover:shadow-lg hover:shadow-indigo-600/30 transition-all duration-150 transform active:scale-[0.99] focus:outline-none focus:ring-4 focus:ring-indigo-200 cursor-pointer"
             >
@@ -285,6 +355,27 @@ const LoginForm = () => {
               <svg className="w-4 h-4 ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
               </svg>
+=======
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-[11px] bg-brand-600 hover:bg-brand-700 active:bg-brand-800 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-sm shadow-md shadow-indigo-600/20 hover:shadow-lg hover:shadow-indigo-600/30 transition-all duration-150 transform active:scale-[0.99] focus:outline-none focus:ring-4 focus:ring-indigo-200 cursor-pointer"
+            >
+              {loading ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                  </svg>
+                  <span>Signing in...</span>
+                </>
+              ) : (
+                <>
+                  <span>Sign In</span>
+                  <svg className="w-4 h-4 ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  </svg>
+                </>
+              )}
+>>>>>>> d39ab1246432014645f9f417d4f8c5a819a6c1be
             </button>
           </div>
         </form>

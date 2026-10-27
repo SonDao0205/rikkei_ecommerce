@@ -1,6 +1,13 @@
+<<<<<<< HEAD
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { authApi } from "../../api/authApi";
+=======
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAppDispatch, useAppSelector } from "../../redux/store";
+import { registerUser, clearAuthError } from "../../redux/slices/authSlice";
+>>>>>>> d39ab1246432014645f9f417d4f8c5a819a6c1be
 
 // â”€â”€â”€ Sub-components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -95,8 +102,15 @@ const validate = (data: RegisterFormData): FormErrors => {
 
   if (!data.password) {
     errors.password = "Password is required.";
+<<<<<<< HEAD
   } else if (!/(?=.*[A-Za-z])(?=.*\d).{10,72}/.test(data.password)) {
     errors.password = "Use 10–72 characters with at least one letter and one number.";
+=======
+  } else if (data.password.length < 10) {
+    errors.password = "Password must be at least 10 characters.";
+  } else if (!/[A-Za-z]/.test(data.password) || !/[0-9]/.test(data.password)) {
+    errors.password = "Password must contain at least one letter and one number.";
+>>>>>>> d39ab1246432014645f9f417d4f8c5a819a6c1be
   }
 
   if (!data.confirmPassword) {
@@ -125,6 +139,12 @@ const inputClass = (hasError: boolean, extra = "") =>
 
 const RegisterForm = () => {
   const navigate = useNavigate();
+<<<<<<< HEAD
+=======
+  const dispatch = useAppDispatch();
+  const { loading, error: authError } = useAppSelector((state) => state.auth);
+
+>>>>>>> d39ab1246432014645f9f417d4f8c5a819a6c1be
   const [formData, setFormData] = useState<RegisterFormData>({
     fullName: "",
     email: "",
@@ -146,12 +166,25 @@ const RegisterForm = () => {
     const newValue = type === "checkbox" ? checked : value;
     setFormData((prev) => ({ ...prev, [name]: newValue }));
 
+<<<<<<< HEAD
     // XÃ³a lá»—i cá»§a field Ä‘ang sá»­a ngay láº­p tá»©c
+=======
+>>>>>>> d39ab1246432014645f9f417d4f8c5a819a6c1be
     if (errors[name as keyof RegisterFormData]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
+    if (authError) {
+      dispatch(clearAuthError());
+    }
   };
 
+<<<<<<< HEAD
+=======
+  useEffect(() => {
+    dispatch(clearAuthError());
+  }, [dispatch]);
+
+>>>>>>> d39ab1246432014645f9f417d4f8c5a819a6c1be
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const validationErrors = validate(formData);
@@ -160,6 +193,7 @@ const RegisterForm = () => {
       return;
     }
     setErrors({});
+<<<<<<< HEAD
     setApiError("");
     setSubmitting(true);
     try {
@@ -169,6 +203,21 @@ const RegisterForm = () => {
       setApiError(error instanceof Error ? error.message : "Registration failed.");
     } finally {
       setSubmitting(false);
+=======
+
+    const resultAction = await dispatch(
+      registerUser({
+        fullName: formData.fullName,
+        email: formData.email,
+        phone: formData.phone,
+        password: formData.password,
+        role: "client",
+      })
+    );
+
+    if (registerUser.fulfilled.match(resultAction)) {
+      navigate("/home");
+>>>>>>> d39ab1246432014645f9f417d4f8c5a819a6c1be
     }
   };
 
@@ -182,6 +231,16 @@ const RegisterForm = () => {
         <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">Create Your Account</h2>
         <p className="mt-2 text-sm text-slate-500">Join millions of shoppers and explore top verified stores</p>
       </div>
+
+      {/* Auth Error Banner */}
+      {authError && authError !== "No active session found." && (
+        <div className="mb-5 p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2">
+          <svg className="w-4 h-4 flex-shrink-0 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+          </svg>
+          <span>{authError}</span>
+        </div>
+      )}
 
       {/* Social Register Buttons */}
       <div className="grid grid-cols-2 gap-3.5 mb-6">
@@ -414,6 +473,7 @@ const RegisterForm = () => {
         <div className="pt-2">
           <button
             type="submit"
+<<<<<<< HEAD
             disabled={submitting}
             className="w-full flex items-center justify-center space-x-2 py-3 px-4 rounded-xl shadow-md bg-brand-700 hover:bg-brand-800 focus:ring-4 focus:ring-brand-100 text-white font-semibold text-sm transition-all duration-150 transform active:scale-[0.99] cursor-pointer"
           >
@@ -421,6 +481,27 @@ const RegisterForm = () => {
             <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
               <path d="M14 5l7 7m0 0l-7 7m7-7H3" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
+=======
+            disabled={loading}
+            className="w-full flex items-center justify-center space-x-2 py-3 px-4 rounded-xl shadow-md bg-brand-700 hover:bg-brand-800 disabled:opacity-60 disabled:cursor-not-allowed focus:ring-4 focus:ring-brand-100 text-white font-semibold text-sm transition-all duration-150 transform active:scale-[0.99] cursor-pointer"
+          >
+            {loading ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                </svg>
+                <span>Creating account...</span>
+              </>
+            ) : (
+              <>
+                <span>Create Account</span>
+                <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path d="M14 5l7 7m0 0l-7 7m7-7H3" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </>
+            )}
+>>>>>>> d39ab1246432014645f9f417d4f8c5a819a6c1be
           </button>
         </div>
       </form>
