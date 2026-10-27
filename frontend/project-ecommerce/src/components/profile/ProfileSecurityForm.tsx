@@ -1,9 +1,12 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../redux/store";
 import { changeUserPassword } from "../../redux/slices/profileSlice";
+import { logoutUser } from "../../redux/slices/authSlice";
 
 export const ProfileSecurityForm: React.FC = () => {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const { passwordLoading, passwordSuccessMessage, passwordError } =
     useAppSelector((state) => state.profile);
 
@@ -42,8 +45,8 @@ export const ProfileSecurityForm: React.FC = () => {
       setValidationError("Vui lòng nhập mật khẩu hiện tại.");
       return;
     }
-    if (!newPassword || newPassword.length < 6) {
-      setValidationError("Mật khẩu mới phải có ít nhất 6 ký tự.");
+    if (!newPassword || newPassword.length < 10) {
+      setValidationError("Mật khẩu mới phải có ít nhất 10 ký tự.");
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -60,9 +63,8 @@ export const ProfileSecurityForm: React.FC = () => {
     );
 
     if (changeUserPassword.fulfilled.match(res)) {
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
+      await dispatch(logoutUser());
+      navigate("/login?password=changed", { replace: true });
     }
   };
 
