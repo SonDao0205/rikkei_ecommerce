@@ -5,7 +5,7 @@ import type { UserRole } from "../types/ecommerce";
 
 interface ProtectedRouteProps {
   children: ReactNode;
-  allowedRoles?: UserRole[];
+  allowedRoles?: (UserRole | string)[];
 }
 
 /**
@@ -39,8 +39,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/" replace />;
   }
 
-  if (allowedRoles && role && !allowedRoles.includes(role)) {
-    return <Navigate to="/" replace />;
+  if (allowedRoles && allowedRoles.length > 0) {
+    const userRole = (role || "").toLowerCase().trim();
+    const hasRole = allowedRoles.some((r) => r.toLowerCase().trim() === userRole);
+    if (!hasRole) {
+      return <Navigate to="/" replace />;
+    }
   }
 
   return <>{children}</>;

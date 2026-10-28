@@ -4,6 +4,8 @@ import productReducer from "./slices/productSlice";
 import adminProductReducer from "./slices/adminProductSlice";
 import authReducer from "./slices/authSlice";
 import profileReducer from "./slices/profileSlice";
+import adminDashboardReducer from "./slices/adminDashboardSlice";
+import adminOrderReducer from "./slices/adminOrderSlice";
 
 export const store = configureStore({
   reducer: {
@@ -11,6 +13,8 @@ export const store = configureStore({
     adminProduct: adminProductReducer,
     auth: authReducer,
     profile: profileReducer,
+    adminDashboard: adminDashboardReducer,
+    adminOrder: adminOrderReducer,
   },
 });
 
