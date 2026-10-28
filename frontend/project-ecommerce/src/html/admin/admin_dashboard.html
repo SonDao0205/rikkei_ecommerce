@@ -1,0 +1,778 @@
+<!DOCTYPE html><html lang="en" style=""><head></head><body class="bg-background font-body-md text-body-md text-on-surface"><svg class="inline-defs-container" aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden"></svg><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_dashboard" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Plus+Jakarta+Sans:wght@600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "tertiary": "#7b0022",
+          "on-error": "#ffffff",
+          "error-container": "#ffdad6",
+          "surface-tint": "#5148d7",
+          "surface-variant": "#dae2fd",
+          "on-surface": "#131b2e",
+          "primary-container": "#4338ca",
+          "on-secondary-fixed": "#001d31",
+          "on-tertiary": "#ffffff",
+          "on-secondary": "#ffffff",
+          "tertiary-container": "#a60031",
+          "secondary-container": "#5bb8fe",
+          "on-primary-container": "#c1beff",
+          "inverse-primary": "#c3c0ff",
+          "secondary-fixed-dim": "#93ccff",
+          "on-error-container": "#93000a",
+          "primary": "#2a14b4",
+          "surface-dim": "#d2d9f4",
+          "surface-container-high": "#e2e7ff",
+          "secondary-fixed": "#cce5ff",
+          "tertiary-fixed": "#ffdadb",
+          "on-background": "#131b2e",
+          "on-surface-variant": "#464554",
+          "inverse-on-surface": "#eef0ff",
+          "on-primary-fixed-variant": "#372abf",
+          "background": "#faf8ff",
+          "on-tertiary-container": "#ffb0b5",
+          "inverse-surface": "#283044",
+          "on-primary-fixed": "#100069",
+          "outline-variant": "#c7c4d7",
+          "on-secondary-container": "#00476e",
+          "surface-container-highest": "#dae2fd",
+          "on-primary": "#ffffff",
+          "surface-container": "#eaedff",
+          "outline": "#777586",
+          "surface-bright": "#faf8ff",
+          "on-tertiary-fixed-variant": "#92002a",
+          "secondary": "#006398",
+          "surface-container-lowest": "#ffffff",
+          "surface-container-low": "#f2f3ff",
+          "on-tertiary-fixed": "#40000d",
+          "tertiary-fixed-dim": "#ffb2b7",
+          "error": "#ba1a1a",
+          "on-secondary-fixed-variant": "#004b73",
+          "primary-fixed-dim": "#c3c0ff",
+          "primary-fixed": "#e3dfff",
+          "surface": "#faf8ff"
+        },
+        "borderRadius": {
+          "DEFAULT": "0.25rem",
+          "lg": "0.5rem",
+          "xl": "0.75rem",
+          "full": "9999px"
+        },
+        "spacing": {
+          "margin": "2rem",
+          "space-sm": "0.5rem",
+          "space-xs": "0.25rem",
+          "space-lg": "1.5rem",
+          "gutter-sm": "1rem",
+          "margin-lg": "3rem",
+          "gutter": "1.5rem",
+          "margin-sm": "1rem",
+          "space-md": "1rem",
+          "space-xl": "2.5rem"
+        },
+        "fontFamily": {
+          "headline-xl": [
+            "Plus Jakarta Sans"
+          ],
+          "body-lg": [
+            "Inter"
+          ],
+          "body-sm": [
+            "Inter"
+          ],
+          "headline-lg": [
+            "Plus Jakarta Sans"
+          ],
+          "headline-xl-mobile": [
+            "Plus Jakarta Sans"
+          ],
+          "headline-md": [
+            "Plus Jakarta Sans"
+          ],
+          "label-sm": [
+            "Plus Jakarta Sans"
+          ],
+          "display-lg": [
+            "Plus Jakarta Sans"
+          ],
+          "label-lg": [
+            "Plus Jakarta Sans"
+          ],
+          "body-md": [
+            "Inter"
+          ],
+          "display-lg-mobile": [
+            "Plus Jakarta Sans"
+          ],
+          "label-md": [
+            "Plus Jakarta Sans"
+          ]
+        },
+        "fontSize": {
+          "headline-xl": [
+            "36px",
+            {
+              "lineHeight": "44px",
+              "letterSpacing": "-0.02em",
+              "fontWeight": "700"
+            }
+          ],
+          "body-lg": [
+            "16px",
+            {
+              "lineHeight": "24px",
+              "letterSpacing": "-0.005em",
+              "fontWeight": "400"
+            }
+          ],
+          "body-sm": [
+            "12px",
+            {
+              "lineHeight": "16px",
+              "letterSpacing": "0.005em",
+              "fontWeight": "400"
+            }
+          ],
+          "headline-lg": [
+            "24px",
+            {
+              "lineHeight": "32px",
+              "letterSpacing": "-0.015em",
+              "fontWeight": "600"
+            }
+          ],
+          "headline-xl-mobile": [
+            "26px",
+            {
+              "lineHeight": "34px",
+              "letterSpacing": "-0.015em",
+              "fontWeight": "600"
+            }
+          ],
+          "headline-md": [
+            "20px",
+            {
+              "lineHeight": "28px",
+              "letterSpacing": "-0.01em",
+              "fontWeight": "600"
+            }
+          ],
+          "label-sm": [
+            "11px",
+            {
+              "lineHeight": "14px",
+              "letterSpacing": "0.04em",
+              "fontWeight": "700"
+            }
+          ],
+          "display-lg": [
+            "48px",
+            {
+              "lineHeight": "56px",
+              "letterSpacing": "-0.025em",
+              "fontWeight": "700"
+            }
+          ],
+          "label-lg": [
+            "14px",
+            {
+              "lineHeight": "20px",
+              "letterSpacing": "0.01em",
+              "fontWeight": "600"
+            }
+          ],
+          "body-md": [
+            "14px",
+            {
+              "lineHeight": "20px",
+              "letterSpacing": "0",
+              "fontWeight": "400"
+            }
+          ],
+          "display-lg-mobile": [
+            "32px",
+            {
+              "lineHeight": "40px",
+              "letterSpacing": "-0.02em",
+              "fontWeight": "700"
+            }
+          ],
+          "label-md": [
+            "12px",
+            {
+              "lineHeight": "16px",
+              "letterSpacing": "0.02em",
+              "fontWeight": "600"
+            }
+          ]
+        }
+      },
+    },
+  }</script><svg class="inline-defs-container" aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden"></svg><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_dashboard" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Plus+Jakarta+Sans:wght@600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "tertiary": "#7b0022",
+          "on-error": "#ffffff",
+          "error-container": "#ffdad6",
+          "surface-tint": "#5148d7",
+          "surface-variant": "#dae2fd",
+          "on-surface": "#131b2e",
+          "primary-container": "#4338ca",
+          "on-secondary-fixed": "#001d31",
+          "on-tertiary": "#ffffff",
+          "on-secondary": "#ffffff",
+          "tertiary-container": "#a60031",
+          "secondary-container": "#5bb8fe",
+          "on-primary-container": "#c1beff",
+          "inverse-primary": "#c3c0ff",
+          "secondary-fixed-dim": "#93ccff",
+          "on-error-container": "#93000a",
+          "primary": "#2a14b4",
+          "surface-dim": "#d2d9f4",
+          "surface-container-high": "#e2e7ff",
+          "secondary-fixed": "#cce5ff",
+          "tertiary-fixed": "#ffdadb",
+          "on-background": "#131b2e",
+          "on-surface-variant": "#464554",
+          "inverse-on-surface": "#eef0ff",
+          "on-primary-fixed-variant": "#372abf",
+          "background": "#faf8ff",
+          "on-tertiary-container": "#ffb0b5",
+          "inverse-surface": "#283044",
+          "on-primary-fixed": "#100069",
+          "outline-variant": "#c7c4d7",
+          "on-secondary-container": "#00476e",
+          "surface-container-highest": "#dae2fd",
+          "on-primary": "#ffffff",
+          "surface-container": "#eaedff",
+          "outline": "#777586",
+          "surface-bright": "#faf8ff",
+          "on-tertiary-fixed-variant": "#92002a",
+          "secondary": "#006398",
+          "surface-container-lowest": "#ffffff",
+          "surface-container-low": "#f2f3ff",
+          "on-tertiary-fixed": "#40000d",
+          "tertiary-fixed-dim": "#ffb2b7",
+          "error": "#ba1a1a",
+          "on-secondary-fixed-variant": "#004b73",
+          "primary-fixed-dim": "#c3c0ff",
+          "primary-fixed": "#e3dfff",
+          "surface": "#faf8ff"
+        },
+        "borderRadius": {
+          "DEFAULT": "0.25rem",
+          "lg": "0.5rem",
+          "xl": "0.75rem",
+          "full": "9999px"
+        },
+        "spacing": {
+          "margin": "2rem",
+          "space-sm": "0.5rem",
+          "space-xs": "0.25rem",
+          "space-lg": "1.5rem",
+          "gutter-sm": "1rem",
+          "margin-lg": "3rem",
+          "gutter": "1.5rem",
+          "margin-sm": "1rem",
+          "space-md": "1rem",
+          "space-xl": "2.5rem"
+        },
+        "fontFamily": {
+          "headline-xl": [
+            "Plus Jakarta Sans"
+          ],
+          "body-lg": [
+            "Inter"
+          ],
+          "body-sm": [
+            "Inter"
+          ],
+          "headline-lg": [
+            "Plus Jakarta Sans"
+          ],
+          "headline-xl-mobile": [
+            "Plus Jakarta Sans"
+          ],
+          "headline-md": [
+            "Plus Jakarta Sans"
+          ],
+          "label-sm": [
+            "Plus Jakarta Sans"
+          ],
+          "display-lg": [
+            "Plus Jakarta Sans"
+          ],
+          "label-lg": [
+            "Plus Jakarta Sans"
+          ],
+          "body-md": [
+            "Inter"
+          ],
+          "display-lg-mobile": [
+            "Plus Jakarta Sans"
+          ],
+          "label-md": [
+            "Plus Jakarta Sans"
+          ]
+        },
+        "fontSize": {
+          "headline-xl": [
+            "36px",
+            {
+              "lineHeight": "44px",
+              "letterSpacing": "-0.02em",
+              "fontWeight": "700"
+            }
+          ],
+          "body-lg": [
+            "16px",
+            {
+              "lineHeight": "24px",
+              "letterSpacing": "-0.005em",
+              "fontWeight": "400"
+            }
+          ],
+          "body-sm": [
+            "12px",
+            {
+              "lineHeight": "16px",
+              "letterSpacing": "0.005em",
+              "fontWeight": "400"
+            }
+          ],
+          "headline-lg": [
+            "24px",
+            {
+              "lineHeight": "32px",
+              "letterSpacing": "-0.015em",
+              "fontWeight": "600"
+            }
+          ],
+          "headline-xl-mobile": [
+            "26px",
+            {
+              "lineHeight": "34px",
+              "letterSpacing": "-0.015em",
+              "fontWeight": "600"
+            }
+          ],
+          "headline-md": [
+            "20px",
+            {
+              "lineHeight": "28px",
+              "letterSpacing": "-0.01em",
+              "fontWeight": "600"
+            }
+          ],
+          "label-sm": [
+            "11px",
+            {
+              "lineHeight": "14px",
+              "letterSpacing": "0.04em",
+              "fontWeight": "700"
+            }
+          ],
+          "display-lg": [
+            "48px",
+            {
+              "lineHeight": "56px",
+              "letterSpacing": "-0.025em",
+              "fontWeight": "700"
+            }
+          ],
+          "label-lg": [
+            "14px",
+            {
+              "lineHeight": "20px",
+              "letterSpacing": "0.01em",
+              "fontWeight": "600"
+            }
+          ],
+          "body-md": [
+            "14px",
+            {
+              "lineHeight": "20px",
+              "letterSpacing": "0",
+              "fontWeight": "400"
+            }
+          ],
+          "display-lg-mobile": [
+            "32px",
+            {
+              "lineHeight": "40px",
+              "letterSpacing": "-0.02em",
+              "fontWeight": "700"
+            }
+          ],
+          "label-md": [
+            "12px",
+            {
+              "lineHeight": "16px",
+              "letterSpacing": "0.02em",
+              "fontWeight": "600"
+            }
+          ]
+        }
+      },
+    },
+  }</script><aside class="fixed left-0 top-0 h-full w-72 bg-inverse-surface text-inverse-on-surface z-50 flex flex-col justify-between py-6 px-4 shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex flex-col gap-6"><div class="flex items-center gap-3 px-3 py-2"><div class="w-10 h-10 rounded-xl bg-primary-container flex items-center justify-center text-on-primary shadow-sm"><span class="material-symbols-outlined text-[24px]">storefront</span></div><div><h1 class="font-headline-md text-headline-md leading-none text-white tracking-tight">MarketPulse</h1><p class="font-label-sm text-label-sm uppercase tracking-wider text-surface-variant/70 mt-1">MarketPulse Admin</p></div></div><nav class="flex flex-col gap-1.5" data-active-classes="bg-primary-container text-on-primary font-label-lg font-bold shadow-sm"><a aria-current="page" class="flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all bg-primary-container text-on-primary font-label-lg font-bold shadow-sm" data-path="dashboard" href="#"><span class="material-symbols-outlined text-[22px]">space_dashboard</span><span class="">Dashboard</span></a><a class="flex items-center gap-3 px-3.5 py-3 rounded-xl font-label-lg text-label-lg text-inverse-on-surface/75 hover:bg-inverse-surface/80 hover:text-white transition-all" data-path="products" href="#"><span class="material-symbols-outlined text-[22px]">inventory_2</span><span class="">Products</span></a><a class="flex items-center gap-3 px-3.5 py-3 rounded-xl font-label-lg text-label-lg text-inverse-on-surface/75 hover:bg-inverse-surface/80 hover:text-white transition-all" data-path="orders" href="#"><span class="material-symbols-outlined text-[22px]">local_shipping</span><span class="">Orders</span></a><a class="flex items-center gap-3 px-3.5 py-3 rounded-xl font-label-lg text-label-lg text-inverse-on-surface/75 hover:bg-inverse-surface/80 hover:text-white transition-all" data-path="customers" href="#"><span class="material-symbols-outlined text-[22px]">group</span><span class="">Customers / Users</span></a><a class="flex items-center gap-3 px-3.5 py-3 rounded-xl font-label-lg text-label-lg text-inverse-on-surface/75 hover:bg-inverse-surface/80 hover:text-white transition-all" data-path="settings" href="#"><span class="material-symbols-outlined text-[22px]">settings</span><span class="">Settings</span></a></nav></div><div class="pt-4"><div class="bg-surface-container-highest/10 rounded-xl p-3 flex items-center justify-between"><div class="flex items-center gap-3 min-w-0"><div class="w-9 h-9 rounded-full bg-primary-container flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-on-primary text-[20px]">admin_panel_settings</span></div><div class="min-w-0 flex-1"><p class="font-label-md text-label-md text-white truncate font-medium">Nguyen Admin</p><p class="font-label-sm text-label-sm text-surface-variant/60 truncate">Super Admin</p></div></div><a class="p-1.5 text-inverse-on-surface/60 hover:text-white hover:bg-inverse-surface/80 rounded-lg transition-colors" data-path="login" href="#" title="Sign out"><span class="material-symbols-outlined text-[20px]">logout</span></a></div></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-16 bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 flex items-center justify-between px-gutter"><div class="flex items-center gap-2 font-label-md text-label-md text-on-surface-variant"><span class="font-medium text-on-surface-variant">Admin</span><span class="material-symbols-outlined text-[16px]">chevron_right</span><span class="font-semibold text-on-surface">Dashboard</span></div><div class="flex items-center gap-5"><div class="relative hidden sm:block w-72"><span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span><input class="w-full h-10 pl-9 pr-14 bg-surface-container-lowest rounded-xl font-body-sm text-body-sm text-on-surface placeholder:text-outline focus:outline-none shadow-[0_1px_3px_0_rgba(15,23,42,0.04)]" placeholder="Search catalog, orders..." type="text"><kbd class="absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">Ctrl+K</kbd></div><div class="flex items-center gap-2"><button class="relative p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-full transition-colors" type="button"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-error"></span></button><button class="p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-full transition-colors" type="button"><span class="material-symbols-outlined text-[22px]">help_outline</span></button></div><div class="flex items-center pl-2"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full pt-16 bg-background px-gutter min-h-screen"><div class="flex flex-col w-full pb-12">
+<!-- Top Executive Bar / Breadcrumb Navigation -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 py-6 border-b border-outline-variant/30">
+<div class="flex flex-col gap-1.5">
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-label-sm text-label-sm tracking-wider uppercase font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+          Real-Time Metrics
+        </span>
+<span class="text-outline font-body-sm text-body-sm">• Live sync via Socket.io</span>
+</div>
+<h1 class="font-headline-xl text-headline-xl text-on-surface tracking-tight">Executive Dashboard</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Real-time overview of marketplace performance, COD revenue, and order velocity</p>
+</div>
+<!-- Toolbar Filters & Export -->
+<div class="flex items-center flex-wrap gap-3">
+<div class="inline-flex p-1 rounded-xl bg-surface-container shadow-sm border border-outline-variant/30">
+<button class="px-3.5 py-1.5 rounded-lg bg-primary-container text-on-primary font-label-md text-label-md font-semibold shadow-sm transition-all" type="button">
+          Today
+        </button>
+<button class="px-3.5 py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-colors" type="button">
+          Last 7 Days
+        </button>
+<button class="px-3.5 py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-colors" type="button">
+          This Month
+        </button>
+<button class="px-3.5 py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-colors" type="button">
+          Year to Date
+        </button>
+</div>
+<button class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-surface-container-lowest hover:bg-surface-container transition-all text-on-surface font-label-md text-label-md shadow-sm border border-outline-variant/40 hover:shadow" type="button">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">download</span>
+<span class="">Export Report</span>
+</button>
+</div>
+</div>
+<!-- Key Metrics Row (4-Column Bento Cards) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mt-6">
+<!-- Card 1: Revenue -->
+<div class="relative overflow-hidden bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-outline-variant/40 flex flex-col justify-between group hover:shadow-md transition-all">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">Total Revenue / GMV</span>
+<span class="font-headline-lg text-headline-lg font-bold text-on-surface mt-2 font-mono tracking-tight">42.850.000 ₫</span>
+</div>
+<div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[22px]">payments</span>
+</div>
+</div>
+<div class="mt-4 flex items-center justify-between">
+<span class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md font-mono">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+          +18.4% vs last week
+        </span>
+<span class="font-label-sm text-label-sm text-outline">Target: 45M ₫</span>
+</div>
+<!-- Micro Sparkline Graph -->
+<div class="mt-3 w-full h-9 overflow-hidden">
+
+</div>
+</div>
+<!-- Card 2: Orders -->
+<div class="relative overflow-hidden bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-outline-variant/40 flex flex-col justify-between group hover:shadow-md transition-all">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">Today's Orders</span>
+<span class="font-headline-lg text-headline-lg font-bold text-on-surface mt-2 font-mono tracking-tight">38 Orders</span>
+</div>
+<div class="w-10 h-10 rounded-xl bg-secondary-fixed text-secondary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[22px]">shopping_bag</span>
+</div>
+</div>
+<div class="mt-4">
+<div class="flex items-center justify-between text-label-sm font-label-sm mb-1.5">
+<span class="font-medium text-on-surface-variant">Payment Method Share</span>
+<span class="font-mono font-semibold text-secondary">89% COD</span>
+</div>
+<!-- Segmented bar -->
+<div class="w-full h-2.5 rounded-full bg-surface-container flex overflow-hidden">
+<div class="h-full bg-secondary-container" style="width: 89%" title="34 COD Orders"></div>
+<div class="h-full bg-primary" style="width: 11%" title="4 Digital MoMo/Card Orders"></div>
+</div>
+</div>
+<div class="mt-3 flex items-center gap-1.5 text-label-sm font-label-sm">
+<span class="px-2 py-0.5 rounded-md bg-secondary-fixed/50 text-on-secondary-fixed-variant font-mono font-medium">34 COD</span>
+<span class="text-outline">•</span>
+<span class="px-2 py-0.5 rounded-md bg-primary-fixed/60 text-on-primary-fixed-variant font-mono font-medium">4 Digital Payments</span>
+</div>
+</div>
+<!-- Card 3: Inventory Alerts -->
+<div class="relative overflow-hidden bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-outline-variant/40 flex flex-col justify-between group hover:shadow-md transition-all">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">Active Inventory</span>
+<span class="font-headline-lg text-headline-lg font-bold text-on-surface mt-2 font-mono tracking-tight">124 SKUs</span>
+</div>
+<div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[22px]">inventory_2</span>
+</div>
+</div>
+<div class="mt-4">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-tertiary-fixed text-on-tertiary-fixed-variant font-label-sm text-label-sm font-semibold">
+<span class="w-2 h-2 rounded-full bg-tertiary animate-ping shrink-0"></span>
+<span class="">4 SKUs Restock Needed</span>
+</div>
+</div>
+<div class="mt-3 text-body-sm font-body-sm text-on-surface-variant truncate">
+<span class="font-medium text-tertiary font-mono">UrbanStep</span> (2), <span class="font-medium text-tertiary font-mono">Crafted Saigon</span> (2) low stock
+      </div>
+</div>
+<!-- Card 4: New Users -->
+<div class="relative overflow-hidden bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-outline-variant/40 flex flex-col justify-between group hover:shadow-md transition-all">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">New Customer Signups</span>
+<span class="font-headline-lg text-headline-lg font-bold text-on-surface mt-2 font-mono tracking-tight">12 Customers</span>
+</div>
+<div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[22px]">group_add</span>
+</div>
+</div>
+<div class="mt-4 flex items-center justify-between">
+<span class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md font-mono">
+<span class="material-symbols-outlined text-[14px]">arrow_upward</span>
+          +25% vs yesterday
+        </span>
+<span class="font-label-sm text-label-sm text-outline">100% Mobile</span>
+</div>
+<div class="mt-3 text-body-sm font-body-sm text-on-surface-variant">
+<span class="font-semibold text-on-surface font-mono">8</span> OTP verified, <span class="font-semibold text-on-surface font-mono">4</span> 1st purchase completed
+      </div>
+</div>
+</div>
+<!-- Data Visualization Grid (65% / 35%) -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
+<!-- Left: Weekly Revenue & Order Trends (8 of 12 cols = 66.6%) -->
+<div class="lg:col-span-8 bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/40 flex flex-col justify-between">
+<div>
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-outline-variant/30">
+<div>
+<div class="flex items-center gap-2">
+<h2 class="font-headline-md text-headline-md font-bold text-on-surface tracking-tight">Revenue &amp; Order Trends</h2>
+<span class="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-primary-fixed text-on-primary-fixed-variant">W43 • 2024</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Daily breakdown between Cash-on-Delivery collections and Digital Payment checkout</p>
+</div>
+<div class="flex items-center gap-2">
+<div class="inline-flex p-0.5 rounded-lg bg-surface-container text-label-sm font-label-sm">
+<button class="px-3 py-1 rounded-md bg-surface-container-lowest text-primary font-semibold shadow-xs" type="button">
+                Gross Revenue
+              </button>
+<button class="px-3 py-1 rounded-md text-on-surface-variant hover:text-on-surface transition-colors" type="button">
+                Order Volume
+              </button>
+</div>
+</div>
+</div>
+<!-- SVG Chart Workspace -->
+<div class="relative mt-6 h-72 w-full">
+<!-- Horizontal Grid Lines -->
+<div class="absolute inset-0 flex flex-col justify-between pointer-events-none">
+<div class="border-b border-dashed border-outline-variant/30 w-full flex items-center justify-between text-label-sm font-label-sm text-outline font-mono"><span class="">50M ₫</span></div>
+<div class="border-b border-dashed border-outline-variant/30 w-full flex items-center justify-between text-label-sm font-label-sm text-outline font-mono"><span class="">40M ₫</span></div>
+<div class="border-b border-dashed border-outline-variant/30 w-full flex items-center justify-between text-label-sm font-label-sm text-outline font-mono"><span class="">30M ₫</span></div>
+<div class="border-b border-dashed border-outline-variant/30 w-full flex items-center justify-between text-label-sm font-label-sm text-outline font-mono"><span class="">20M ₫</span></div>
+<div class="border-b border-dashed border-outline-variant/30 w-full flex items-center justify-between text-label-sm font-label-sm text-outline font-mono"><span class="">10M ₫</span></div>
+<div class="border-b border-outline-variant/50 w-full flex items-center justify-between text-label-sm font-label-sm text-outline font-mono"><span class="">0 ₫</span></div>
+</div>
+<!-- SVG Graphic & Stacked Columns -->
+<div class="absolute inset-0 pl-14 pr-4 pt-2 pb-6">
+<svg class="w-full h-full overflow-visible" fill="none" preserveAspectRatio="none" viewBox="0 0 700 240">
+<defs>
+<linearGradient id="areaGlow" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#4338ca" stop-opacity="0.3"></stop>
+<stop offset="80%" stop-color="#4338ca" stop-opacity="0.02"></stop>
+</linearGradient>
+</defs>
+<!-- Stacked Bar Graphics for 7 Days -->
+<!-- Mon (Col 1: x=40) -->
+<rect fill="#5bb8fe" height="96" opacity="0.85" rx="4" width="28" x="35" y="140"></rect>
+<rect fill="#4338ca" height="15" rx="3" width="28" x="35" y="125"></rect>
+<!-- Tue (Col 2: x=135) -->
+<rect fill="#5bb8fe" height="126" opacity="0.85" rx="4" width="28" x="135" y="110"></rect>
+<rect fill="#4338ca" height="15" rx="3" width="28" x="135" y="95"></rect>
+<!-- Wed (Col 3: x=235) -->
+<rect fill="#5bb8fe" height="86" opacity="0.85" rx="4" width="28" x="235" y="150"></rect>
+<rect fill="#4338ca" height="15" rx="3" width="28" x="235" y="135"></rect>
+<!-- Thu (Col 4: x=335) -->
+<rect fill="#5bb8fe" height="146" opacity="0.85" rx="4" width="28" x="335" y="90"></rect>
+<rect fill="#4338ca" height="20" rx="3" width="28" x="335" y="70"></rect>
+<!-- Fri (Col 5: x=435) -->
+<rect fill="#5bb8fe" height="176" opacity="0.85" rx="4" width="28" x="435" y="60"></rect>
+<rect fill="#4338ca" height="18" rx="3" width="28" x="435" y="42"></rect>
+<!-- Sat (Col 6: x=535) -->
+<rect fill="#5bb8fe" height="196" opacity="0.85" rx="4" width="28" x="535" y="40"></rect>
+<rect fill="#4338ca" height="18" rx="3" width="28" x="535" y="22"></rect>
+<!-- Sun (Col 7: x=635) -->
+<rect fill="#5bb8fe" height="191" rx="4" width="28" x="635" y="45"></rect>
+<rect fill="#4338ca" height="20" rx="3" width="28" x="635" y="25"></rect>
+<!-- Area Fill Under Spline -->
+<path d="M49,125 C149,95 249,135 349,70 C449,42 549,22 649,25 L649,240 L49,240 Z" fill="url(#areaGlow)"></path>
+<!-- Smooth Curve Line Layer -->
+<path d="M49,125 C149,95 249,135 349,70 C449,42 549,22 649,25" fill="none" stroke="#2a14b4" stroke-linecap="round" stroke-width="3"></path>
+<!-- Glowing Sunday Data Point -->
+<circle class="animate-pulse" cx="649" cy="25" fill="#4338ca" r="7"></circle>
+<circle cx="649" cy="25" fill="#ffffff" r="3.5"></circle>
+</svg>
+<!-- Floating Interactive Tooltip Hover Card at Sunday -->
+<div class="absolute right-0 top-0 -translate-y-4 bg-inverse-surface text-inverse-on-surface px-3 py-2.5 rounded-xl shadow-xl flex flex-col gap-0.5 z-20 pointer-events-none border border-surface-variant/20">
+<div class="flex items-center gap-1.5 font-label-sm text-label-sm text-surface-variant/80">
+<span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+<span class="font-semibold text-white">Sun, Oct 27 (Today)</span>
+</div>
+<span class="font-label-lg text-label-lg font-mono font-bold text-white tracking-tight">42.850.000 ₫</span>
+<span class="font-body-sm text-[11px] text-surface-variant/70">38 Orders: 34 COD / 4 MoMo</span>
+</div>
+</div>
+<!-- X-Axis Labels -->
+<div class="absolute bottom-0 left-14 right-4 flex items-center justify-between text-label-sm font-label-sm text-on-surface-variant font-medium pt-2">
+<span class="w-10 text-center">Mon</span>
+<span class="w-10 text-center">Tue</span>
+<span class="w-10 text-center">Wed</span>
+<span class="w-10 text-center">Thu</span>
+<span class="w-10 text-center">Fri</span>
+<span class="w-10 text-center">Sat</span>
+<span class="w-10 text-center font-bold text-primary font-mono">Sun (Today)</span>
+</div>
+</div>
+</div>
+<!-- Chart Footer Legend & Aggregate Stats -->
+<div class="mt-8 pt-4 border-t border-outline-variant/30 flex flex-wrap items-center justify-between gap-4">
+<div class="flex items-center gap-4 text-label-sm font-label-sm">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded bg-secondary-container"></span>
+<span class="text-on-surface font-medium">COD Cash Volume (89.5%)</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded bg-primary-container"></span>
+<span class="text-on-surface font-medium">Digital MoMo / Cards (10.5%)</span>
+</div>
+</div>
+<div class="flex items-center gap-3 text-label-sm font-label-sm text-on-surface-variant">
+<span class="">Avg. Basket Value:</span>
+<span class="font-mono font-bold text-on-surface px-2 py-0.5 rounded bg-surface-container">1.127.000 ₫</span>
+</div>
+</div>
+</div>
+<!-- Right: COD Settlement & Order Distribution (4 of 12 cols = 33.3%) -->
+<div class="lg:col-span-4 bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/40 flex flex-col justify-between">
+<div>
+<div class="pb-3 border-b border-outline-variant/30">
+<div class="flex items-center justify-between">
+<h2 class="font-headline-md text-headline-md font-bold text-on-surface tracking-tight">COD Settlement</h2>
+<span class="material-symbols-outlined text-outline text-[20px]">donut_large</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Current batch fulfillment &amp; cash collection cycle</p>
+</div>
+<!-- SVG Donut Chart with Center Stat -->
+<div class="relative w-48 h-48 mx-auto my-5 flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+<!-- Background base circle -->
+<circle cx="50" cy="50" fill="none" r="38" stroke="#eaedff" stroke-width="12"></circle>
+<!-- Slice 1: Delivered & Collected (52%) - Emerald -->
+<circle cx="50" cy="50" fill="none" r="38" stroke="#059669" stroke-dasharray="124.2 238.8" stroke-dashoffset="0" stroke-linecap="round" stroke-width="12"></circle>
+<!-- Slice 2: In-Transit (30%) - Blue/Secondary -->
+<circle cx="50" cy="50" fill="none" r="38" stroke="#006398" stroke-dasharray="71.6 238.8" stroke-dashoffset="-128" stroke-linecap="round" stroke-width="12"></circle>
+<!-- Slice 3: Pending Confirmation (12%) - Amber -->
+<circle cx="50" cy="50" fill="none" r="38" stroke="#d97706" stroke-dasharray="28.6 238.8" stroke-dashoffset="-203" stroke-linecap="round" stroke-width="12"></circle>
+<!-- Slice 4: Cancelled / Return (6%) - Tertiary/Rose -->
+<circle cx="50" cy="50" fill="none" r="38" stroke="#ba1a1a" stroke-dasharray="14.3 238.8" stroke-dashoffset="-233" stroke-linecap="round" stroke-width="12"></circle>
+</svg>
+<!-- Donut Centered Typography -->
+<div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+<span class="font-headline-lg text-headline-lg font-bold text-on-surface font-mono leading-none">48</span>
+<span class="font-label-sm text-[11px] uppercase tracking-wider text-on-surface-variant font-semibold mt-1">Active Batch</span>
+<span class="font-body-sm text-[10px] text-outline">Orders</span>
+</div>
+</div>
+<!-- Metric Details List -->
+<div class="flex flex-col gap-2.5 mt-2">
+<div class="flex items-center justify-between text-body-sm font-body-sm p-2 rounded-lg bg-surface-container/50">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
+<span class="text-on-surface font-medium">Delivered &amp; Cash Collected</span>
+</div>
+<div class="text-right">
+<span class="font-mono font-bold text-on-surface">25</span>
+<span class="text-outline text-[11px] block font-mono">28.5M ₫ (100% remitted)</span>
+</div>
+</div>
+<div class="flex items-center justify-between text-body-sm font-body-sm p-2 rounded-lg hover:bg-surface-container/30 transition-colors">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary"></span>
+<span class="text-on-surface font-medium">In-Transit (GHTK / GHN)</span>
+</div>
+<div class="text-right">
+<span class="font-mono font-bold text-on-surface">14</span>
+<span class="text-outline text-[11px] block font-mono">16.2M ₫ in-courier</span>
+</div>
+</div>
+<div class="flex items-center justify-between text-body-sm font-body-sm p-2 rounded-lg hover:bg-surface-container/30 transition-colors">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-amber-600"></span>
+<span class="text-on-surface font-medium">Pending Confirmation</span>
+</div>
+<div class="text-right">
+<span class="font-mono font-bold text-on-surface">6</span>
+<span class="text-outline text-[11px] block font-mono">6.8M ₫ unassigned</span>
+</div>
+</div>
+<div class="flex items-center justify-between text-body-sm font-body-sm p-2 rounded-lg hover:bg-surface-container/30 transition-colors">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-error"></span>
+<span class="text-on-surface font-medium">Cancelled / Return Failed</span>
+</div>
+<div class="text-right">
+<span class="font-mono font-bold text-on-surface">3</span>
+<span class="text-outline text-[11px] block font-mono">3.1M ₫ reversed</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Live Sync Tag -->
+<div class="mt-4 pt-3 border-t border-outline-variant/30 flex items-center justify-between text-[11px] font-label-sm text-outline">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px] text-emerald-600">verified_user</span>
+          GHTK &amp; GHN API reconciled
+        </span>
+<span class="font-mono">15m ago</span>
+</div>
+</div>
+</div>
+<!-- Bottom Workspace Row: Operations & Activity Log (50% / 50%) -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+<!-- Left: Pending Operational Actions -->
+
+<!-- Right: Latest Marketplace Activity Feed -->
+
+</div>
+</div>
+<script>
+  // Micro-interactions for toolbar buttons & chart switch
+  document.addEventListener('DOMContentLoaded', () => {
+    const timeButtons = document.querySelectorAll('.inline-flex button');
+    timeButtons.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const parent = btn.parentElement;
+        if (!parent) return;
+        parent.querySelectorAll('button').forEach(b => {
+          b.className = 'px-3.5 py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-colors';
+        });
+        btn.className = 'px-3.5 py-1.5 rounded-lg bg-primary-container text-on-primary font-label-md text-label-md font-semibold shadow-sm transition-all';
+      });
+    });
+  });
+</script></main></div>
+
+</body></html>

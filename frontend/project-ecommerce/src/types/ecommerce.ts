@@ -220,3 +220,180 @@ export interface InventoryStats {
   lowStockCount: number;
   outOfStockCount: number;
 }
+
+/**
+ * Admin Executive Dashboard Interfaces matching scriptDb.sql schema
+ */
+export type TimeRangeFilter = 'today' | '7d' | 'month' | 'ytd';
+export type TrendMetricType = 'revenue' | 'volume';
+
+export interface KpiCardRevenue {
+  totalRevenue: number;
+  formattedRevenue: string;
+  changePercent: number;
+  isPositive: boolean;
+  comparisonLabel: string;
+  targetRevenue: string;
+  sparkline: number[];
+}
+
+export interface KpiCardOrders {
+  totalOrders: number;
+  codCount: number;
+  codPercent: number;
+  digitalCount: number;
+  digitalPercent: number;
+}
+
+export interface KpiCardInventory {
+  totalSkus: number;
+  restockNeededCount: number;
+  lowStockShops: { shopName: string; count: number }[];
+}
+
+export interface KpiCardCustomers {
+  totalNew: number;
+  changePercent: number;
+  isPositive: boolean;
+  comparisonLabel: string;
+  mobilePercent: number;
+  otpVerifiedCount: number;
+  firstPurchaseCount: number;
+}
+
+export interface RevenueTrendItem {
+  day: string;
+  fullDate: string;
+  codRevenue: number;
+  digitalRevenue: number;
+  totalRevenue: number;
+  orderVolume: number;
+  codHeight: number;
+  digitalHeight: number;
+  splineY: number;
+  isToday?: boolean;
+}
+
+export interface CodSettlementItem {
+  id: string;
+  label: string;
+  sublabel: string;
+  count: number;
+  amount: string;
+  percentage: number;
+  colorClass: string;
+  dotColorClass: string;
+  strokeDasharray: string;
+  strokeDashoffset: string;
+}
+
+export interface OperationalAlertItem {
+  id: string;
+  type: 'shop_approval' | 'return_request' | 'inventory_warning' | 'system_alert';
+  title: string;
+  description: string;
+  timestamp: string;
+  priority: 'high' | 'medium' | 'low';
+  actionLabel: string;
+  actionUrl?: string;
+}
+
+export interface MarketplaceActivityItem {
+  id: string;
+  icon: string;
+  iconBg: string;
+  iconColor: string;
+  title: string;
+  description: string;
+  timeAgo: string;
+  tag?: string;
+  tagColor?: string;
+}
+
+export interface AdminDashboardData {
+  kpis: {
+    revenue: KpiCardRevenue;
+    orders: KpiCardOrders;
+    inventory: KpiCardInventory;
+    customers: KpiCardCustomers;
+  };
+  revenueTrend: {
+    weekLabel: string;
+    points: RevenueTrendItem[];
+    avgBasketValue: string;
+    codVolumePercent: number;
+    digitalVolumePercent: number;
+  };
+  codSettlement: {
+    totalActiveBatch: number;
+    slices: CodSettlementItem[];
+    lastSynced: string;
+  };
+  operations: OperationalAlertItem[];
+  activities: MarketplaceActivityItem[];
+}
+
+/**
+ * Admin Order Management Interfaces matching scriptDb.sql and admin_order.html
+ */
+export type OrderStatus = 'pending' | 'shipping' | 'delivered' | 'packing' | 'cancelled';
+export type OrderPaymentMethod = 'COD' | 'MOMO' | 'VISA' | 'CARD';
+export type OrderCourier = 'GHTK' | 'GHN' | 'VIETTEL_POST';
+
+export interface OrderCustomerInfo {
+  name: string;
+  phone: string;
+  address: string;
+}
+
+export interface OrderLineItem {
+  id?: number;
+  name: string;
+  sku?: string;
+  quantity: number;
+  price: number;
+  image?: string;
+}
+
+export interface AdminOrderItem {
+  id: string; // e.g. "#ORD-9821"
+  source: string; // e.g. "Web Store • GHTK", "TikTok Shop"
+  hasCodAlert?: boolean;
+  createdAt: string; // e.g. "27/10/2024"
+  timeAgo: string; // e.g. "14:18 (15m trước)"
+  customer: OrderCustomerInfo;
+  shopName: string;
+  productSummary: string;
+  items: OrderLineItem[];
+  paymentMethod: OrderPaymentMethod;
+  paymentNote: string;
+  totalAmount: number;
+  formattedTotal: string;
+  codAmount?: number;
+  status: OrderStatus;
+  statusLabel: string;
+  courier: OrderCourier;
+  courierLabel: string;
+  trackingCode?: string;
+}
+
+export interface OrderStatusCounts {
+  all: number;
+  pending: number;
+  shipping: number;
+  delivered: number;
+  cancelled: number;
+}
+
+export interface OrderFilterParams {
+  search?: string;
+  statusTab?: 'all' | 'pending' | 'shipping' | 'delivered' | 'cancelled';
+  dateRange?: string;
+  paymentMethod?: string;
+  vendor?: string;
+  courier?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+

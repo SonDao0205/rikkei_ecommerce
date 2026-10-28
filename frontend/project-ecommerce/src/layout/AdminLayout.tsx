@@ -55,29 +55,47 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           {/* Nav Items */}
           <nav className="flex flex-col gap-1.5">
             {navItems.map((item) => {
+              const isDashboard =
+                location.pathname === "/admin" || location.pathname === "/admin/dashboard";
               const isActive =
-                item.path === location.pathname ||
+                (item.path === "/admin/dashboard" && isDashboard) ||
                 (item.path === "/admin/products" &&
-                  (location.pathname === "/admin" || location.pathname.startsWith("/admin/product")));
+                  location.pathname.startsWith("/admin/product")) ||
+                (item.path !== "/admin/dashboard" &&
+                  item.path !== "/admin/products" &&
+                  item.path === location.pathname);
 
               return (
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`flex items-center gap-3 px-3.5 py-3 rounded-xl font-label-lg text-label-lg transition-all ${
+                  className={`flex items-center justify-between px-3.5 py-3 rounded-xl font-label-lg text-label-lg transition-all ${
                     isActive
                       ? "bg-primary-container text-on-primary font-bold shadow-sm"
                       : "text-inverse-on-surface/75 hover:bg-inverse-surface/80 hover:text-white"
                   }`}
                 >
-                  <span
-                    className={`material-symbols-outlined text-[22px] ${
-                      isActive ? "text-white" : ""
-                    }`}
-                  >
-                    {item.icon}
-                  </span>
-                  <span>{item.label}</span>
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={`material-symbols-outlined text-[22px] ${
+                        isActive ? "text-white" : ""
+                      }`}
+                    >
+                      {item.icon}
+                    </span>
+                    <span>{item.label}</span>
+                  </div>
+                  {item.path === "/admin/orders" && (
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-label-sm font-bold ${
+                        isActive
+                          ? "bg-white/20 text-on-primary"
+                          : "bg-surface-container-highest/20 text-inverse-on-surface/80"
+                      }`}
+                    >
+                      48
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -121,7 +139,13 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           <div className="flex items-center gap-2 font-label-md text-label-md text-on-surface-variant">
             <span className="font-medium text-on-surface-variant">Admin</span>
             <span className="material-symbols-outlined text-[16px]">chevron_right</span>
-            <span className="font-semibold text-on-surface">Products</span>
+            <span className="font-semibold text-on-surface">
+              {location.pathname.startsWith("/admin/product")
+                ? "Products"
+                : location.pathname.startsWith("/admin/order")
+                ? "Orders"
+                : "Dashboard"}
+            </span>
           </div>
 
           <div className="flex items-center gap-5">

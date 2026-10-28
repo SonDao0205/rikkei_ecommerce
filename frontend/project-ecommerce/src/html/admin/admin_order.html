@@ -1,0 +1,783 @@
+<!DOCTYPE html><html lang="en" style="width: 1551px; height: 1465px; overflow: hidden; position: relative;"><head>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><meta content="web_dashboard" name="shell-type"></head><body class="bg-background font-body-md text-body-md text-on-surface"><svg aria-hidden="true" class="inline-defs-container" style="position:absolute;width:0;height:0;overflow:hidden"></svg><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_dashboard" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Plus+Jakarta+Sans:wght@600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "tertiary": "#7b0022",
+          "on-error": "#ffffff",
+          "error-container": "#ffdad6",
+          "surface-tint": "#5148d7",
+          "surface-variant": "#dae2fd",
+          "on-surface": "#131b2e",
+          "primary-container": "#4338ca",
+          "on-secondary-fixed": "#001d31",
+          "on-tertiary": "#ffffff",
+          "on-secondary": "#ffffff",
+          "tertiary-container": "#a60031",
+          "secondary-container": "#5bb8fe",
+          "on-primary-container": "#c1beff",
+          "inverse-primary": "#c3c0ff",
+          "secondary-fixed-dim": "#93ccff",
+          "on-error-container": "#93000a",
+          "primary": "#2a14b4",
+          "surface-dim": "#d2d9f4",
+          "surface-container-high": "#e2e7ff",
+          "secondary-fixed": "#cce5ff",
+          "tertiary-fixed": "#ffdadb",
+          "on-background": "#131b2e",
+          "on-surface-variant": "#464554",
+          "inverse-on-surface": "#eef0ff",
+          "on-primary-fixed-variant": "#372abf",
+          "background": "#faf8ff",
+          "on-tertiary-container": "#ffb0b5",
+          "inverse-surface": "#283044",
+          "on-primary-fixed": "#100069",
+          "outline-variant": "#c7c4d7",
+          "on-secondary-container": "#00476e",
+          "surface-container-highest": "#dae2fd",
+          "on-primary": "#ffffff",
+          "surface-container": "#eaedff",
+          "outline": "#777586",
+          "surface-bright": "#faf8ff",
+          "on-tertiary-fixed-variant": "#92002a",
+          "secondary": "#006398",
+          "surface-container-lowest": "#ffffff",
+          "surface-container-low": "#f2f3ff",
+          "on-tertiary-fixed": "#40000d",
+          "tertiary-fixed-dim": "#ffb2b7",
+          "error": "#ba1a1a",
+          "on-secondary-fixed-variant": "#004b73",
+          "primary-fixed-dim": "#c3c0ff",
+          "primary-fixed": "#e3dfff",
+          "surface": "#faf8ff"
+        },
+        "borderRadius": {
+          "DEFAULT": "0.25rem",
+          "lg": "0.5rem",
+          "xl": "0.75rem",
+          "full": "9999px"
+        },
+        "spacing": {
+          "margin": "2rem",
+          "space-sm": "0.5rem",
+          "space-xs": "0.25rem",
+          "space-lg": "1.5rem",
+          "gutter-sm": "1rem",
+          "margin-lg": "3rem",
+          "gutter": "1.5rem",
+          "margin-sm": "1rem",
+          "space-md": "1rem",
+          "space-xl": "2.5rem"
+        },
+        "fontFamily": {
+          "headline-xl": [
+            "Plus Jakarta Sans"
+          ],
+          "body-lg": [
+            "Inter"
+          ],
+          "body-sm": [
+            "Inter"
+          ],
+          "headline-lg": [
+            "Plus Jakarta Sans"
+          ],
+          "headline-xl-mobile": [
+            "Plus Jakarta Sans"
+          ],
+          "headline-md": [
+            "Plus Jakarta Sans"
+          ],
+          "label-sm": [
+            "Plus Jakarta Sans"
+          ],
+          "display-lg": [
+            "Plus Jakarta Sans"
+          ],
+          "label-lg": [
+            "Plus Jakarta Sans"
+          ],
+          "body-md": [
+            "Inter"
+          ],
+          "display-lg-mobile": [
+            "Plus Jakarta Sans"
+          ],
+          "label-md": [
+            "Plus Jakarta Sans"
+          ]
+        },
+        "fontSize": {
+          "headline-xl": [
+            "36px",
+            {
+              "lineHeight": "44px",
+              "letterSpacing": "-0.02em",
+              "fontWeight": "700"
+            }
+          ],
+          "body-lg": [
+            "16px",
+            {
+              "lineHeight": "24px",
+              "letterSpacing": "-0.005em",
+              "fontWeight": "400"
+            }
+          ],
+          "body-sm": [
+            "12px",
+            {
+              "lineHeight": "16px",
+              "letterSpacing": "0.005em",
+              "fontWeight": "400"
+            }
+          ],
+          "headline-lg": [
+            "24px",
+            {
+              "lineHeight": "32px",
+              "letterSpacing": "-0.015em",
+              "fontWeight": "600"
+            }
+          ],
+          "headline-xl-mobile": [
+            "26px",
+            {
+              "lineHeight": "34px",
+              "letterSpacing": "-0.015em",
+              "fontWeight": "600"
+            }
+          ],
+          "headline-md": [
+            "20px",
+            {
+              "lineHeight": "28px",
+              "letterSpacing": "-0.01em",
+              "fontWeight": "600"
+            }
+          ],
+          "label-sm": [
+            "11px",
+            {
+              "lineHeight": "14px",
+              "letterSpacing": "0.04em",
+              "fontWeight": "700"
+            }
+          ],
+          "display-lg": [
+            "48px",
+            {
+              "lineHeight": "56px",
+              "letterSpacing": "-0.025em",
+              "fontWeight": "700"
+            }
+          ],
+          "label-lg": [
+            "14px",
+            {
+              "lineHeight": "20px",
+              "letterSpacing": "0.01em",
+              "fontWeight": "600"
+            }
+          ],
+          "body-md": [
+            "14px",
+            {
+              "lineHeight": "20px",
+              "letterSpacing": "0",
+              "fontWeight": "400"
+            }
+          ],
+          "display-lg-mobile": [
+            "32px",
+            {
+              "lineHeight": "40px",
+              "letterSpacing": "-0.02em",
+              "fontWeight": "700"
+            }
+          ],
+          "label-md": [
+            "12px",
+            {
+              "lineHeight": "16px",
+              "letterSpacing": "0.02em",
+              "fontWeight": "600"
+            }
+          ]
+        }
+      },
+    },
+  }</script><aside class="fixed left-0 top-0 h-full w-72 bg-inverse-surface text-inverse-on-surface z-50 flex flex-col justify-between py-6 px-4 shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex flex-col gap-6"><div class="flex items-center gap-3 px-3 py-2"><div class="w-10 h-10 rounded-xl bg-primary-container flex items-center justify-center text-on-primary shadow-sm"><span class="material-symbols-outlined text-[24px]">storefront</span></div><div><h1 class="font-headline-md text-headline-md leading-none text-white tracking-tight"></h1><h1 class="font-headline-md text-headline-md leading-none text-white tracking-tight" style="--tw-border-spacing-y: 0; --tw-translate-x: 0; --tw-translate-y: 0; --tw-rotate: 0; --tw-skew-x: 0; --tw-skew-y: 0; --tw-scale-x: 1; --tw-scale-y: 1; --tw-pan-x: ; --tw-pan-y: ; --tw-pinch-zoom: ; --tw-scroll-snap-strictness: proximity; --tw-gradient-from-position: ; --tw-gradient-via-position: ; --tw-gradient-to-position: ; --tw-ordinal: ; --tw-slashed-zero: ; --tw-numeric-figure: ; --tw-numeric-spacing: ; --tw-numeric-fraction: ; --tw-ring-inset: ; --tw-ring-offset-width: 0px; --tw-ring-offset-color: #fff; --tw-ring-color: rgb(59 130 246 / 0.5); --tw-ring-offset-shadow: 0 0 #0000; --tw-ring-shadow: 0 0 #0000; --tw-shadow: 0 0 #0000; --tw-shadow-colored: 0 0 #0000; --tw-blur: ; --tw-brightness: ; --tw-contrast: ; --tw-grayscale: ; --tw-hue-rotate: ; --tw-invert: ; --tw-saturate: ; --tw-sepia: ; --tw-drop-shadow: ; --tw-backdrop-blur: ; --tw-backdrop-brightness: ; --tw-backdrop-contrast: ; --tw-backdrop-grayscale: ; --tw-backdrop-hue-rotate: ; --tw-backdrop-invert: ; --tw-backdrop-opacity: ; --tw-backdrop-saturate: ; --tw-backdrop-sepia: ; --tw-contain-size: ; --tw-contain-layout: ; --tw-contain-paint: ; --tw-contain-style: ; --tw-text-opacity: 1; color: rgb(255, 255, 255); outline: none !important; box-shadow: none !important;">MarketPulse</h1><p class="font-label-sm text-label-sm uppercase tracking-wider text-surface-variant/70 mt-1">MarketPulse Admin</p></div></div><nav class="flex flex-col gap-1.5" data-active-classes="bg-primary-container text-on-primary font-label-lg font-bold shadow-sm"><a class="flex items-center gap-3 px-3.5 py-3 rounded-xl font-label-lg text-label-lg text-inverse-on-surface/75 hover:bg-inverse-surface/80 hover:text-white transition-all" data-path="dashboard" href="#"><span class="material-symbols-outlined text-[22px]">space_dashboard</span><span class="">Dashboard</span></a><a class="flex items-center gap-3 px-3.5 py-3 rounded-xl font-label-lg text-label-lg text-inverse-on-surface/75 hover:bg-inverse-surface/80 hover:text-white transition-all" data-path="products" href="#"><span class="material-symbols-outlined text-[22px]">inventory_2</span><span class="">Products</span></a><a class="flex items-center justify-between px-3.5 py-3 rounded-xl font-label-lg text-label-lg bg-primary-container text-on-primary font-bold shadow-sm transition-all" data-path="orders" href="#"><div class="flex items-center gap-3"><span class="material-symbols-outlined text-[22px]">local_shipping</span><span class="">Orders</span></div><span class="px-2 py-0.5 rounded-full bg-white/20 text-on-primary text-label-sm font-bold">48</span></a><a class="flex items-center gap-3 px-3.5 py-3 rounded-xl font-label-lg text-label-lg text-inverse-on-surface/75 hover:bg-inverse-surface/80 hover:text-white transition-all" data-path="customers" href="#"><span class="material-symbols-outlined text-[22px]">group</span><span class="">Customers / Users</span></a><a class="flex items-center gap-3 px-3.5 py-3 rounded-xl font-label-lg text-label-lg text-inverse-on-surface/75 hover:bg-inverse-surface/80 hover:text-white transition-all" data-path="settings" href="#"><span class="material-symbols-outlined text-[22px]">settings</span><span class="">Settings</span></a></nav></div><div class="pt-4"><div class="bg-surface-container-highest/10 rounded-xl p-3 flex items-center justify-between"><div class="flex items-center gap-3 min-w-0"><div class="w-9 h-9 rounded-full bg-primary-container flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-on-primary text-[20px]">admin_panel_settings</span></div><div class="min-w-0 flex-1"><p class="font-label-md text-label-md text-white truncate font-medium">Nguyen Admin</p><p class="font-label-sm text-label-sm text-surface-variant/60 truncate">Super Admin</p></div></div><a class="p-1.5 text-inverse-on-surface/60 hover:text-white hover:bg-inverse-surface/80 rounded-lg transition-colors" data-path="login" href="#" title="Sign out"><span class="material-symbols-outlined text-[20px]">logout</span></a></div></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-16 bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 flex items-center justify-between px-gutter"><div class="flex items-center gap-2 font-label-md text-label-md text-on-surface-variant"><span class="font-medium text-on-surface-variant">Admin</span><span class="material-symbols-outlined text-[16px]">chevron_right</span><span class="font-semibold text-on-surface">Dashboard</span></div><div class="flex items-center gap-5"><div class="relative hidden sm:block w-72"><span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span><input class="w-full h-10 pl-9 pr-14 bg-surface-container-lowest rounded-xl font-body-sm text-body-sm text-on-surface placeholder:text-outline focus:outline-none shadow-[0_1px_3px_0_rgba(15,23,42,0.04)]" placeholder="Search catalog, orders..." type="text"><kbd class="absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">Ctrl+K</kbd></div><div class="flex items-center gap-2"><button class="relative p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-full transition-colors" type="button"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-error"></span></button><button class="p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-full transition-colors" type="button"><span class="material-symbols-outlined text-[22px]">help_outline</span></button></div><div class="flex items-center pl-2"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full pt-16 bg-background px-gutter min-h-screen"><div class="flex flex-col w-full pb-12">
+<!-- Top Operational Banner & Breadcrumb Mirror -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+<div>
+<div class="flex items-center gap-2 mb-1.5">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-secondary-container/20 text-secondary font-label-sm text-label-sm font-semibold tracking-wider uppercase">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>
+          Live Gateway Sync
+        </span>
+<span class="text-on-surface-variant font-label-sm text-label-sm">• Vietnamese Marketplace Cluster #04</span>
+</div>
+<h1 class="font-headline-xl text-headline-xl text-on-surface tracking-tight">Order Management</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-0.5">Track, verify, and fulfill cross-shop customer purchases with automated COD routing.</p>
+</div>
+<!-- Global Bulk & Export Actions -->
+<div class="flex items-center gap-3 shrink-0">
+<button class="inline-flex items-center gap-2 px-4 py-2.5 bg-surface-container-lowest text-on-surface font-label-lg text-label-lg rounded-xl shadow-sm hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-[18px]">download</span>
+        Export (CSV)
+      </button>
+<button class="inline-flex items-center gap-2 px-4 py-2.5 bg-surface-container-high text-on-surface font-label-lg text-label-lg rounded-xl shadow-sm hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined text-[18px]">print</span>
+        Batch Print Labels
+      </button>
+<button class="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-container text-on-primary font-label-lg text-label-lg rounded-xl shadow-md hover:opacity-95 transition-all">
+<span class="material-symbols-outlined text-[18px]">add_task</span>
+        Bulk Confirm (5)
+      </button>
+</div>
+</div>
+<!-- Operational Status Segment Tabs -->
+<div class="flex items-center gap-2 overflow-x-auto pb-2 mb-6 scrollbar-none">
+<button class="group inline-flex items-center gap-2.5 px-4 py-2 rounded-xl bg-primary-container text-on-primary font-label-lg text-label-lg shadow-sm transition-all whitespace-nowrap">
+<span class="">All Orders</span>
+<span class="px-2 py-0.5 rounded-full bg-white/20 text-on-primary text-label-sm font-bold">48</span>
+</button>
+<button class="group inline-flex items-center gap-2.5 px-4 py-2 rounded-xl bg-surface-container-lowest text-on-surface font-label-lg text-label-lg shadow-sm hover:bg-surface-container transition-all whitespace-nowrap">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-tertiary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-tertiary"></span>
+</span>
+<span class="">Pending Confirmation</span>
+<span class="px-2 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-label-sm font-bold">5</span>
+</button>
+<button class="group inline-flex items-center gap-2.5 px-4 py-2 rounded-xl bg-surface-container-lowest text-on-surface font-label-lg text-label-lg shadow-sm hover:bg-surface-container transition-all whitespace-nowrap">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="">Processing &amp; Shipping</span>
+<span class="px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm font-bold">18</span>
+</button>
+<button class="group inline-flex items-center gap-2.5 px-4 py-2 rounded-xl bg-surface-container-lowest text-on-surface font-label-lg text-label-lg shadow-sm hover:bg-surface-container transition-all whitespace-nowrap">
+<span class="w-2 h-2 rounded-full bg-surface-tint"></span>
+<span class="">Delivered &amp; Completed</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm font-bold">23</span>
+</button>
+<button class="group inline-flex items-center gap-2.5 px-4 py-2 rounded-xl bg-surface-container-lowest text-on-surface font-label-lg text-label-lg shadow-sm hover:bg-surface-container transition-all whitespace-nowrap">
+<span class="w-2 h-2 rounded-full bg-error"></span>
+<span class="">Cancelled / Returned</span>
+<span class="px-2 py-0.5 rounded-full bg-error-container text-on-error-container font-label-sm text-label-sm font-bold">2</span>
+</button>
+</div>
+<!-- Command & Multi-Filter Matrix -->
+<div class="bg-surface-container-lowest rounded-2xl shadow-sm p-4 mb-6">
+<div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+<!-- Search Input -->
+<div class="md:col-span-4 relative">
+<span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">search</span>
+<input class="w-full h-11 pl-10 pr-20 bg-surface-container-low rounded-xl font-body-md text-body-md text-on-surface placeholder:text-outline focus:outline-none focus:bg-surface-container-lowest shadow-sm" placeholder="Search by Order ID (#ORD-XXXX), Customer name, Phone..." type="text" value="#ORD-982">
+<div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+<kbd class="px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant font-label-sm text-label-sm">⌘</kbd>
+<kbd class="px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant font-label-sm text-label-sm">K</kbd>
+</div>
+</div>
+<!-- Filters Group -->
+<div class="md:col-span-8 flex flex-wrap lg:flex-nowrap items-center gap-2 justify-end">
+<!-- Date Selector -->
+<div class="relative min-w-[150px]">
+<button class="w-full h-11 px-3 bg-surface-container-low hover:bg-surface-container text-on-surface rounded-xl flex items-center justify-between text-left font-label-md text-label-md">
+<span class="flex items-center gap-2 truncate">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">calendar_today</span>
+<span class="">Today (Oct 27)</span>
+</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">expand_more</span>
+</button>
+</div>
+<!-- Payment Method -->
+<div class="relative min-w-[160px]">
+<button class="w-full h-11 px-3 bg-surface-container-low hover:bg-surface-container text-on-surface rounded-xl flex items-center justify-between text-left font-label-md text-label-md">
+<span class="flex items-center gap-2 truncate">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">payments</span>
+<span class="">COD Only (89%)</span>
+</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">expand_more</span>
+</button>
+</div>
+<!-- Vendor Selection -->
+<div class="relative min-w-[150px]">
+<button class="w-full h-11 px-3 bg-surface-container-low hover:bg-surface-container text-on-surface rounded-xl flex items-center justify-between text-left font-label-md text-label-md">
+<span class="flex items-center gap-2 truncate">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">store</span>
+<span class="">All Vendors</span>
+</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">expand_more</span>
+</button>
+</div>
+<!-- Courier Partner -->
+<div class="relative min-w-[140px]">
+<button class="w-full h-11 px-3 bg-surface-container-low hover:bg-surface-container text-on-surface rounded-xl flex items-center justify-between text-left font-label-md text-label-md">
+<span class="flex items-center gap-2 truncate">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">local_shipping</span>
+<span class="">GHTK Express</span>
+</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">expand_more</span>
+</button>
+</div>
+<!-- Clear Reset -->
+<button class="h-11 px-3.5 text-on-surface-variant hover:text-error hover:bg-error-container/30 rounded-xl transition-colors font-label-md text-label-md flex items-center gap-1.5 shrink-0">
+<span class="material-symbols-outlined text-[18px]">filter_alt_off</span>
+          Clear (2)
+        </button>
+</div>
+</div>
+</div>
+<!-- Primary Split Workflow (Data Table + Contextual Quick Drawer) -->
+<div class="grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+<!-- Dense Interactive Orders Data Table (7 Cols) -->
+<div class="w-full bg-surface-container-lowest rounded-2xl shadow-sm overflow-hidden flex flex-col">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low text-on-surface-variant font-label-md text-label-md select-none border-b border-surface-container-high/60">
+<th class="py-4 pl-4 pr-2 w-10">
+<input class="w-4 h-4 rounded text-primary-container focus:ring-0 cursor-pointer" type="checkbox">
+</th>
+<th class="py-4 px-3 min-w-[140px]">Mã Đơn / Order ID</th>
+<th class="py-4 px-3 min-w-[130px]">Thời Gian / Date</th>
+<th class="py-4 px-3 min-w-[180px]">Khách Hàng / Customer</th>
+<th class="py-4 px-3 min-w-[200px]">Cửa Hàng &amp; Sản Phẩm</th>
+<th class="py-4 px-3 min-w-[120px]">Thanh Toán</th>
+<th class="py-4 px-3 text-right min-w-[140px]">Tổng Tiền &amp; COD</th>
+<th class="py-4 px-3 text-center min-w-[140px]">Trạng Thái</th>
+<th class="py-4 pr-6 pl-3 text-right min-w-[180px]">Thao Tác / Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container-high/60 font-body-sm text-body-sm text-on-surface">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-4 pl-4 pr-2 align-middle">
+<input checked="" class="w-4 h-4 rounded text-primary-container focus:ring-0 cursor-pointer" type="checkbox">
+</td>
+<td class="py-4 px-3 align-middle">
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-1.5">
+<span class="font-headline-md text-headline-md tracking-tight font-bold text-primary">#ORD-9821</span>
+<span class="px-1.5 py-0.5 rounded bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-label-sm font-bold scale-90 origin-left">COD Alert</span>
+</div>
+<span class="text-on-surface-variant font-label-sm text-label-sm">Web Store • GHTK</span>
+</div>
+</td>
+<td class="py-4 px-3 align-middle">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-semibold text-on-surface">27/10/2024</span>
+<span class="text-on-surface-variant font-label-sm text-label-sm flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[13px]">schedule</span> 14:18 (15m trước)
+</span>
+</div>
+</td>
+<td class="py-4 px-3 align-middle">
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg font-bold text-on-surface">Nguyễn Văn A</span>
+<span class="font-mono text-on-surface-variant text-[11px]">+84 909 123 456</span>
+<span class="text-on-surface-variant font-label-sm text-label-sm truncate max-w-[200px]">142 Võ Thị Sáu, Q.3, TP.HCM</span>
+</div>
+</td>
+<td class="py-4 px-3 align-middle">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-semibold text-primary truncate">UrbanStep Official</span>
+<span class="text-on-surface-variant text-label-sm">Retro Runner V2 Sneaker + 1 món</span>
+</div>
+</td>
+<td class="py-4 px-3 align-middle">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-container-high text-on-surface font-label-sm text-label-sm font-bold">
+<span class="material-symbols-outlined text-[15px] text-tertiary">payments</span>
+COD
+</span>
+</td>
+<td class="py-4 px-3 align-middle text-right">
+<div class="flex flex-col items-end">
+<span class="font-headline-md text-headline-md font-bold text-on-surface">1.415.000 ₫</span>
+<span class="text-tertiary font-label-sm text-label-sm font-medium">Chờ thu tiền COD</span>
+</div>
+</td>
+<td class="py-4 px-3 align-middle text-center">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-label-sm font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-ping"></span>
+Chờ xác nhận
+</span>
+</td>
+<td class="py-4 pr-6 pl-3 align-middle text-right">
+<div class="flex items-center justify-end gap-2">
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary-container text-on-primary font-label-md text-label-md font-semibold shadow-sm hover:opacity-95 transition-all">
+<span class="material-symbols-outlined text-[16px]">visibility</span>
+Xem chi tiết
+</button>
+<button class="p-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors" title="In phiếu đơn">
+<span class="material-symbols-outlined text-[18px]">print</span>
+</button>
+<button class="p-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors" title="Mã vận đơn GHTK">
+<span class="material-symbols-outlined text-[18px]">local_shipping</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-4 pl-4 pr-2 align-middle">
+<input class="w-4 h-4 rounded text-primary-container focus:ring-0 cursor-pointer" type="checkbox">
+</td>
+<td class="py-4 px-3 align-middle">
+<div class="flex flex-col gap-1">
+<span class="font-label-lg text-label-lg font-bold text-on-surface">#ORD-9820</span>
+<span class="text-on-surface-variant font-label-sm text-label-sm">TikTok Shop</span>
+</div>
+</td>
+<td class="py-4 px-3 align-middle">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-semibold text-on-surface">27/10/2024</span>
+<span class="text-on-surface-variant font-label-sm text-label-sm flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[13px]">schedule</span> 13:45 (48m trước)
+</span>
+</div>
+</td>
+<td class="py-4 px-3 align-middle">
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg font-semibold text-on-surface">Trần Thị Mai</span>
+<span class="font-mono text-on-surface-variant text-[11px]">+84 988 345 221</span>
+<span class="text-on-surface-variant font-label-sm text-label-sm truncate max-w-[200px]">Hà Đông, Hà Nội</span>
+</div>
+</td>
+<td class="py-4 px-3 align-middle">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-semibold text-on-surface truncate">Crafted Saigon</span>
+<span class="text-on-surface-variant text-label-sm">Leather Wallet Pro x1</span>
+</div>
+</td>
+<td class="py-4 px-3 align-middle">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-container-high text-on-surface font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[15px] text-secondary">account_balance_wallet</span>
+MoMo
+</span>
+</td>
+<td class="py-4 px-3 align-middle text-right">
+<div class="flex flex-col items-end">
+<span class="font-label-lg text-label-lg font-bold text-on-surface">850.000 ₫</span>
+<span class="text-secondary font-label-sm text-label-sm">Đã thanh toán</span>
+</div>
+</td>
+<td class="py-4 px-3 align-middle text-center">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+Đang giao hàng
+</span>
+</td>
+<td class="py-4 pr-6 pl-3 align-middle text-right">
+<div class="flex items-center justify-end gap-2">
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md font-semibold transition-colors">
+<span class="material-symbols-outlined text-[16px]">visibility</span>
+Xem chi tiết
+</button>
+<button class="p-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors" title="In phiếu đơn">
+<span class="material-symbols-outlined text-[18px]">print</span>
+</button>
+<button class="p-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors" title="Mã vận đơn">
+<span class="material-symbols-outlined text-[18px]">local_shipping</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-4 pl-4 pr-2 align-middle">
+<input class="w-4 h-4 rounded text-primary-container focus:ring-0 cursor-pointer" type="checkbox">
+</td>
+<td class="py-4 px-3 align-middle">
+<div class="flex flex-col gap-1">
+<span class="font-label-lg text-label-lg font-bold text-on-surface">#ORD-9818</span>
+<span class="text-on-surface-variant font-label-sm text-label-sm">Shopee Cluster</span>
+</div>
+</td>
+<td class="py-4 px-3 align-middle">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-semibold text-on-surface">27/10/2024</span>
+<span class="text-on-surface-variant font-label-sm text-label-sm flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[13px]">schedule</span> 12:30 (2h trước)
+</span>
+</div>
+</td>
+<td class="py-4 px-3 align-middle">
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg font-semibold text-on-surface">Lê Hoàng Nam</span>
+<span class="font-mono text-on-surface-variant text-[11px]">+84 912 884 102</span>
+<span class="text-on-surface-variant font-label-sm text-label-sm truncate max-w-[200px]">Hải Châu, Đà Nẵng</span>
+</div>
+</td>
+<td class="py-4 px-3 align-middle">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-semibold text-on-surface truncate">Terra Living Lab</span>
+<span class="text-on-surface-variant text-label-sm">Ceramic Pour-Over Set</span>
+</div>
+</td>
+<td class="py-4 px-3 align-middle">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-container-high text-on-surface font-label-sm text-label-sm font-bold">
+<span class="material-symbols-outlined text-[15px] text-tertiary">payments</span>
+COD
+</span>
+</td>
+<td class="py-4 px-3 align-middle text-right">
+<div class="flex flex-col items-end">
+<span class="font-label-lg text-label-lg font-bold text-on-surface">620.000 ₫</span>
+<span class="text-surface-tint font-label-sm text-label-sm font-medium">Đã thu COD</span>
+</div>
+</td>
+<td class="py-4 px-3 align-middle text-center">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+Đã giao thành công
+</span>
+</td>
+<td class="py-4 pr-6 pl-3 align-middle text-right">
+<div class="flex items-center justify-end gap-2">
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md font-semibold transition-colors">
+<span class="material-symbols-outlined text-[16px]">visibility</span>
+Xem chi tiết
+</button>
+<button class="p-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors" title="In phiếu đơn">
+<span class="material-symbols-outlined text-[18px]">print</span>
+</button>
+<button class="p-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors" title="Mã vận đơn">
+<span class="material-symbols-outlined text-[18px]">local_shipping</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-4 pl-4 pr-2 align-middle">
+<input class="w-4 h-4 rounded text-primary-container focus:ring-0 cursor-pointer" type="checkbox">
+</td>
+<td class="py-4 px-3 align-middle">
+<div class="flex flex-col gap-1">
+<span class="font-label-lg text-label-lg font-bold text-on-surface">#ORD-9815</span>
+<span class="text-on-surface-variant font-label-sm text-label-sm">Web Store</span>
+</div>
+</td>
+<td class="py-4 px-3 align-middle">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-semibold text-on-surface">27/10/2024</span>
+<span class="text-on-surface-variant font-label-sm text-label-sm flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[13px]">schedule</span> 11:15 (3h trước)
+</span>
+</div>
+</td>
+<td class="py-4 px-3 align-middle">
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg font-semibold text-on-surface">Đỗ Thùy Trang</span>
+<span class="font-mono text-on-surface-variant text-[11px]">+84 977 412 009</span>
+<span class="text-on-surface-variant font-label-sm text-label-sm truncate max-w-[200px]">Bình Thạnh, TP. HCM</span>
+</div>
+</td>
+<td class="py-4 px-3 align-middle">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-semibold text-on-surface truncate">UrbanStep Official</span>
+<span class="text-on-surface-variant text-label-sm">Air Canvas Low x1</span>
+</div>
+</td>
+<td class="py-4 px-3 align-middle">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-container-high text-on-surface font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[15px] text-primary">credit_card</span>
+Visa
+</span>
+</td>
+<td class="py-4 px-3 align-middle text-right">
+<div class="flex flex-col items-end">
+<span class="font-label-lg text-label-lg font-bold text-on-surface">1.890.000 ₫</span>
+<span class="text-secondary font-label-sm text-label-sm">Đã thanh toán online</span>
+</div>
+</td>
+<td class="py-4 px-3 align-middle text-center">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-label-sm font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+Chờ xác nhận
+</span>
+</td>
+<td class="py-4 pr-6 pl-3 align-middle text-right">
+<div class="flex items-center justify-end gap-2">
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md font-semibold transition-colors">
+<span class="material-symbols-outlined text-[16px]">visibility</span>
+Xem chi tiết
+</button>
+<button class="p-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors" title="In phiếu đơn">
+<span class="material-symbols-outlined text-[18px]">print</span>
+</button>
+<button class="p-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors" title="Mã vận đơn">
+<span class="material-symbols-outlined text-[18px]">local_shipping</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-4 pl-4 pr-2 align-middle">
+<input class="w-4 h-4 rounded text-primary-container focus:ring-0 cursor-pointer" type="checkbox">
+</td>
+<td class="py-4 px-3 align-middle">
+<div class="flex flex-col gap-1">
+<span class="font-label-lg text-label-lg font-bold text-on-surface">#ORD-9812</span>
+<span class="text-on-surface-variant font-label-sm text-label-sm">Lazada Partner</span>
+</div>
+</td>
+<td class="py-4 px-3 align-middle">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-semibold text-on-surface">27/10/2024</span>
+<span class="text-on-surface-variant font-label-sm text-label-sm flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[13px]">schedule</span> 10:20 (4h trước)
+</span>
+</div>
+</td>
+<td class="py-4 px-3 align-middle">
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg font-semibold text-on-surface">Phạm Quốc Hưng</span>
+<span class="font-mono text-on-surface-variant text-[11px]">+84 934 551 892</span>
+<span class="text-on-surface-variant font-label-sm text-label-sm truncate max-w-[200px]">Ninh Kiều, Cần Thơ</span>
+</div>
+</td>
+<td class="py-4 px-3 align-middle">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-semibold text-on-surface truncate">UrbanStep Official</span>
+<span class="text-on-surface-variant text-label-sm">Trail Boot Rugged x1</span>
+</div>
+</td>
+<td class="py-4 px-3 align-middle">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-container-high text-on-surface font-label-sm text-label-sm font-bold">
+<span class="material-symbols-outlined text-[15px] text-tertiary">payments</span>
+COD
+</span>
+</td>
+<td class="py-4 px-3 align-middle text-right">
+<div class="flex flex-col items-end">
+<span class="font-label-lg text-label-lg font-bold text-on-surface">2.450.000 ₫</span>
+<span class="text-on-surface-variant font-label-sm text-label-sm">Chờ thu COD</span>
+</div>
+</td>
+<td class="py-4 px-3 align-middle text-center">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-fixed text-on-primary-fixed-variant font-label-sm text-label-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+Đang đóng gói
+</span>
+</td>
+<td class="py-4 pr-6 pl-3 align-middle text-right">
+<div class="flex items-center justify-end gap-2">
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md font-semibold transition-colors">
+<span class="material-symbols-outlined text-[16px]">visibility</span>
+Xem chi tiết
+</button>
+<button class="p-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors" title="In phiếu đơn">
+<span class="material-symbols-outlined text-[18px]">print</span>
+</button>
+<button class="p-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors" title="Mã vận đơn">
+<span class="material-symbols-outlined text-[18px]">local_shipping</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 6 -->
+<tr class="hover:bg-surface-container-low transition-colors opacity-75">
+<td class="py-4 pl-4 pr-2 align-middle">
+<input class="w-4 h-4 rounded text-primary-container focus:ring-0 cursor-pointer" type="checkbox">
+</td>
+<td class="py-4 px-3 align-middle">
+<div class="flex flex-col gap-1">
+<span class="font-label-lg text-label-lg font-bold text-on-surface">#ORD-9804</span>
+<span class="text-on-surface-variant font-label-sm text-label-sm">Web Store</span>
+</div>
+</td>
+<td class="py-4 px-3 align-middle">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-semibold text-on-surface">27/10/2024</span>
+<span class="text-on-surface-variant font-label-sm text-label-sm flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[13px]">schedule</span> 08:15 (6h trước)
+</span>
+</div>
+</td>
+<td class="py-4 px-3 align-middle">
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg font-semibold text-on-surface">Vũ Hoài Thương</span>
+<span class="font-mono text-on-surface-variant text-[11px]">+84 945 091 228</span>
+<span class="text-on-surface-variant font-label-sm text-label-sm truncate max-w-[200px]">Hạ Long, Quảng Ninh</span>
+</div>
+</td>
+<td class="py-4 px-3 align-middle">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-semibold text-on-surface truncate">Crafted Saigon</span>
+<span class="text-on-surface-variant text-label-sm">Canvas Backpack V3 x1</span>
+</div>
+</td>
+<td class="py-4 px-3 align-middle">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-container-high text-on-surface font-label-sm text-label-sm font-bold">
+<span class="material-symbols-outlined text-[15px] text-tertiary">payments</span>
+COD
+</span>
+</td>
+<td class="py-4 px-3 align-middle text-right">
+<div class="flex flex-col items-end">
+<span class="font-label-lg text-label-lg font-bold text-on-surface">1.100.000 ₫</span>
+<span class="text-error font-label-sm text-label-sm">Đã huỷ đơn COD</span>
+</div>
+</td>
+<td class="py-4 px-3 align-middle text-center">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-error-container text-on-error-container font-label-sm text-label-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-error"></span>
+Đã huỷ
+</span>
+</td>
+<td class="py-4 pr-6 pl-3 align-middle text-right">
+<div class="flex items-center justify-end gap-2">
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md font-semibold transition-colors">
+<span class="material-symbols-outlined text-[16px]">visibility</span>
+Xem chi tiết
+</button>
+<button class="p-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors" title="In phiếu đơn">
+<span class="material-symbols-outlined text-[18px]">print</span>
+</button>
+<button class="p-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors" title="Mã vận đơn">
+<span class="material-symbols-outlined text-[18px]">local_shipping</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Compact Footer & Pagination inside Card -->
+<div class="p-4 bg-surface-container-low flex flex-col sm:flex-row items-center justify-between gap-4">
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+Showing <span class="font-semibold text-on-surface">1</span> to <span class="font-semibold text-on-surface">6</span> of <span class="font-semibold text-on-surface">48</span> orders
+</p>
+<div class="flex items-center gap-1">
+<button class="w-8 h-8 rounded-lg bg-surface-container hover:bg-surface-container-high flex items-center justify-center text-on-surface-variant transition-colors disabled:opacity-40">
+<span class="material-symbols-outlined text-[18px]">chevron_left</span>
+</button>
+<button class="w-8 h-8 rounded-lg bg-primary-container text-on-primary font-label-md text-label-md font-bold">1</button>
+<button class="w-8 h-8 rounded-lg hover:bg-surface-container text-on-surface font-label-md text-label-md">2</button>
+<button class="w-8 h-8 rounded-lg hover:bg-surface-container text-on-surface font-label-md text-label-md">3</button>
+<span class="px-1 text-on-surface-variant text-label-sm">...</span>
+<button class="w-8 h-8 rounded-lg hover:bg-surface-container text-on-surface font-label-md text-label-md">5</button>
+<button class="w-8 h-8 rounded-lg bg-surface-container hover:bg-surface-container-high flex items-center justify-center text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Quick Detail Preview / Operations Command Rail (5 Cols) -->
+
+</div>
+</div></main></div>
+
+
+
+
+<div id="snapdom-sandbox" data-snapdom-sandbox="true" aria-hidden="true" style="position: absolute; left: -9999px; top: -9999px; width: 0px; height: 0px; overflow: hidden;"></div>
+
+</body></html>

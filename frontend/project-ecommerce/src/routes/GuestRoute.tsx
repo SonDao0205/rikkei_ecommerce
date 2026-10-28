@@ -32,8 +32,8 @@ export const GuestRoute: React.FC<GuestRouteProps> = ({ children }) => {
 
   // Nếu đã đăng nhập thành công, không cho phép vào lại trang login/register
   if (isAuthenticated) {
-    if (role === "admin") {
-      return <Navigate to="/admin/products" replace />;
+    if ((role || "").toLowerCase().trim() === "admin") {
+      return <Navigate to="/admin/dashboard" replace />;
     }
     return <Navigate to="/home" replace />;
   }
