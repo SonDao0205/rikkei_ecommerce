@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -93,12 +94,22 @@ func (h handler) categories(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h handler) products(w http.ResponseWriter, r *http.Request) {
-	categoryID, err := strconv.ParseInt(r.URL.Query().Get("category_id"), 10, 64)
-	if err != nil && r.URL.Query().Get("category_id") != "" {
-		writeError(w, http.StatusBadRequest, "invalid_category", "category_id must be a positive integer")
+	categoryValue := r.URL.Query().Get("category_id")
+	categoryID := int64(0)
+	if categoryValue != "" {
+		parsed, err := strconv.ParseInt(categoryValue, 10, 64)
+		if err != nil || parsed < 0 {
+			writeError(w, http.StatusBadRequest, "invalid_category", "category_id must be zero or a positive integer")
+			return
+		}
+		categoryID = parsed
+	}
+	page, limit, err := parsePage(r.URL.Query())
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_pagination", err.Error())
 		return
 	}
-	page, limit := boundedPage(r.URL.Query().Get("page"), r.URL.Query().Get("limit"))
+	offset := (page - 1) * limit
 	where := `p.status='ACTIVE' AND p.is_deleted=0 AND s.status='ACTIVE' AND (?=0 OR p.category_id=?)`
 	countQuery := `SELECT COUNT(*) FROM products p JOIN shops s ON s.id=p.shop_id WHERE ` + where
 	var total int
@@ -110,7 +121,7 @@ func (h handler) products(w http.ResponseWriter, r *http.Request) {
 	query := `SELECT p.id,p.shop_id,p.category_id,p.brand_id,p.name,p.slug,p.description,p.thumbnail_url,p.price,p.sold_count,p.rating_avg,p.rating_count,p.status,p.reject_reason,p.is_deleted,s.name,c.name,
 		(SELECT COALESCE(SUM(v.stock),0) FROM product_variants v WHERE v.product_id=p.id AND v.status='ACTIVE')
 		FROM products p JOIN shops s ON s.id=p.shop_id JOIN categories c ON c.id=p.category_id WHERE ` + where + ` ORDER BY ` + order + ` LIMIT ? OFFSET ?`
-	rows, err := h.db.QueryContext(r.Context(), query, categoryID, categoryID, limit, (page-1)*limit)
+	rows, err := h.db.QueryContext(r.Context(), query, categoryID, categoryID, limit, offset)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal_error", "Could not load products")
 		return
@@ -137,6 +148,10 @@ func (h handler) adminProducts(w http.ResponseWriter, r *http.Request) {
 	category := strings.TrimSpace(r.URL.Query().Get("category"))
 	stockStatus := strings.TrimSpace(r.URL.Query().Get("stock_status"))
 	vendor := strings.TrimSpace(r.URL.Query().Get("vendor"))
+	if stockStatus != "" && stockStatus != "in_stock" && stockStatus != "low_stock" && stockStatus != "out_of_stock" {
+		writeError(w, http.StatusBadRequest, "invalid_stock_status", "stock_status must be in_stock, low_stock, or out_of_stock")
+		return
+	}
 	query := `SELECT p.id,p.name,COALESCE(v.sku,''),p.thumbnail_url,s.name,IF(s.status='ACTIVE','VERIFIED','ARTISAN'),c.name,p.price,
 		(SELECT COALESCE(SUM(v2.stock),0) FROM product_variants v2 WHERE v2.product_id=p.id AND v2.status='ACTIVE'),p.status
 		FROM products p JOIN shops s ON s.id=p.shop_id JOIN categories c ON c.id=p.category_id
@@ -209,26 +224,39 @@ func (h handler) updateProductStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var request struct {
-		IsActive bool `json:"is_active"`
+		IsActive *bool `json:"is_active"`
 	}
-	if json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&request) != nil {
+	if !decodeJSON(w, r, &request, 4096) || request.IsActive == nil {
 		writeError(w, http.StatusBadRequest, "invalid_request", "is_active is required")
 		return
 	}
+	var currentStatus string
+	if err := h.db.QueryRowContext(r.Context(), `SELECT status FROM products WHERE id=? AND is_deleted=0`, id).Scan(&currentStatus); err != nil {
+		if err == sql.ErrNoRows {
+			writeError(w, http.StatusNotFound, "product_not_found", "Product was not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "internal_error", "Could not read product status")
+		return
+	}
+	if currentStatus != "ACTIVE" && currentStatus != "HIDDEN" {
+		writeError(w, http.StatusConflict, "product_status_not_toggleable", "Only approved products can be activated or hidden")
+		return
+	}
 	status := "HIDDEN"
-	if request.IsActive {
+	if *request.IsActive {
 		status = "ACTIVE"
 	}
-	result, err := h.db.ExecContext(r.Context(), `UPDATE products SET status=? WHERE id=? AND is_deleted=0`, status, id)
+	result, err := h.db.ExecContext(r.Context(), `UPDATE products SET status=? WHERE id=? AND is_deleted=0 AND status IN ('ACTIVE','HIDDEN')`, status, id)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal_error", "Could not update product status")
 		return
 	}
 	if count, _ := result.RowsAffected(); count == 0 {
-		writeError(w, http.StatusNotFound, "product_not_found", "Product was not found")
+		writeError(w, http.StatusConflict, "product_status_changed", "Product status changed; reload and try again")
 		return
 	}
-	writeJSON(w, http.StatusOK, apiResponse{Success: true, Data: map[string]any{"id": id, "is_active": request.IsActive, "status": status}})
+	writeJSON(w, http.StatusOK, apiResponse{Success: true, Data: map[string]any{"id": id, "is_active": *request.IsActive, "status": status}})
 }
 
 func (h handler) deleteProduct(w http.ResponseWriter, r *http.Request) {
@@ -254,7 +282,7 @@ func (h handler) bulkProducts(w http.ResponseWriter, r *http.Request) {
 		Action     string  `json:"action"`
 		ProductIDs []int64 `json:"product_ids"`
 	}
-	if json.NewDecoder(http.MaxBytesReader(w, r.Body, 16*1024)).Decode(&request) != nil || len(request.ProductIDs) == 0 || len(request.ProductIDs) > 100 {
+	if !decodeJSON(w, r, &request, 16*1024) || len(request.ProductIDs) == 0 || len(request.ProductIDs) > 100 {
 		writeError(w, http.StatusBadRequest, "invalid_bulk_request", "Provide between 1 and 100 product IDs")
 		return
 	}
@@ -262,13 +290,21 @@ func (h handler) bulkProducts(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid_bulk_action", "Action must be activate, deactivate, or delete")
 		return
 	}
-	placeholders := make([]string, len(request.ProductIDs))
-	args := make([]any, 0, len(request.ProductIDs))
-	for i, id := range request.ProductIDs {
+	ids := make([]int64, 0, len(request.ProductIDs))
+	seen := make(map[int64]struct{}, len(request.ProductIDs))
+	for _, id := range request.ProductIDs {
 		if id <= 0 {
 			writeError(w, http.StatusBadRequest, "invalid_product_id", "Product IDs must be positive")
 			return
 		}
+		if _, exists := seen[id]; !exists {
+			seen[id] = struct{}{}
+			ids = append(ids, id)
+		}
+	}
+	placeholders := make([]string, len(ids))
+	args := make([]any, 0, len(ids))
+	for i, id := range ids {
 		placeholders[i] = "?"
 		args = append(args, id)
 	}
@@ -278,7 +314,11 @@ func (h handler) bulkProducts(w http.ResponseWriter, r *http.Request) {
 	} else if request.Action == "delete" {
 		field, value = "is_deleted", "1"
 	}
-	statement := fmt.Sprintf("UPDATE products SET %s=? WHERE is_deleted=0 AND id IN (%s)", field, strings.Join(placeholders, ","))
+	where := "is_deleted=0"
+	if request.Action == "activate" || request.Action == "deactivate" {
+		where += " AND status IN ('ACTIVE','HIDDEN')"
+	}
+	statement := fmt.Sprintf("UPDATE products SET %s=? WHERE %s AND id IN (%s)", field, where, strings.Join(placeholders, ","))
 	result, err := h.db.ExecContext(r.Context(), statement, append([]any{value}, args...)...)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal_error", "Could not apply bulk action")
@@ -316,18 +356,34 @@ func adminProductOrder(value string) string {
 	}
 }
 
-func boundedPage(pageValue, limitValue string) (page, limit int) {
+func parsePage(queryValues interface{ Get(string) string }) (page, limit int, err error) {
 	page, limit = 1, 100
-	if value, err := strconv.Atoi(pageValue); err == nil && value > 0 {
-		page = value
+	if value := queryValues.Get("page"); value != "" {
+		page, err = strconv.Atoi(value)
+		if err != nil || page < 1 || page > 100_000 {
+			return 0, 0, fmt.Errorf("page must be between 1 and 100000")
+		}
 	}
-	if value, err := strconv.Atoi(limitValue); err == nil && value > 0 {
-		limit = value
+	if value := queryValues.Get("limit"); value != "" {
+		limit, err = strconv.Atoi(value)
+		if err != nil || limit < 1 {
+			return 0, 0, fmt.Errorf("limit must be a positive integer")
+		}
 	}
 	if limit > 100 {
 		limit = 100
 	}
-	return page, limit
+	return page, limit, nil
+}
+
+func decodeJSON(w http.ResponseWriter, r *http.Request, destination any, maxBytes int64) bool {
+	decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, maxBytes))
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(destination); err != nil {
+		return false
+	}
+	var trailing any
+	return decoder.Decode(&trailing) == io.EOF
 }
 
 func writeJSON(w http.ResponseWriter, status int, response any) {

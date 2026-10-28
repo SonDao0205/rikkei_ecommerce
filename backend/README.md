@@ -1,6 +1,6 @@
 # Rikkei E-Commerce Backend
 
-Backend Go cho MVP Rikkei E-Commerce. Hiá»‡n repository cung cáº¥p API xÃ¡c thá»±c vÃ  ná»n táº£ng phÃ¢n quyá»n. API sáº£n pháº©m, shop, giá» hÃ ng vÃ  Ä‘Æ¡n hÃ ng chÆ°a Ä‘Æ°á»£c triá»ƒn khai.
+Backend Go cho MVP Rikkei E-Commerce. BE hiện có API auth/RBAC, hồ sơ cơ bản, catalog đọc danh mục/sản phẩm và một số API admin inventory. Các nghiệp vụ shop, giỏ hàng, checkout và đơn hàng vẫn đang phát triển. Contract catalog/admin inventory xem tại [docs/catalog-api.md](../docs/catalog-api.md).
 
 TÃ i liá»‡u chia thÃ nh hai pháº§n: **DevOps** chuáº©n bá»‹ cáº¥u hÃ¬nh, triá»ƒn khai vÃ  váº­n hÃ nh backend; **FE** tÃ­ch há»£p cÃ¡c API hiá»‡n cÃ³.
 

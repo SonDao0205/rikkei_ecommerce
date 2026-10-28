@@ -407,9 +407,13 @@ func (a *App) forgotPassword(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, 200, generic)
 		return
 	}
-	n, _ := rand.Int(rand.Reader, big.NewInt(1000000))
+	n, e := rand.Int(rand.Reader, big.NewInt(1000000))
+	if e != nil {
+		a.serverError(w, r, e)
+		return
+	}
 	otp := fmt.Sprintf("%06d", n.Int64())
-	_, e := a.db.ExecContext(r.Context(), `INSERT INTO password_reset_otps(email,otp_hash,expires_at,attempts) VALUES(?,?,?,0) ON DUPLICATE KEY UPDATE otp_hash=VALUES(otp_hash),expires_at=VALUES(expires_at),attempts=0,created_at=UTC_TIMESTAMP()`, email, hmacDigest(a.cfg.JWTSecret, otp), time.Now().UTC().Add(a.cfg.OTPTTL))
+	_, e = a.db.ExecContext(r.Context(), `INSERT INTO password_reset_otps(email,otp_hash,expires_at,attempts) VALUES(?,?,?,0) ON DUPLICATE KEY UPDATE otp_hash=VALUES(otp_hash),expires_at=VALUES(expires_at),attempts=0,created_at=UTC_TIMESTAMP()`, email, hmacDigest(a.cfg.JWTSecret, otp), time.Now().UTC().Add(a.cfg.OTPTTL))
 	if e != nil {
 		a.serverError(w, r, e)
 		return
