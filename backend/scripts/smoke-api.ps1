@@ -55,6 +55,12 @@ $email = "smoke-$([guid]::NewGuid().ToString('N'))@example.test"
 $phone = "+84$(([DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds() % 1000000000).ToString('D9'))"
 $password = 'SmokeTest12345'
 $null = Invoke-Api GET '/healthz'
+$categories = Invoke-Api GET '/api/v1/categories'
+if ($categories.Status -ne 200 -or $categories.Json.data[0].id -ne 0) { throw 'Public category API did not return the all-categories entry' }
+$catalog = Invoke-Api GET '/api/v1/products?page=1&limit=10&sort=best_selling'
+if ($catalog.Status -ne 200 -or $catalog.Json.data.total -lt 0) { throw "Public catalog API failed with HTTP $($catalog.Status)" }
+$invalidCatalogPage = Invoke-Api GET '/api/v1/products?page=0'
+if ($invalidCatalogPage.Status -ne 400) { throw "Invalid catalog page returned HTTP $($invalidCatalogPage.Status), expected 400" }
 $registration = Invoke-Api POST '/api/v1/auth/register' @{ email = $email; password = $password; full_name = 'Smoke Test'; phone = $phone }
 if ($registration.Status -ne 201) { throw "Registration failed with HTTP $($registration.Status)" }
 
@@ -88,6 +94,8 @@ if ($phoneLogin.Status -ne 200) { throw "Phone login failed with HTTP $($phoneLo
 $phoneToken = $phoneLogin.Json.data.access_token
 $admin = Invoke-Api GET '/api/v1/admin/users' $null $null $phoneToken
 if ($admin.Status -ne 403) { throw "CLIENT admin access returned HTTP $($admin.Status), expected 403" }
+$adminInventory = Invoke-Api GET '/api/v1/admin/products' $null $null $phoneToken
+if ($adminInventory.Status -ne 403) { throw "CLIENT inventory access returned HTTP $($adminInventory.Status), expected 403" }
 $logout = Invoke-Api POST '/api/v1/auth/logout' $null $phoneCookies $phoneToken
 if ($logout.Status -ne 200) { throw "Logout failed with HTTP $($logout.Status)" }
 $afterLogout = Invoke-Api GET '/api/v1/auth/me' $null $null $phoneToken
@@ -109,4 +117,4 @@ if ($newPassword.Status -ne 200) { throw 'New password did not work after passwo
 $invalidOTP = Invoke-Api POST '/api/v1/auth/verify-reset-otp' @{ identifier = $email; otp = 'abcdef' }
 if ($invalidOTP.Status -ne 400) { throw 'Malformed OTP was not rejected' }
 
-Write-Host 'API smoke checks passed: health, register, email/phone login, refresh rotation/replay, RBAC, logout, password change, and malformed OTP rejection.'
+Write-Host 'API smoke checks passed: health, public catalog/categories, invalid pagination, register, email/phone login, refresh rotation/replay, RBAC, logout, password change, and malformed OTP rejection.'
