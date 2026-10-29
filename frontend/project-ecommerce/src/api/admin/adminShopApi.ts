@@ -12,7 +12,7 @@ interface ApiResponse<T> {
   message?: string;
 }
 
-export let mockShopsState: AdminShopItem[] = [
+export const mockShopsState: AdminShopItem[] = [
   {
     id: 1,
     code: "#VN-8821",

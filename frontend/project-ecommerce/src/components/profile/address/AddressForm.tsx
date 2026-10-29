@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../../redux/store";
 import {
   createAddressThunk,
@@ -46,22 +46,41 @@ export const AddressForm: React.FC = () => {
   const { editingAddress, saving, error } = useAppSelector((state) => state.address);
   const isEditMode = Boolean(editingAddress);
 
-  // Form states
-  const [recipientName, setRecipientName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [province, setProvince] = useState("TP. Hồ Chí Minh");
-  const [district, setDistrict] = useState("Quận 1");
-  const [ward, setWard] = useState("Phường Bến Nghé");
-  const [streetDetail, setStreetDetail] = useState("");
-  const [addressType, setAddressType] = useState<AddressType>("HOME");
-  const [isDefault, setIsDefault] = useState(false);
+  // Form states initialized with editingAddress if present
+  const initialPhone = editingAddress
+    ? (editingAddress.phone || "").replace(/^\+84\s?/, "").replace(/^0/, "")
+    : "";
+  const initialProvince =
+    editingAddress && VIETNAM_LOCATIONS[editingAddress.province]
+      ? editingAddress.province
+      : "TP. Hồ Chí Minh";
+  const initialDistricts = Object.keys(VIETNAM_LOCATIONS[initialProvince] || {});
+  const initialDistrict =
+    editingAddress && initialDistricts.includes(editingAddress.district)
+      ? editingAddress.district
+      : initialDistricts[0] || "Quận 1";
+  const initialWards = VIETNAM_LOCATIONS[initialProvince]?.[initialDistrict] || [];
+  const initialWard =
+    editingAddress && initialWards.includes(editingAddress.ward)
+      ? editingAddress.ward
+      : initialWards[0] || "Phường Bến Nghé";
+
+  const [recipientName, setRecipientName] = useState(editingAddress?.recipient_name || "");
+  const [phone, setPhone] = useState(initialPhone);
+  const [province, setProvince] = useState(initialProvince);
+  const [district, setDistrict] = useState(initialDistrict);
+  const [ward, setWard] = useState(initialWard);
+  const [streetDetail, setStreetDetail] = useState(editingAddress?.street_detail || "");
+  const [addressType, setAddressType] = useState<AddressType>(editingAddress?.address_type || "HOME");
+  const [isDefault, setIsDefault] = useState(Boolean(editingAddress?.is_default));
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  // Sync state when editingAddress changes
-  useEffect(() => {
+  // Sync state when editingAddress changes during render
+  const [prevEditingAddress, setPrevEditingAddress] = useState(editingAddress);
+  if (editingAddress !== prevEditingAddress) {
+    setPrevEditingAddress(editingAddress);
     if (editingAddress) {
       setRecipientName(editingAddress.recipient_name || "");
-      // Normalize phone for +84 input
       const cleanPhone = (editingAddress.phone || "").replace(/^\+84\s?/, "").replace(/^0/, "");
       setPhone(cleanPhone);
 
@@ -96,7 +115,7 @@ export const AddressForm: React.FC = () => {
       setIsDefault(false);
     }
     setValidationError(null);
-  }, [editingAddress]);
+  }
 
   // Handle province change
   const handleProvinceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {

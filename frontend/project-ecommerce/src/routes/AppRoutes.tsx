@@ -14,20 +14,7 @@ import Address from "../pages/user/Address";
 import ProtectedRoute from "./ProtectedRoute";
 import GuestRoute from "./GuestRoute";
 import StorefrontRoute from "./StorefrontRoute";
-import { useAppSelector } from "../redux/store";
-
-/**
- * Điều hướng dự phòng khi URL không khớp với bất kỳ route nào:
- * - Admin đăng nhập: Chuyển về /admin/dashboard
- * - Người dùng khác / khách: Chuyển về trang chủ /
- */
-const WildcardRoute: React.FC = () => {
-  const { isAuthenticated, role } = useAppSelector((state) => state.auth);
-  if (isAuthenticated && (role || "").toLowerCase().trim() === "admin") {
-    return <Navigate to="/admin/dashboard" replace />;
-  }
-  return <Navigate to="/" replace />;
-};
+import WildcardRoute from "./WildcardRoute";
 
 /**
  * router – Cấu hình toàn bộ routing của ứng dụng bằng createBrowserRouter.

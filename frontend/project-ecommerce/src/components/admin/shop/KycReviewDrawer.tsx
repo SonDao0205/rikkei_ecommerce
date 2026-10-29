@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import type { AdminShopItem, ShopTier } from "../../../types/ecommerce";
 
 interface KycReviewDrawerProps {
@@ -25,12 +25,12 @@ export const KycReviewDrawer: React.FC<KycReviewDrawerProps> = ({
   const [rejectReason, setRejectReason] = useState("");
   const [selectedTier, setSelectedTier] = useState<ShopTier>("STANDARD");
 
-  useEffect(() => {
-    if (shop) {
-      setSelectedTier(shop.tier || "STANDARD");
-      setAdminNotes(shop.reject_reason || "");
-    }
-  }, [shop]);
+  const [prevShopId, setPrevShopId] = useState<number | null>(null);
+  if (shop && shop.id !== prevShopId) {
+    setPrevShopId(shop.id);
+    setSelectedTier(shop.tier || "STANDARD");
+    setAdminNotes(shop.reject_reason || "");
+  }
 
   if (!isOpen || !shop) return null;
 

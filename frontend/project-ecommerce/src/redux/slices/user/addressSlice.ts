@@ -129,7 +129,7 @@ export const addressSlice = createSlice({
       .addCase(createAddressThunk.fulfilled, (state, action) => {
         state.saving = false;
         const newAddr = action.payload;
-        if (Boolean(newAddr.is_default)) {
+        if (newAddr.is_default) {
           state.addresses = state.addresses.map((a) => ({ ...a, is_default: 0 }));
         }
         state.addresses.unshift(newAddr);
@@ -149,7 +149,7 @@ export const addressSlice = createSlice({
       .addCase(updateAddressThunk.fulfilled, (state, action) => {
         state.saving = false;
         const updated = action.payload;
-        if (Boolean(updated.is_default)) {
+        if (updated.is_default) {
           state.addresses = state.addresses.map((a) => ({
             ...a,
             is_default: a.id === updated.id ? 1 : 0,

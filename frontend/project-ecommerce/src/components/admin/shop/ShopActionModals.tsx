@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import type { AdminShopItem, ShopTier } from "../../../types/ecommerce";
 
 interface LockModalProps {
@@ -16,11 +16,11 @@ export const LockShopModal: React.FC<LockModalProps> = ({
 }) => {
   const [reason, setReason] = useState("Policy violations (Tỷ lệ khiếu nại vượt ngưỡng an toàn)");
 
-  useEffect(() => {
-    if (shop) {
-      setReason("Policy violations (Tỷ lệ khiếu nại & tranh chấp đơn hàng vượt ngưỡng)");
-    }
-  }, [shop]);
+  const [prevShopId, setPrevShopId] = useState<number | null>(null);
+  if (shop && shop.id !== prevShopId) {
+    setPrevShopId(shop.id);
+    setReason("Policy violations (Tỷ lệ khiếu nại & tranh chấp đơn hàng vượt ngưỡng)");
+  }
 
   if (!isOpen || !shop) return null;
 
@@ -102,12 +102,12 @@ export const EditCommissionModal: React.FC<EditCommissionModalProps> = ({
   const [tier, setTier] = useState<ShopTier>("STANDARD");
   const [rate, setRate] = useState<number>(5);
 
-  useEffect(() => {
-    if (shop) {
-      setTier(shop.tier || "STANDARD");
-      setRate(shop.commission_rate || 5);
-    }
-  }, [shop]);
+  const [prevShopId, setPrevShopId] = useState<number | null>(null);
+  if (shop && shop.id !== prevShopId) {
+    setPrevShopId(shop.id);
+    setTier(shop.tier || "STANDARD");
+    setRate(shop.commission_rate || 5);
+  }
 
   if (!isOpen || !shop) return null;
 
