@@ -4,7 +4,7 @@ import router from "./routes/AppRoutes";
 import LoginSuccessToast from "./components/common/LoginSuccessToast";
 import LogoutConfirmModal from "./components/common/LogoutConfirmModal";
 import { useAppDispatch } from "./redux/store";
-import { refreshAccessToken, sessionExpired } from "./redux/slices/authSlice";
+import { refreshAccessToken, sessionExpired } from "./redux/slices/auth/authSlice";
 
 function App() {
   const dispatch = useAppDispatch();

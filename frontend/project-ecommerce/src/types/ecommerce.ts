@@ -396,4 +396,209 @@ export interface OrderFilterParams {
   pageSize?: number;
 }
 
+/**
+ * Address Book Interfaces matching scriptDb.sql addresses table & address.html
+ */
+export type AddressType = 'HOME' | 'OFFICE' | 'OTHER';
+
+export interface Address {
+  id: number;
+  user_id?: number;
+  recipient_name: string;
+  phone: string;
+  province: string;
+  district: string;
+  ward: string;
+  street_detail: string;
+  is_default: number | boolean;
+  address_type?: AddressType;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CreateAddressPayload {
+  recipient_name: string;
+  phone: string;
+  province: string;
+  district: string;
+  ward: string;
+  street_detail: string;
+  is_default?: boolean | number;
+  address_type?: AddressType;
+}
+
+export interface UpdateAddressPayload extends CreateAddressPayload {
+  id: number;
+}
+
+/**
+ * Order Detail Full Specification Interfaces matching admin_orderDetail.html
+ */
+export interface OrderDetailProductItem {
+  id: number | string;
+  name: string;
+  image: string;
+  tag?: string;
+  tagType?: "emerald" | "sky" | "amber";
+  variant: string;
+  sku: string;
+  warehouse: string;
+  availableStock: string;
+  price: number;
+  quantity: number;
+  total: number;
+}
+
+export interface OrderDetailFinancial {
+  subtotal: number;
+  shippingFee: number;
+  shippingRegion: string;
+  insuranceFee: number;
+  insuranceLabel: string;
+  voucherCode: string;
+  voucherDiscount: number;
+  partnerDiscount: number;
+  grandTotal: number;
+  paymentStatus: string;
+  paymentStatusType: "amber" | "emerald" | "rose";
+  paymentNote?: string;
+}
+
+export interface OrderDetailCustomer {
+  id: string;
+  name: string;
+  avatarText?: string;
+  tier: string;
+  orderCount: number;
+  phone: string;
+  street: string;
+  administrativeArea: string;
+  buyerNote?: string;
+}
+
+export interface OrderDetailTimelineStep {
+  step: number;
+  title: string;
+  time: string;
+  description: string;
+  status: "completed" | "current" | "pending";
+}
+
+export interface OrderDetailShipping {
+  courier: string;
+  trackingCode: string;
+  servicePackage: string;
+  estimatedDelivery: string;
+  timeline: OrderDetailTimelineStep[];
+}
+
+export interface AdminOrderDetailData {
+  id: string;
+  orderCode: string;
+  status: OrderStatus;
+  statusLabel: string;
+  isUrgent?: boolean;
+  urgentLabel?: string;
+  createdAt: string;
+  timeAgo: string;
+  channel: string;
+  paymentCode: string;
+  shopName: string;
+  shopCode: string;
+  shopBadge: "verified" | "official";
+  packageSpec: string;
+  packageWeight: string;
+  items: OrderDetailProductItem[];
+  financial: OrderDetailFinancial;
+  customer: OrderDetailCustomer;
+  shipping: OrderDetailShipping;
+}
+
+/**
+ * Admin Shop & Merchant Management Interfaces matching scriptDb.sql and admin_shop.html
+ */
+export type ShopTier = "STANDARD" | "PREMIUM" | "MALL" | "OFFICIAL";
+export type AdminShopStatus =
+  | "all"
+  | "active"
+  | "pending"
+  | "suspended"
+  | "rejected"
+  | "ALL"
+  | "ACTIVE"
+  | "PENDING"
+  | "SUSPENDED"
+  | "REJECTED";
+
+export interface AdminShopItem {
+  id: number;
+  code: string; // e.g. "#VN-8821"
+  name: string;
+  description?: string;
+  logo_url: string | null;
+  tier: ShopTier;
+  category: string;
+  category_icon?: string;
+  owner_name: string;
+  owner_phone: string;
+  owner_email: string;
+  location: string;
+  sku_count: number;
+  sku_label?: string; // e.g. "12 Draft SKUs", "86 SKUs", "24 SKUs (Frozen)"
+  order_count: number;
+  order_label?: string; // e.g. "0 orders (New Registration)", "1,420 orders"
+  rating_avg: number;
+  rating_count: number;
+  commission_rate: number; // e.g. 5, 8, 12
+  commission_tier_label: string; // e.g. "8% Tier", "12% Mall Tier", "5% Standard"
+  available_balance: number;
+  settlement_cycle: string; // e.g. "Bi-weekly", "Weekly", "Escrow: 4.800.000 ₫"
+  status: "PENDING" | "ACTIVE" | "SUSPENDED" | "REJECTED";
+  status_label: string;
+  is_live: boolean;
+  tax_id?: string;
+  identity_card?: string;
+  business_license_url?: string;
+  reject_reason?: string | null;
+  created_at: string;
+}
+
+export interface ShopMetricStats {
+  totalShops?: number;
+  activeShops?: number;
+  activeRateText?: string;
+  pendingKycCount?: number;
+  pendingActionRequired?: number;
+  suspendedCount?: number;
+  suspendedNote?: string;
+  totalGmvFormatted?: string;
+  totalGmvChange?: string;
+  statusCounts?: {
+    all: number;
+    active: number;
+    pending: number;
+    suspended: number;
+  };
+  totalActive?: number;
+  activeGrowth?: string;
+  pendingKyc?: number;
+  suspended?: number;
+  totalGmv?: number;
+  formattedGmv?: string;
+  gmvGrowth?: string;
+}
+
+export interface ShopFilterParams {
+  search?: string;
+  statusTab?: AdminShopStatus;
+  category?: string;
+  commissionTier?: string;
+  rating?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+
+
+
 

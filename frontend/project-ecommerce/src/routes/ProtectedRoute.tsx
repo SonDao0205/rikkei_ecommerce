@@ -6,16 +6,21 @@ import type { UserRole } from "../types/ecommerce";
 interface ProtectedRouteProps {
   children: ReactNode;
   allowedRoles?: (UserRole | string)[];
+  disallowedRoles?: (UserRole | string)[];
 }
 
 /**
  * Route Guard:
- * - Khi bất kì ai chưa đăng nhập: chuyển hướng về trang chủ ("/")
- * - Khi người dùng đã đăng nhập nhưng không có role hợp lệ: chuyển hướng về trang chủ ("/")
+ * - Khi chưa đăng nhập: chuyển hướng về trang chủ ("/")
+ * - Khi người dùng truy cập route không đúng phân quyền:
+ *   + Nếu là admin: chuyển hướng về trang quản trị ("/admin/dashboard")
+ *   + Nếu là người dùng thường: chuyển hướng về trang chủ ("/")
+ *   + Trạng thái đăng nhập được giữ nguyên hoàn toàn.
  */
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
   allowedRoles,
+  disallowedRoles,
 }) => {
   const { isAuthenticated, role, isInitialized } = useAppSelector(
     (state) => state.auth
@@ -39,10 +44,28 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/" replace />;
   }
 
+  const userRole = (role || "").toLowerCase().trim();
+
+  // Kiểm tra danh sách vai trò bị cấm (disallowedRoles)
+  if (disallowedRoles && disallowedRoles.length > 0) {
+    const isDisallowed = disallowedRoles.some(
+      (r) => r.toLowerCase().trim() === userRole
+    );
+    if (isDisallowed) {
+      if (userRole === "admin") {
+        return <Navigate to="/admin/dashboard" replace />;
+      }
+      return <Navigate to="/" replace />;
+    }
+  }
+
+  // Kiểm tra danh sách vai trò được phép (allowedRoles)
   if (allowedRoles && allowedRoles.length > 0) {
-    const userRole = (role || "").toLowerCase().trim();
     const hasRole = allowedRoles.some((r) => r.toLowerCase().trim() === userRole);
     if (!hasRole) {
+      if (userRole === "admin") {
+        return <Navigate to="/admin/dashboard" replace />;
+      }
       return <Navigate to="/" replace />;
     }
   }

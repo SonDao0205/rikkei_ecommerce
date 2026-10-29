@@ -4,7 +4,6 @@ import type { AdminOrderItem } from "../../../types/ecommerce";
 interface OrderDetailDrawerProps {
   order: AdminOrderItem | null;
   onClose: () => void;
-  onConfirm: (orderId: string) => void;
   onCancel: (orderId: string) => void;
   onPrint: (order: AdminOrderItem) => void;
 }
@@ -12,11 +11,15 @@ interface OrderDetailDrawerProps {
 export const OrderDetailDrawer: React.FC<OrderDetailDrawerProps> = ({
   order,
   onClose,
-  onConfirm,
   onCancel,
   onPrint,
 }) => {
   if (!order) return null;
+
+  const displayStatus =
+    order.status === "pending"
+      ? "Chờ Shop xác nhận & đóng gói"
+      : order.statusLabel;
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
@@ -38,6 +41,9 @@ export const OrderDetailDrawer: React.FC<OrderDetailDrawerProps> = ({
                 <span className="px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm font-semibold">
                   {order.courierLabel}
                 </span>
+                <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-[10px] font-bold border border-indigo-200">
+                  Admin giám sát
+                </span>
               </div>
               <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
                 {order.source} • {order.createdAt} ({order.timeAgo})
@@ -58,10 +64,13 @@ export const OrderDetailDrawer: React.FC<OrderDetailDrawerProps> = ({
             <div className="p-4 rounded-xl bg-surface-container-low border border-surface-container-high/60 flex items-center justify-between">
               <div>
                 <span className="font-label-sm text-label-sm text-on-surface-variant uppercase font-semibold">
-                  Trạng Thái Hiện Tại
+                  Trạng Thái Hiện Tại (Phía Shop)
                 </span>
-                <p className="font-headline-sm text-lg font-bold text-on-surface mt-1">
-                  {order.statusLabel}
+                <p className="font-headline-sm text-lg font-bold text-on-surface mt-1 flex items-center gap-2">
+                  <span>{displayStatus}</span>
+                  {order.status === "pending" && (
+                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                  )}
                 </p>
               </div>
               <div className="text-right">
@@ -98,12 +107,17 @@ export const OrderDetailDrawer: React.FC<OrderDetailDrawerProps> = ({
 
             {/* Order Items List */}
             <div className="flex flex-col gap-2">
-              <h3 className="font-label-lg text-label-lg font-bold text-on-surface flex items-center gap-2">
-                <span className="material-symbols-outlined text-[18px] text-primary">
-                  shopping_cart
+              <div className="flex items-center justify-between">
+                <h3 className="font-label-lg text-label-lg font-bold text-on-surface flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[18px] text-primary">
+                    shopping_cart
+                  </span>
+                  Chi Tiết Sản Phẩm ({order.shopName})
+                </h3>
+                <span className="text-[11px] text-slate-500 bg-surface-container px-2 py-0.5 rounded">
+                  Do Shop đóng gói
                 </span>
-                Chi Tiết Sản Phẩm ({order.shopName})
-              </h3>
+              </div>
               <div className="divide-y divide-surface-container-high/50 border border-surface-container-high/50 rounded-xl overflow-hidden">
                 {order.items.map((item, idx) => (
                   <div key={idx} className="p-3.5 flex items-center justify-between gap-3">
@@ -159,7 +173,7 @@ export const OrderDetailDrawer: React.FC<OrderDetailDrawerProps> = ({
             </div>
           </div>
 
-          {/* Drawer Actions Footer */}
+          {/* Drawer Actions Footer (Refactored to Platform Admin scope) */}
           <div className="p-6 border-t border-surface-container-high/60 bg-surface-container-low/40 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <button
@@ -170,28 +184,28 @@ export const OrderDetailDrawer: React.FC<OrderDetailDrawerProps> = ({
                 <span className="material-symbols-outlined text-[18px]">print</span>
                 In phiếu
               </button>
+
               {order.status !== "cancelled" && (
                 <button
                   type="button"
                   onClick={() => onCancel(order.id)}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl hover:bg-error-container text-error font-label-md text-label-md font-semibold transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-label-md text-label-md font-semibold transition-colors cursor-pointer"
+                  title="Quyền can thiệp hủy đơn của Admin sàn trong tình huống bắt buộc / gian lận / tranh chấp"
                 >
-                  <span className="material-symbols-outlined text-[18px]">cancel</span>
-                  Hủy đơn
+                  <span className="material-symbols-outlined text-[18px]">gavel</span>
+                  Hủy cưỡng chế
                 </button>
               )}
             </div>
 
-            {order.status === "pending" && (
-              <button
-                type="button"
-                onClick={() => onConfirm(order.id)}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary-container text-on-primary font-label-md text-label-md font-bold shadow-md hover:opacity-95 transition-all cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[18px]">check_circle</span>
-                Xác nhận đơn hàng
-              </button>
-            )}
+            {/* Direct Link to Full Page Order Detail */}
+            <a
+              href={`/admin/orders/${order.id.replace("#", "")}`}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/60 text-primary hover:bg-primary-fixed/20 font-label-md text-label-md font-semibold transition-all shadow-xs cursor-pointer"
+            >
+              <span>Xem toàn bộ chi tiết</span>
+              <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+            </a>
           </div>
         </div>
       </div>

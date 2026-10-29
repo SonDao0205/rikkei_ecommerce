@@ -1,0 +1,607 @@
+<!DOCTYPE html><html lang="vi" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>MarketPulse Admin - Chi tiết Đơn hàng #ORD-9821</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Plus Jakarta Sans', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              200: '#c7d2fe',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              800: '#3730a3',
+              900: '#312e81',
+            }
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    body { font-family: 'Inter', sans-serif; }
+    .font-display { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    .material-symbols-outlined.fill {
+      font-variation-settings: 'FILL' 1;
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body class="bg-[#f8fafc] text-slate-800 antialiased min-h-screen">
+<!-- ==================== 1. SIDEBAR ==================== -->
+<aside class="fixed left-0 top-0 h-screen w-64 bg-[#0f172a] text-slate-300 z-50 flex flex-col justify-between border-r border-slate-800 shadow-xl">
+<div class="flex flex-col">
+<!-- Logo Header -->
+<div class="h-20 px-6 flex items-center gap-3.5 border-b border-slate-800/80 bg-slate-950/40">
+<div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-sky-400 flex items-center justify-center shadow-lg shadow-indigo-500/25 ring-2 ring-indigo-400/20">
+<span class="material-symbols-outlined text-white text-[22px]">query_stats</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-1">
+<span class="font-display font-extrabold text-white text-[17px] tracking-tight">MarketPulse</span>
+</div>
+<span class="text-[10px] font-semibold uppercase tracking-widest text-indigo-400/90 font-mono">ADMIN CONSOLE</span>
+</div>
+</div>
+<!-- Navigation Links -->
+<nav class="p-4 space-y-1.5">
+<div class="px-3 pb-2 pt-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">Điều hành &amp; Quản lý</div>
+<a class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all group" href="#">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-slate-400 group-hover:text-indigo-400 text-[20px] transition-colors">dashboard</span>
+<span class="text-sm font-medium">Dashboard</span>
+</div>
+</a>
+<a class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all group" href="#">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-slate-400 group-hover:text-indigo-400 text-[20px] transition-colors">inventory_2</span>
+<span class="text-sm font-medium">Sản phẩm (Products)</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 text-[11px] font-semibold border border-slate-700/60">124</span>
+</a>
+<!-- ACTIVE: Orders -->
+<a class="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 font-medium" href="#">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-white text-[20px]">receipt_long</span>
+<span class="text-sm font-semibold">Đơn hàng (Orders)</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-indigo-500/80 text-white text-[11px] font-bold shadow-sm">8 New</span>
+</a>
+<a class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all group" href="#">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-slate-400 group-hover:text-indigo-400 text-[20px] transition-colors">storefront</span>
+<span class="text-sm font-medium">Người bán &amp; Khách</span>
+</div>
+</a>
+<a class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all group" href="#">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-slate-400 group-hover:text-indigo-400 text-[20px] transition-colors">loyalty</span>
+<span class="text-sm font-medium">Marketing &amp; Voucher</span>
+</div>
+</a>
+<a class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all group" href="#">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-slate-400 group-hover:text-indigo-400 text-[20px] transition-colors">settings</span>
+<span class="text-sm font-medium">Cài đặt Hệ thống</span>
+</div>
+</a>
+</nav>
+</div>
+<!-- Bottom User Profile Card -->
+<div class="p-3.5 m-3 rounded-2xl bg-slate-800/70 border border-slate-700/60 flex items-center justify-between hover:bg-slate-800 transition-colors">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-9 h-9 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center font-bold text-sm">
+          AR
+        </div>
+<div class="flex flex-col min-w-0">
+<span class="text-xs font-semibold text-white truncate">Alex Rivera</span>
+<span class="text-[10px] text-emerald-400 font-medium flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Super Admin
+          </span>
+</div>
+</div>
+<button class="text-slate-400 hover:text-white transition-colors p-1" title="Tùy chọn">
+<span class="material-symbols-outlined text-[18px]">logout</span>
+</button>
+</div>
+</aside>
+<!-- ==================== MAIN WRAPPER (Offset by Sidebar) ==================== -->
+<div class="pl-64 flex flex-col min-h-screen">
+<!-- ==================== 2. TOP HEADER BAR ==================== -->
+<header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-[0_1px_3px_rgba(0,0,0,0.03)] h-16 px-8 flex items-center justify-between gap-4">
+<!-- Breadcrumb & Cluster Status -->
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2 text-xs font-medium text-slate-500">
+<span class="hover:text-slate-800 cursor-pointer">Admin</span>
+<span class="material-symbols-outlined text-[14px] text-slate-400">chevron_right</span>
+<span class="hover:text-slate-800 cursor-pointer">Orders</span>
+<span class="material-symbols-outlined text-[14px] text-slate-400">chevron_right</span>
+<span class="text-indigo-600 font-semibold bg-indigo-50 px-2 py-0.5 rounded-md">Chi tiết Đơn hàng (#ORD-9821)</span>
+</div>
+<div class="h-4 w-px bg-slate-200 hidden sm:block"></div>
+<div class="hidden sm:inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200/70 text-emerald-700 text-xs font-medium">
+<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+<span class="">Systems Live • DB Connected (HCM-DC2)</span>
+</div>
+</div>
+<!-- Right Header Actions (Search, Notifications, Profile) -->
+<div class="flex items-center gap-3">
+<!-- Quick Search -->
+<div class="relative hidden md:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">search</span>
+<input class="w-64 pl-9 pr-12 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all" placeholder="Tìm SKU, khách hàng, mã vận đơn..." type="text">
+<kbd class="absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 text-[10px] font-semibold text-slate-400 bg-white border border-slate-200 rounded">⌘K</kbd>
+</div>
+<!-- Help Button -->
+<button class="w-9 h-9 rounded-xl border border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-50 flex items-center justify-center transition-colors">
+<span class="material-symbols-outlined text-[19px]">help_outline</span>
+</button>
+<!-- Notification Bell -->
+<button class="relative w-9 h-9 rounded-xl border border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-50 flex items-center justify-center transition-colors">
+<span class="material-symbols-outlined text-[19px]">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white"></span>
+</button>
+<div class="h-6 w-px bg-slate-200"></div>
+<!-- Header Profile -->
+<div class="flex items-center gap-2.5 pl-1 cursor-pointer">
+<img alt="Avatar" class="w-8 h-8 rounded-xl object-cover ring-1 ring-slate-200 shadow-sm" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDtScqVhhqllCX8GNI4aOlQzDCJMPrVUSWX-rnfi7mDL2Ha8d9zKflV_i3CuvFXsXxqEhLWQg0lb8OPt1nX5_rOscKBt-EtYzOruwvWi1sdVT8YJa4hjItH1OkrYki44wMYiVsO5Qks_7xN80n7TgReIYeQFM49Wp0v8CRGZoTqtl8TK9FEHWARCPQUCSrMpF_hAJMLXCLM5-AQlO7O4aFqzfbeKaeVJVcr0juvfYE">
+<span class="text-xs font-semibold text-slate-700 hidden lg:inline">Alex R.</span>
+<span class="material-symbols-outlined text-slate-400 text-[16px]">expand_more</span>
+</div>
+</div>
+</header>
+<!-- ==================== 3. MAIN PAGE CONTENT ==================== -->
+<main class="flex-1 p-8 space-y-6 max-w-[1600px] w-full mx-auto">
+<!-- ==================== 3A. TITLE & MASTER ACTION BAR ==================== -->
+<div class="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-sm flex flex-col xl:flex-row items-start xl:items-center justify-between gap-6">
+<!-- Left: Order Title & Badges & Metadata -->
+<div class="flex items-start gap-4">
+<a class="mt-1 w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors border border-slate-200 shadow-xs" href="#" title="Quay lại danh sách đơn hàng">
+<span class="material-symbols-outlined text-[20px]">arrow_back</span>
+</a>
+<div class="space-y-1.5">
+<div class="flex flex-wrap items-center gap-3">
+<h1 class="font-display text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight">Chi tiết Đơn hàng #ORD-9821</h1>
+<!-- Amber Status Badge -->
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-300 shadow-xs">
+<span class="material-symbols-outlined text-[15px] text-amber-600 fill">warning</span>
+<span class="">Chờ xác nhận COD</span>
+</span>
+<!-- Urgent Red Badge -->
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">
+<span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping"></span>
+<span class="">Cấp bách 2h</span>
+</span>
+</div>
+<!-- Subtitle info -->
+<div class="flex flex-wrap items-center gap-2.5 text-xs text-slate-500">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px] text-slate-400">schedule</span>
+                Đặt lúc: <strong class="text-slate-700 font-semibold">27/10/2024 - 14:18</strong> (25 phút trước)
+              </span>
+<span class="text-slate-300">•</span>
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px] text-slate-400">laptop_mac</span>
+                Kênh: <strong class="text-slate-700 font-semibold">Web Store (Desktop)</strong>
+</span>
+<span class="text-slate-300">•</span>
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px] text-slate-400">receipt</span>
+                Mã thanh toán: <code class="font-mono text-indigo-600 font-semibold bg-indigo-50 px-1.5 py-0.5 rounded">CS-9821-COD</code>
+</span>
+</div>
+</div>
+</div>
+<!-- Right: Action Buttons Group -->
+<div class="flex flex-wrap items-center gap-2.5 w-full xl:w-auto justify-start xl:justify-end">
+<button class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs transition-all shadow-xs active:scale-95">
+<span class="material-symbols-outlined text-[17px] text-slate-500">receipt_long</span>
+<span class="">Xuất VAT (E-Invoice)</span>
+</button>
+<button class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs transition-all shadow-xs active:scale-95">
+<span class="material-symbols-outlined text-[17px] text-slate-500">print</span>
+<span class="">In Phiếu kho &amp; Vận đơn</span>
+</button>
+<button class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-rose-200 bg-rose-50/60 hover:bg-rose-100 text-rose-700 font-semibold text-xs transition-all active:scale-95" onclick="confirmCancelOrder()">
+<span class="material-symbols-outlined text-[17px]">cancel</span>
+<span class="">Hủy đơn</span>
+</button>
+<!-- Master High-contrast Primary Button -->
+<button class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow-md shadow-indigo-600/30 transition-all active:scale-95" onclick="approveCODOrder()">
+<span class="material-symbols-outlined text-[19px]">check_circle</span>
+<span class="">✓ Xác nhận Đơn hàng COD</span>
+</button>
+</div>
+</div>
+<!-- ==================== 4. TWO COLUMN GRID (65% / 35%) ==================== -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+<!-- ==================== LEFT COLUMN (65% / 8 Cols) ==================== -->
+<div class="lg:col-span-8 space-y-6">
+<!-- 4A. BANNER: COD FRAUD & VERIFICATION SHIELD -->
+
+<!-- 4B. PRODUCT & SKU ITEMS CARD -->
+<div class="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-sm space-y-5">
+<!-- Header -->
+<div class="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-100">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 border border-sky-100 flex items-center justify-center">
+<span class="material-symbols-outlined text-[22px]">inventory_2</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h2 class="font-display text-base font-bold text-slate-900">Kiện hàng &amp; Chi tiết SKU</h2>
+<span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-bold text-xs">2 món</span>
+</div>
+<div class="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
+<span class="">Gian hàng:</span>
+<a class="font-semibold text-indigo-600 hover:text-indigo-700 inline-flex items-center gap-1" href="#">
+                      UrbanStep Official
+                      <span class="material-symbols-outlined text-[14px] text-sky-500 fill">verified</span>
+</a>
+<span class="px-1.5 py-0.2 rounded bg-slate-100 text-slate-500 text-[10px] font-mono">#SHOP-0089</span>
+</div>
+</div>
+</div>
+
+</div>
+<!-- Products Table-like List -->
+<div class="space-y-3">
+<!-- Item 1 -->
+<div class="p-4 rounded-xl border border-slate-200/80 bg-slate-50/50 hover:bg-slate-50 transition-colors flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+<div class="flex items-center gap-4 min-w-0">
+<img alt="Retro Runner V2 Sneaker" class="w-18 h-18 rounded-xl object-cover border border-slate-200 bg-white shrink-0 shadow-xs" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB08yzFXcp8Bpd3OeVGA0UyUI29V8be9z9x5rixKuG3Vt5aM2OZw-DnFJV6rzBBOs-R4m4Cri83rFx7V15YNq2inJgZP8RRGByUsKStKB444mnZAEk9_UVhy770IPzi7PGvdLeyGwivaFMez1mPCAxKcsg1UEwvPrGojKIu15QibS2qr-Oq4UHzvg1PvdXaMnq6D586tr1Ntj8awoiDYlsTpL777vmsARQz1TOXiRs">
+<div class="space-y-1.5 min-w-0">
+<div class="flex items-center gap-2">
+<h4 class="font-display text-sm font-bold text-slate-900 truncate">Retro Runner V2 Sneaker</h4>
+<span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 text-[11px] font-semibold border border-emerald-200/60">Bán chạy #1</span>
+</div>
+<div class="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+<span class="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-700 font-medium">Size 41 • Off-White / Navy</span>
+<span class="font-mono text-slate-500 font-medium">SKU: <strong class="text-slate-800">URS-RN-41</strong></span>
+</div>
+<div class="flex flex-wrap items-center gap-3 text-xs text-slate-500">
+<span class="">Vị trí kho: <strong class="text-slate-800 font-semibold font-mono">KHO-HCM-A12</strong></span>
+<span class="text-slate-300">•</span>
+<span class="">Tồn kho khả dụng: <strong class="text-emerald-600 font-semibold">42 đôi</strong></span>
+</div>
+</div>
+</div>
+<div class="flex md:flex-col items-end justify-between w-full md:w-auto shrink-0 border-t md:border-t-0 pt-2 md:pt-0 border-slate-200">
+<div class="text-xs text-slate-500 font-medium">1.250.000 ₫ × 1</div>
+<div class="font-display text-sm md:text-base font-extrabold text-slate-900 tabular-nums">1.250.000 ₫</div>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="p-4 rounded-xl border border-slate-200/80 bg-slate-50/50 hover:bg-slate-50 transition-colors flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+<div class="flex items-center gap-4 min-w-0">
+<img alt="Cushioned Bamboo Athletic Socks" class="w-18 h-18 rounded-xl object-cover border border-slate-200 bg-white shrink-0 shadow-xs" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBjXd2x23kVFlHqBxL_Lpl_6XJJEuOXJIh46eEFa5HDc7hajK6vGnocuN90So8GeXuyxF2F-ceaxQwvvNJ3ddykqczOs4x_wIo9C3N-cwR_5vIuLlMjWg2U6IcSmm9EiAaOv07whuLtObn3opPButZCW6JyV7Za1MnbBkzkKtw7jt0CywDnyXk82rk_fB7Tq7jdo2ScwnK-NmqEGqQvTneVHk6zvXPVcZq4AHGGswY">
+<div class="space-y-1.5 min-w-0">
+<div class="flex items-center gap-2">
+<h4 class="font-display text-sm font-bold text-slate-900 truncate">Cushioned Bamboo Athletic Socks</h4>
+<span class="px-2 py-0.5 rounded bg-sky-50 text-sky-700 text-[11px] font-semibold border border-sky-200/60">Combo kèm</span>
+</div>
+<div class="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+<span class="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-700 font-medium">Grey Melange • Free Size</span>
+<span class="font-mono text-slate-500 font-medium">SKU: <strong class="text-slate-800">URS-SCK-01</strong></span>
+</div>
+<div class="flex flex-wrap items-center gap-3 text-xs text-slate-500">
+<span class="">Vị trí kho: <strong class="text-slate-800 font-semibold font-mono">KHO-HCM-B04</strong></span>
+<span class="text-slate-300">•</span>
+<span class="">Tồn kho khả dụng: <strong class="text-emerald-600 font-semibold">158 đôi</strong></span>
+</div>
+</div>
+</div>
+<div class="flex md:flex-col items-end justify-between w-full md:w-auto shrink-0 border-t md:border-t-0 pt-2 md:pt-0 border-slate-200">
+<div class="text-xs text-slate-500 font-medium">120.000 ₫ × 1</div>
+<div class="font-display text-sm md:text-base font-extrabold text-slate-900 tabular-nums">120.000 ₫</div>
+</div>
+</div>
+</div>
+<!-- Footer Specs -->
+<div class="p-3 rounded-xl bg-slate-50 border border-slate-200/60 flex flex-wrap items-center justify-between text-xs text-slate-600 gap-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-indigo-600 text-[18px]">package_2</span>
+<span class="">Quy cách đóng gói: <strong class="text-slate-800 font-medium">Hộp carton UrbanStep tiêu chuẩn + Màng bóng khí bảo vệ</strong></span>
+</div>
+<span class="font-semibold text-slate-800 bg-white px-2.5 py-1 rounded-md border border-slate-200">Khối lượng: 950g</span>
+</div>
+</div>
+<!-- 4C. FINANCIAL & COD RECONCILIATION SUMMARY CARD -->
+<div class="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-sm space-y-5">
+<div class="flex items-center justify-between pb-4 border-b border-slate-100">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center justify-center">
+<span class="material-symbols-outlined text-[22px]">payments</span>
+</div>
+<div>
+<h3 class="font-display text-base font-bold text-slate-900">Bảng Tính tiền &amp; Đối soát Thanh toán</h3>
+<p class="text-xs text-slate-500">Chi tiết phân bổ dòng tiền, phí vận chuyển và công nợ COD</p>
+</div>
+</div>
+<span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-semibold">
+                Hình thức: COD (Thu tiền khi nhận)
+              </span>
+</div>
+<!-- Breakdown & Grand Total Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+<!-- Left: Detailed Line Breakdown -->
+<div class="space-y-3 text-xs">
+<div class="flex items-center justify-between py-1 text-slate-600">
+<span class="">Tạm tính tiền hàng (Subtotal):</span>
+<span class="font-bold text-slate-900 tabular-nums text-sm">1.370.000 ₫</span>
+</div>
+<div class="flex items-center justify-between py-1 text-slate-600">
+<div class="flex items-center gap-1.5">
+<span class="">Phí vận chuyển nội thành:</span>
+<span class="text-[10px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-500 font-medium">HCMC Inner</span>
+</div>
+<span class="font-semibold text-slate-800 tabular-nums">+ 35.000 ₫</span>
+</div>
+<div class="flex items-center justify-between py-1 text-slate-600">
+<div class="flex items-center gap-1.5">
+<span class="">Phí bảo hiểm hàng hóa:</span>
+<span class="text-[10px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-500 font-medium">Transit Insured</span>
+</div>
+<span class="font-semibold text-slate-800 tabular-nums">+ 10.000 ₫</span>
+</div>
+<div class="flex items-center justify-between py-1 text-slate-600">
+<div class="flex items-center gap-1.5">
+<span class="">Voucher sàn trợ giá:</span>
+<span class="text-[10px] px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-700 font-mono font-bold">MP-MEGA50</span>
+</div>
+<span class="font-medium text-slate-400 tabular-nums">- 0 ₫ (Không áp dụng)</span>
+</div>
+<div class="flex items-center justify-between py-1 text-slate-600">
+<span class="">Chiết khấu đối tác thương mại:</span>
+<span class="font-medium text-slate-400 tabular-nums">0 ₫</span>
+</div>
+</div>
+<!-- Right: Highlighted Grand Total Card -->
+<div class="p-5 rounded-xl bg-gradient-to-br from-indigo-50 via-slate-50 to-white border border-indigo-100/80 flex flex-col justify-between gap-4 shadow-xs">
+<div>
+<span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">TỔNG TIỀN THU HỘ COD (GRAND TOTAL)</span>
+<div class="font-display text-3xl font-extrabold text-indigo-700 tabular-nums tracking-tight mt-1">
+                    1.415.000 ₫
+                  </div>
+<p class="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                    Đơn vị vận chuyển GHTK chịu trách nhiệm thu hộ và đối soát chu kỳ T+2 vào tài khoản định danh sàn.
+                  </p>
+</div>
+<div class="p-2.5 rounded-lg bg-white border border-slate-200/80 flex items-center justify-between text-xs">
+<span class="text-slate-600 font-medium">Trạng thái thanh toán:</span>
+<span class="inline-flex items-center gap-1.5 text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded">
+<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                    Chưa thu (Chờ giao hàng)
+                  </span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- ==================== RIGHT COLUMN (35% / 4 Cols) ==================== -->
+<div class="lg:col-span-4 space-y-6">
+<!-- 4D. CUSTOMER INFORMATION CARD -->
+<div class="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-sm space-y-5">
+<div class="flex items-center justify-between pb-3 border-b border-slate-100">
+<div class="flex items-center gap-2.5">
+<div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">person</span>
+</div>
+<div>
+<h3 class="font-display text-sm font-bold text-slate-900">Thông tin Người mua &amp; Giao nhận</h3>
+<span class="text-[11px] text-slate-500">Hồ sơ khách hàng</span>
+</div>
+</div>
+<a class="text-xs font-semibold text-indigo-600 hover:underline flex items-center gap-0.5" href="#">
+<span class="">Chi tiết CRM</span>
+<span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</a>
+</div>
+<!-- Customer Avatar & Tier -->
+<div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70 space-y-3">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-11 h-11 rounded-full bg-indigo-600 text-white font-display font-bold text-sm flex items-center justify-center shadow-sm">
+                    NA
+                  </div>
+<div>
+<h4 class="font-display text-sm font-bold text-slate-900">Nguyễn Văn An</h4>
+<span class="font-mono text-[11px] text-slate-500">ID: #USR-8912</span>
+</div>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[11px] font-bold">
+                  ★ Gold Tier (18 đơn)
+                </span>
+</div>
+<div class="space-y-2 pt-2 border-t border-slate-200/60 text-xs">
+<!-- Phone -->
+<div class="flex items-center justify-between py-1">
+<div class="flex items-center gap-2 text-slate-600">
+<span class="material-symbols-outlined text-[17px] text-slate-400">call</span>
+<span class="font-mono font-bold text-slate-900 text-sm">+84 909 123 456</span>
+</div>
+<button class="p-1 rounded text-slate-400 hover:text-indigo-600 hover:bg-white transition-colors" onclick="navigator.clipboard.writeText('+84909123456'); alert('Đã sao chép SĐT!');" title="Sao chép SĐT">
+<span class="material-symbols-outlined text-[16px]">content_copy</span>
+</button>
+</div>
+<!-- Address -->
+<div class="flex items-start gap-2 text-slate-600 pt-1">
+<span class="material-symbols-outlined text-[18px] text-slate-400 shrink-0 mt-0.5">location_on</span>
+<div>
+<span class="font-semibold text-slate-900 block">142 Võ Thị Sáu</span>
+<span class="text-slate-500">Phường Võ Thị Sáu, Quận 3, TP. Hồ Chí Minh</span>
+</div>
+</div>
+</div>
+<!-- Buyer Note Box -->
+<div class="p-3 rounded-lg bg-amber-50/70 border border-amber-200/80 flex items-start gap-2.5 mt-2">
+<span class="material-symbols-outlined text-amber-700 text-[18px] shrink-0 mt-0.5">sticky_note_2</span>
+<div class="text-xs">
+<span class="font-bold text-amber-900 block">Ghi chú của khách hàng:</span>
+<p class="italic text-amber-950 mt-0.5">"Giao giờ hành chính, gọi trước khi giao 15 phút."</p>
+</div>
+</div>
+</div>
+</div>
+<!-- 4E. 3PL LOGISTICS & SHIPPING CARD -->
+<div class="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-sm space-y-5">
+<div class="flex items-center justify-between pb-3 border-b border-slate-100">
+<div class="flex items-center gap-2.5">
+<div class="w-9 h-9 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">local_shipping</span>
+</div>
+<div>
+<h3 class="font-display text-sm font-bold text-slate-900">Điều phối Vận chuyển</h3>
+<span class="text-[11px] text-slate-500">Đối tác 3PL Logistics</span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold text-xs border border-emerald-200">
+                GHTK Express
+              </span>
+</div>
+<!-- Carrier & Tracking Info -->
+<div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70 space-y-2.5 text-xs">
+<div class="flex items-center justify-between">
+<span class="text-slate-500">Mã vận đơn (Waybill):</span>
+<div class="flex items-center gap-1">
+<span class="font-mono font-bold text-indigo-700 text-xs" id="trackingCode">GHTK-VN-908213</span>
+<button class="p-1 rounded text-slate-400 hover:text-indigo-600" onclick="copyTrackingCode()" title="Sao chép">
+<span class="material-symbols-outlined text-[15px]">content_copy</span>
+</button>
+</div>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-slate-500">Gói cước:</span>
+<span class="font-semibold text-slate-800">Giao hỏa tốc tiêu chuẩn (24h)</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-slate-500">Dự kiến giao:</span>
+<span class="font-semibold text-slate-800">28/10/2024 (Trước 17:00)</span>
+</div>
+<div class="pt-2 border-t border-slate-200/60">
+<button class="w-full py-2 px-3 rounded-lg bg-white hover:bg-slate-100 text-slate-700 font-semibold text-xs border border-slate-200 transition-colors flex items-center justify-center gap-1.5 shadow-xs" onclick="toggleCourierModal()">
+<span class="material-symbols-outlined text-[16px]">swap_horiz</span>
+<span class="">Đổi đối tác (GHN / Viettel Post)</span>
+</button>
+</div>
+</div>
+<!-- Shipping Stepper Timeline -->
+<div class="space-y-3 pt-1">
+<span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Lộ trình vận chuyển dự kiến</span>
+<div class="relative pl-6 space-y-4 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
+<!-- Step 1: Done -->
+<div class="relative">
+<span class="absolute -left-6 top-0.5 w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center ring-4 ring-white">
+<span class="material-symbols-outlined text-[10px]">check</span>
+</span>
+<div>
+<h5 class="text-xs font-bold text-slate-900">Tạo đơn đặt mua</h5>
+<p class="text-[11px] text-slate-500">27/10/2024 - 14:18 (Thành công)</p>
+</div>
+</div>
+<!-- Step 2: Current (Amber pulse) -->
+<div class="relative">
+<span class="absolute -left-6 top-0.5 w-4 h-4 rounded-full bg-amber-500 text-white flex items-center justify-center ring-4 ring-white animate-pulse">
+<span class="w-1.5 h-1.5 rounded-full bg-white"></span>
+</span>
+<div>
+<h5 class="text-xs font-bold text-amber-700">Chờ xác nhận COD</h5>
+<p class="text-[11px] text-slate-600">Đang thẩm định số điện thoại khách</p>
+</div>
+</div>
+<!-- Step 3: Pending -->
+<div class="relative opacity-60">
+<span class="absolute -left-6 top-0.5 w-4 h-4 rounded-full bg-slate-300 text-white flex items-center justify-center ring-4 ring-white">
+<span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+</span>
+<div>
+<h5 class="text-xs font-semibold text-slate-700">Đang đóng gói hàng</h5>
+<p class="text-[11px] text-slate-400">Kho HCM UrbanStep sẵn sàng xuất</p>
+</div>
+</div>
+<!-- Step 4: Pending -->
+<div class="relative opacity-60">
+<span class="absolute -left-6 top-0.5 w-4 h-4 rounded-full bg-slate-300 text-white flex items-center justify-center ring-4 ring-white">
+<span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+</span>
+<div>
+<h5 class="text-xs font-semibold text-slate-700">Trung chuyển &amp; Giao hàng</h5>
+<p class="text-[11px] text-slate-400">Shipper GHTK phát tận nơi</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- 4F. AUDIT TRAIL / FRAUD LOGS CARD -->
+
+</div>
+</div>
+</main>
+</div>
+<!-- Micro-interactions Script -->
+<script>
+    function copyTrackingCode() {
+      const code = document.getElementById('trackingCode').innerText;
+      navigator.clipboard.writeText(code).then(() => {
+        alert('Đã sao chép mã vận đơn: ' + code);
+      });
+    }
+
+    function sendOtpTrigger() {
+      const btn = document.getElementById('otpBtn');
+      btn.innerHTML = '<span class="material-symbols-outlined text-[18px] animate-spin">refresh</span> Đang gửi OTP...';
+      btn.disabled = true;
+      setTimeout(() => {
+        btn.innerHTML = '<span class="material-symbols-outlined text-[18px] text-emerald-600">done_all</span> Đã gửi OTP thành công (ZNS)';
+        btn.classList.add('bg-emerald-50', 'text-emerald-700', 'border-emerald-300');
+      }, 1000);
+    }
+
+    function approveCODOrder() {
+      if (confirm('Xác nhận hoàn tất thẩm định đơn hàng COD #ORD-9821 và chuyển sang trạng thái Đóng gói?')) {
+        alert('Đơn hàng #ORD-9821 đã được phê duyệt COD thành công! Hệ thống đã gửi thông báo đến kho UrbanStep.');
+        window.location.reload();
+      }
+    }
+
+    function confirmCancelOrder() {
+      const reason = prompt('Nhập lý do hủy đơn hàng #ORD-9821:', 'Khách hàng không phản hồi cuộc gọi xác nhận');
+      if (reason) {
+        alert('Đã hủy đơn hàng #ORD-9821. Lý do: ' + reason);
+      }
+    }
+
+    function toggleCourierModal() {
+      const choice = prompt('Chọn đơn vị vận chuyển mới:\n1. GHN Express (Giao Hàng Nhanh)\n2. Viettel Post\nNhập số 1 hoặc 2:', '1');
+      if (choice === '1') {
+        alert('Đã chuyển đối tác sang GHN Express. Mã vận đơn mới đang được khởi tạo.');
+      } else if (choice === '2') {
+        alert('Đã chuyển đối tác sang Viettel Post. Mã vận đơn mới đang được khởi tạo.');
+      }
+    }
+  </script>
+
+
+</body></html>

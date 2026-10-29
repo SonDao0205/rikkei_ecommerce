@@ -1,8 +1,8 @@
 import React, { useRef } from "react";
 import { Link } from "react-router-dom";
 import { useAppDispatch } from "../../redux/store";
-import { openLogoutModal } from "../../redux/slices/authSlice";
-import { setLocalAvatarPreview } from "../../redux/slices/profileSlice";
+import { openLogoutModal } from "../../redux/slices/auth/authSlice";
+import { setLocalAvatarPreview } from "../../redux/slices/user/profileSlice";
 import { getDefaultAvatar } from "../../utils/avatar";
 import type { UserProfileDetails } from "../../types/ecommerce";
 
@@ -51,7 +51,7 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
       id: "address-book",
       label: "Address Book",
       icon: "location_on",
-      href: "#address-book",
+      href: "/profile/address",
       subtext: "Địa chỉ",
     },
     {

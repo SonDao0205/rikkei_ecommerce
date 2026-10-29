@@ -4,7 +4,7 @@ import {
   updateUserProfile,
   removeUserAvatar,
   setLocalAvatarPreview,
-} from "../../redux/slices/profileSlice";
+} from "../../redux/slices/user/profileSlice";
 import { getDefaultAvatar } from "../../utils/avatar";
 import type { UserProfileDetails } from "../../types/ecommerce";
 

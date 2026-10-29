@@ -1,11 +1,13 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { useDispatch, useSelector, type TypedUseSelectorHook } from "react-redux";
-import productReducer from "./slices/productSlice";
-import adminProductReducer from "./slices/adminProductSlice";
-import authReducer from "./slices/authSlice";
-import profileReducer from "./slices/profileSlice";
-import adminDashboardReducer from "./slices/adminDashboardSlice";
-import adminOrderReducer from "./slices/adminOrderSlice";
+import productReducer from "./slices/product/productSlice";
+import adminProductReducer from "./slices/admin/adminProductSlice";
+import authReducer from "./slices/auth/authSlice";
+import profileReducer from "./slices/user/profileSlice";
+import adminDashboardReducer from "./slices/admin/adminDashboardSlice";
+import adminOrderReducer from "./slices/admin/adminOrderSlice";
+import addressReducer from "./slices/user/addressSlice";
+import adminShopReducer from "./slices/admin/adminShopSlice";
 
 export const store = configureStore({
   reducer: {
@@ -15,6 +17,8 @@ export const store = configureStore({
     profile: profileReducer,
     adminDashboard: adminDashboardReducer,
     adminOrder: adminOrderReducer,
+    address: addressReducer,
+    adminShop: adminShopReducer,
   },
 });
 

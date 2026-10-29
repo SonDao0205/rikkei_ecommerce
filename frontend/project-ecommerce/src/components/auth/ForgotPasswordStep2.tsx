@@ -4,7 +4,7 @@ import {
   verifyPasswordResetOtp,
   sendPasswordResetOtp,
   clearPasswordResetState,
-} from "../../redux/slices/authSlice";
+} from "../../redux/slices/auth/authSlice";
 
 interface ForgotPasswordStep2Props {
   onBack: () => void;

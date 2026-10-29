@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../redux/store";
-import { registerUser, clearAuthError } from "../../redux/slices/authSlice";
+import { registerUser, clearAuthError } from "../../redux/slices/auth/authSlice";
 
 // ─── Sub-components ─────────────────────────────────────────────────────────────
 
