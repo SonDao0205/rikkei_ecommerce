@@ -1,7 +1,7 @@
 import React, { type ReactNode } from "react";
 import { Link, useLocation, Navigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../redux/store";
-import { openLogoutModal } from "../redux/slices/authSlice";
+import { openLogoutModal } from "../redux/slices/auth/authSlice";
 import { APP_CONFIG } from "../config/appConfig";
 
 interface AdminLayoutProps {
@@ -15,8 +15,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     (state) => state.auth
   );
 
-  if (isInitialized && !isAuthenticated) {
-    return <Navigate to="/" replace />;
+  if (isInitialized) {
+    const userRole = (user?.role || "").toLowerCase().trim();
+    if (!isAuthenticated || userRole !== "admin") {
+      return <Navigate to="/" replace />;
+    }
   }
 
   const handleOpenLogout = (e: React.MouseEvent) => {
@@ -28,6 +31,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { label: "Dashboard", path: "/admin/dashboard", icon: "space_dashboard" },
     { label: "Products", path: "/admin/products", icon: "inventory_2" },
     { label: "Orders", path: "/admin/orders", icon: "local_shipping" },
+    { label: "Shops & Merchants", path: "/admin/shops", icon: "store" },
     { label: "Customers / Users", path: "/admin/customers", icon: "group" },
     { label: "Settings", path: "/admin/settings", icon: "settings" },
   ];
@@ -61,9 +65,16 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 (item.path === "/admin/dashboard" && isDashboard) ||
                 (item.path === "/admin/products" &&
                   location.pathname.startsWith("/admin/product")) ||
-                (item.path !== "/admin/dashboard" &&
-                  item.path !== "/admin/products" &&
-                  item.path === location.pathname);
+                (item.path === "/admin/orders" &&
+                  location.pathname.startsWith("/admin/order")) ||
+                (item.path === "/admin/shops" &&
+                  (location.pathname.startsWith("/admin/shop") ||
+                    location.pathname.startsWith("/admin/merchant"))) ||
+                (item.path === "/admin/customers" &&
+                  location.pathname.startsWith("/admin/customer")) ||
+                (item.path === "/admin/settings" &&
+                  location.pathname.startsWith("/admin/setting")) ||
+                item.path === location.pathname;
 
               return (
                 <Link
@@ -144,6 +155,10 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 ? "Products"
                 : location.pathname.startsWith("/admin/order")
                 ? "Orders"
+                : location.pathname.startsWith("/admin/customer")
+                ? "Customers / Users"
+                : location.pathname.startsWith("/admin/setting")
+                ? "Settings"
                 : "Dashboard"}
             </span>
           </div>

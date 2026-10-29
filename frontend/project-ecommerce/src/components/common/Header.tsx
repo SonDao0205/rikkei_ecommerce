@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../redux/store";
-import { openLogoutModal } from "../../redux/slices/authSlice";
+import { openLogoutModal } from "../../redux/slices/auth/authSlice";
 import { getDefaultAvatar } from "../../utils/avatar";
 
 interface HeaderProps {
@@ -192,16 +192,7 @@ const Header: React.FC<HeaderProps> = ({
                       <span className="material-symbols-outlined text-[16px]">person</span>
                       <span>Hồ sơ của tôi</span>
                     </Link>
-                    {(user.role || "").toLowerCase() === "admin" && (
-                      <Link
-                        to="/admin/dashboard"
-                        onClick={() => setShowUserMenu(false)}
-                        className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-on-surface hover:bg-surface-container hover:text-primary transition-colors"
-                      >
-                        <span className="material-symbols-outlined text-[16px]">admin_panel_settings</span>
-                        <span>Admin Console</span>
-                      </Link>
-                    )}
+
                     <button
                       type="button"
                       onClick={handleOpenLogout}

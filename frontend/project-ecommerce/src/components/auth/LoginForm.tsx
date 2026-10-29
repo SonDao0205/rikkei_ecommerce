@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../redux/store";
-import { loginUser, clearAuthError } from "../../redux/slices/authSlice";
+import { loginUser, clearAuthError } from "../../redux/slices/auth/authSlice";
 import { APP_CONFIG } from "../../config/appConfig";
 
 // ─── Icons ──────────────────────────────────────────────────────────────────────

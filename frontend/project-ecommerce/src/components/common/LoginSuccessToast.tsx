@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useAppDispatch, useAppSelector } from "../../redux/store";
-import { dismissLoginToast } from "../../redux/slices/authSlice";
+import { dismissLoginToast } from "../../redux/slices/auth/authSlice";
 
 /**
  * LoginSuccessToast

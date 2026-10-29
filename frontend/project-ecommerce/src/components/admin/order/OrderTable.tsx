@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import type { AdminOrderItem } from "../../../types/ecommerce";
 
 interface OrderTableProps {
@@ -148,12 +149,12 @@ export const OrderTable: React.FC<OrderTableProps> = ({
                     <td className="py-4 px-3 align-middle">
                       <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-1.5">
-                          <span
-                            onClick={() => onViewDetail(order)}
+                          <Link
+                            to={`/admin/orders/${order.id.replace('#', '')}`}
                             className="font-headline-md text-headline-md tracking-tight font-bold text-primary hover:underline cursor-pointer"
                           >
                             {order.id}
-                          </span>
+                          </Link>
                           {order.hasCodAlert && (
                             <span className="px-1.5 py-0.5 rounded bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-label-sm font-bold scale-90 origin-left">
                               COD Alert
@@ -247,11 +248,19 @@ export const OrderTable: React.FC<OrderTableProps> = ({
                         <button
                           type="button"
                           onClick={() => onViewDetail(order)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary-container text-on-primary font-label-md text-label-md font-semibold shadow-sm hover:opacity-95 transition-all cursor-pointer"
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md font-medium transition-all cursor-pointer"
+                          title="Xem nhanh chi tiết"
                         >
                           <span className="material-symbols-outlined text-[16px]">visibility</span>
-                          <span>Xem chi tiết</span>
+                          <span>Xem nhanh</span>
                         </button>
+                        <Link
+                          to={`/admin/orders/${order.id.replace('#', '')}`}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary-container text-on-primary font-label-md text-label-md font-semibold shadow-sm hover:opacity-95 transition-all cursor-pointer"
+                        >
+                          <span className="material-symbols-outlined text-[16px]">open_in_new</span>
+                          <span>Chi tiết</span>
+                        </Link>
                         <button
                           type="button"
                           onClick={() => onPrintOrder(order)}

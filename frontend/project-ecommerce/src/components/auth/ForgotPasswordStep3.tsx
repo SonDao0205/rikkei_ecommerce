@@ -4,7 +4,7 @@ import { useAppDispatch, useAppSelector } from "../../redux/store";
 import {
   resetPasswordWithToken,
   clearPasswordResetState,
-} from "../../redux/slices/authSlice";
+} from "../../redux/slices/auth/authSlice";
 
 interface ForgotPasswordStep3Props {
   onBack: () => void;

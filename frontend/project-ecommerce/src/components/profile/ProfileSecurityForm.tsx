@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../redux/store";
-import { changeUserPassword, clearProfileStatus } from "../../redux/slices/profileSlice";
-import { logoutUser } from "../../redux/slices/authSlice";
+import { changeUserPassword, clearProfileStatus } from "../../redux/slices/user/profileSlice";
+import { logoutUser } from "../../redux/slices/auth/authSlice";
 
 export const ProfileSecurityForm: React.FC = () => {
   const navigate = useNavigate();

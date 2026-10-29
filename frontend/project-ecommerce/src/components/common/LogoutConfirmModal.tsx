@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useAppDispatch, useAppSelector } from "../../redux/store";
-import { logoutUser, closeLogoutModal } from "../../redux/slices/authSlice";
+import { logoutUser, closeLogoutModal } from "../../redux/slices/auth/authSlice";
 import router from "../../routes/AppRoutes";
 
 export interface LogoutConfirmModalProps {

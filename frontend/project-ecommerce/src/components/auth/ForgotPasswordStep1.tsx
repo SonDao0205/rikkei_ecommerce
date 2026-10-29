@@ -3,7 +3,7 @@ import { useAppDispatch, useAppSelector } from "../../redux/store";
 import {
   sendPasswordResetOtp,
   clearPasswordResetState,
-} from "../../redux/slices/authSlice";
+} from "../../redux/slices/auth/authSlice";
 
 interface ForgotPasswordStep1Props {
   onSuccessStep?: (identity: string, mode: "email" | "phone") => void;
