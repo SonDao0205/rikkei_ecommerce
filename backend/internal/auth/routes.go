@@ -23,5 +23,9 @@ func RegisterRoutes(a *App) {
 	a.mux.Handle("GET /api/v1/admin/users", a.requireRole("ADMIN", a.listUsers))
 	catalog.RegisterRoutes(a.mux, a.db, func(next http.HandlerFunc) http.HandlerFunc {
 		return a.requireRole("ADMIN", next)
+	}, func(next http.HandlerFunc) http.HandlerFunc {
+		return a.requireRole("CLIENT", next)
+	}, func(r *http.Request) string {
+		return current(r).ID
 	})
 }

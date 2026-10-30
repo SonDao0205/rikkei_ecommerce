@@ -3,6 +3,7 @@ package auth
 import (
 	"crypto/hmac"
 	"database/sql"
+	"errors"
 	"net/http"
 	"strings"
 	"time"
@@ -115,8 +116,12 @@ func (a *App) verifyResetOTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	email, err := a.resetEmailForIdentifier(r, identifier)
-	if err != nil {
+	if errors.Is(err, sql.ErrNoRows) {
 		writeError(w, http.StatusBadRequest, "invalid_or_expired_otp", "Verification code is invalid or expired")
+		return
+	}
+	if err != nil {
+		a.serverError(w, r, err)
 		return
 	}
 	if !a.checkResetOTP(w, r, email, q.OTP) {
@@ -144,10 +149,10 @@ func (a *App) resetEmailForIdentifier(r *http.Request, identifier string) (strin
 	}
 	var email string
 	err := a.db.QueryRowContext(r.Context(), query, identifier).Scan(&email)
-	if err != nil || email == "" {
+	if errors.Is(err, sql.ErrNoRows) || err == nil && email == "" {
 		return "", sql.ErrNoRows
 	}
-	return email, nil
+	return email, err
 }
 
 func (a *App) checkResetOTP(w http.ResponseWriter, r *http.Request, email, otp string) bool {
@@ -161,6 +166,10 @@ func (a *App) checkResetOTP(w http.ResponseWriter, r *http.Request, email, otp s
 	var expires time.Time
 	var attempts int
 	err = tx.QueryRowContext(r.Context(), `SELECT otp_hash,expires_at,attempts FROM password_reset_otps WHERE email=? FOR UPDATE`, email).Scan(&hash, &expires, &attempts)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		a.serverError(w, r, err)
+		return false
+	}
 	valid := err == nil && attempts < 5 && time.Now().Before(expires) && hmac.Equal([]byte(hash), []byte(hmacDigest(a.cfg.JWTSecret, otp)))
 	if !valid {
 		if err == nil && attempts < 5 {
