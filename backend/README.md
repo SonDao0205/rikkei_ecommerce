@@ -110,6 +110,8 @@ $env:API_BASE_URL = 'http://localhost:18080' # đổi theo cổng host đang dù
 
 Smoke test tạo tài khoản ngẫu nhiên và kiểm tra catalog, tìm kiếm/filter, chi tiết sản phẩm/shop, follow/unfollow, auth, refresh replay, RBAC và password. Không trỏ script đến production/shared DB. OTP được ghi log chỉ ở development; không bật development mode với dữ liệu production.
 
+Postman collection importable bao phủ các route BE hiện có, kèm local environment và hướng dẫn chạy bằng Collection Runner/Newman tại [`postman/`](../postman/README.md). Nạp lại seed trước mỗi lần chạy vì collection xóa mềm fixture kiểm thử inventory `960009`.
+
 ## 2. Hướng dẫn FE tích hợp API
 
 ### Base URL, request và response

@@ -58,7 +58,8 @@ INSERT INTO products (id,shop_id,category_id,brand_id,name,slug,description,thum
  (960005,920003,930005,940003,'Apple iPhone 15 Pro 128GB','seed-iphone-15-pro-128gb','Điện thoại mẫu có một phần từ khóa tìm kiếm tương tự.','https://images.unsplash.com/photo-1696446701796-da61225697cc?w=800',25990000,180,4.80,31,'ACTIVE',0),
  (960006,920003,930005,940003,'Apple iPhone 15 128GB','seed-iphone-15-128gb','Điện thoại mẫu cơ bản để so sánh tỷ lệ khớp từ khóa.','https://images.unsplash.com/photo-1696446701796-da61225697cc?w=800',19990000,120,4.70,24,'ACTIVE',0),
  (960007,920003,930005,NULL,'Ốp lưng MagSafe cho iPhone 15 Pro Max','seed-iphone-15-pro-max-case','Phụ kiện mẫu giúp kiểm tra xếp hạng theo tỷ lệ từ khóa trong tên.','https://images.unsplash.com/photo-1603313011105-34b1b4e5e9f1?w=800',390000,80,4.60,17,'ACTIVE',0),
- (960008,920003,930005,NULL,'Cáp USB-C sạc nhanh 20W','seed-usb-c-20w-cable','Phụ kiện công nghệ mẫu không chứa từ khóa iPhone.','https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800',190000,65,4.50,12,'ACTIVE',0)
+ (960008,920003,930005,NULL,'Cáp USB-C sạc nhanh 20W','seed-usb-c-20w-cable','Phụ kiện công nghệ mẫu không chứa từ khóa iPhone.','https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800',190000,65,4.50,12,'ACTIVE',0),
+ (960009,920003,930005,NULL,'Postman API Test Product','seed-postman-api-test-product','Local-only fixture used by the Postman collection to test admin inventory actions.','https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800',100000,0,0,0,'ACTIVE',0)
 ON DUPLICATE KEY UPDATE shop_id=VALUES(shop_id),category_id=VALUES(category_id),brand_id=VALUES(brand_id),name=VALUES(name),description=VALUES(description),thumbnail_url=VALUES(thumbnail_url),price=VALUES(price),sold_count=VALUES(sold_count),rating_avg=VALUES(rating_avg),rating_count=VALUES(rating_count),status=VALUES(status),is_deleted=VALUES(is_deleted);
 
 INSERT INTO product_images (id,product_id,url,sort_order,is_primary) VALUES
@@ -70,7 +71,8 @@ INSERT INTO product_images (id,product_id,url,sort_order,is_primary) VALUES
  (960106,960005,'https://images.unsplash.com/photo-1696446701796-da61225697cc?w=800',1,1),
  (960107,960006,'https://images.unsplash.com/photo-1696446701796-da61225697cc?w=800',1,1),
  (960108,960007,'https://images.unsplash.com/photo-1603313011105-34b1b4e5e9f1?w=800',1,1),
- (960109,960008,'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800',1,1)
+ (960109,960008,'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800',1,1),
+ (960110,960009,'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800',1,1)
 ON DUPLICATE KEY UPDATE product_id=VALUES(product_id),url=VALUES(url),sort_order=VALUES(sort_order),is_primary=VALUES(is_primary);
 
 INSERT INTO product_variants (id,product_id,sku,name,price,stock,status) VALUES
@@ -82,7 +84,8 @@ INSERT INTO product_variants (id,product_id,sku,name,price,stock,status) VALUES
  (961006,960005,'SEED-IPHONE-15-PRO-128','iPhone 15 Pro / 128GB',25990000,9,'ACTIVE'),
  (961007,960006,'SEED-IPHONE-15-128','iPhone 15 / 128GB',19990000,14,'ACTIVE'),
  (961008,960007,'SEED-IPHONE-15-PRO-MAX-CASE','Ốp lưng / Trong suốt',390000,30,'ACTIVE'),
- (961009,960008,'SEED-USB-C-20W-CABLE','Cáp USB-C / 1m',190000,45,'ACTIVE')
+ (961009,960008,'SEED-USB-C-20W-CABLE','Cáp USB-C / 1m',190000,45,'ACTIVE'),
+ (961010,960009,'SEED-POSTMAN-API-TEST','Postman API test fixture',100000,12,'ACTIVE')
 ON DUPLICATE KEY UPDATE product_id=VALUES(product_id),name=VALUES(name),price=VALUES(price),stock=VALUES(stock),status=VALUES(status);
 
 INSERT INTO variant_attribute_values (variant_id,attribute_value_id) VALUES
