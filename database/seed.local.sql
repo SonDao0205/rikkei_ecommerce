@@ -12,7 +12,8 @@ INSERT INTO users (id,email,phone,password_hash,full_name,email_verified,status,
  (900003,'seed-buyer@local.test','+84910000003','$2a$12$lk6XmQ5LPsgzOv8RKJmux.tjH81CcAGXZHCboFl099d6B8.mHTzgO','Local Buyer',1,'ACTIVE','client'),
  (900004,'seed-seller-b@local.test','+84910000004','$2a$12$lk6XmQ5LPsgzOv8RKJmux.tjH81CcAGXZHCboFl099d6B8.mHTzgO','Local Seller B',1,'ACTIVE','seller'),
  (900005,'seed-locked@local.test','+84910000005','$2a$12$lk6XmQ5LPsgzOv8RKJmux.tjH81CcAGXZHCboFl099d6B8.mHTzgO','Local Locked User',1,'LOCKED','client'),
- (900006,'seed-unverified@local.test','+84910000006','$2a$12$lk6XmQ5LPsgzOv8RKJmux.tjH81CcAGXZHCboFl099d6B8.mHTzgO','Local Unverified User',0,'ACTIVE','client')
+ (900006,'seed-unverified@local.test','+84910000006','$2a$12$lk6XmQ5LPsgzOv8RKJmux.tjH81CcAGXZHCboFl099d6B8.mHTzgO','Local Unverified User',0,'ACTIVE','client'),
+ (900007,'seed-seller-tech@local.test','+84910000007','$2a$12$lk6XmQ5LPsgzOv8RKJmux.tjH81CcAGXZHCboFl099d6B8.mHTzgO','Local Tech Seller',1,'ACTIVE','seller')
 ON DUPLICATE KEY UPDATE email=VALUES(email),phone=VALUES(phone),password_hash=VALUES(password_hash),full_name=VALUES(full_name),email_verified=VALUES(email_verified),status=VALUES(status),role=VALUES(role);
 
 INSERT INTO addresses (id,user_id,recipient_name,phone,province,district,ward,street_detail,is_default) VALUES
@@ -22,7 +23,8 @@ ON DUPLICATE KEY UPDATE user_id=VALUES(user_id),recipient_name=VALUES(recipient_
 
 INSERT INTO shops (id,owner_id,name,description,phone,warehouse_address,status,follower_count,approved_at) VALUES
  (920001,900002,'Mây Studio','Cửa hàng mẫu đồ dùng và thời trang tối giản.','+84910000012','Cầu Giấy, Hà Nội','ACTIVE',1,UTC_TIMESTAMP()),
- (920002,900004,'Bếp Nhà Mộc','Cửa hàng mẫu đồ gia dụng và cà phê.','+84910000014','Quận 1, TP Hồ Chí Minh','PENDING',0,NULL)
+ (920002,900004,'Bếp Nhà Mộc','Cửa hàng mẫu đồ gia dụng và cà phê.','+84910000014','Quận 1, TP Hồ Chí Minh','PENDING',0,NULL),
+ (920003,900007,'Tech World','Cửa hàng thiết bị công nghệ mẫu dùng để thử tìm kiếm sản phẩm.','+84910000017','Quận 3, TP Hồ Chí Minh','ACTIVE',0,UTC_TIMESTAMP())
 ON DUPLICATE KEY UPDATE owner_id=VALUES(owner_id),description=VALUES(description),phone=VALUES(phone),warehouse_address=VALUES(warehouse_address),status=VALUES(status),follower_count=VALUES(follower_count),approved_at=VALUES(approved_at);
 
 INSERT INTO shop_followers (shop_id,user_id) VALUES (920001,900003)
@@ -32,12 +34,14 @@ INSERT INTO categories (id,parent_id,name,slug,sort_order,is_active) VALUES
  (930001,NULL,'Thời trang','seed-fashion',1,1),
  (930002,930001,'Áo và phụ kiện','seed-fashion-accessories',2,1),
  (930003,NULL,'Nhà cửa và đời sống','seed-home-living',3,1),
- (930004,NULL,'Thực phẩm và đồ uống','seed-food-drink',4,1)
+ (930004,NULL,'Thực phẩm và đồ uống','seed-food-drink',4,1),
+ (930005,NULL,'Điện thoại và phụ kiện','seed-electronics',5,1)
 ON DUPLICATE KEY UPDATE parent_id=VALUES(parent_id),name=VALUES(name),sort_order=VALUES(sort_order),is_active=VALUES(is_active);
 
 INSERT INTO brands (id,name,slug,is_active) VALUES
  (940001,'Mây Basics','seed-may-basics',1),
- (940002,'Nhà Mộc','seed-nha-moc',1)
+ (940002,'Nhà Mộc','seed-nha-moc',1),
+ (940003,'Apple','seed-apple',1)
 ON DUPLICATE KEY UPDATE name=VALUES(name),is_active=VALUES(is_active);
 
 INSERT INTO attributes (id,name) VALUES (950001,'Màu sắc'),(950002,'Kích cỡ')
@@ -49,21 +53,36 @@ ON DUPLICATE KEY UPDATE attribute_id=VALUES(attribute_id),value=VALUES(value);
 INSERT INTO products (id,shop_id,category_id,brand_id,name,slug,description,thumbnail_url,price,sold_count,rating_avg,rating_count,status,is_deleted) VALUES
  (960001,920001,930002,940001,'Áo thun cotton cơ bản','seed-cotton-tee','Sản phẩm mẫu để phát triển catalog và tồn kho.','https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800',250000,18,4.80,4,'ACTIVE',0),
  (960002,920001,930002,940001,'Túi vải dùng hằng ngày','seed-canvas-tote','Sản phẩm mẫu có nhiều biến thể màu.','https://images.unsplash.com/photo-1590874103328-eac38a683ce7?w=800',180000,7,4.50,2,'ACTIVE',0),
- (960003,920002,930004,940002,'Cà phê rang xay','seed-roasted-coffee','Sản phẩm mẫu của shop đang chờ duyệt.','https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=800',145000,0,0,0,'PENDING',0)
+ (960003,920002,930004,940002,'Cà phê rang xay','seed-roasted-coffee','Sản phẩm mẫu của shop đang chờ duyệt.','https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=800',145000,0,0,0,'PENDING',0),
+ (960004,920003,930005,940003,'Apple iPhone 15 Pro Max 256GB','seed-iphone-15-pro-max-256gb','Điện thoại mẫu để kiểm thử tìm kiếm nhiều từ khóa không liền nhau.','https://images.unsplash.com/photo-1696446701796-da61225697cc?w=800',29990000,250,4.90,42,'ACTIVE',0),
+ (960005,920003,930005,940003,'Apple iPhone 15 Pro 128GB','seed-iphone-15-pro-128gb','Điện thoại mẫu có một phần từ khóa tìm kiếm tương tự.','https://images.unsplash.com/photo-1696446701796-da61225697cc?w=800',25990000,180,4.80,31,'ACTIVE',0),
+ (960006,920003,930005,940003,'Apple iPhone 15 128GB','seed-iphone-15-128gb','Điện thoại mẫu cơ bản để so sánh tỷ lệ khớp từ khóa.','https://images.unsplash.com/photo-1696446701796-da61225697cc?w=800',19990000,120,4.70,24,'ACTIVE',0),
+ (960007,920003,930005,NULL,'Ốp lưng MagSafe cho iPhone 15 Pro Max','seed-iphone-15-pro-max-case','Phụ kiện mẫu giúp kiểm tra xếp hạng theo tỷ lệ từ khóa trong tên.','https://images.unsplash.com/photo-1603313011105-34b1b4e5e9f1?w=800',390000,80,4.60,17,'ACTIVE',0),
+ (960008,920003,930005,NULL,'Cáp USB-C sạc nhanh 20W','seed-usb-c-20w-cable','Phụ kiện công nghệ mẫu không chứa từ khóa iPhone.','https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800',190000,65,4.50,12,'ACTIVE',0)
 ON DUPLICATE KEY UPDATE shop_id=VALUES(shop_id),category_id=VALUES(category_id),brand_id=VALUES(brand_id),name=VALUES(name),description=VALUES(description),thumbnail_url=VALUES(thumbnail_url),price=VALUES(price),sold_count=VALUES(sold_count),rating_avg=VALUES(rating_avg),rating_count=VALUES(rating_count),status=VALUES(status),is_deleted=VALUES(is_deleted);
 
 INSERT INTO product_images (id,product_id,url,sort_order,is_primary) VALUES
  (960101,960001,'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800',1,1),
  (960102,960001,'https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=800',2,0),
  (960103,960002,'https://images.unsplash.com/photo-1590874103328-eac38a683ce7?w=800',1,1),
- (960104,960003,'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=800',1,1)
+ (960104,960003,'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=800',1,1),
+ (960105,960004,'https://images.unsplash.com/photo-1696446701796-da61225697cc?w=800',1,1),
+ (960106,960005,'https://images.unsplash.com/photo-1696446701796-da61225697cc?w=800',1,1),
+ (960107,960006,'https://images.unsplash.com/photo-1696446701796-da61225697cc?w=800',1,1),
+ (960108,960007,'https://images.unsplash.com/photo-1603313011105-34b1b4e5e9f1?w=800',1,1),
+ (960109,960008,'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800',1,1)
 ON DUPLICATE KEY UPDATE product_id=VALUES(product_id),url=VALUES(url),sort_order=VALUES(sort_order),is_primary=VALUES(is_primary);
 
 INSERT INTO product_variants (id,product_id,sku,name,price,stock,status) VALUES
  (961001,960001,'SEED-TEE-BLK-M','Đen / M',250000,24,'ACTIVE'),
  (961002,960001,'SEED-TEE-WHT-L','Trắng / L',250000,11,'ACTIVE'),
  (961003,960002,'SEED-TOTE-NAT','Màu tự nhiên',180000,35,'ACTIVE'),
- (961004,960003,'SEED-COFFEE-250','Túi 250g',145000,40,'ACTIVE')
+ (961004,960003,'SEED-COFFEE-250','Túi 250g',145000,40,'ACTIVE'),
+ (961005,960004,'SEED-IPHONE-15-PRO-MAX-256','iPhone 15 Pro Max / 256GB',29990000,12,'ACTIVE'),
+ (961006,960005,'SEED-IPHONE-15-PRO-128','iPhone 15 Pro / 128GB',25990000,9,'ACTIVE'),
+ (961007,960006,'SEED-IPHONE-15-128','iPhone 15 / 128GB',19990000,14,'ACTIVE'),
+ (961008,960007,'SEED-IPHONE-15-PRO-MAX-CASE','Ốp lưng / Trong suốt',390000,30,'ACTIVE'),
+ (961009,960008,'SEED-USB-C-20W-CABLE','Cáp USB-C / 1m',190000,45,'ACTIVE')
 ON DUPLICATE KEY UPDATE product_id=VALUES(product_id),name=VALUES(name),price=VALUES(price),stock=VALUES(stock),status=VALUES(status);
 
 INSERT INTO variant_attribute_values (variant_id,attribute_value_id) VALUES

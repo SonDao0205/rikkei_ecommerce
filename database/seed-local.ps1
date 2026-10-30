@@ -36,7 +36,7 @@ try {
   & $dockerPath compose exec -T -e "MYSQL_PWD=$($settings['DB_PASSWORD'])" mysql mysql "-u$($settings['DB_USERNAME'])" $settings['DB_NAME'] -e 'source /tmp/seed.local.sql'
   if ($LASTEXITCODE -ne 0) { throw 'Nạp seed thất bại. Kiểm tra lỗi SQL phía trên.' }
 
-  & $dockerPath compose exec -T -e "MYSQL_PWD=$($settings['DB_PASSWORD'])" mysql mysql "-u$($settings['DB_USERNAME'])" $settings['DB_NAME'] -e 'SELECT COUNT(*) AS seed_users FROM users WHERE id BETWEEN 900001 AND 900006; SELECT COUNT(*) AS seed_products FROM products WHERE id BETWEEN 960001 AND 960003; SELECT COUNT(*) AS seed_orders FROM orders WHERE id=990001;'
+  & $dockerPath compose exec -T -e "MYSQL_PWD=$($settings['DB_PASSWORD'])" mysql mysql "-u$($settings['DB_USERNAME'])" $settings['DB_NAME'] -e 'SELECT COUNT(*) AS seed_users FROM users WHERE id BETWEEN 900001 AND 900007; SELECT COUNT(*) AS seed_products FROM products WHERE id BETWEEN 960001 AND 960008; SELECT COUNT(*) AS seed_orders FROM orders WHERE id=990001;'
   if ($LASTEXITCODE -ne 0) { throw 'Không đọc được số lượng dữ liệu seed.' }
   Write-Host 'Đã nạp dữ liệu local. Chạy lại script sẽ cập nhật các bản ghi seed có ID cố định.'
 } finally {

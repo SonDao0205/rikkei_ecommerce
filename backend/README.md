@@ -232,7 +232,7 @@ OTP mặc định hết hạn sau 10 phút, tối đa 5 lần nhập sai và gi�
 
 | Query | Mô tả |
 |---|---|
-| `q` | Tìm tên/mô tả sản phẩm hoặc tên shop; tối đa 100 ký tự. Alias `search` được hỗ trợ; không gửi đồng thời cả hai. |
+| `q` | Tìm theo token trong tên sản phẩm; tối đa 100 ký tự. Kết quả xếp theo tỷ lệ token khớp tên từ cao xuống thấp; alias `search` được hỗ trợ. |
 | `category_id` | `0` hoặc không gửi để lấy mọi danh mục; ID không âm |
 | `brand_id`, `shop_id` | ID dương |
 | `min_price`, `max_price` | Giá không âm; min không được lớn hơn max |
@@ -244,8 +244,10 @@ OTP mặc định hết hạn sau 10 phút, tối đa 5 lần nhập sai và gi�
 Ví dụ:
 
 ```text
-GET /api/v1/products?q=cotton&category_id=930002&brand_id=940001&min_price=100000&max_price=500000&min_rating=4&sort=price_asc&page=1&limit=20
+GET /api/v1/products?q=iphone+pro+max&category_id=930005&page=1&limit=20
 ```
+
+Search tách từ khóa và dùng FULLTEXT prefix matching trên tên sản phẩm; vì vậy query `iphone pro max` tìm được `Apple iPhone 15 Pro Max 256GB` dù có thêm từ `15` ở giữa. Sản phẩm khớp nhiều token hơn được xếp trước; các kết quả bằng mức khớp được sắp theo `sort`. Từ ngắn có xử lý riêng; khi FULLTEXT không có sản phẩm phù hợp, fallback tìm token trong tên/mô tả/shop.
 
 Response `data` gồm `products`, `total`, `page`, `limit`. Chỉ trả sản phẩm active, chưa xóa, thuộc shop active và danh mục active. Các query parameter lạ/lặp, sort không hỗ trợ, query lỗi định dạng hoặc filter ngoài giới hạn trả `400`.
 
