@@ -1,61 +1,85 @@
 # Rikkei E-Commerce Backend
 
-Backend Go cho MVP Rikkei E-Commerce. BE hiện có API auth/RBAC, hồ sơ cơ bản, catalog đọc danh mục/sản phẩm và một số API admin inventory. Các nghiệp vụ shop, giỏ hàng, checkout và đơn hàng vẫn đang phát triển. Contract catalog/admin inventory xem tại [docs/catalog-api.md](../docs/catalog-api.md).
+Backend REST API cho MVP Rikkei E-Commerce, viết bằng Go 1.24+, `net/http` và MySQL `database/sql`. Tài liệu này hướng dẫn DevOps chạy/vận hành BE và FE tích hợp các API **đang có**.
 
-Tài liệu chia thành hai phần: **DevOps** chuẩn bị cấu hình, triển khai và vận hành backend; **FE** tích hợp các API hiện có.
+> BE hiện cung cấp auth/RBAC, hồ sơ cơ bản, catalog công khai, chi tiết sản phẩm/shop, theo dõi shop và một số API admin inventory. Các luồng mở shop, seller CRUD sản phẩm, giỏ hàng, voucher, checkout, thanh toán, đơn hàng, đánh giá và địa chỉ vẫn chưa có API. Không dùng API mẫu/mock của FE thay cho bảo đảm nghiệp vụ từ BE.
+
+Contract đầy đủ của catalog và inventory nằm tại [`docs/catalog-api.md`](../docs/catalog-api.md). Hướng dẫn Compose/seed local nằm tại [`docs/local-development.md`](../docs/local-development.md).
 
 ## 1. Hướng dẫn DevOps
 
-### Thành phần và yêu cầu
+### Yêu cầu và cổng
 
-- Go 1.24 trở lên.
-- MySQL 8.x. Database/schema `rikkei_ecommerce` phải được tạo trước khi chạy migration.
-- The root `docker-compose.yml` starts the frontend, backend, MySQL, Redis, and optional Cloudflare tunnel services.
-- Backend mặc định lắng nghe `:8080`; có thể đổi bằng `HTTP_ADDR`.
+- Go 1.24+ nếu chạy BE trực tiếp trên máy.
+- MySQL 8.x, schema `rikkei_ecommerce`.
+- Compose root ở thư mục gốc `rikkei_ecommerce` có frontend, backend, MySQL, Redis và Cloudflare Tunnel tùy chọn. BE hiện không dùng Redis.
+- BE lắng nghe `:8080` trong container; cổng host lấy từ `BACKEND_HOST_PORT` (mặc định `8080`, máy local có thể dùng `18080`).
+- FE mặc định ở `http://localhost:5173`; MySQL bind loopback ở `localhost:3307`.
 
-### Chạy local
+### Chạy local bằng Compose
 
-Từ thư mục `project-ojt`, sao chép `.env.example` thành `.env`, điền DSN và JWT secret riêng, sau đó chạy backend:
+Từ thư mục gốc `rikkei_ecommerce`:
 
 ```powershell
-Copy-Item .env.example .env
-docker compose up -d mysql
+Copy-Item .env.example .env   # chỉ khi chưa có .env
+# Đặt các mật khẩu local và JWT_SECRET riêng trong .env.
+docker compose up --build -d
+docker compose ps
+Invoke-WebRequest http://localhost:5173/healthz
+```
+
+Compose nạp schema qua `database/scriptDb.sql` khi khởi tạo database rỗng. **Không chạy lại file này trên database đã có dữ liệu**: script có `DROP DATABASE IF EXISTS`. Để nạp fixtures local có thể chạy lại an toàn:
+
+```powershell
+.\database\seed-local.ps1
+```
+
+Seed chỉ dành cho local; các tài khoản và mật khẩu mẫu được ghi trong [`docs/local-development.md`](../docs/local-development.md). Không chạy seed ở staging/production hoặc database dùng chung.
+
+### Chạy BE trực tiếp
+
+Từ thư mục `rikkei_ecommerce/backend`:
+
+```powershell
+Copy-Item .env.example .env   # cấu hình DATABASE_DSN và JWT_SECRET trước
 go run ./cmd/api
 ```
 
-Nếu đã cài MySQL trực tiếp trên máy, chỉ cần tạo schema, cấu hình `DATABASE_DSN` tương ứng và bỏ qua lệnh Docker. Ở development, `AUTO_MIGRATE=true` sẽ áp dụng migration khi API khởi động. Migration bổ sung bảng auth/security và index, tái sử dụng `refresh_tokens`, dọn token/OTP cũ; migration không tạo database và không tạo các bảng nghiệp vụ commerce.
+Nếu MySQL chạy trong Compose nhưng BE chạy trên host, DSN cần dùng host port `3307`, ví dụ:
+
+```text
+app:local-password@tcp(127.0.0.1:3307)/rikkei_ecommerce?parseTime=true&loc=UTC&charset=utf8mb4&collation=utf8mb4_unicode_ci
+```
+
+Không chạy hai backend cùng bind một host port. API gốc mặc định `http://localhost:8080`; nếu Compose được cấu hình `BACKEND_HOST_PORT=18080`, gọi trực tiếp `http://localhost:18080`. FE trong Compose đi qua Nginx same-origin ở `http://localhost:5173`, proxy `/api/` và `/healthz` đến BE.
 
 ### Cấu hình môi trường
 
-`cmd/api` và `cmd/migrate` đọc `.env` từ thư mục làm việc hiện tại; biến môi trường của hệ thống được ưu tiên hơn `.env`.
+`cmd/api` và `cmd/migrate` đọc `.env` tại **working directory hiện tại**; biến môi trường của hệ thống được ưu tiên.
 
-| Biến                       | Mục đích                                         | Mặc định / yêu cầu                                                             |
-| ---------------------------- | ---------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| `APP_ENV`                    | Chế độ chạy                                   | `development`; production dùng `production`                                           |
-| `HTTP_ADDR`                  | Địa chỉ HTTP                                     | `:8080`                                                                                |
-| `DATABASE_DSN`               | Kết nối MySQL                                    | Bắt buộc; schema phải tồn tại                                                |
-| `JWT_SECRET`                 | Ký JWT và HMAC OTP                                 | Bắt buộc, tối thiểu 32 ký tự; dùng secret ngẫu nhiên riêng             |
-| `ACCESS_TOKEN_TTL`           | Tuổi thọ access token                             | `15m`; cho phép 1 phút đến 1 giờ                                                 |
-| `REFRESH_TOKEN_TTL`          | Tuổi thọ phiên refresh                           | `168h` (7 ngày); tối thiểu 1 giờ                                                 |
-| `OTP_TTL`                    | Tuổi thọ mã OTP                                  | `10m`; cho phép 1–30 phút                                                          |
-| `CORS_ALLOWED_ORIGINS`       | Allowlist origin FE, phân cách bằng dấu phẩy | Local mẫu: `http://localhost:5173`; production chỉ dùng origin HTTPS tường minh |
-| `COOKIE_SECURE`              | Chỉ gửi cookie qua HTTPS                         | `false` local; bắt buộc `true` production                                          |
-| `AUTO_MIGRATE`               | Tự áp dụng migration khi API chạy             | `true` development; production bắt buộc `false`                                    |
-| `SMTP_HOST`, `SMTP_PORT`     | Máy chủ gửi OTP qua STARTTLS                    | Host do hệ thống mail cung cấp; port mặc định `587`                         |
-| `SMTP_USER`, `SMTP_PASSWORD` | Xác thực SMTP nếu nhà cung cấp yêu cầu    | Cấu hình theo nhà cung cấp; không commit secret                                 |
-| `SMTP_FROM`                  | Địa chỉ gửi OTP                                | Bắt buộc trong production, phải là email hợp lệ                             |
+| Biến | Mục đích | Mặc định / yêu cầu |
+|---|---|---|
+| `APP_ENV` | Chế độ chạy | `development`; production đặt `production` |
+| `HTTP_ADDR` | Địa chỉ listen | `:8080` |
+| `DATABASE_DSN` | Kết nối MySQL | Bắt buộc; schema phải tồn tại |
+| `JWT_SECRET` | Ký JWT và HMAC OTP | Bắt buộc, tối thiểu 32 ký tự; production dùng secret ngẫu nhiên mạnh |
+| `ACCESS_TOKEN_TTL` | Tuổi thọ access token | `15m`; 1 phút–1 giờ |
+| `REFRESH_TOKEN_TTL` | Tuổi thọ refresh session | `168h` (7 ngày); tối thiểu 1 giờ |
+| `OTP_TTL` | Tuổi thọ OTP | `10m`; 1–30 phút |
+| `CORS_ALLOWED_ORIGINS` | Allowlist origin, phân cách dấu phẩy | Local `http://localhost:5173`; production chỉ origin HTTPS tường minh |
+| `COOKIE_SECURE` | Chỉ gửi refresh cookie qua HTTPS | `false` local; production bắt buộc `true` |
+| `AUTO_MIGRATE` | Áp dụng auth migration khi API khởi động | `true` development; production bắt buộc `false` |
+| `SMTP_HOST`, `SMTP_PORT` | SMTP STARTTLS gửi OTP | Port mặc định `587`; production cần SMTP hoạt động |
+| `SMTP_USER`, `SMTP_PASSWORD` | SMTP authentication nếu nhà cung cấp yêu cầu | Không commit credentials |
+| `SMTP_FROM` | Email gửi OTP | Production bắt buộc email hợp lệ |
 
-Không đưa `.env`, DSN/password database, SMTP credential hay JWT secret vào Git, image Docker, log hoặc tài liệu dùng chung. Cấp quyền DB tối thiểu cần thiết cho API; chỉ tài khoản chạy migration cần quyền DDL.
+Không commit `.env`, DSN/password DB, SMTP credentials hoặc JWT secret. Dùng tài khoản DB có quyền tối thiểu; chỉ bước migration cần quyền DDL.
 
-### Build, migration và khởi chạy production
+### Migration và production
 
-```powershell
-go test ./...
-go vet ./...
-go build -o bin/api.exe ./cmd/api
-```
+`AUTO_MIGRATE=true` chạy migration auth/security khi API khởi động. Migration nằm tại `internal/auth/migrations/001_security.sql`, tạo các bảng security còn thiếu, bổ sung index cần thiết và dọn refresh token/OTP hết hạn. Migration **không tạo database và không thay thế schema commerce** trong `database/scriptDb.sql`.
 
-Trước khi triển khai, thiết lập biến production trong môi trường bảo mật (hoặc file `.env` được bảo vệ), bảo đảm database đã có, rồi chạy migration bằng tài khoản được cấp quyền DDL:
+Production nên triển khai migration riêng bằng tài khoản có DDL, sau khi xác nhận schema và backup:
 
 ```powershell
 $env:APP_ENV = "production"
@@ -63,71 +87,75 @@ $env:AUTO_MIGRATE = "false"
 go run ./cmd/migrate
 ```
 
-Sau khi migration hoàn tất, chạy API với cấu hình production. Production bắt buộc HTTPS, `COOKIE_SECURE=true`, `AUTO_MIGRATE=false`, JWT secret mạnh, origin HTTPS chính xác trong CORS và SMTP có STARTTLS. Dùng reverse proxy/load balancer để kết thúc TLS và giới hạn truy cập mạng tới API/DB phù hợp với hạ tầng.
+Chạy API production với `AUTO_MIGRATE=false`, HTTPS, `COOKIE_SECURE=true`, JWT secret riêng, CORS allowlist HTTPS chính xác và SMTP STARTTLS. Dùng reverse proxy/load balancer để kết thúc TLS và giới hạn truy cập mạng tới API/DB. Khi FE/API khác site, cần thiết kế cookie và CSRF protection phù hợp trước khi triển khai.
 
-Health check cho service monitor/orchestrator: `GET /healthz`. HTTP `200` nghĩa là API truy vấn được database; `503` nghĩa là database chưa sẵn sàng. Endpoint này không thay thế monitoring tài nguyên, log, backup hoặc kiểm tra readiness của các hệ thống phụ thuộc khác.
+`GET /healthz` trả `200` khi API truy vấn được DB và `503` khi DB chưa sẵn sàng; đây là health check cơ bản, không thay thế monitoring/backup.
 
-### Vận hành và giới hạn hiện tại
+### Build và kiểm thử BE
 
-- Mỗi request được bảo vệ sẽ kiểm tra trạng thái và role user trong DB, cùng trạng thái phiên. Access token dùng HS256; refresh token được lưu hash, xoay vòng và replay sẽ thu hồi phiên.
-- Cookie refresh có `HttpOnly`, `SameSite=Strict`, `Secure` theo cấu hình và path `/api/v1/auth/refresh`. Khi FE và API khác site, cần thiết kế lại cookie và CSRF protection trước khi triển khai.
-- Rate limiter hiện nằm trong bộ nhớ của một process. Khi scale nhiều replica, chuyển giới hạn sang gateway hoặc kho chia sẻ như Redis.
-- OTP được log ở development để kiểm thử; không chạy development mode với dữ liệu production. OTP/email chưa được kiểm thử end-to-end với SMTP thật.
-- Hiện chưa có OAuth, MFA, xác minh email, quản lý nhiều thiết bị, module commerce hoặc công cụ bootstrap admin. Cấp `SELLER`/`ADMIN` bằng quy trình vận hành tin cậy, không qua đăng ký public.
-- Migration security không thay thế việc import schema commerce đầy đủ theo SRS. Kiểm tra schema hiện có trước khi áp dụng migration trên môi trường đang chạy.
-
-### Kiểm thử và cấu trúc code
-
-Các lệnh đã chạy thành công: `go test ./...`, `go vet ./...`, `go build ./...` và smoke test trên MySQL local. Unit test bao gồm validation mật khẩu/phone/role, JWT tamper/type/expiry, auth bắt buộc, CORS, JSON nghiêm ngặt, rate limit và tính duy nhất của JWT phát hành liên tiếp.
-
-Smoke test API bao gồm health, đăng ký, login email/phone, refresh/replay, từ chối CLIENT ở route ADMIN, logout và thu hồi phiên. Script tạo user kiểm thử ngẫu nhiên trong database:
+Từ thư mục `backend`:
 
 ```powershell
-./scripts/smoke-api.ps1
+go test ./...
+go vet ./...
+go build ./...
 ```
 
-API phải đang chạy và `.env` phải trỏ tới database dùng cho kiểm thử. Có thể đặt `API_BASE_URL` để đổi địa chỉ backend.
+Smoke test tích hợp cần API đang chạy và database **local/test** đã được seed:
 
-```text
-cmd/api/                         Entry point HTTP
-cmd/migrate/                     Chạy migration thủ công
-internal/auth/                   Auth, JWT, OTP, RBAC và middleware
-internal/auth/migrations/        Migration MySQL được nhúng
-internal/auth/app_test.go        Unit tests
-scripts/smoke-api.ps1            API smoke test
-docker-compose.yml               MySQL local
+```powershell
+$env:API_BASE_URL = 'http://localhost:18080' # đổi theo cổng host đang dùng
+.\scripts\smoke-api.ps1
 ```
 
-## 2. Hướng dẫn FE
+Smoke test tạo tài khoản ngẫu nhiên và kiểm tra catalog, tìm kiếm/filter, chi tiết sản phẩm/shop, follow/unfollow, auth, refresh replay, RBAC và password. Không trỏ script đến production/shared DB. OTP được ghi log chỉ ở development; không bật development mode với dữ liệu production.
 
-### Base URL, JSON và lỗi
+## 2. Hướng dẫn FE tích hợp API
 
-Đặt base URL theo môi trường FE; local mặc định:
+### Base URL, request và response
 
-```js
-const API_BASE_URL = "http://localhost:8080";
-```
+- Qua FE/Compose, dùng same-origin `http://localhost:5173`; URL API vẫn bắt đầu bằng `/api/v1`.
+- Gọi trực tiếp backend local: `http://localhost:8080` hoặc `http://localhost:18080` tùy `BACKEND_HOST_PORT`.
+- Request có JSON body phải gửi `Content-Type: application/json`.
+- Thành công dùng envelope `{ "success": true, "data": ... }`; lỗi có HTTP status và dạng `{ "success": false, "message": "...", "errors": [{ "code": "...", "message": "..." }] }`.
+- Với cross-origin, origin phải nằm trong `CORS_ALLOWED_ORIGINS`; refresh cookie cần gửi credentials.
+- FE có thể ẩn/hiện UI theo role để cải thiện trải nghiệm, nhưng **quyền luôn do BE kiểm tra**.
 
-Request có body phải dùng `Content-Type: application/json`. Response thành công có `success: true` và thường có `data`; lỗi có HTTP status, `message` và `errors`:
+### API hiện có
 
-```json
-{
-  "success": false,
-  "message": "Email/phone or password is incorrect",
-  "errors": [
-    {
-      "code": "invalid_credentials",
-      "message": "Email/phone or password is incorrect"
-    }
-  ]
-}
-```
+| Method | Endpoint | Xác thực | Công dụng |
+|---|---|---|---|
+| `GET` | `/healthz` | Không | Health check DB |
+| `POST` | `/api/v1/auth/register` | Không | Đăng ký tài khoản CLIENT |
+| `POST` | `/api/v1/auth/login` | Không | Email/phone và password; cấp access token, đặt refresh cookie |
+| `POST` | `/api/v1/auth/refresh` | Refresh cookie | Xoay refresh token và cấp access token |
+| `POST` | `/api/v1/auth/logout` | Access token | Thu hồi phiên hiện tại |
+| `GET` | `/api/v1/auth/me` | Access token | Hồ sơ tài khoản hiện tại |
+| `PUT` | `/api/v1/auth/profile` | Access token | Cập nhật tên và phone |
+| `PUT` | `/api/v1/auth/password` | Access token | Đổi password, thu hồi refresh session |
+| `POST` | `/api/v1/auth/forgot-password` | Không | Yêu cầu OTP qua email |
+| `POST` | `/api/v1/auth/verify-reset-otp` | Không | Xác thực OTP |
+| `POST` | `/api/v1/auth/reset-password` | OTP | Đặt password mới, thu hồi session |
+| `GET` | `/api/v1/admin/users` | ADMIN | Danh sách tối đa 100 user |
+| `GET` | `/api/v1/categories` | Không | Danh mục đang hoạt động |
+| `GET` | `/api/v1/products` | Không | Danh sách/tìm kiếm/lọc/sắp xếp sản phẩm |
+| `GET` | `/api/v1/products/{id}` | Không | Chi tiết sản phẩm, ảnh, biến thể và shop công khai |
+| `GET` | `/api/v1/shops/{id}` | Không | Hồ sơ shop đang hoạt động |
+| `GET` | `/api/v1/shops/{id}/products` | Không | Sản phẩm công khai của shop |
+| `GET` | `/api/v1/shops/{id}/follow` | CLIENT | Trạng thái follow của user hiện tại |
+| `POST` | `/api/v1/shops/{id}/follow` | CLIENT | Theo dõi shop |
+| `DELETE` | `/api/v1/shops/{id}/follow` | CLIENT | Bỏ theo dõi shop |
+| `GET` | `/api/v1/admin/products` | ADMIN | Danh sách/tìm kiếm/lọc/sort inventory |
+| `GET` | `/api/v1/admin/inventory-stats` | ADMIN | Thống kê inventory |
+| `PATCH` | `/api/v1/admin/products/{id}/status` | ADMIN | Bật/tắt sản phẩm đã duyệt |
+| `DELETE` | `/api/v1/admin/products/{id}` | ADMIN | Xóa mềm sản phẩm |
+| `POST` | `/api/v1/admin/products/bulk` | ADMIN | Activate/deactivate/delete tối đa 100 ID |
 
-Origin của FE phải có trong `CORS_ALLOWED_ORIGINS`. Local mẫu là `http://localhost:5173`; origin được so khớp chính xác.
+API path/query phải theo đúng tên và giới hạn dưới đây. Contract catalog/admin inventory và ví dụ response đầy đủ: [`docs/catalog-api.md`](../docs/catalog-api.md).
 
-### Đăng ký
+### Auth: đăng ký và đăng nhập
 
-`POST /api/v1/auth/register` — không cần đăng nhập. Backend luôn tạo user role `CLIENT`; API public không nhận role.
+`POST /api/v1/auth/register` nhận:
 
 ```json
 {
@@ -138,174 +166,147 @@ Origin của FE phải có trong `CORS_ALLOWED_ORIGINS`. Local mẫu là `http:/
 }
 ```
 
-Email được chuẩn hóa chữ thường; email và phone phải duy nhất. Phone gồm 9–15 chữ số, có thể bắt đầu bằng `+`. Mật khẩu dài 10–72 byte, có ít nhất một chữ cái và một chữ số. Thành công trả HTTP `201` và hồ sơ user trong `data`.
+Email được chuẩn hóa chữ thường; email và phone duy nhất. Phone có 9–15 chữ số, tùy chọn dấu `+`. Password dài 10–72 byte, phải có ít nhất một chữ cái và một chữ số. Public registration luôn tạo role `CLIENT`; không nhận role từ client.
 
-### Đăng nhập và access token
-
-`POST /api/v1/auth/login` — không cần đăng nhập. `identifier` nhận email hoặc phone:
+`POST /api/v1/auth/login`:
 
 ```json
 { "identifier": "customer@example.com", "password": "SecurePass123" }
 ```
 
-Response thành công có `data.access_token`, `data.expires_in` (giây), `data.token_type` và `data.user`. Refresh token được đặt riêng trong cookie `HttpOnly`, không có trong JSON. FE giữ access token trong bộ nhớ ứng dụng và gửi:
+`identifier` có thể là email hoặc phone. Response trả `data.user`, `data.access_token`, `data.token_type` (`Bearer`) và `data.expires_in` (giây). Refresh token được đặt trong cookie `HttpOnly`, không trả trong JSON.
+
+Giữ access token trong memory và gắn vào protected requests:
 
 ```http
 Authorization: Bearer <access_token>
 ```
 
-Không lưu access/refresh token trong `localStorage`.
+Không lưu access/refresh token trong `localStorage` hoặc `sessionStorage`. FE hiện có thể dùng `src/api/axiosClient.ts`, vốn giữ access token trong memory và tự deduplicate refresh request song song.
 
-### Làm mới phiên
+### Refresh, logout và khôi phục phiên
 
-`POST /api/v1/auth/refresh` — không cần body hay Bearer token. Trình duyệt gửi cookie và FE cập nhật access token mới:
-
-```js
-const response = await fetch(`${API_BASE_URL}/api/v1/auth/refresh`, {
-  method: "POST",
-  credentials: "include",
-});
-const result = await response.json();
-if (response.ok) {
-  // Lưu result.data.access_token trong memory.
-}
-```
-
-Refresh cookie có path `/api/v1/auth/refresh`, `HttpOnly`, `SameSite=Strict`; local HTTP dùng `COOKIE_SECURE=false`, production HTTPS dùng `true`. Request cross-origin cần `credentials: "include"`. Nếu refresh trả `401`, yêu cầu người dùng đăng nhập lại. Token refresh cũ bị dùng lại sẽ làm backend thu hồi phiên đó.
-
-### Hồ sơ, đăng xuất và phân quyền
-
-`GET /api/v1/auth/me` yêu cầu access token:
+Gửi `POST /api/v1/auth/refresh` không body, với cookie credentials:
 
 ```js
-const response = await fetch(`${API_BASE_URL}/api/v1/auth/me`, {
-  headers: { Authorization: `Bearer ${accessToken}` },
+await axios.post("/api/v1/auth/refresh", undefined, {
+  withCredentials: true,
 });
 ```
 
-`POST /api/v1/auth/logout` cũng yêu cầu access token. Backend thu hồi phiên; FE nên xóa access token khỏi memory sau response thành công.
+Refresh cookie có `HttpOnly`, path `/api/v1/auth/refresh`, `SameSite=Strict`, `Secure` theo cấu hình. Refresh token được xoay vòng; dùng lại token cũ sẽ thu hồi phiên. Nếu refresh trả `401`, xóa access token trong memory và yêu cầu đăng nhập lại.
 
-`GET /api/v1/admin/users` là route minh họa, chỉ role `ADMIN` được truy cập. Role trả về là `CLIENT`, `SELLER` hoặc `ADMIN`; FE có thể dùng role để hiển thị giao diện nhưng backend vẫn là nơi quyết định quyền truy cập.
+`POST /api/v1/auth/logout` cần access token; BE thu hồi phiên hiện tại và xóa refresh cookie. Sau thành công, FE xóa access token và trạng thái user ở client. Lúc khởi động lại ứng dụng, FE có thể gọi refresh để khôi phục phiên từ cookie.
 
-### Quên và đặt lại mật khẩu
+### Hồ sơ và password
 
-`POST /api/v1/auth/forgot-password` nhận email hoặc phone; OTP được gửi đến email gắn với tài khoản:
+`GET /api/v1/auth/me` trả hồ sơ user hiện tại. Cập nhật bằng `PUT /api/v1/auth/profile`:
 
 ```json
-{ "identifier": "customer@example.com" }
+{ "full_name": "Nguyen Van A", "phone": "+84901234567" }
 ```
 
-Response chung không tiết lộ tài khoản tồn tại hay không. Trong development, lấy OTP từ log backend; production gửi qua SMTP STARTTLS.
-
-`POST /api/v1/auth/reset-password` nhận email, OTP 6 chữ số và mật khẩu mới:
+Đổi password bằng `PUT /api/v1/auth/password`:
 
 ```json
 {
-  "email": "customer@example.com",
-  "otp": "123456",
-  "new_password": "NewSecurePass456"
+  "current_password": "SecurePass123",
+  "new_password": "NewSecurePass456",
+  "confirm_password": "NewSecurePass456"
 }
 ```
 
-OTP mặc định hết hạn sau 10 phút, tối đa 5 lần nhập sai, cooldown gửi lại 60 giây. Đặt lại mật khẩu thu hồi toàn bộ phiên; người dùng đăng nhập lại bằng mật khẩu mới.
+BE xác minh password hiện tại, yêu cầu password mới hợp lệ và khác password cũ, rồi thu hồi refresh sessions. FE nên yêu cầu đăng nhập lại sau khi đổi.
 
-### Danh sách API và status
+### Quên password và OTP
 
-| Method | Endpoint                       | Xác thực    | Mô tả                                            |
-| ------ | ------------------------------ | -------------- | --------------------------------------------------- |
-| `GET`  | `/healthz`                     | Không         | Kiểm tra kết nối DB                           |
-| `POST` | `/api/v1/auth/register`        | Không         | Tạo tài khoản CLIENT                           |
-| `POST` | `/api/v1/auth/login`           | Không         | Đăng nhập, trả access token và refresh cookie |
-| `POST` | `/api/v1/auth/refresh`         | Refresh cookie | Xoay phiên, trả access token mới               |
-| `POST` | `/api/v1/auth/logout`          | Bearer         | Thu hồi phiên hiện tại                       |
-| `GET`  | `/api/v1/auth/me`              | Bearer         | Hồ sơ hiện tại                               |
-| `POST` | `/api/v1/auth/forgot-password` | Không         | Yêu cầu OTP                                      |
-| `POST` | `/api/v1/auth/reset-password`  | Không         | Đổi mật khẩu bằng OTP                       |
-| `GET`  | `/api/v1/admin/users`          | ADMIN          | Tối đa 100 user, route minh họa RBAC            |
+1. `POST /api/v1/auth/forgot-password` với `{ "identifier": "email-or-phone" }`. Response luôn chung để không tiết lộ tài khoản tồn tại; OTP gửi đến email của tài khoản. Development ghi OTP vào BE log.
+2. `POST /api/v1/auth/verify-reset-otp` với `{ "identifier": "email-or-phone", "otp": "123456" }`. OTP gồm đúng 6 chữ số.
+3. `POST /api/v1/auth/reset-password` với `{ "identifier": "email-or-phone", "otp": "123456", "new_password": "NewSecurePass456" }`. Field `email` cũ được hỗ trợ thay cho `identifier` để tương thích client cũ.
 
-## Bổ sung bảo mật và tích hợp FE
+OTP mặc định hết hạn sau 10 phút, tối đa 5 lần nhập sai và giới hạn gửi lại 60 giây. Endpoint reset luôn xác minh OTP trong transaction; kết quả verify trước đó không thay thế lần xác minh này. Đặt lại password thu hồi mọi refresh session.
 
-### Tổ chức auth/security
+### Catalog: tìm kiếm, lọc và phân trang
 
-Route HTTP tập trung tại `internal/auth/routes.go`; handlers trong `app.go` và `security_handlers.go` kiểm tra request/response, còn SQL được thực hiện theo luồng handler hiện tại. `security_handlers.go` chứa đổi mật khẩu và xác minh OTP. Đây là ranh giới đầu tiên để tách tiếp service/repository khi mở rộng nghiệp vụ; tránh thêm route rải rác trong entrypoint.
+`GET /api/v1/products` hỗ trợ:
 
-### API quản lý mật khẩu
+| Query | Mô tả |
+|---|---|
+| `q` | Tìm tên/mô tả sản phẩm hoặc tên shop; tối đa 100 ký tự. Alias `search` được hỗ trợ; không gửi đồng thời cả hai. |
+| `category_id` | `0` hoặc không gửi để lấy mọi danh mục; ID không âm |
+| `brand_id`, `shop_id` | ID dương |
+| `min_price`, `max_price` | Giá không âm; min không được lớn hơn max |
+| `min_rating` | Từ 0 đến 5 |
+| `sort` | `latest` (mặc định), `best_selling`, `price_asc`, `price_desc` |
+| `page` | Mặc định 1; từ 1 đến 100000 |
+| `limit` | Mặc định 100; tối đa 100 |
 
-`POST /api/v1/auth/verify-reset-otp` xác minh OTP thực sự ở server. Body nhận `identifier` (email hoặc điện thoại) và `otp`; response không trả lại OTP hoặc email được tra cứu. Endpoint reset vẫn xác minh lại OTP trong transaction, vì vậy bước verify trên client không thay thế xác minh ở thao tác thay đổi mật khẩu.
+Ví dụ:
 
-`POST /api/v1/auth/reset-password` nhận `identifier`, `otp`, `new_password`; trường `email` cũ vẫn được nhận để tương thích client cũ. Email hoặc số điện thoại đều được hỗ trợ; OTP có hạn dùng, giới hạn lần thử và cooldown. Mật khẩu được hash bằng bcrypt và các refresh session được thu hồi.
-
-`PUT /api/v1/auth/password` yêu cầu Bearer access token. Body gồm `current_password`, `new_password`, `confirm_password`. Backend xác minh mật khẩu hiện tại, áp chính sách mật khẩu, từ chối dùng lại mật khẩu cũ, đổi mật khẩu và thu hồi mọi refresh session trong cùng transaction. FE yêu cầu đăng nhập lại sau khi đổi.
-
-| Method | Endpoint                        | Xác thực | Chức năng                                     |
-| ------ | ------------------------------- | ----------- | ------------------------------------------------ |
-| `POST` | `/api/v1/auth/verify-reset-otp` | Không      | Xác minh mã OTP ở BE, áp giới hạn thử |
-| `POST` | `/api/v1/auth/reset-password`   | OTP         | Đặt lại mật khẩu và thu hồi phiên    |
-| `PUT`  | `/api/v1/auth/password`         | Bearer      | Đổi mật khẩu từ phiên hiện tại      |
-
-### Run the FE and BE stack with Compose
-
-The root of this checkout contains `docker-compose.yml`. Create `.env` from the sample, replace local passwords, and set a unique JWT secret of at least 32 characters:
-
-## Bổ sung bảo mật và tích hợp FE
-
-### Tổ chức auth/security
-
-Route HTTP tập trung tại `internal/auth/routes.go`; handlers trong `app.go` và `security_handlers.go` kiểm tra request/response, còn SQL được thực hiện theo luồng handler hiện tại. `security_handlers.go` chứa đổi mật khẩu và xác minh OTP. Đây là ranh giới đầu tiên để tách tiếp service/repository khi mở rộng nghiệp vụ; tránh thêm route rải rác trong entrypoint.
-
-### API quản lý mật khẩu
-
-`POST /api/v1/auth/verify-reset-otp` xác minh OTP thực sự ở server. Body nhận `identifier` (email hoặc điện thoại) và `otp`; response không trả lại OTP hoặc email được tra cứu. Endpoint reset vẫn xác minh lại OTP trong transaction, vì vậy bước verify trên client không thay thế xác minh ở thao tác thay đổi mật khẩu.
-
-`POST /api/v1/auth/reset-password` nhận `identifier`, `otp`, `new_password`; trường `email` cũ vẫn được nhận để tương thích client cũ. Email hoặc số điện thoại đều được hỗ trợ; OTP có hạn dùng, giới hạn lần thử và cooldown. Mật khẩu được hash bằng bcrypt và các refresh session được thu hồi.
-
-`PUT /api/v1/auth/password` yêu cầu Bearer access token. Body gồm `current_password`, `new_password`, `confirm_password`. Backend xác minh mật khẩu hiện tại, áp chính sách mật khẩu, từ chối dùng lại mật khẩu cũ, đổi mật khẩu và thu hồi mọi refresh session trong cùng transaction. FE yêu cầu đăng nhập lại sau khi đổi.
-
-| Method | Endpoint                        | Xác thực | Chức năng                             |
-| ------ | ------------------------------- | -------- | ------------------------------------- |
-| `POST` | `/api/v1/auth/verify-reset-otp` | Không    | Xác minh mã OTP ở BE, áp giới hạn thử |
-| `POST` | `/api/v1/auth/reset-password`   | OTP      | Đặt lại mật khẩu và thu hồi phiên     |
-| `PUT`  | `/api/v1/auth/password`         | Bearer   | Đổi mật khẩu từ phiên hiện tại        |
-
-### Chạy stack FE/BE bằng Compose
-
-Repo `project-ojt/fe/rikkei_ecommerce` là compose root vì chứa cả source FE và backend mà compose build. Tạo `.env` từ `.env.example`, đổi các mật khẩu local mẫu và đặt JWT secret ngẫu nhiên ít nhất 32 ký tự, sau đó chạy:
-
-```powershell
-Copy-Item .env.example .env
-docker compose up --build -d
-docker compose ps
-Invoke-WebRequest http://localhost:5173/healthz
-$env:API_BASE_URL = 'http://localhost:8080'
-./backend/scripts/smoke-api.ps1
+```text
+GET /api/v1/products?q=cotton&category_id=930002&brand_id=940001&min_price=100000&max_price=500000&min_rating=4&sort=price_asc&page=1&limit=20
 ```
 
-The FE is served at `http://localhost:5173`; Nginx proxies `/api/` and `/healthz` to the backend over the Compose network. The API and MySQL ports are bound to loopback at `8080` and `3307`. Cloudflare Tunnel starts only with the `tunnel` profile and a configured `TUNNEL_TOKEN`. In development, the OTP appears in backend logs for testing. Production sends OTP by SMTP with STARTTLS.
+Response `data` gồm `products`, `total`, `page`, `limit`. Chỉ trả sản phẩm active, chưa xóa, thuộc shop active và danh mục active. Các query parameter lạ/lặp, sort không hỗ trợ, query lỗi định dạng hoặc filter ngoài giới hạn trả `400`.
 
-### Cài dependency và kiểm tra
+`GET /api/v1/products/{id}` chỉ hiển thị sản phẩm công khai. `data` gồm `product`, `images`, `variants`, `shop`; tối đa 100 ảnh và 100 biến thể active. Mỗi biến thể gồm SKU, giá, tồn kho và danh sách thuộc tính. Sản phẩm chưa duyệt/ẩn/đã xóa hoặc shop/danh mục không active trả `404`. Hồ sơ công khai không bao gồm địa chỉ kho, chủ shop hoặc lý do từ chối.
 
-Go modules khai báo tại `go.mod`/`go.sum`; tải và kiểm tra bằng:
+`GET /api/v1/shops/{id}` lấy hồ sơ shop active. `GET /api/v1/shops/{id}/products` lấy danh sách sản phẩm shop và hỗ trợ các filter/sort/page/limit của catalog.
 
-````
+### Theo dõi shop
 
-FE được serve tại `http://localhost:5173`; Nginx proxy `/api/` và `/healthz` qua service `backend`, dùng same-origin cookie. API port `8080` và MySQL port `3307` chỉ bind loopback để kiểm tra local. Compose không cần Redis vì backend hiện không dùng Redis. `.env` là cấu hình local không commit.
+Các endpoint follow chỉ dành cho user role `CLIENT` đã đăng nhập:
 
-Để dùng backend riêng ở `project-ojt/be`, đặt `DATABASE_DSN` theo MySQL chạy trên host (mặc định compose local dùng port `3306` ở repo BE riêng) và chạy `go run ./cmd/api`. Không chạy đồng thời hai backend trên cùng host port `8080`. FE Compose build backend từ repo FE; đồng bộ thay đổi backend riêng sang `fe/rikkei_ecommerce/backend` trước khi build/push FE repo.
+- `GET /api/v1/shops/{id}/follow`: trả `following` và `follower_count`.
+- `POST /api/v1/shops/{id}/follow`: theo dõi.
+- `DELETE /api/v1/shops/{id}/follow`: bỏ theo dõi.
 
-### Cài dependency và kiểm tra
+Gửi access token dạng Bearer. Gọi lặp là idempotent, follower count được cập nhật cùng transaction; user không thể theo dõi shop của chính mình. Seller/Admin không được dùng các route này.
 
-Go modules khai báo tại `go.mod`/`go.sum`; tải và kiểm tra bằng:
+### Admin inventory
 
-```powershell
-go mod download
-go test ./...
-go vet ./...
-go build ./cmd/api
-````
+Các route `/api/v1/admin/*` yêu cầu role `ADMIN`; thiếu/hết hạn phiên trả `401`, role không đủ trả `403`.
 
-Frontend dùng lockfile; cài đúng phiên bản bằng `npm ci`, sau đó `npm run lint` và `npm run build` tại `frontend/project-ecommerce`. Khi stack đang chạy, `./backend/scripts/smoke-api.ps1` kiểm tra health, register/login, refresh replay, RBAC và logout. Smoke script có thể tạo tài khoản thử trong DB local.
+- `GET /api/v1/admin/products`: filter `search`, `category`, `vendor`, `stock_status` (`in_stock`, `low_stock`, `out_of_stock`), sort `sort_by` (`newest`, `stock_asc`, `stock_desc`, `price_desc`). Hiện endpoint trả toàn bộ kết quả phù hợp, chưa có pagination.
+- `GET /api/v1/admin/inventory-stats`: thống kê SKU/sản phẩm/tồn kho.
+- `PATCH /api/v1/admin/products/{id}/status`: body `{ "is_active": true }`; chỉ sản phẩm đã duyệt ở trạng thái `ACTIVE`/`HIDDEN` mới được toggle.
+- `DELETE /api/v1/admin/products/{id}`: xóa mềm.
+- `POST /api/v1/admin/products/bulk`: body `{ "action": "deactivate", "product_ids": [960001, 960002] }`; action là `activate`, `deactivate`, `delete`; từ 1 đến 100 ID dương. ID trùng được tính một lần.
 
-Các status FE thường cần xử lý: `400` dữ liệu không hợp lệ, `401` xác thực sai/hết hạn, `403` origin hoặc role bị từ chối, `409` email/phone đã được dùng, `415` Content-Type không đúng, `429` vượt rate limit, `503` DB chưa sẵn sàng. Body JSON tối đa 1 MiB; JSON lỗi, field lạ hoặc nhiều JSON value bị từ chối.
-Frontend dùng lockfile; cài đúng phiên bản bằng `npm ci`, sau đó `npm run lint` và `npm run build` tại `frontend/project-ecommerce`. Khi stack đang chạy, `./backend/scripts/smoke-api.ps1` kiểm tra health, register/login, refresh replay, RBAC và logout. Smoke script có thể tạo tài khoản thử trong DB local.
+Admin list/status transitions là API hiện có nhưng chưa bao gồm duyệt sản phẩm/shop hay CRUD danh mục/brand. Body JSON bị giới hạn kích thước, field lạ, JSON sai/nhiều JSON values và content type khác `application/json` bị từ chối.
 
-Các status FE thường cần xử lý: `400` dữ liệu không hợp lệ, `401` xác thực sai/hết hạn, `403` origin hoặc role bị từ chối, `409` email/phone đã được dùng, `415` Content-Type không đúng, `429` vượt rate limit, `503` DB chưa sẵn sàng. Body JSON tối đa 1 MiB; JSON lỗi, field lạ hoặc nhiều JSON value bị từ chối.
+### Lỗi và phản hồi FE
+
+| HTTP | Ý nghĩa thường gặp | Hành vi FE khuyến nghị |
+|---|---|---|
+| `400` | JSON/query/input không hợp lệ | Báo lỗi field/query; không lặp request nguyên trạng |
+| `401` | Thiếu/sai/hết hạn access token hoặc phiên | Thử refresh một lần; nếu thất bại thì xóa phiên |
+| `403` | Origin không được phép hoặc role không đủ | Báo không có quyền; không retry tự động |
+| `404` | Tài nguyên không tồn tại/không công khai | Hiển thị not found |
+| `409` | Tài khoản trùng, trạng thái không cho phép, follow shop của mình | Hiển thị xung đột và yêu cầu tải lại nếu phù hợp |
+| `415` | Body không gửi `application/json` | Sửa request header |
+| `429` | Rate limit | Tôn trọng `Retry-After`, chờ trước khi thử lại |
+| `500`/`503` | Lỗi BE hoặc DB chưa sẵn sàng | Báo lỗi chung, không hiển thị chi tiết nội bộ |
+
+## 3. Bảo mật và giới hạn hiện tại
+
+- Protected API kiểm tra user status/role và trạng thái phiên trong DB; access JWT dùng HS256. Refresh token chỉ lưu dạng hash, xoay vòng và phát hiện replay.
+- Rate limiter hiện nằm trong memory của một process; khi scale nhiều replica cần chuyển giới hạn sang gateway hoặc shared store.
+- OTP delivery qua SMTP STARTTLS cần được kiểm thử trên môi trường tích hợp; không ghi OTP hoặc secret ra log ngoài development.
+- Chưa có OAuth Google/Facebook, MFA, xác minh email/phone, quản lý thiết bị/session UI, seller API, cart/checkout/order/payment hoặc address API.
+- Role `SELLER`/`ADMIN` phải được cấp bằng quy trình vận hành tin cậy; đăng ký public chỉ tạo `CLIENT`.
+- Security migration không thay thế full commerce schema. Kiểm tra schema/backup trước migration tại database đã có dữ liệu.
+
+## 4. Cấu trúc BE
+
+```text
+cmd/api/                         Entry point HTTP và graceful shutdown
+cmd/migrate/                     Chạy migration thủ công
+internal/auth/                   Auth, JWT, OTP, RBAC, middleware và routes
+internal/auth/migrations/        Migration MySQL được embed
+internal/catalog/                Catalog, product/shop detail, follow, admin inventory
+internal/catalog/*_test.go       Unit tests cho validation/filter
+scripts/smoke-api.ps1             Smoke test API local
+```
+
+API routes được đăng ký tập trung tại `internal/auth/routes.go`; các route catalog được gom tại `internal/catalog/routes.go`. Catalog dùng MySQL parameterized queries, allowlist sort, giới hạn phân trang và validate query/body tại BE.

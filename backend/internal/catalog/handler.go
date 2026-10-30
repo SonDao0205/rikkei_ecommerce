@@ -5,12 +5,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"mime"
 	"net/http"
 	"strconv"
 	"strings"
 )
 
-type handler struct{ db *sql.DB }
+type handler struct {
+	db     *sql.DB
+	userID func(*http.Request) string
+}
 
 type apiError struct {
 	Code    string `json:"code"`
@@ -71,6 +75,11 @@ type adminProduct struct {
 }
 
 func (h handler) categories(w http.ResponseWriter, r *http.Request) {
+	values, err := parseRequestQuery(r)
+	if err != nil || len(values) != 0 {
+		writeError(w, http.StatusBadRequest, "invalid_query", "Categories does not accept query parameters")
+		return
+	}
 	rows, err := h.db.QueryContext(r.Context(), `SELECT id,parent_id,name,slug,image_url,sort_order,is_active FROM categories WHERE is_active=1 ORDER BY sort_order,id`)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal_error", "Could not load categories")
@@ -94,74 +103,35 @@ func (h handler) categories(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h handler) products(w http.ResponseWriter, r *http.Request) {
-	categoryValue := r.URL.Query().Get("category_id")
-	categoryID := int64(0)
-	if categoryValue != "" {
-		parsed, err := strconv.ParseInt(categoryValue, 10, 64)
-		if err != nil || parsed < 0 {
-			writeError(w, http.StatusBadRequest, "invalid_category", "category_id must be zero or a positive integer")
-			return
-		}
-		categoryID = parsed
-	}
-	page, limit, err := parsePage(r.URL.Query())
-	if err != nil {
-		writeError(w, http.StatusBadRequest, "invalid_pagination", err.Error())
-		return
-	}
-	offset := (page - 1) * limit
-	where := `p.status='ACTIVE' AND p.is_deleted=0 AND s.status='ACTIVE' AND (?=0 OR p.category_id=?)`
-	countQuery := `SELECT COUNT(*) FROM products p JOIN shops s ON s.id=p.shop_id WHERE ` + where
-	var total int
-	if err = h.db.QueryRowContext(r.Context(), countQuery, categoryID, categoryID).Scan(&total); err != nil {
-		writeError(w, http.StatusInternalServerError, "internal_error", "Could not load products")
-		return
-	}
-	order := productOrder(r.URL.Query().Get("sort"))
-	query := `SELECT p.id,p.shop_id,p.category_id,p.brand_id,p.name,p.slug,p.description,p.thumbnail_url,p.price,p.sold_count,p.rating_avg,p.rating_count,p.status,p.reject_reason,p.is_deleted,s.name,c.name,
-		(SELECT COALESCE(SUM(v.stock),0) FROM product_variants v WHERE v.product_id=p.id AND v.status='ACTIVE')
-		FROM products p JOIN shops s ON s.id=p.shop_id JOIN categories c ON c.id=p.category_id WHERE ` + where + ` ORDER BY ` + order + ` LIMIT ? OFFSET ?`
-	rows, err := h.db.QueryContext(r.Context(), query, categoryID, categoryID, limit, offset)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "internal_error", "Could not load products")
-		return
-	}
-	defer rows.Close()
-	items := []product{}
-	for rows.Next() {
-		var item product
-		if err = rows.Scan(&item.ID, &item.ShopID, &item.CategoryID, &item.BrandID, &item.Name, &item.Slug, &item.Description, &item.ThumbnailURL, &item.Price, &item.SoldCount, &item.RatingAvg, &item.RatingCount, &item.Status, &item.RejectReason, &item.IsDeleted, &item.ShopName, &item.CategoryName, &item.Stock); err != nil {
-			writeError(w, http.StatusInternalServerError, "internal_error", "Could not load products")
-			return
-		}
-		items = append(items, item)
-	}
-	if err = rows.Err(); err != nil {
-		writeError(w, http.StatusInternalServerError, "internal_error", "Could not load products")
-		return
-	}
-	writeJSON(w, http.StatusOK, apiResponse{Success: true, Data: map[string]any{"products": items, "total": total}})
+	h.listProducts(w, r, 0)
 }
 
 func (h handler) adminProducts(w http.ResponseWriter, r *http.Request) {
-	search := strings.TrimSpace(r.URL.Query().Get("search"))
-	category := strings.TrimSpace(r.URL.Query().Get("category"))
-	stockStatus := strings.TrimSpace(r.URL.Query().Get("stock_status"))
-	vendor := strings.TrimSpace(r.URL.Query().Get("vendor"))
-	if stockStatus != "" && stockStatus != "in_stock" && stockStatus != "low_stock" && stockStatus != "out_of_stock" {
-		writeError(w, http.StatusBadRequest, "invalid_stock_status", "stock_status must be in_stock, low_stock, or out_of_stock")
+	values, err := parseRequestQuery(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_product_filters", "Query string is malformed")
 		return
 	}
+	if err := validateAdminProductQuery(values); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_product_filters", err.Error())
+		return
+	}
+	search := strings.TrimSpace(values.Get("search"))
+	category := strings.TrimSpace(values.Get("category"))
+	stockStatus := strings.TrimSpace(values.Get("stock_status"))
+	vendor := strings.TrimSpace(values.Get("vendor"))
+	searchPattern := "%" + escapeLike(search) + "%"
+	vendorPattern := "%" + escapeLike(vendor) + "%"
 	query := `SELECT p.id,p.name,COALESCE(v.sku,''),p.thumbnail_url,s.name,IF(s.status='ACTIVE','VERIFIED','ARTISAN'),c.name,p.price,
-		(SELECT COALESCE(SUM(v2.stock),0) FROM product_variants v2 WHERE v2.product_id=p.id AND v2.status='ACTIVE'),p.status
+		(SELECT COALESCE(SUM(v2.stock),0) FROM product_variants v2 WHERE v2.product_id=p.id AND v2.status='ACTIVE') AS total_stock,p.status
 		FROM products p JOIN shops s ON s.id=p.shop_id JOIN categories c ON c.id=p.category_id
 		LEFT JOIN product_variants v ON v.id=(SELECT MIN(v1.id) FROM product_variants v1 WHERE v1.product_id=p.id AND v1.status='ACTIVE')
-		WHERE p.is_deleted=0 AND (?='' OR p.name LIKE CONCAT('%',?,'%') OR v.sku LIKE CONCAT('%',?,'%') OR s.name LIKE CONCAT('%',?,'%'))
-		AND (?='' OR c.name=?) AND (?='' OR s.name LIKE CONCAT('%',?,'%'))
+		WHERE p.is_deleted=0 AND (?='' OR p.name LIKE ? ESCAPE '!' OR v.sku LIKE ? ESCAPE '!' OR s.name LIKE ? ESCAPE '!')
+		AND (?='' OR c.name=?) AND (?='' OR s.name LIKE ? ESCAPE '!')
 		AND (?='' OR (?='in_stock' AND (SELECT COALESCE(SUM(v3.stock),0) FROM product_variants v3 WHERE v3.product_id=p.id AND v3.status='ACTIVE')>5)
 		OR (?='low_stock' AND (SELECT COALESCE(SUM(v4.stock),0) FROM product_variants v4 WHERE v4.product_id=p.id AND v4.status='ACTIVE') BETWEEN 1 AND 5)
-		OR (?='out_of_stock' AND (SELECT COALESCE(SUM(v5.stock),0) FROM product_variants v5 WHERE v5.product_id=p.id AND v5.status='ACTIVE')=0)) ORDER BY ` + adminProductOrder(r.URL.Query().Get("sort_by"))
-	args := []any{search, search, search, search, category, category, vendor, vendor, stockStatus, stockStatus, stockStatus, stockStatus}
+		OR (?='out_of_stock' AND (SELECT COALESCE(SUM(v5.stock),0) FROM product_variants v5 WHERE v5.product_id=p.id AND v5.status='ACTIVE')=0)) ORDER BY ` + adminProductOrder(values.Get("sort_by"))
+	args := []any{search, searchPattern, searchPattern, searchPattern, category, category, vendor, vendorPattern, stockStatus, stockStatus, stockStatus, stockStatus}
 	rows, err := h.db.QueryContext(r.Context(), query, args...)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal_error", "Could not load inventory")
@@ -252,7 +222,12 @@ func (h handler) updateProductStatus(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "internal_error", "Could not update product status")
 		return
 	}
-	if count, _ := result.RowsAffected(); count == 0 {
+	count, err := result.RowsAffected()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal_error", "Could not verify product status update")
+		return
+	}
+	if count == 0 {
 		writeError(w, http.StatusConflict, "product_status_changed", "Product status changed; reload and try again")
 		return
 	}
@@ -270,7 +245,12 @@ func (h handler) deleteProduct(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "internal_error", "Could not delete product")
 		return
 	}
-	if count, _ := result.RowsAffected(); count == 0 {
+	count, err := result.RowsAffected()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal_error", "Could not verify product deletion")
+		return
+	}
+	if count == 0 {
 		writeError(w, http.StatusNotFound, "product_not_found", "Product was not found")
 		return
 	}
@@ -324,7 +304,11 @@ func (h handler) bulkProducts(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "internal_error", "Could not apply bulk action")
 		return
 	}
-	count, _ := result.RowsAffected()
+	count, err := result.RowsAffected()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal_error", "Could not verify bulk action")
+		return
+	}
 	writeJSON(w, http.StatusOK, apiResponse{Success: true, Data: map[string]any{"action": request.Action, "count": count}})
 }
 
@@ -346,9 +330,9 @@ func productOrder(value string) string {
 func adminProductOrder(value string) string {
 	switch value {
 	case "stock_asc":
-		return "stock ASC,p.id DESC"
+		return "total_stock ASC,p.id DESC"
 	case "stock_desc":
-		return "stock DESC,p.id DESC"
+		return "total_stock DESC,p.id DESC"
 	case "price_desc":
 		return "p.price DESC,p.id DESC"
 	default:
@@ -377,6 +361,10 @@ func parsePage(queryValues interface{ Get(string) string }) (page, limit int, er
 }
 
 func decodeJSON(w http.ResponseWriter, r *http.Request, destination any, maxBytes int64) bool {
+	mediaType, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
+	if err != nil || mediaType != "application/json" {
+		return false
+	}
 	decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, maxBytes))
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(destination); err != nil {

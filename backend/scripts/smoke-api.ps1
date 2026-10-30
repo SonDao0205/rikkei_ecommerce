@@ -59,8 +59,26 @@ $categories = Invoke-Api GET '/api/v1/categories'
 if ($categories.Status -ne 200 -or $categories.Json.data[0].id -ne 0) { throw 'Public category API did not return the all-categories entry' }
 $catalog = Invoke-Api GET '/api/v1/products?page=1&limit=10&sort=best_selling'
 if ($catalog.Status -ne 200 -or $catalog.Json.data.total -lt 0) { throw "Public catalog API failed with HTTP $($catalog.Status)" }
+$filteredCatalog = Invoke-Api GET '/api/v1/products?q=cotton&category_id=930002&brand_id=940001&min_price=100000&max_price=300000&min_rating=4.5&sort=price_asc&page=1&limit=10'
+if ($filteredCatalog.Status -ne 200 -or $filteredCatalog.Json.data.products.Count -lt 1 -or $filteredCatalog.Json.data.products[0].id -ne 960001) {
+  throw 'Catalog search/filter/sort did not return the expected seeded product'
+}
 $invalidCatalogPage = Invoke-Api GET '/api/v1/products?page=0'
 if ($invalidCatalogPage.Status -ne 400) { throw "Invalid catalog page returned HTTP $($invalidCatalogPage.Status), expected 400" }
+$invalidCatalogFilter = Invoke-Api GET '/api/v1/products?min_price=500&max_price=100'
+if ($invalidCatalogFilter.Status -ne 400) { throw "Invalid catalog filter returned HTTP $($invalidCatalogFilter.Status), expected 400" }
+$productDetail = Invoke-Api GET '/api/v1/products/960001'
+if ($productDetail.Status -ne 200 -or $productDetail.Json.data.variants.Count -lt 1 -or $productDetail.Json.data.shop.id -ne 920001) {
+  throw 'Product detail did not include its active variants and public shop'
+}
+$hiddenProductDetail = Invoke-Api GET '/api/v1/products/960003'
+if ($hiddenProductDetail.Status -ne 404) { throw 'Unapproved product detail was publicly accessible' }
+$shopDetail = Invoke-Api GET '/api/v1/shops/920001'
+if ($shopDetail.Status -ne 200 -or $shopDetail.Json.data.shop.id -ne 920001 -or $shopDetail.Json.data.shop.PSObject.Properties.Name -contains 'warehouse_address') {
+  throw 'Public shop detail is missing expected data or exposes the warehouse address'
+}
+$shopProducts = Invoke-Api GET '/api/v1/shops/920001/products?page=1&limit=10'
+if ($shopProducts.Status -ne 200 -or $shopProducts.Json.data.products.Count -lt 1) { throw 'Shop product list failed' }
 $registration = Invoke-Api POST '/api/v1/auth/register' @{ email = $email; password = $password; full_name = 'Smoke Test'; phone = $phone }
 if ($registration.Status -ne 201) { throw "Registration failed with HTTP $($registration.Status)" }
 
@@ -72,6 +90,20 @@ $oldRefresh = Set-RefreshCookie $emailCookies $emailLogin.SetCookie
 $token = $emailLogin.Json.data.access_token
 $me = Invoke-Api GET '/api/v1/auth/me' $null $null $token
 if ($me.Status -ne 200 -or $me.Json.data.email -ne $email) { throw 'Email login or /me failed' }
+$followState = Invoke-Api GET '/api/v1/shops/920001/follow' $null $emailCookies $token
+if ($followState.Status -ne 200 -or $followState.Json.data.following -ne $false) { throw 'Initial shop follow state is incorrect' }
+$followed = Invoke-Api POST '/api/v1/shops/920001/follow' $null $emailCookies $token
+if ($followed.Status -ne 200 -or $followed.Json.data.following -ne $true) { throw 'Following a shop failed' }
+$followedAgain = Invoke-Api POST '/api/v1/shops/920001/follow' $null $emailCookies $token
+if ($followedAgain.Status -ne 200 -or $followedAgain.Json.data.follower_count -ne $followed.Json.data.follower_count) {
+  throw 'Repeated follow changed the follower count'
+}
+$unfollowed = Invoke-Api DELETE '/api/v1/shops/920001/follow' $null $emailCookies $token
+if ($unfollowed.Status -ne 200 -or $unfollowed.Json.data.following -ne $false) { throw 'Unfollowing a shop failed' }
+$unfollowedAgain = Invoke-Api DELETE '/api/v1/shops/920001/follow' $null $emailCookies $token
+if ($unfollowedAgain.Status -ne 200 -or $unfollowedAgain.Json.data.follower_count -ne $unfollowed.Json.data.follower_count) {
+  throw 'Repeated unfollow changed the follower count'
+}
 
 $refresh = Invoke-Api POST '/api/v1/auth/refresh' $null $emailCookies
 if ($refresh.Status -ne 200 -or -not $refresh.Json.data.access_token) { throw "Refresh did not issue a new access token (HTTP $($refresh.Status))" }
@@ -96,6 +128,14 @@ $admin = Invoke-Api GET '/api/v1/admin/users' $null $null $phoneToken
 if ($admin.Status -ne 403) { throw "CLIENT admin access returned HTTP $($admin.Status), expected 403" }
 $adminInventory = Invoke-Api GET '/api/v1/admin/products' $null $null $phoneToken
 if ($adminInventory.Status -ne 403) { throw "CLIENT inventory access returned HTTP $($adminInventory.Status), expected 403" }
+$adminLogin = Invoke-Api POST '/api/v1/auth/login' @{ identifier = 'seed-admin@local.test'; password = 'LocalTest123!' }
+if ($adminLogin.Status -ne 200) { throw 'Admin login failed for local seeded account' }
+$sortedInventory = Invoke-Api GET '/api/v1/admin/products?sort_by=stock_asc' $null $null $adminLogin.Json.data.access_token
+if ($sortedInventory.Status -ne 200 -or $sortedInventory.Json.data.products.Count -lt 1) {
+  throw 'Admin inventory stock sort failed'
+}
+$invalidInventoryFilter = Invoke-Api GET '/api/v1/admin/products?sort_by=unknown' $null $null $adminLogin.Json.data.access_token
+if ($invalidInventoryFilter.Status -ne 400) { throw 'Invalid admin inventory sort was not rejected' }
 $logout = Invoke-Api POST '/api/v1/auth/logout' $null $phoneCookies $phoneToken
 if ($logout.Status -ne 200) { throw "Logout failed with HTTP $($logout.Status)" }
 $afterLogout = Invoke-Api GET '/api/v1/auth/me' $null $null $phoneToken
@@ -117,4 +157,4 @@ if ($newPassword.Status -ne 200) { throw 'New password did not work after passwo
 $invalidOTP = Invoke-Api POST '/api/v1/auth/verify-reset-otp' @{ identifier = $email; otp = 'abcdef' }
 if ($invalidOTP.Status -ne 400) { throw 'Malformed OTP was not rejected' }
 
-Write-Host 'API smoke checks passed: health, public catalog/categories, invalid pagination, register, email/phone login, refresh rotation/replay, RBAC, logout, password change, and malformed OTP rejection.'
+Write-Host 'API smoke checks passed: catalog filters, product/shop detail, shop follow, admin inventory, auth, refresh replay, RBAC, password change, and OTP validation.'

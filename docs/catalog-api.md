@@ -14,14 +14,37 @@ Tham số query:
 
 | Tham số | Ví dụ | Mặc định/giới hạn |
 |---|---|---|
+| `q` | `cotton` | Tìm tên/mô tả sản phẩm hoặc tên shop; tối đa 100 ký tự. `search` được hỗ trợ như alias cũ; không gửi cả hai. |
 | `category_id` | `930001` | `0` nghĩa là tất cả; không nhận số âm |
+| `brand_id` | `940001` | ID thương hiệu dương |
+| `shop_id` | `920001` | ID shop dương |
+| `min_price`, `max_price` | `100000`, `500000` | Giá không âm; giá nhỏ nhất không được lớn hơn giá lớn nhất |
+| `min_rating` | `4.5` | Từ `0` đến `5` |
 | `sort` | `best_selling` | `latest`; hỗ trợ `price_asc`, `price_desc`, `best_selling`, `latest` |
 | `page` | `1` | Mặc định `1`, từ `1` đến `100000` |
 | `limit` | `16` | Mặc định `100`, tối đa `100` |
 
-Ví dụ: `GET /api/v1/products?category_id=0&sort=best_selling&page=1&limit=16`.
+Ví dụ: `GET /api/v1/products?q=cotton&category_id=930001&min_price=100000&min_rating=4&sort=best_selling&page=1&limit=16`.
 
-`data` có dạng `{ "products": [...], "total": 2 }`. Chỉ sản phẩm đang hoạt động, chưa bị xóa và thuộc shop đang hoạt động được trả về. Mỗi sản phẩm có thông tin shop/category, giá, rating và tổng tồn kho biến thể đang hoạt động.
+`data` có dạng `{ "products": [...], "total": 2, "page": 1, "limit": 16 }`. Chỉ sản phẩm đang hoạt động, chưa bị xóa, thuộc shop đang hoạt động và danh mục đang hoạt động được trả về. Mỗi sản phẩm có thông tin shop/category, giá, rating và tổng tồn kho biến thể đang hoạt động. Mọi query parameter không được hỗ trợ, giá trị lặp, sort không hợp lệ hoặc filter ngoài giới hạn trả `400`.
+
+### `GET /api/v1/products/{id}`
+
+Trả chi tiết sản phẩm đang được niêm yết, tối đa 100 ảnh và 100 biến thể đang hoạt động cùng SKU/giá/tồn kho/thuộc tính, kèm thông tin shop công khai. Sản phẩm ẩn, chưa duyệt, đã xóa hoặc thuộc shop/danh mục không hoạt động được coi như không tồn tại và trả `404`. Dữ liệu nội bộ như địa chỉ kho và lý do từ chối không được trả về.
+
+Response `data` có dạng `{ "product": {...}, "images": [...], "variants": [...], "shop": {...} }`. Mỗi biến thể có `attributes`, là danh sách `{ "attribute_id", "name", "value_id", "value" }`.
+
+### Shop công khai và theo dõi
+
+| Method | Endpoint | Xác thực | Mô tả |
+|---|---|---|---|
+| `GET` | `/api/v1/shops/{id}` | Không | Hồ sơ công khai của shop đang hoạt động |
+| `GET` | `/api/v1/shops/{id}/products` | Không | Sản phẩm của shop, hỗ trợ các filter/sort/page/limit như danh sách sản phẩm |
+| `GET` | `/api/v1/shops/{id}/follow` | CLIENT | Trạng thái theo dõi của tài khoản hiện tại |
+| `POST` | `/api/v1/shops/{id}/follow` | CLIENT | Theo dõi shop; thao tác lặp không tăng follower count lần nữa |
+| `DELETE` | `/api/v1/shops/{id}/follow` | CLIENT | Bỏ theo dõi shop; thao tác lặp không làm giảm follower count |
+
+Theo dõi/bỏ theo dõi cập nhật quan hệ và `follower_count` trong cùng transaction; không cho phép tự theo dõi shop của mình. Hồ sơ công khai không bao gồm địa chỉ kho, chủ shop, trạng thái duyệt nội bộ hay lý do từ chối.
 
 ## API quản trị tồn kho
 
@@ -47,4 +70,4 @@ Xóa mềm sản phẩm, không xóa vật lý dữ liệu liên quan.
 
 Body: `{ "action": "deactivate", "product_ids": [960001, 960002] }`. `action` nhận `activate`, `deactivate`, `delete`; nhận từ 1 đến 100 ID dương. ID trùng được xử lý một lần. Bật/tắt hàng loạt chỉ áp dụng sản phẩm đã duyệt.
 
-Request body từ chối field lạ, JSON sai hoặc nhiều JSON value. Filter sai trả `400`. Các lỗi trả envelope chuẩn với `errors[0].code` và `errors[0].message`.
+Request body phải có `Content-Type: application/json`, từ chối field lạ, JSON sai hoặc nhiều JSON value. Filter sai, parameter lạ/lặp hoặc vượt giới hạn trả `400`. Các lỗi trả envelope chuẩn với `errors[0].code` và `errors[0].message`.

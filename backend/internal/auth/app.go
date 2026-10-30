@@ -160,15 +160,19 @@ func (a *App) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	u.Role = roleFromDB(u.Role)
-	sid, e := a.newSession(r.Context(), w, u)
+	accessToken, e := a.newSession(r.Context(), w, u)
 	if e != nil {
 		a.serverError(w, r, e)
 		return
 	}
-	writeJSON(w, 200, map[string]any{"success": true, "data": map[string]any{"user": u, "access_token": a.issue(u, "access", a.cfg.AccessTTL, sid), "token_type": "Bearer", "expires_in": int64(a.cfg.AccessTTL.Seconds())}})
+	writeJSON(w, 200, map[string]any{"success": true, "data": map[string]any{"user": u, "access_token": accessToken, "token_type": "Bearer", "expires_in": int64(a.cfg.AccessTTL.Seconds())}})
 }
 func (a *App) newSession(ctx context.Context, w http.ResponseWriter, u User) (string, error) {
-	placeholder := digest(newID())
+	randomID, e := newID()
+	if e != nil {
+		return "", e
+	}
+	placeholder := digest(randomID)
 	tx, e := a.db.BeginTx(ctx, nil)
 	if e != nil {
 		return "", e
@@ -183,7 +187,14 @@ func (a *App) newSession(ctx context.Context, w http.ResponseWriter, u User) (st
 		return "", e
 	}
 	sid := strconv.FormatInt(sessionNumber, 10)
-	refresh := a.issue(u, "refresh", a.cfg.RefreshTTL, sid)
+	refresh, e := a.issue(u, "refresh", a.cfg.RefreshTTL, sid)
+	if e != nil {
+		return "", e
+	}
+	accessToken, e := a.issue(u, "access", a.cfg.AccessTTL, sid)
+	if e != nil {
+		return "", e
+	}
 	hash := digest(refresh)
 	if _, e = tx.ExecContext(ctx, `UPDATE refresh_tokens SET token_hash=? WHERE id=?`, hash, sessionNumber); e != nil {
 		return "", e
@@ -194,8 +205,8 @@ func (a *App) newSession(ctx context.Context, w http.ResponseWriter, u User) (st
 	if e = tx.Commit(); e != nil {
 		return "", e
 	}
-	a.setRefreshCookie(w, refresh)
-	return sid, nil
+	a.setRefreshCookie(w, refresh, a.cfg.RefreshTTL)
+	return accessToken, nil
 }
 func (a *App) refresh(w http.ResponseWriter, r *http.Request) {
 	if a.cfg.AppEnv == "production" && r.Header.Get("Origin") == "" {
@@ -222,9 +233,13 @@ func (a *App) refresh(w http.ResponseWriter, r *http.Request) {
 	var uid, status, currentHash string
 	var expiresAt time.Time
 	err = tx.QueryRowContext(r.Context(), `SELECT rt.user_id, u.status, rt.token_hash, rt.expires_at FROM refresh_tokens rt JOIN users u ON u.id=rt.user_id WHERE rt.id=? AND rt.revoked=0 AND rt.expires_at>UTC_TIMESTAMP() FOR UPDATE`, claims.SessionID).Scan(&uid, &status, &currentHash, &expiresAt)
-	if err != nil || uid != claims.UserID || status != "ACTIVE" {
+	if errors.Is(err, sql.ErrNoRows) || err == nil && (uid != claims.UserID || status != "ACTIVE") {
 		a.clearRefreshCookie(w)
 		writeError(w, 401, "invalid_session", "Refresh session is invalid or expired")
+		return
+	}
+	if err != nil {
+		a.serverError(w, r, err)
 		return
 	}
 	presentedHash := digest(ck.Value)
@@ -239,6 +254,9 @@ func (a *App) refresh(w http.ResponseWriter, r *http.Request) {
 				a.serverError(w, r, err)
 				return
 			}
+		} else if !errors.Is(replayErr, sql.ErrNoRows) {
+			a.serverError(w, r, replayErr)
+			return
 		}
 		a.clearRefreshCookie(w)
 		writeError(w, 401, "invalid_session", "Refresh session is invalid or expired")
@@ -257,7 +275,16 @@ func (a *App) refresh(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 401, "invalid_session", "Refresh session is invalid or expired")
 		return
 	}
-	refresh := a.issue(u, "refresh", remaining, claims.SessionID)
+	refresh, err := a.issue(u, "refresh", remaining, claims.SessionID)
+	if err != nil {
+		a.serverError(w, r, err)
+		return
+	}
+	accessToken, err := a.issue(u, "access", a.cfg.AccessTTL, claims.SessionID)
+	if err != nil {
+		a.serverError(w, r, err)
+		return
+	}
 	newHash := digest(refresh)
 	if _, err = tx.ExecContext(r.Context(), `UPDATE auth_refresh_history SET used_at=UTC_TIMESTAMP() WHERE refresh_token_id=? AND token_hash=? AND used_at IS NULL`, claims.SessionID, currentHash); err != nil {
 		a.serverError(w, r, err)
@@ -275,8 +302,8 @@ func (a *App) refresh(w http.ResponseWriter, r *http.Request) {
 		a.serverError(w, r, err)
 		return
 	}
-	a.setRefreshCookie(w, refresh)
-	writeJSON(w, 200, map[string]any{"success": true, "data": map[string]any{"user": u, "access_token": a.issue(u, "access", a.cfg.AccessTTL, claims.SessionID), "token_type": "Bearer", "expires_in": int64(a.cfg.AccessTTL.Seconds())}})
+	a.setRefreshCookie(w, refresh, remaining)
+	writeJSON(w, 200, map[string]any{"success": true, "data": map[string]any{"user": u, "access_token": accessToken, "token_type": "Bearer", "expires_in": int64(a.cfg.AccessTTL.Seconds())}})
 }
 func (a *App) logout(w http.ResponseWriter, r *http.Request) {
 	u := current(r)
@@ -398,13 +425,21 @@ func (a *App) forgotPassword(w http.ResponseWriter, r *http.Request) {
 		lookup = `SELECT COALESCE(email,'') FROM users WHERE email=? AND status='ACTIVE'`
 	}
 	var email string
-	if e := a.db.QueryRowContext(r.Context(), lookup, identifier).Scan(&email); e != nil || email == "" {
+	if e := a.db.QueryRowContext(r.Context(), lookup, identifier).Scan(&email); errors.Is(e, sql.ErrNoRows) || e == nil && email == "" {
 		writeJSON(w, 200, generic)
+		return
+	} else if e != nil {
+		a.serverError(w, r, e)
 		return
 	}
 	var recent int
-	if e := a.db.QueryRowContext(r.Context(), `SELECT 1 FROM password_reset_otps WHERE email=? AND created_at>DATE_SUB(UTC_TIMESTAMP(),INTERVAL 60 SECOND)`, email).Scan(&recent); e == nil {
+	e := a.db.QueryRowContext(r.Context(), `SELECT 1 FROM password_reset_otps WHERE email=? AND created_at>DATE_SUB(UTC_TIMESTAMP(),INTERVAL 60 SECOND)`, email).Scan(&recent)
+	if e == nil {
 		writeJSON(w, 200, generic)
+		return
+	}
+	if !errors.Is(e, sql.ErrNoRows) {
+		a.serverError(w, r, e)
 		return
 	}
 	n, e := rand.Int(rand.Reader, big.NewInt(1000000))
@@ -448,8 +483,12 @@ func (a *App) resetPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	email, err := a.resetEmailForIdentifier(r, identifier)
-	if err != nil {
+	if errors.Is(err, sql.ErrNoRows) {
 		writeError(w, 400, "invalid_or_expired_otp", "Verification code is invalid or expired")
+		return
+	}
+	if err != nil {
+		a.serverError(w, r, err)
 		return
 	}
 	tx, e := a.db.BeginTx(r.Context(), nil)
@@ -462,6 +501,10 @@ func (a *App) resetPassword(w http.ResponseWriter, r *http.Request) {
 	var expires time.Time
 	var attempts int
 	e = tx.QueryRowContext(r.Context(), `SELECT otp_hash,expires_at,attempts FROM password_reset_otps WHERE email=? FOR UPDATE`, email).Scan(&hash, &expires, &attempts)
+	if e != nil && !errors.Is(e, sql.ErrNoRows) {
+		a.serverError(w, r, e)
+		return
+	}
 	valid := e == nil && attempts < 5 && time.Now().Before(expires) && hmac.Equal([]byte(hash), []byte(hmacDigest(a.cfg.JWTSecret, q.OTP)))
 	if !valid {
 		if e == nil && attempts < 5 {
@@ -502,21 +545,25 @@ func (a *App) resetPassword(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, 200, map[string]any{"success": true, "message": "Password updated. Please sign in again"})
 }
 
-func (a *App) issue(u User, typ string, ttl time.Duration, sid string) string {
+func (a *App) issue(u User, typ string, ttl time.Duration, sid string) (string, error) {
 	if sid == "" {
-		sid = newID()
+		var err error
+		sid, err = newID()
+		if err != nil {
+			return "", err
+		}
+	}
+	jti, err := newID()
+	if err != nil {
+		return "", err
 	}
 	uid := strconv.FormatInt(u.ID, 10)
 	claims := struct {
 		tokenClaims
 		jwt.RegisteredClaims
-	}{tokenClaims{UserID: uid, Role: u.Role, SessionID: sid, Type: typ}, jwt.RegisteredClaims{ID: newID(), Subject: uid, IssuedAt: jwt.NewNumericDate(time.Now()), ExpiresAt: jwt.NewNumericDate(time.Now().Add(ttl)), Issuer: "rikkei-ecommerce", Audience: []string{"rikkei-ecommerce-api"}}}
+	}{tokenClaims{UserID: uid, Role: u.Role, SessionID: sid, Type: typ}, jwt.RegisteredClaims{ID: jti, Subject: uid, IssuedAt: jwt.NewNumericDate(time.Now()), ExpiresAt: jwt.NewNumericDate(time.Now().Add(ttl)), Issuer: "rikkei-ecommerce", Audience: []string{"rikkei-ecommerce-api"}}}
 	t := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	s, e := t.SignedString([]byte(a.cfg.JWTSecret))
-	if e != nil {
-		return ""
-	}
-	return s
+	return t.SignedString([]byte(a.cfg.JWTSecret))
 }
 func (a *App) parse(raw, typ string) (tokenClaims, error) {
 	c := struct {
@@ -548,14 +595,22 @@ func (a *App) requireAuth(next http.HandlerFunc) http.HandlerFunc {
 		}
 		var role, status string
 		e = a.db.QueryRowContext(r.Context(), `SELECT role,status FROM users WHERE id=?`, c.UserID).Scan(&role, &status)
-		if e != nil || status != "ACTIVE" {
+		if errors.Is(e, sql.ErrNoRows) || e == nil && status != "ACTIVE" {
 			writeError(w, 401, "unauthorized", "Session is invalid")
+			return
+		}
+		if e != nil {
+			a.serverError(w, r, e)
 			return
 		}
 		var active int
 		e = a.db.QueryRowContext(r.Context(), `SELECT 1 FROM refresh_tokens WHERE id=? AND user_id=? AND revoked=0 AND expires_at>UTC_TIMESTAMP()`, c.SessionID, c.UserID).Scan(&active)
-		if e != nil {
+		if errors.Is(e, sql.ErrNoRows) {
 			writeError(w, 401, "unauthorized", "Session is invalid or expired")
+			return
+		}
+		if e != nil {
+			a.serverError(w, r, e)
 			return
 		}
 		next(w, r.WithContext(context.WithValue(r.Context(), ctxKey{}, contextUser{ID: c.UserID, Role: roleFromDB(role), SessionID: c.SessionID})))
@@ -574,8 +629,8 @@ func current(r *http.Request) contextUser {
 	u, _ := r.Context().Value(ctxKey{}).(contextUser)
 	return u
 }
-func (a *App) setRefreshCookie(w http.ResponseWriter, v string) {
-	http.SetCookie(w, &http.Cookie{Name: "refresh_token", Value: v, Path: "/api/v1/auth/refresh", HttpOnly: true, Secure: a.cfg.CookieSecure, SameSite: http.SameSiteStrictMode, MaxAge: int(a.cfg.RefreshTTL.Seconds())})
+func (a *App) setRefreshCookie(w http.ResponseWriter, v string, ttl time.Duration) {
+	http.SetCookie(w, &http.Cookie{Name: "refresh_token", Value: v, Path: "/api/v1/auth/refresh", HttpOnly: true, Secure: a.cfg.CookieSecure, SameSite: http.SameSiteStrictMode, MaxAge: max(1, int(ttl.Seconds()))})
 }
 func (a *App) clearRefreshCookie(w http.ResponseWriter) {
 	http.SetCookie(w, &http.Cookie{Name: "refresh_token", Value: "", Path: "/api/v1/auth/refresh", HttpOnly: true, Secure: a.cfg.CookieSecure, SameSite: http.SameSiteStrictMode, MaxAge: -1})
@@ -778,12 +833,12 @@ func hmacDigest(key, value string) string {
 	_, _ = h.Write([]byte(value))
 	return hex.EncodeToString(h.Sum(nil))
 }
-func newID() string {
+func newID() (string, error) {
 	b := make([]byte, 16)
 	if _, e := rand.Read(b); e != nil {
-		panic(e)
+		return "", e
 	}
 	b[6] = (b[6] & 0x0f) | 0x40
 	b[8] = (b[8] & 0x3f) | 0x80
-	return fmt.Sprintf("%x-%x-%x-%x-%x", b[:4], b[4:6], b[6:8], b[8:10], b[10:])
+	return fmt.Sprintf("%x-%x-%x-%x-%x", b[:4], b[4:6], b[6:8], b[8:10], b[10:]), nil
 }
