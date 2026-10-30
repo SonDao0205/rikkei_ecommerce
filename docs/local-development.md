@@ -35,10 +35,13 @@ Seed dùng các ID cố định khai báo trong file và có thể chạy lại;
 | Người bán A | `seed-seller-a@local.test` | seller, shop hoạt động |
 | Người mua | `seed-buyer@local.test` | client, hoạt động |
 | Người bán B | `seed-seller-b@local.test` | seller, shop chờ duyệt |
+| Người bán công nghệ | `seed-seller-tech@local.test` | seller, shop Tech World hoạt động |
 | Tài khoản khóa | `seed-locked@local.test` | client, bị khóa để thử đăng nhập |
 | Chưa xác minh email | `seed-unverified@local.test` | client, `email_verified=0` |
 
 Seed tạo dữ liệu liên kết cho địa chỉ, shop, danh mục, thương hiệu, thuộc tính, sản phẩm/biến thể, kho, giỏ hàng, wishlist, voucher, phương thức giao hàng/thanh toán, đơn hàng, thanh toán, hoàn tiền, đánh giá, thông báo và audit log. Script không chèn vào `refresh_tokens`, `auth_refresh_history`, `password_reset_otps` vì đây là trạng thái phiên/OTP sống; không nên seed token giả.
+
+Seed có các sản phẩm công nghệ `960004`–`960008` để kiểm tra xếp hạng tìm kiếm. Ví dụ gọi `GET /api/v1/products?q=iphone+pro+max`: sản phẩm có đủ ba từ trong tên được xếp trước sản phẩm chỉ khớp một phần. Seed local có thể chạy lại bằng lệnh ở trên.
 
 FE hiện lấy danh mục và sản phẩm từ `GET /api/v1/categories` và `GET /api/v1/products`. Hồ sơ auth dùng `GET /api/v1/auth/me` và `PUT /api/v1/auth/profile`; đổi mật khẩu dùng `PUT /api/v1/auth/password`. Trang quản trị sản phẩm dùng `GET /api/v1/admin/products`, `GET /api/v1/admin/inventory-stats`, `PATCH /api/v1/admin/products/{id}/status`, `DELETE /api/v1/admin/products/{id}` và `POST /api/v1/admin/products/bulk`; các route quản trị yêu cầu role `ADMIN`. Giỏ hàng, tạo/sửa sản phẩm, checkout và các nghiệp vụ đơn hàng chưa có API để demo end-to-end.
 

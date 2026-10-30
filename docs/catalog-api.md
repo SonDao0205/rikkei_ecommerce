@@ -14,7 +14,7 @@ Tham số query:
 
 | Tham số | Ví dụ | Mặc định/giới hạn |
 |---|---|---|
-| `q` | `cotton` | Tìm tên/mô tả sản phẩm hoặc tên shop; tối đa 100 ký tự. `search` được hỗ trợ như alias cũ; không gửi cả hai. |
+| `q` | `iphone pro max` | Tìm theo từng từ trong tên sản phẩm; tối đa 100 ký tự. Kết quả được xếp theo tỷ lệ từ trong query khớp tên từ cao xuống thấp. Dùng MySQL FULLTEXT prefix matching; từ ngắn được xử lý riêng và có fallback tìm kiếm. `search` được hỗ trợ như alias cũ; không gửi cả hai. |
 | `category_id` | `930001` | `0` nghĩa là tất cả; không nhận số âm |
 | `brand_id` | `940001` | ID thương hiệu dương |
 | `shop_id` | `920001` | ID shop dương |
@@ -24,7 +24,7 @@ Tham số query:
 | `page` | `1` | Mặc định `1`, từ `1` đến `100000` |
 | `limit` | `16` | Mặc định `100`, tối đa `100` |
 
-Ví dụ: `GET /api/v1/products?q=cotton&category_id=930001&min_price=100000&min_rating=4&sort=best_selling&page=1&limit=16`.
+Ví dụ: `GET /api/v1/products?q=iphone+pro+max&category_id=930005&page=1&limit=16`. Với sản phẩm tên `Apple iPhone 15 Pro Max 256GB`, từ `15` không làm mất kết quả: các token `iphone`, `pro`, `max` được so khớp độc lập, nên sản phẩm có đủ ba token xếp trên sản phẩm chỉ có hai token. Các kết quả có cùng tỷ lệ khớp tiếp tục dùng `sort` đã chọn để sắp xếp. Nếu FULLTEXT không tìm được sản phẩm nào theo tên, backend dùng tìm kiếm chứa token trên tên/mô tả/shop để giữ tương thích với các từ ngắn hoặc thuật ngữ không được FULLTEXT lập chỉ mục.
 
 `data` có dạng `{ "products": [...], "total": 2, "page": 1, "limit": 16 }`. Chỉ sản phẩm đang hoạt động, chưa bị xóa, thuộc shop đang hoạt động và danh mục đang hoạt động được trả về. Mỗi sản phẩm có thông tin shop/category, giá, rating và tổng tồn kho biến thể đang hoạt động. Mọi query parameter không được hỗ trợ, giá trị lặp, sort không hợp lệ hoặc filter ngoài giới hạn trả `400`.
 

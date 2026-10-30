@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 )
 
@@ -29,6 +30,7 @@ func TestParseProductFilters(t *testing.T) {
 		{name: "invalid sort", query: "sort=price%3BDROP%20TABLE%20products", wantErr: true},
 		{name: "invalid page", query: "page=0", wantErr: true},
 		{name: "shop filter only when enabled", query: "shop_id=4", wantErr: true},
+		{name: "search has no searchable characters", query: "q=_%25", wantErr: true},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -63,6 +65,46 @@ func TestParseProductFiltersShopPath(t *testing.T) {
 func TestEscapeLikeTreatsWildcardsAsLiteral(t *testing.T) {
 	if got, want := escapeLike(`100%_!`), `100!%!_!!`; got != want {
 		t.Fatalf("escapeLike()=%q want %q", got, want)
+	}
+}
+
+func TestSearchTokensNormalizeAndDeduplicateWords(t *testing.T) {
+	got := searchTokens("  iPhone 15 PRO-max iphone ")
+	want := []string{"iphone", "15", "pro", "max"}
+	if len(got) != len(want) {
+		t.Fatalf("searchTokens()=%q want %q", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("searchTokens()=%q want %q", got, want)
+		}
+	}
+}
+
+func TestBuildProductSearchUsesFullTextAndRanksNameTokenCoverage(t *testing.T) {
+	search := buildProductSearch("iphone pro max")
+	if !strings.Contains(search.matchClause, "MATCH(p.name) AGAINST (? IN BOOLEAN MODE)") {
+		t.Fatalf("matchClause does not use the product-name full-text index: %s", search.matchClause)
+	}
+	if len(search.matchArgs) != 1 || search.matchArgs[0] != "iphone* pro* max*" {
+		t.Fatalf("matchArgs=%v, want tokenized boolean prefix query", search.matchArgs)
+	}
+	if strings.Count(search.relevance, "CASE WHEN p.name LIKE") != 3 || len(search.relevanceArgs) != 3 {
+		t.Fatalf("relevance=%q args=%v, want one name-coverage score per distinct token", search.relevance, search.relevanceArgs)
+	}
+	if strings.Count(search.fallbackClause, "COALESCE(p.description,'')") != 3 || len(search.fallbackArgs) != 9 {
+		t.Fatalf("fallback=%q args=%v, want name/description/shop fallback per token", search.fallbackClause, search.fallbackArgs)
+	}
+}
+
+func TestBuildProductSearchHandlesShortTokens(t *testing.T) {
+	search := buildProductSearch("iPhone 15")
+	if !strings.Contains(search.matchClause, "MATCH(p.name) AGAINST (? IN BOOLEAN MODE)") ||
+		!strings.Contains(search.matchClause, "p.name LIKE ? ESCAPE '!'") {
+		t.Fatalf("matchClause=%q, want full-text and short-token matching", search.matchClause)
+	}
+	if len(search.matchArgs) != 2 || search.matchArgs[0] != "iphone*" || search.matchArgs[1] != "%15%" {
+		t.Fatalf("matchArgs=%v, want full-text prefix and literal short-token pattern", search.matchArgs)
 	}
 }
 

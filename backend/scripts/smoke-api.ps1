@@ -59,6 +59,14 @@ $categories = Invoke-Api GET '/api/v1/categories'
 if ($categories.Status -ne 200 -or $categories.Json.data[0].id -ne 0) { throw 'Public category API did not return the all-categories entry' }
 $catalog = Invoke-Api GET '/api/v1/products?page=1&limit=10&sort=best_selling'
 if ($catalog.Status -ne 200 -or $catalog.Json.data.total -lt 0) { throw "Public catalog API failed with HTTP $($catalog.Status)" }
+$rankedSearch = Invoke-Api GET '/api/v1/products?q=iphone+pro+max&page=1&limit=10'
+if ($rankedSearch.Status -ne 200 -or $rankedSearch.Json.data.products.Count -lt 3) {
+  throw 'Tokenized product search did not return the expected seeded matches'
+}
+$rankedIDs = @($rankedSearch.Json.data.products | ForEach-Object { $_.id })
+if ($rankedIDs[0] -notin @(960004, 960007) -or $rankedIDs[1] -notin @(960004, 960007) -or $rankedIDs[2] -ne 960005) {
+  throw "Product search results were not ranked by matched name tokens: $($rankedIDs -join ', ')"
+}
 $filteredCatalog = Invoke-Api GET '/api/v1/products?q=cotton&category_id=930002&brand_id=940001&min_price=100000&max_price=300000&min_rating=4.5&sort=price_asc&page=1&limit=10'
 if ($filteredCatalog.Status -ne 200 -or $filteredCatalog.Json.data.products.Count -lt 1 -or $filteredCatalog.Json.data.products[0].id -ne 960001) {
   throw 'Catalog search/filter/sort did not return the expected seeded product'
@@ -157,4 +165,4 @@ if ($newPassword.Status -ne 200) { throw 'New password did not work after passwo
 $invalidOTP = Invoke-Api POST '/api/v1/auth/verify-reset-otp' @{ identifier = $email; otp = 'abcdef' }
 if ($invalidOTP.Status -ne 400) { throw 'Malformed OTP was not rejected' }
 
-Write-Host 'API smoke checks passed: catalog filters, product/shop detail, shop follow, admin inventory, auth, refresh replay, RBAC, password change, and OTP validation.'
+Write-Host 'API smoke checks passed: ranked token search, catalog filters, product/shop detail, shop follow, admin inventory, auth, refresh replay, RBAC, password change, and OTP validation.'
