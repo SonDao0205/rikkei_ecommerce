@@ -19,7 +19,7 @@ Muốn dùng cổng BE mặc định `8080`, hãy xóa `BACKEND_HOST_PORT` khỏ
 
 ## Nạp dữ liệu mẫu cho local
 
-`database/scriptDb.sql` tạo schema gồm các bảng auth và commerce nhưng không seed dữ liệu. BE tự migration các bảng bảo mật còn thiếu khi `AUTO_MIGRATE=true`. Không chạy lại `scriptDb.sql` thủ công trên database đã có dữ liệu: file này có lệnh xóa và tạo lại database.
+`database/scriptDb.sql` tạo schema gồm các bảng auth và commerce nhưng không seed dữ liệu. BE tự chạy migration bảo mật và bổ sung `addresses.address_type`, `shops.approval_notes` còn thiếu khi `AUTO_MIGRATE=true`; khi triển khai thủ công, chạy `go run ./cmd/migrate` trước khi nâng BE. Không chạy lại `scriptDb.sql` thủ công trên database đã có dữ liệu: file này có lệnh xóa và tạo lại database.
 
 Khi các container đã chạy, nạp dữ liệu mẫu bằng PowerShell tại thư mục gốc repository:
 
@@ -43,7 +43,9 @@ Seed tạo dữ liệu liên kết cho địa chỉ, shop, danh mục, thương 
 
 Seed có các sản phẩm công nghệ `960004`–`960008` để kiểm tra xếp hạng tìm kiếm. Ví dụ gọi `GET /api/v1/products?q=iphone+pro+max`: sản phẩm có đủ ba từ trong tên được xếp trước sản phẩm chỉ khớp một phần. Seed local có thể chạy lại bằng lệnh ở trên.
 
-FE hiện lấy danh mục và sản phẩm từ `GET /api/v1/categories` và `GET /api/v1/products`. Hồ sơ auth dùng `GET /api/v1/auth/me` và `PUT /api/v1/auth/profile`; đổi mật khẩu dùng `PUT /api/v1/auth/password`. Trang quản trị sản phẩm dùng `GET /api/v1/admin/products`, `GET /api/v1/admin/inventory-stats`, `PATCH /api/v1/admin/products/{id}/status`, `DELETE /api/v1/admin/products/{id}` và `POST /api/v1/admin/products/bulk`; các route quản trị yêu cầu role `ADMIN`. Giỏ hàng, tạo/sửa sản phẩm, checkout và các nghiệp vụ đơn hàng chưa có API để demo end-to-end.
+Collection kiểm thử Postman bao phủ tất cả các route backend hiện tại, gồm cả fixture inventory riêng `960009`, được hướng dẫn tại [`postman/README.md`](../postman/README.md). Nạp lại seed sau mỗi lần chạy collection để khôi phục fixture này trước lượt test tiếp theo.
+
+FE hiện lấy danh mục và sản phẩm từ `GET /api/v1/categories` và `GET /api/v1/products`. Hồ sơ auth dùng `GET /api/v1/auth/me` và `PUT /api/v1/auth/profile`; đổi mật khẩu dùng `PUT /api/v1/auth/password`. Shop onboarding, duyệt shop, seller product CRUD và address book có API; seller API chỉ hoạt động khi shop ACTIVE. Trang quản trị inventory dùng `/api/v1/admin/products` và các route liên quan, yêu cầu role `ADMIN`. Giỏ hàng, checkout và các nghiệp vụ đơn hàng chưa có API để demo end-to-end.
 
 Seed chỉ thay đổi dữ liệu DB local; các workflow CI/CD không theo dõi `database/**` hay `docs/**`. Các thay đổi code BE và FE vẫn kích hoạt workflow tương ứng khi push vào nhánh `build`.
 

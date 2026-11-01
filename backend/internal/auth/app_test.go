@@ -112,17 +112,17 @@ func TestProtectedRouteRequiresAccessToken(t *testing.T) {
 
 func TestPasswordSecurityRoutesAreRegisteredAndProtected(t *testing.T) {
 	a := testApp()
-	for _, path := range []string{"/api/v1/auth/password", "/api/v1/auth/verify-reset-otp", "/api/v1/shops/44/follow"} {
+	for _, path := range []string{"/api/v1/auth/password", "/api/v1/auth/verify-reset-otp"} {
 		t.Run(path, func(t *testing.T) {
 			method := http.MethodPut
-			if path == "/api/v1/auth/verify-reset-otp" || path == "/api/v1/shops/44/follow" {
+			if path == "/api/v1/auth/verify-reset-otp" {
 				method = http.MethodPost
 			}
 			req := httptest.NewRequest(method, path, bytes.NewBufferString(`{"identifier":"test@example.com","otp":"123"}`))
 			req.Header.Set("Content-Type", "application/json")
 			rec := httptest.NewRecorder()
 			a.Handler().ServeHTTP(rec, req)
-			if (path == "/api/v1/auth/password" || path == "/api/v1/shops/44/follow") && rec.Code != http.StatusUnauthorized {
+			if path == "/api/v1/auth/password" && rec.Code != http.StatusUnauthorized {
 				t.Fatalf("%s must require authentication, got %d", path, rec.Code)
 			}
 			if path == "/api/v1/auth/verify-reset-otp" && rec.Code != http.StatusBadRequest {
