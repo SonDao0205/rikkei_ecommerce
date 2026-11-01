@@ -1,11 +1,5 @@
 package auth
 
-import (
-	"net/http"
-
-	"rikkei-ecommerce/internal/catalog"
-)
-
 // RegisterRoutes keeps the HTTP surface in one place. Each handler owns only
 // request/response concerns; authentication and role checks are composed here.
 func RegisterRoutes(a *App) {
@@ -21,11 +15,4 @@ func RegisterRoutes(a *App) {
 	a.mux.HandleFunc("POST /api/v1/auth/verify-reset-otp", a.verifyResetOTP)
 	a.mux.HandleFunc("POST /api/v1/auth/reset-password", a.resetPassword)
 	a.mux.Handle("GET /api/v1/admin/users", a.requireRole("ADMIN", a.listUsers))
-	catalog.RegisterRoutes(a.mux, a.db, func(next http.HandlerFunc) http.HandlerFunc {
-		return a.requireRole("ADMIN", next)
-	}, func(next http.HandlerFunc) http.HandlerFunc {
-		return a.requireRole("CLIENT", next)
-	}, func(r *http.Request) string {
-		return current(r).ID
-	})
 }

@@ -8,6 +8,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"rikkei-ecommerce/internal/auth"
+	"rikkei-ecommerce/internal/migrations"
 )
 
 func main() {
@@ -25,8 +26,8 @@ func main() {
 	if err = db.PingContext(ctx); err != nil {
 		log.Fatalf("database connection failed: %v", err)
 	}
-	if err = auth.Migrate(ctx, db); err != nil {
+	if err = migrations.Run(ctx, db); err != nil {
 		log.Fatal(err)
 	}
-	log.Print("security migration applied")
+	log.Print("database migrations applied")
 }
