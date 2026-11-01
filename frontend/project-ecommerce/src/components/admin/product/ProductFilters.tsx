@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import type { Category } from "../../../types/ecommerce";
 
 interface ProductFiltersProps {
   searchQuery: string;
@@ -7,13 +8,14 @@ interface ProductFiltersProps {
   vendorFilter: string;
   sortBy: string;
   selectedCount: number;
+  categories?: Category[];
   onSearchChange: (value: string) => void;
   onCategoryChange: (value: string) => void;
   onStockStatusChange: (value: string) => void;
   onVendorChange: (value: string) => void;
   onSortChange: (value: string) => void;
   onClearFilters: () => void;
-  onApplyBulkAction: (action: string) => void;
+  onApplyBulkAction: (action: "activate" | "deactivate" | "delete") => void;
 }
 
 const ProductFilters: React.FC<ProductFiltersProps> = ({
@@ -23,6 +25,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
   vendorFilter,
   sortBy,
   selectedCount,
+  categories,
   onSearchChange,
   onCategoryChange,
   onStockStatusChange,
@@ -31,7 +34,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
   onClearFilters,
   onApplyBulkAction,
 }) => {
-  const [bulkAction, setBulkAction] = useState("");
+  const [bulkAction, setBulkAction] = useState<"activate" | "deactivate" | "delete" | "">("");
 
   const handleApplyBulk = () => {
     if (!bulkAction) {
@@ -80,11 +83,23 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
             className="h-11 px-3 bg-surface-container-low text-on-surface font-body-md text-body-md rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-container transition-all cursor-pointer flex-1"
           >
             <option value="">All Categories</option>
-            <option value="Footwear">Footwear</option>
-            <option value="Fashion & Apparel">Apparel & Textiles</option>
-            <option value="Accessories">Accessories</option>
-            <option value="Artisan Craft">Artisan Crafts</option>
-            <option value="Home & Living">Home & Living</option>
+            {categories && categories.length > 0
+              ? categories
+                  .filter((c) => c.id !== 0)
+                  .map((cat) => (
+                    <option key={cat.id} value={cat.name}>
+                      {cat.name}
+                    </option>
+                  ))
+              : (
+                <>
+                  <option value="Thời trang">Thời trang</option>
+                  <option value="Áo và phụ kiện">Áo và phụ kiện</option>
+                  <option value="Nhà cửa và đời sống">Nhà cửa và đời sống</option>
+                  <option value="Thực phẩm và đồ uống">Thực phẩm và đồ uống</option>
+                  <option value="Điện thoại và phụ kiện">Điện thoại và phụ kiện</option>
+                </>
+              )}
           </select>
 
           <select
@@ -98,17 +113,13 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
             <option value="out_of_stock">Out of Stock (0)</option>
           </select>
 
-          <select
+          <input
+            type="text"
             value={vendorFilter}
             onChange={(e) => onVendorChange(e.target.value)}
-            className="h-11 px-3 bg-surface-container-low text-on-surface font-body-md text-body-md rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-container transition-all cursor-pointer flex-1"
-          >
-            <option value="">All Vendors</option>
-            <option value="UrbanStep">UrbanStep</option>
-            <option value="Crafted Saigon">Crafted Saigon</option>
-            <option value="Terra Living Lab">Terra Living Lab</option>
-            <option value="Vietnam Silk Co.">Vietnam Silk Co.</option>
-          </select>
+            placeholder="Filter Shop / Vendor..."
+            className="h-11 px-3 bg-surface-container-low text-on-surface font-body-md text-body-md rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-container transition-all flex-1 min-w-[140px]"
+          />
 
           <select
             value={sortBy}
@@ -132,13 +143,12 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
             </span>
             <select
               value={bulkAction}
-              onChange={(e) => setBulkAction(e.target.value)}
+              onChange={(e) => setBulkAction(e.target.value as "activate" | "deactivate" | "delete" | "")}
               className="h-9 px-3 bg-surface-container text-on-surface font-body-sm text-body-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-container cursor-pointer"
             >
               <option value="">Choose Bulk Action...</option>
-              <option value="deactivate">Deactivate Selected</option>
               <option value="activate">Activate Selected</option>
-              <option value="category">Assign Category</option>
+              <option value="deactivate">Deactivate Selected</option>
               <option value="delete">Delete Selected</option>
             </select>
             <button

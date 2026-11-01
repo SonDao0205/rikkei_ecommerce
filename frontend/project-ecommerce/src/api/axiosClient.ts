@@ -124,6 +124,16 @@ axiosClient.interceptors.response.use(
             message = "Vui lòng nhập mật khẩu hiện tại và mật khẩu mới hợp lệ (tối thiểu 10 ký tự, có cả chữ và số).";
         } else if (errorCode === "invalid_reset_request") {
             message = "Mã OTP và mật khẩu mới hợp lệ là bắt buộc.";
+        } else if (errorCode === "product_not_found") {
+            message = "Sản phẩm không tồn tại hoặc đã ngừng kinh doanh.";
+        } else if (errorCode === "shop_not_found") {
+            message = "Cửa hàng không tồn tại hoặc tạm ngưng hoạt động.";
+        } else if (errorCode === "self_follow_denied" || errorCode === "cannot_follow_own_shop") {
+            message = "Bạn không thể theo dõi cửa hàng của chính mình.";
+        } else if (errorCode === "invalid_product_status") {
+            message = "Chỉ có thể thay đổi trạng thái cho sản phẩm đã được duyệt.";
+        } else if (errorCode === "invalid_product_filters") {
+            message = "Bộ lọc hoặc tham số tìm kiếm không hợp lệ.";
         } else if (errorCode === "rate_limited" || error.response?.status === 429) {
             message = "Thao tác quá nhanh. Vui lòng thử lại sau giây lát.";
         }

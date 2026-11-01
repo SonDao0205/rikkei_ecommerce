@@ -1,6 +1,12 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from "@reduxjs/toolkit";
 import { productApi } from "../../../api/product/productApi";
-import type { AdminProductItem, InventoryStats } from "../../../types/ecommerce";
+import type {
+  AdminProductItem,
+  InventoryStats,
+  AdminProductQueryParams,
+  AdminProductSortOption,
+  AdminStockStatus,
+} from "../../../types/ecommerce";
 
 interface AdminProductState {
   products: AdminProductItem[];
@@ -12,9 +18,9 @@ interface AdminProductState {
   // Filters & Controls
   searchQuery: string;
   categoryFilter: string;
-  stockStatusFilter: string;
+  stockStatusFilter: AdminStockStatus | "";
   vendorFilter: string;
-  sortBy: string;
+  sortBy: AdminProductSortOption;
 
   // Row selection for bulk actions
   selectedIds: number[];
@@ -27,7 +33,7 @@ interface AdminProductState {
 const initialState: AdminProductState = {
   products: [],
   stats: null,
-  totalProducts: 124,
+  totalProducts: 0,
   loading: false,
   error: null,
 
@@ -57,13 +63,7 @@ export const getInventoryStats = createAsyncThunk(
 export const getAdminProducts = createAsyncThunk(
   "adminProducts/getAdminProducts",
   async (
-    params: {
-      search?: string;
-      category?: string;
-      stockStatus?: string;
-      vendor?: string;
-      sortBy?: string;
-    } | undefined,
+    params: AdminProductQueryParams | undefined,
     { rejectWithValue }
   ) => {
     try {
@@ -76,9 +76,15 @@ export const getAdminProducts = createAsyncThunk(
 
 export const toggleProductStatus = createAsyncThunk(
   "adminProducts/toggleProductStatus",
-  async (productId: number, { rejectWithValue }) => {
+  async (productId: number, { getState, dispatch, rejectWithValue }) => {
     try {
-      return await productApi.toggleAdminProductStatus(productId);
+      const state = getState() as { adminProduct: AdminProductState };
+      const current = state.adminProduct.products.find((p) => p.id === productId);
+      const newActive = current ? !current.is_active : true;
+      const result = await productApi.toggleAdminProductStatus(productId, newActive);
+      // Cập nhật lại số liệu thống kê kho hàng
+      dispatch(getInventoryStats());
+      return result;
     } catch (err: unknown) {
       return rejectWithValue(err instanceof Error ? err.message : "Failed to toggle status");
     }
@@ -87,9 +93,10 @@ export const toggleProductStatus = createAsyncThunk(
 
 export const deleteProduct = createAsyncThunk(
   "adminProducts/deleteProduct",
-  async (productId: number, { rejectWithValue }) => {
+  async (productId: number, { dispatch, rejectWithValue }) => {
     try {
       await productApi.deleteAdminProduct(productId);
+      dispatch(getInventoryStats());
       return productId;
     } catch (err: unknown) {
       return rejectWithValue(err instanceof Error ? err.message : "Failed to delete product");
@@ -100,11 +107,13 @@ export const deleteProduct = createAsyncThunk(
 export const executeBulkAction = createAsyncThunk(
   "adminProducts/executeBulkAction",
   async (
-    payload: { action: string; productIds: number[] },
-    { rejectWithValue }
+    payload: { action: "activate" | "deactivate" | "delete"; productIds: number[] },
+    { dispatch, rejectWithValue }
   ) => {
     try {
-      return await productApi.bulkAdminAction(payload.action, payload.productIds);
+      const result = await productApi.bulkAdminAction(payload.action, payload.productIds);
+      dispatch(getInventoryStats());
+      return { ...result, productIds: payload.productIds };
     } catch (err: unknown) {
       return rejectWithValue(err instanceof Error ? err.message : "Failed to execute bulk action");
     }
@@ -117,18 +126,23 @@ export const adminProductSlice = createSlice({
   reducers: {
     setSearchQuery: (state, action: PayloadAction<string>) => {
       state.searchQuery = action.payload;
+      state.currentPage = 1;
     },
     setCategoryFilter: (state, action: PayloadAction<string>) => {
       state.categoryFilter = action.payload;
+      state.currentPage = 1;
     },
-    setStockStatusFilter: (state, action: PayloadAction<string>) => {
+    setStockStatusFilter: (state, action: PayloadAction<AdminStockStatus | "">) => {
       state.stockStatusFilter = action.payload;
+      state.currentPage = 1;
     },
     setVendorFilter: (state, action: PayloadAction<string>) => {
       state.vendorFilter = action.payload;
+      state.currentPage = 1;
     },
-    setSortBy: (state, action: PayloadAction<string>) => {
+    setSortBy: (state, action: PayloadAction<AdminProductSortOption>) => {
       state.sortBy = action.payload;
+      state.currentPage = 1;
     },
     clearAllFilters: (state) => {
       state.searchQuery = "";
@@ -136,6 +150,7 @@ export const adminProductSlice = createSlice({
       state.stockStatusFilter = "";
       state.vendorFilter = "";
       state.sortBy = "newest";
+      state.currentPage = 1;
     },
     toggleSelectProduct: (state, action: PayloadAction<number>) => {
       const id = action.payload;
@@ -155,6 +170,9 @@ export const adminProductSlice = createSlice({
     setCurrentPage: (state, action: PayloadAction<number>) => {
       state.currentPage = action.payload;
     },
+    clearAdminProductError: (state) => {
+      state.error = null;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -165,11 +183,15 @@ export const adminProductSlice = createSlice({
       // Admin Products
       .addCase(getAdminProducts.pending, (state) => {
         state.loading = true;
+        state.error = null;
       })
       .addCase(getAdminProducts.fulfilled, (state, action) => {
         state.loading = false;
         state.products = action.payload.products;
         state.totalProducts = action.payload.total;
+        state.selectedIds = state.selectedIds.filter((id) =>
+          action.payload.products.some((p) => p.id === id)
+        );
       })
       .addCase(getAdminProducts.rejected, (state, action) => {
         state.loading = false;
@@ -177,39 +199,51 @@ export const adminProductSlice = createSlice({
       })
       // Toggle Status
       .addCase(toggleProductStatus.fulfilled, (state, action) => {
-        const updated = action.payload;
-        const index = state.products.findIndex((p) => p.id === updated.id);
+        const { id, is_active, status } = action.payload;
+        const index = state.products.findIndex((p) => p.id === id);
         if (index !== -1) {
-          state.products[index] = updated;
+          state.products[index].is_active = is_active;
+          state.products[index].status = status as "ACTIVE" | "INACTIVE";
         }
+      })
+      .addCase(toggleProductStatus.rejected, (state, action) => {
+        state.error = action.payload as string;
       })
       // Delete
       .addCase(deleteProduct.fulfilled, (state, action) => {
         const deletedId = action.payload;
         state.products = state.products.filter((p) => p.id !== deletedId);
         state.selectedIds = state.selectedIds.filter((id) => id !== deletedId);
+        state.totalProducts = Math.max(0, state.totalProducts - 1);
+      })
+      .addCase(deleteProduct.rejected, (state, action) => {
+        state.error = action.payload as string;
       })
       // Bulk Action
       .addCase(executeBulkAction.fulfilled, (state, action) => {
-        const { action: bulkAct } = action.payload;
+        const { action: bulkAct, productIds } = action.payload;
         if (bulkAct === "activate") {
           state.products = state.products.map((p) =>
-            state.selectedIds.includes(p.id)
+            productIds.includes(p.id)
               ? { ...p, is_active: true, status: "ACTIVE" }
               : p
           );
         } else if (bulkAct === "deactivate") {
           state.products = state.products.map((p) =>
-            state.selectedIds.includes(p.id)
+            productIds.includes(p.id)
               ? { ...p, is_active: false, status: "INACTIVE" }
               : p
           );
         } else if (bulkAct === "delete") {
           state.products = state.products.filter(
-            (p) => !state.selectedIds.includes(p.id)
+            (p) => !productIds.includes(p.id)
           );
           state.selectedIds = [];
+          state.totalProducts = Math.max(0, state.totalProducts - productIds.length);
         }
+      })
+      .addCase(executeBulkAction.rejected, (state, action) => {
+        state.error = action.payload as string;
       });
   },
 });
@@ -224,6 +258,7 @@ export const {
   toggleSelectProduct,
   selectAllProducts,
   setCurrentPage,
+  clearAdminProductError,
 } = adminProductSlice.actions;
 
 export default adminProductSlice.reducer;

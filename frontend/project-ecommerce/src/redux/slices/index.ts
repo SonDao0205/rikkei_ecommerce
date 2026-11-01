@@ -7,6 +7,7 @@ export { default as profileReducer } from "./user/profileSlice";
 export { default as addressReducer } from "./user/addressSlice";
 export { default as productReducer } from "./product/productSlice";
 export { default as adminShopReducer } from "./admin/adminShopSlice";
+export { default as publicShopReducer } from "./shop/publicShopSlice";
 
 // Slices / Actions (namespaced to avoid action name collision like clearAllFilters, setCurrentPage)
 export * as adminDashboardSlice from "./admin/adminDashboardSlice";
@@ -17,3 +18,4 @@ export * as profileSlice from "./user/profileSlice";
 export * as addressSlice from "./user/addressSlice";
 export * as productSlice from "./product/productSlice";
 export * as adminShopSlice from "./admin/adminShopSlice";
+export * as publicShopSlice from "./shop/publicShopSlice";

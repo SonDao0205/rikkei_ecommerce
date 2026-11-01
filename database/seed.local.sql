@@ -21,22 +21,22 @@ INSERT INTO addresses (id,user_id,recipient_name,phone,province,district,ward,st
  (910002,900002,'Local Seller A','+84910000002','Hồ Chí Minh','Quận 1','Bến Nghé','25 Nguyễn Huệ',1)
 ON DUPLICATE KEY UPDATE user_id=VALUES(user_id),recipient_name=VALUES(recipient_name),phone=VALUES(phone),province=VALUES(province),district=VALUES(district),ward=VALUES(ward),street_detail=VALUES(street_detail),is_default=VALUES(is_default);
 
-INSERT INTO shops (id,owner_id,name,description,phone,warehouse_address,status,follower_count,approved_at) VALUES
- (920001,900002,'Mây Studio','Cửa hàng mẫu đồ dùng và thời trang tối giản.','+84910000012','Cầu Giấy, Hà Nội','ACTIVE',1,UTC_TIMESTAMP()),
- (920002,900004,'Bếp Nhà Mộc','Cửa hàng mẫu đồ gia dụng và cà phê.','+84910000014','Quận 1, TP Hồ Chí Minh','PENDING',0,NULL),
- (920003,900007,'Tech World','Cửa hàng thiết bị công nghệ mẫu dùng để thử tìm kiếm sản phẩm.','+84910000017','Quận 3, TP Hồ Chí Minh','ACTIVE',0,UTC_TIMESTAMP())
-ON DUPLICATE KEY UPDATE owner_id=VALUES(owner_id),description=VALUES(description),phone=VALUES(phone),warehouse_address=VALUES(warehouse_address),status=VALUES(status),follower_count=VALUES(follower_count),approved_at=VALUES(approved_at);
+INSERT INTO shops (id,owner_id,name,description,logo_url,banner_url,phone,warehouse_address,status,follower_count,approved_at) VALUES
+ (920001,900002,'Mây Studio','Cửa hàng mẫu đồ dùng và thời trang tối giản.','https://images.unsplash.com/photo-1544816155-12df9643f363?w=300','https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200','+84910000012','Cầu Giấy, Hà Nội','ACTIVE',1,UTC_TIMESTAMP()),
+ (920002,900004,'Bếp Nhà Mộc','Cửa hàng mẫu đồ gia dụng và cà phê.','https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=300','https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=1200','+84910000014','Quận 1, TP Hồ Chí Minh','PENDING',0,NULL),
+ (920003,900007,'Tech World','Cửa hàng thiết bị công nghệ mẫu dùng để thử tìm kiếm sản phẩm.','https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=300','https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1200','+84910000017','Quận 3, TP Hồ Chí Minh','ACTIVE',0,UTC_TIMESTAMP())
+ON DUPLICATE KEY UPDATE owner_id=VALUES(owner_id),name=VALUES(name),description=VALUES(description),logo_url=VALUES(logo_url),banner_url=VALUES(banner_url),phone=VALUES(phone),warehouse_address=VALUES(warehouse_address),status=VALUES(status),follower_count=VALUES(follower_count),approved_at=VALUES(approved_at);
 
 INSERT INTO shop_followers (shop_id,user_id) VALUES (920001,900003)
 ON DUPLICATE KEY UPDATE shop_id=VALUES(shop_id);
 
-INSERT INTO categories (id,parent_id,name,slug,sort_order,is_active) VALUES
- (930001,NULL,'Thời trang','seed-fashion',1,1),
- (930002,930001,'Áo và phụ kiện','seed-fashion-accessories',2,1),
- (930003,NULL,'Nhà cửa và đời sống','seed-home-living',3,1),
- (930004,NULL,'Thực phẩm và đồ uống','seed-food-drink',4,1),
- (930005,NULL,'Điện thoại và phụ kiện','seed-electronics',5,1)
-ON DUPLICATE KEY UPDATE parent_id=VALUES(parent_id),name=VALUES(name),sort_order=VALUES(sort_order),is_active=VALUES(is_active);
+INSERT INTO categories (id,parent_id,name,slug,image_url,sort_order,is_active) VALUES
+ (930001,NULL,'Thời trang','seed-fashion','https://images.unsplash.com/photo-1445205170230-053b83016050?w=300',1,1),
+ (930002,930001,'Áo và phụ kiện','seed-fashion-accessories','https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=300',2,1),
+ (930003,NULL,'Nhà cửa và đời sống','seed-home-living','https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=300',3,1),
+ (930004,NULL,'Thực phẩm và đồ uống','seed-food-drink','https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=300',4,1),
+ (930005,NULL,'Điện thoại và phụ kiện','seed-electronics','https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300',5,1)
+ON DUPLICATE KEY UPDATE parent_id=VALUES(parent_id),name=VALUES(name),slug=VALUES(slug),image_url=VALUES(image_url),sort_order=VALUES(sort_order),is_active=VALUES(is_active);
 
 INSERT INTO brands (id,name,slug,is_active) VALUES
  (940001,'Mây Basics','seed-may-basics',1),

@@ -21,8 +21,10 @@ import {
   toggleSelectProduct,
   selectAllProducts,
   setCurrentPage,
+  clearAdminProductError,
 } from "../../redux/slices/admin/adminProductSlice";
-import type { AdminProductItem } from "../../types/ecommerce";
+import { getCategories } from "../../redux/slices/product/productSlice";
+import type { AdminProductItem, AdminProductSortOption, AdminStockStatus } from "../../types/ecommerce";
 
 const AdminProduct: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -30,6 +32,8 @@ const AdminProduct: React.FC = () => {
     products,
     stats,
     totalProducts,
+    loading,
+    error,
     searchQuery,
     categoryFilter,
     stockStatusFilter,
@@ -39,9 +43,11 @@ const AdminProduct: React.FC = () => {
     currentPage,
     pageSize,
   } = useAppSelector((state) => state.adminProduct);
+  const { categories } = useAppSelector((state) => state.product);
 
   useEffect(() => {
     dispatch(getInventoryStats());
+    dispatch(getCategories());
   }, [dispatch]);
 
   useEffect(() => {
@@ -49,9 +55,9 @@ const AdminProduct: React.FC = () => {
       getAdminProducts({
         search: searchQuery,
         category: categoryFilter,
-        stockStatus: stockStatusFilter,
+        stock_status: stockStatusFilter || undefined,
         vendor: vendorFilter,
-        sortBy,
+        sort_by: sortBy,
       })
     );
   }, [dispatch, searchQuery, categoryFilter, stockStatusFilter, vendorFilter, sortBy]);
@@ -65,7 +71,7 @@ const AdminProduct: React.FC = () => {
   };
 
   const handleStockStatusChange = (val: string) => {
-    dispatch(setStockStatusFilter(val));
+    dispatch(setStockStatusFilter(val as AdminStockStatus | ""));
   };
 
   const handleVendorChange = (val: string) => {
@@ -73,7 +79,7 @@ const AdminProduct: React.FC = () => {
   };
 
   const handleSortChange = (val: string) => {
-    dispatch(setSortBy(val));
+    dispatch(setSortBy(val as AdminProductSortOption));
   };
 
   const handleClearFilters = () => {
@@ -93,12 +99,12 @@ const AdminProduct: React.FC = () => {
   };
 
   const handleDeleteProduct = (id: number) => {
-    if (window.confirm("Are you sure you want to delete this product?")) {
+    if (window.confirm("Bạn có chắc chắn muốn xóa sản phẩm này không?")) {
       dispatch(deleteProduct(id));
     }
   };
 
-  const handleApplyBulkAction = (action: string) => {
+  const handleApplyBulkAction = (action: "activate" | "deactivate" | "delete") => {
     dispatch(executeBulkAction({ action, productIds: selectedIds }));
   };
 
@@ -107,21 +113,44 @@ const AdminProduct: React.FC = () => {
   };
 
   const handleEditProduct = (product: AdminProductItem) => {
-    alert(`Edit product: ${product.name} (${product.sku})`);
+    alert(`Chỉnh sửa sản phẩm: ${product.name} (${product.sku})`);
   };
 
   const handleDuplicateProduct = (product: AdminProductItem) => {
-    alert(`Duplicated SKU for: ${product.name}`);
+    alert(`Nhân bản SKU cho: ${product.name}`);
   };
 
   const handleAddNewProduct = () => {
-    alert("Open 'Add New Product' modal/form.");
+    alert("Mở giao diện tạo sản phẩm mới.");
   };
+
+  // Client-side pagination slicing
+  const paginatedProducts = products.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   return (
     <AdminLayout>
       {/* Page Title & Action Header */}
       <ProductHeader onAddNewProduct={handleAddNewProduct} />
+
+      {/* Error notification banner */}
+      {error && (
+        <div className="mb-4 p-4 rounded-xl bg-error-container text-on-error-container flex items-center justify-between shadow-sm animate-fade-in">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-[22px]">error</span>
+            <span className="text-sm font-semibold">{error}</span>
+          </div>
+          <button
+            onClick={() => dispatch(clearAdminProductError())}
+            className="p-1 rounded-full hover:bg-black/10 transition-colors cursor-pointer"
+            aria-label="Đóng"
+          >
+            <span className="material-symbols-outlined text-[18px]">close</span>
+          </button>
+        </div>
+      )}
 
       {/* Telemetry / Inventory Health Mini-Strip */}
       <ProductStatsCards stats={stats} />
@@ -134,6 +163,7 @@ const AdminProduct: React.FC = () => {
         vendorFilter={vendorFilter}
         sortBy={sortBy}
         selectedCount={selectedIds.length}
+        categories={categories}
         onSearchChange={handleSearchChange}
         onCategoryChange={handleCategoryChange}
         onStockStatusChange={handleStockStatusChange}
@@ -144,9 +174,18 @@ const AdminProduct: React.FC = () => {
       />
 
       {/* Dedicated Full-Width Inventory Data Table */}
-      <div className="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden flex flex-col">
+      <div className="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden flex flex-col relative">
+        {loading && (
+          <div className="absolute inset-0 bg-surface-container-lowest/60 backdrop-blur-[1px] flex items-center justify-center z-10">
+            <div className="flex items-center gap-2 text-primary font-semibold text-sm">
+              <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              <span>Đang tải danh sách kho hàng...</span>
+            </div>
+          </div>
+        )}
+
         <ProductTable
-          products={products}
+          products={paginatedProducts}
           selectedIds={selectedIds}
           onToggleSelect={handleToggleSelect}
           onSelectAll={handleSelectAll}
@@ -160,7 +199,7 @@ const AdminProduct: React.FC = () => {
         <ProductPagination
           currentPage={currentPage}
           pageSize={pageSize}
-          totalItems={totalProducts}
+          totalItems={totalProducts || products.length}
           onPageChange={handlePageChange}
         />
       </div>

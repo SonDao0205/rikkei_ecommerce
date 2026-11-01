@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from "@reduxjs/toolkit";
 import { productApi } from "../../../api/product/productApi";
-import type { Category, ProductItem } from "../../../types/ecommerce";
+import type { Category, ProductItem, CatalogQueryParams, ProductDetailData } from "../../../types/ecommerce";
 
 interface ProductState {
   categories: Category[];
@@ -11,6 +11,9 @@ interface ProductState {
   sortBy: string;
   loading: boolean;
   error: string | null;
+  selectedProductDetail: ProductDetailData | null;
+  detailLoading: boolean;
+  detailError: string | null;
 }
 
 const initialState: ProductState = {
@@ -22,6 +25,9 @@ const initialState: ProductState = {
   sortBy: "Best Selling",
   loading: false,
   error: null,
+  selectedProductDetail: null,
+  detailLoading: false,
+  detailError: null,
 };
 
 export const getCategories = createAsyncThunk(
@@ -49,13 +55,24 @@ export const getFlashSaleProducts = createAsyncThunk(
 export const getCatalogProducts = createAsyncThunk(
   "products/getCatalogProducts",
   async (
-    params: { categoryId?: number; sort?: string } | undefined,
+    params: (CatalogQueryParams & { categoryId?: number }) | undefined,
     { rejectWithValue }
   ) => {
     try {
       return await productApi.fetchCatalogProducts(params);
     } catch (err: unknown) {
       return rejectWithValue(err instanceof Error ? err.message : "Failed to load catalog products");
+    }
+  }
+);
+
+export const getProductDetail = createAsyncThunk(
+  "products/getProductDetail",
+  async (productId: number, { rejectWithValue }) => {
+    try {
+      return await productApi.fetchProductDetail(productId);
+    } catch (err: unknown) {
+      return rejectWithValue(err instanceof Error ? err.message : "Failed to load product detail");
     }
   }
 );
@@ -69,6 +86,11 @@ export const productSlice = createSlice({
     },
     setSortBy: (state, action: PayloadAction<string>) => {
       state.sortBy = action.payload;
+    },
+    clearProductDetail: (state) => {
+      state.selectedProductDetail = null;
+      state.detailError = null;
+      state.detailLoading = false;
     },
   },
   extraReducers: (builder) => {
@@ -93,9 +115,22 @@ export const productSlice = createSlice({
       .addCase(getCatalogProducts.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
+      })
+      // Product Detail
+      .addCase(getProductDetail.pending, (state) => {
+        state.detailLoading = true;
+        state.detailError = null;
+      })
+      .addCase(getProductDetail.fulfilled, (state, action) => {
+        state.detailLoading = false;
+        state.selectedProductDetail = action.payload;
+      })
+      .addCase(getProductDetail.rejected, (state, action) => {
+        state.detailLoading = false;
+        state.detailError = action.payload as string;
       });
   },
 });
 
-export const { setSelectedCategory, setSortBy } = productSlice.actions;
+export const { setSelectedCategory, setSortBy, clearProductDetail } = productSlice.actions;
 export default productSlice.reducer;
