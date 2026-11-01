@@ -16,3 +16,6 @@ export * from "./user/addressApi";
 
 // Product API
 export * from "./product/productApi";
+
+// Public Shop API
+export * from "./shop/shopApi";

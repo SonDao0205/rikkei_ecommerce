@@ -18,3 +18,9 @@ export { default as AccountPage } from "./user/AccountPage";
 
 // Home page
 export { default as HomePage } from "./home/HomePage";
+
+// Product page
+export { default as ProductDetail } from "./product/ProductDetail";
+
+// Shop page
+export { default as InforShop } from "./shop/InforShop";

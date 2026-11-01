@@ -3,6 +3,8 @@ import RegisterPage from "../pages/auth/RegisterPage";
 import LoginPage from "../pages/auth/LoginPage";
 import ForgotPassword from "../pages/auth/ForgotPassword";
 import HomePage from "../pages/home/HomePage";
+import ProductDetail from "../pages/product/ProductDetail";
+import InforShop from "../pages/shop/InforShop";
 import AdminProduct from "../pages/admin/AdminProduct";
 import AdminDashBoard from "../pages/admin/AdminDashBoard";
 import AdminOrder from "../pages/admin/AdminOrder";
@@ -33,6 +35,38 @@ const router = createBrowserRouter([
     element: (
       <StorefrontRoute>
         <HomePage />
+      </StorefrontRoute>
+    ),
+  },
+  {
+    path: "/product/:id",
+    element: (
+      <StorefrontRoute>
+        <ProductDetail />
+      </StorefrontRoute>
+    ),
+  },
+  {
+    path: "/products/:id",
+    element: (
+      <StorefrontRoute>
+        <ProductDetail />
+      </StorefrontRoute>
+    ),
+  },
+  {
+    path: "/shop/:id",
+    element: (
+      <StorefrontRoute>
+        <InforShop />
+      </StorefrontRoute>
+    ),
+  },
+  {
+    path: "/shops/:id",
+    element: (
+      <StorefrontRoute>
+        <InforShop />
       </StorefrontRoute>
     ),
   },

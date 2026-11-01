@@ -9,6 +9,8 @@ interface CatalogSectionProps {
   onSortChange: (sort: string) => void;
   onAddToCart?: (product: ProductItem) => void;
   onLoadMore?: () => void;
+  onSelectProduct?: (product: ProductItem) => void;
+  onSelectShop?: (shopId: number) => void;
 }
 
 const CatalogSection: React.FC<CatalogSectionProps> = ({
@@ -18,6 +20,8 @@ const CatalogSection: React.FC<CatalogSectionProps> = ({
   onSortChange,
   onAddToCart,
   onLoadMore,
+  onSelectProduct,
+  onSelectShop,
 }) => {
   const [gridMode, setGridMode] = useState<"grid" | "list">("grid");
 
@@ -104,6 +108,8 @@ const CatalogSection: React.FC<CatalogSectionProps> = ({
                 key={product.id}
                 product={product}
                 onQuickAdd={onAddToCart}
+                onClick={onSelectProduct}
+                onShopClick={onSelectShop}
               />
             ))}
           </div>

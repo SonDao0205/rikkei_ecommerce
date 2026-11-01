@@ -153,6 +153,22 @@ export interface Shop {
   updated_at?: string;
 }
 
+export interface PublicShop {
+  id: number;
+  name: string;
+  description: string | null;
+  logo_url: string | null;
+  banner_url: string | null;
+  phone: string | null;
+  follower_count: number;
+  approved_at: string | null;
+}
+
+export interface ShopFollowState {
+  following: boolean;
+  follower_count: number;
+}
+
 export interface Brand {
   id: number;
   name: string;
@@ -181,6 +197,30 @@ export interface Product {
   updated_at?: string;
 }
 
+export interface ProductImage {
+  id: number;
+  url: string;
+  sort_order: number;
+  is_primary: boolean;
+}
+
+export interface VariantAttribute {
+  attribute_id: number;
+  name: string;
+  value_id: number;
+  value: string;
+}
+
+export interface ProductVariant {
+  id: number;
+  sku: string;
+  name: string | null;
+  price: number;
+  stock: number;
+  image_url: string | null;
+  attributes: VariantAttribute[];
+}
+
 /**
  * Extended Product item for UI rendering with relational & presentation data
  */
@@ -198,6 +238,44 @@ export interface ProductItem extends Product {
   is_flash_sale?: boolean;
 }
 
+export interface ProductDetailData {
+  product: ProductItem;
+  images: ProductImage[];
+  variants: ProductVariant[];
+  shop: PublicShop;
+}
+
+export type ProductSortOption =
+  | 'latest'
+  | 'best_selling'
+  | 'price_asc'
+  | 'price_desc'
+  | 'Latest Arrivals'
+  | 'Best Selling'
+  | 'Price: Low → High'
+  | 'Price: High → Low';
+
+export interface CatalogQueryParams {
+  q?: string;
+  search?: string;
+  category_id?: number;
+  brand_id?: number;
+  shop_id?: number;
+  min_price?: number;
+  max_price?: number;
+  min_rating?: number;
+  sort?: ProductSortOption | string;
+  page?: number;
+  limit?: number;
+}
+
+export interface ProductListResponse {
+  products: ProductItem[];
+  total: number;
+  page?: number;
+  limit?: number;
+}
+
 export interface AdminProductItem {
   id: number;
   name: string;
@@ -210,6 +288,32 @@ export interface AdminProductItem {
   stock: number;
   status: 'ACTIVE' | 'INACTIVE';
   is_active: boolean;
+}
+
+export type AdminProductSortOption =
+  | 'newest'
+  | 'stock_asc'
+  | 'stock_desc'
+  | 'price_desc';
+
+export type AdminStockStatus = 'in_stock' | 'low_stock' | 'out_of_stock';
+
+export interface AdminProductQueryParams {
+  search?: string;
+  category?: string;
+  stock_status?: AdminStockStatus;
+  vendor?: string;
+  sort_by?: AdminProductSortOption;
+}
+
+export interface AdminProductListResponse {
+  products: AdminProductItem[];
+  total: number;
+}
+
+export interface AdminBulkProductActionPayload {
+  action: 'activate' | 'deactivate' | 'delete';
+  product_ids: number[];
 }
 
 export interface InventoryStats {

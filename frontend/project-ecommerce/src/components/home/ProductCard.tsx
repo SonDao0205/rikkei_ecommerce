@@ -5,12 +5,16 @@ interface ProductCardProps {
   product: ProductItem;
   onQuickAdd?: (product: ProductItem) => void;
   onToggleWishlist?: (product: ProductItem) => void;
+  onClick?: (product: ProductItem) => void;
+  onShopClick?: (shopId: number) => void;
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({
   product,
   onQuickAdd,
   onToggleWishlist,
+  onClick,
+  onShopClick,
 }) => {
   const [isWishlisted, setIsWishlisted] = useState(false);
 
@@ -32,7 +36,10 @@ const ProductCard: React.FC<ProductCardProps> = ({
   };
 
   return (
-    <div className="group relative flex flex-col rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
+    <div
+      onClick={() => onClick?.(product)}
+      className="group relative flex flex-col rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden cursor-pointer"
+    >
       {/* Image Box (4:5 Ratio) */}
       <div className="relative w-full aspect-[4/5] bg-surface-container-low overflow-hidden">
         <div
@@ -91,8 +98,16 @@ const ProductCard: React.FC<ProductCardProps> = ({
       <div className="p-space-md flex flex-col flex-1 justify-between gap-space-sm">
         <div>
           {/* Shop / Brand Info */}
-          <div className="flex items-center gap-1 mb-1">
-            <span className="font-label-sm text-[11px] text-on-surface-variant font-semibold">
+          <div
+            className="flex items-center gap-1 mb-1 hover:opacity-80 transition-opacity"
+            onClick={(e) => {
+              if (onShopClick) {
+                e.stopPropagation();
+                onShopClick(product.shop_id);
+              }
+            }}
+          >
+            <span className="font-label-sm text-[11px] text-on-surface-variant font-semibold hover:text-primary transition-colors">
               {product.shop_name}
             </span>
             {product.shop_badge && (
