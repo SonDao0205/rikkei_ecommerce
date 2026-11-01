@@ -14,6 +14,7 @@ import {
   cleanAdminProductQueryParams,
   mapBackendProductToProductItem,
   mapBackendCategory,
+  type BackendProductRaw,
 } from "../../utils/catalogAdapters";
 
 interface ApiResponse<T> {
@@ -52,7 +53,7 @@ export const productApi = {
    * GET /api/v1/products?sort=best_selling&limit=4
    */
   fetchFlashSaleProducts: async (): Promise<ProductItem[]> => {
-    const response = await axiosClient.get<ApiResponse<{ products: any[]; total: number }>>("/api/v1/products", {
+    const response = await axiosClient.get<ApiResponse<{ products: BackendProductRaw[]; total: number }>>("/api/v1/products", {
       params: { sort: "best_selling", limit: 4 },
     });
     const products = response.data?.data?.products || [];
@@ -83,7 +84,7 @@ export const productApi = {
     });
 
     const response = await axiosClient.get<
-      ApiResponse<{ products: any[]; total: number; page?: number; limit?: number }>
+      ApiResponse<{ products: BackendProductRaw[]; total: number; page?: number; limit?: number }>
     >("/api/v1/products", { params: cleaned });
 
     const rawList = response.data?.data?.products || [];

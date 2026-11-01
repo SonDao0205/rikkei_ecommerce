@@ -140,23 +140,71 @@ export const cleanAdminProductQueryParams = (
   return cleaned;
 };
 
+export interface BackendProductRaw {
+  id: number;
+  shop_id: number;
+  category_id: number;
+  brand_id?: number | null;
+  name?: string;
+  slug?: string;
+  description?: string | null;
+  thumbnail_url?: string | null;
+  price?: number | string;
+  sold_count?: number;
+  rating_avg?: number;
+  rating_count?: number;
+  status?: string;
+  reject_reason?: string | null;
+  is_deleted?: number;
+  created_at?: string;
+  updated_at?: string;
+  category_name?: string;
+  stock?: number;
+  shop_name?: string;
+  shop_badge?: string;
+  discount_percent?: number;
+  original_price?: number;
+  is_flash_sale?: boolean | number;
+}
+
+export interface BackendCategoryRaw {
+  id: number;
+  parent_id?: number | null;
+  name: string;
+  slug: string;
+  image_url?: string | null;
+  sort_order?: number;
+  is_active?: number;
+}
+
 /**
  * Adapter chuyển đổi dữ liệu sản phẩm từ Backend sang ViewModel ProductItem hiển thị trên UI.
  */
-export const mapBackendProductToProductItem = (raw: any): ProductItem => {
-  const price = typeof raw.price === "number" ? raw.price : parseFloat(raw.price) || 0;
+export const mapBackendProductToProductItem = (raw: BackendProductRaw): ProductItem => {
+  const price = typeof raw.price === "number" ? raw.price : parseFloat(String(raw.price)) || 0;
   const isFlashSale = Boolean(raw.is_flash_sale);
 
   // Tính toán discount_percent và original_price nếu chưa có từ BE
   const discountPercent =
     raw.discount_percent ??
-    (isFlashSale ? 30 : raw.sold_count > 100 ? 15 : undefined);
+    (isFlashSale ? 30 : (raw.sold_count ?? 0) > 100 ? 15 : undefined);
 
   const originalPrice =
     raw.original_price ??
     (discountPercent
       ? Math.round(price / (1 - discountPercent / 100))
       : undefined);
+
+  const validBadges: Array<NonNullable<ProductItem["shop_badge"]>> = [
+    "OFFICIAL",
+    "MALL",
+    "ARTISAN",
+    "VERIFIED",
+  ];
+  const shopBadge: NonNullable<ProductItem["shop_badge"]> =
+    typeof raw.shop_badge === "string" && (validBadges as string[]).includes(raw.shop_badge)
+      ? (raw.shop_badge as NonNullable<ProductItem["shop_badge"]>)
+      : "VERIFIED";
 
   return {
     id: raw.id,
@@ -171,7 +219,7 @@ export const mapBackendProductToProductItem = (raw: any): ProductItem => {
     sold_count: raw.sold_count ?? 0,
     rating_avg: typeof raw.rating_avg === "number" ? raw.rating_avg : 5.0,
     rating_count: raw.rating_count ?? 0,
-    status: raw.status || "ACTIVE",
+    status: (raw.status as ProductItem["status"]) || "ACTIVE",
     reject_reason: raw.reject_reason ?? null,
     is_deleted: raw.is_deleted ?? 0,
     created_at: raw.created_at,
@@ -180,12 +228,12 @@ export const mapBackendProductToProductItem = (raw: any): ProductItem => {
     category_name: raw.category_name,
     stock: raw.stock ?? 0,
     shop_name: raw.shop_name || "Aura Official",
-    shop_badge: (raw.shop_badge as any) || "VERIFIED",
+    shop_badge: shopBadge,
     original_price: originalPrice,
     discount_percent: discountPercent,
     is_flash_sale: isFlashSale,
     claimed_percentage: isFlashSale ? Math.min(Math.round(((raw.sold_count ?? 50) % 50 + 50)), 95) : undefined,
-    stock_alert: raw.stock > 0 && raw.stock <= 5 ? `Chỉ còn ${raw.stock} sản phẩm` : undefined,
+    stock_alert: (raw.stock ?? 0) > 0 && (raw.stock ?? 0) <= 5 ? `Chỉ còn ${raw.stock} sản phẩm` : undefined,
   };
 };
 
@@ -207,7 +255,7 @@ const DEFAULT_CATEGORY_IMAGES: Record<string, string> = {
 /**
  * Adapter chuẩn hóa danh mục trả về từ Backend
  */
-export const mapBackendCategory = (raw: any): Category => {
+export const mapBackendCategory = (raw: BackendCategoryRaw): Category => {
   const imageUrl =
     raw.image_url ||
     (raw.id !== 0 ? DEFAULT_CATEGORY_IMAGES[raw.slug] || DEFAULT_CATEGORY_IMAGES["seed-fashion"] : null);

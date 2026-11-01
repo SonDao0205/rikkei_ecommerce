@@ -26,9 +26,16 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   const { followState, followLoading } = useAppSelector((state) => state.publicShop);
   const { user } = useAppSelector((state) => state.auth);
 
-  const [selectedImage, setSelectedImage] = useState<string>("");
-  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
+  const [prevProductId, setPrevProductId] = useState(productId);
+  const [selectedImageOverride, setSelectedImageOverride] = useState<string | null>(null);
+  const [selectedVariantOverride, setSelectedVariantOverride] = useState<ProductVariant | null>(null);
   const [followMessage, setFollowMessage] = useState<string | null>(null);
+
+  if (productId !== prevProductId) {
+    setPrevProductId(productId);
+    setSelectedImageOverride(null);
+    setSelectedVariantOverride(null);
+  }
 
   useEffect(() => {
     if (productId) {
@@ -39,34 +46,23 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
     };
   }, [dispatch, productId]);
 
+  const shopId = selectedProductDetail?.shop?.id;
+  const followerCount = selectedProductDetail?.shop?.follower_count ?? 0;
+
   useEffect(() => {
-    if (selectedProductDetail) {
-      const primary =
-        selectedProductDetail.images.find((img) => img.is_primary)?.url ||
-        selectedProductDetail.images[0]?.url ||
-        selectedProductDetail.product.thumbnail_url ||
-        "";
-      setSelectedImage(primary);
-
-      if (selectedProductDetail.variants.length > 0) {
-        setSelectedVariant(selectedProductDetail.variants[0]);
-      }
-
-      // Khởi tạo số lượng follower từ thông tin shop công khai
-      if (selectedProductDetail.shop?.id) {
-        dispatch(
-          setFollowState({
-            following: false,
-            follower_count: selectedProductDetail.shop.follower_count ?? 0,
-          })
-        );
-        // Chỉ gọi API trạng thái follow khi đã đăng nhập vai trò CLIENT
-        if (user && user.role?.toLowerCase() === "client") {
-          dispatch(getShopFollowState(selectedProductDetail.shop.id));
-        }
+    if (shopId) {
+      dispatch(
+        setFollowState({
+          following: false,
+          follower_count: followerCount,
+        })
+      );
+      // Chỉ gọi API trạng thái follow khi đã đăng nhập vai trò CLIENT
+      if (user && user.role?.toLowerCase() === "client") {
+        dispatch(getShopFollowState(shopId));
       }
     }
-  }, [dispatch, selectedProductDetail, user]);
+  }, [dispatch, shopId, followerCount, user]);
 
   if (!productId) return null;
 
@@ -107,6 +103,16 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   const images = selectedProductDetail?.images || [];
   const variants = selectedProductDetail?.variants || [];
   const shop = selectedProductDetail?.shop;
+
+  const defaultImage =
+    images.find((img) => img.is_primary)?.url ||
+    images[0]?.url ||
+    product?.thumbnail_url ||
+    "";
+  const selectedImage = selectedImageOverride || defaultImage;
+
+  const selectedVariant =
+    selectedVariantOverride ?? (variants.length > 0 ? variants[0] : null);
 
   const currentPrice = selectedVariant?.price ?? product?.price ?? 0;
   const currentStock = selectedVariant?.stock ?? product?.stock ?? 0;
@@ -174,7 +180,7 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                     {images.map((img) => (
                       <button
                         key={img.id}
-                        onClick={() => setSelectedImage(img.url)}
+                        onClick={() => setSelectedImageOverride(img.url)}
                         className={`relative w-16 h-16 rounded-lg overflow-hidden shrink-0 border-2 transition-all cursor-pointer ${
                           selectedImage === img.url
                             ? "border-primary shadow-sm scale-105"
@@ -254,8 +260,8 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                           <button
                             key={v.id}
                             onClick={() => {
-                              setSelectedVariant(v);
-                              if (v.image_url) setSelectedImage(v.image_url);
+                              setSelectedVariantOverride(v);
+                              if (v.image_url) setSelectedImageOverride(v.image_url);
                             }}
                             className={`px-3 py-2 rounded-lg text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1.5 ${
                               isSelected

@@ -8,6 +8,7 @@ import type {
 import {
   cleanCatalogQueryParams,
   mapBackendProductToProductItem,
+  type BackendProductRaw,
 } from "../../utils/catalogAdapters";
 
 interface ApiResponse<T> {
@@ -38,7 +39,7 @@ export const shopApi = {
   ): Promise<ProductListResponse> => {
     const cleaned = cleanCatalogQueryParams(params);
     const response = await axiosClient.get<
-      ApiResponse<{ products: any[]; total: number; page?: number; limit?: number }>
+      ApiResponse<{ products: BackendProductRaw[]; total: number; page?: number; limit?: number }>
     >(`/api/v1/shops/${shopId}/products`, { params: cleaned });
 
     const rawProducts = response.data?.data?.products || [];

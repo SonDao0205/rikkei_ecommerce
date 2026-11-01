@@ -22,7 +22,13 @@ export const ProductDetail: React.FC = () => {
     (state) => state.product
   );
 
-  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
+  const [prevId, setPrevId] = useState(id);
+  const [selectedVariantOverride, setSelectedVariantOverride] = useState<ProductVariant | null>(null);
+
+  if (id !== prevId) {
+    setPrevId(id);
+    setSelectedVariantOverride(null);
+  }
 
   // Fetch product detail on mount or when URL ID changes
   useEffect(() => {
@@ -38,31 +44,29 @@ export const ProductDetail: React.FC = () => {
     };
   }, [dispatch, id]);
 
-  // Sync initial variant and shop follow state when product detail loads
-  useEffect(() => {
-    if (selectedProductDetail) {
-      if (selectedProductDetail.variants && selectedProductDetail.variants.length > 0) {
-        setSelectedVariant(selectedProductDetail.variants[0]);
-      } else {
-        setSelectedVariant(null);
-      }
+  const shopId = selectedProductDetail?.shop?.id;
+  const followerCount = selectedProductDetail?.shop?.follower_count ?? 0;
 
-      if (selectedProductDetail.shop?.id) {
-        dispatch(
-          setFollowState({
-            following: false,
-            follower_count: selectedProductDetail.shop.follower_count ?? 0,
-          })
-        );
-        dispatch(getShopFollowState(selectedProductDetail.shop.id));
-      }
+  // Sync shop follow state when product detail loads
+  useEffect(() => {
+    if (shopId) {
+      dispatch(
+        setFollowState({
+          following: false,
+          follower_count: followerCount,
+        })
+      );
+      dispatch(getShopFollowState(shopId));
     }
-  }, [dispatch, selectedProductDetail]);
+  }, [dispatch, shopId, followerCount]);
 
   const product = selectedProductDetail?.product;
   const images = selectedProductDetail?.images || [];
   const variants = selectedProductDetail?.variants || [];
   const shop = selectedProductDetail?.shop;
+
+  const selectedVariant =
+    selectedVariantOverride ?? (variants.length > 0 ? variants[0] : null);
 
   // Determine main image URL (prioritize variant image, then primary image, then thumbnail)
   const mainImageUrl =
@@ -167,7 +171,7 @@ export const ProductDetail: React.FC = () => {
                   product={product}
                   variants={variants}
                   selectedVariant={selectedVariant}
-                  onSelectVariant={(variant) => setSelectedVariant(variant)}
+                  onSelectVariant={(variant) => setSelectedVariantOverride(variant)}
                 />
 
                 {/* Accordion Information Tabs */}
