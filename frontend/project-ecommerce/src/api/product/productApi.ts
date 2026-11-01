@@ -23,6 +23,13 @@ interface ApiResponse<T> {
   message?: string;
 }
 
+export interface CategoryVariantAttribute {
+  id: number;
+  name: string;
+  required: boolean;
+  values: Array<{ id: number; value: string }>;
+}
+
 export const productApi = {
   /**
    * Lấy danh mục sản phẩm (Category Circles Bar trên trang Home)
@@ -46,6 +53,19 @@ export const productApi = {
       });
     }
     return mapped;
+  },
+
+  /**
+   * Lấy các thuộc tính biến thể được cấu hình cho danh mục
+   * GET /api/v1/categories/{id}/attributes
+   */
+  fetchCategoryAttributes: async (
+    categoryId: number
+  ): Promise<{ category_id: number; attributes: CategoryVariantAttribute[] }> => {
+    const response = await axiosClient.get<
+      ApiResponse<{ category_id: number; attributes: CategoryVariantAttribute[] }>
+    >(`/api/v1/categories/${categoryId}/attributes`);
+    return response.data.data;
   },
 
   /**

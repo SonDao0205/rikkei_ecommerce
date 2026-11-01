@@ -29,6 +29,7 @@ func TestBusinessRoutesRequireAuthentication(t *testing.T) {
 		{http.MethodGet, "/api/v1/me/shop"},
 		{http.MethodPut, "/api/v1/me/shop"},
 		{http.MethodGet, "/api/v1/admin/shops"},
+		{http.MethodPut, "/api/v1/admin/categories/1/attributes"},
 		{http.MethodPatch, "/api/v1/admin/shops/1/status"},
 		{http.MethodPatch, "/api/v1/admin/shops/1/approve"},
 		{http.MethodPatch, "/api/v1/admin/shops/1/reject"},

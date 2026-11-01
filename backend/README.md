@@ -156,6 +156,8 @@ Postman collection importable bao phủ các route BE hiện có, kèm local env
 | `POST` | `/api/v1/auth/reset-password` | OTP | Đặt password mới, thu hồi session |
 | `GET` | `/api/v1/admin/users` | ADMIN | Danh sách tối đa 100 user |
 | `GET` | `/api/v1/categories` | Không | Danh mục đang hoạt động |
+| `GET` | `/api/v1/categories/{id}/attributes` | Không | Thuộc tính biến thể, bắt buộc/tùy chọn và các giá trị của danh mục |
+| `PUT` | `/api/v1/admin/categories/{id}/attributes` | ADMIN | Thay thế cấu hình thuộc tính biến thể danh mục |
 | `GET` | `/api/v1/products` | Không | Danh sách/tìm kiếm/lọc/sắp xếp sản phẩm |
 | `GET` | `/api/v1/products/{id}` | Không | Chi tiết sản phẩm, ảnh, biến thể và shop công khai |
 | `GET` | `/api/v1/shops/{id}` | Không | Hồ sơ shop đang hoạt động |
@@ -349,7 +351,23 @@ Seller endpoints kiểm tra đồng thời role `SELLER`, trạng thái tài kho
 }
 ```
 
-Mỗi sản phẩm cần 1–10 ảnh và 1–50 biến thể; mỗi biến thể có SKU duy nhất, giá tối đa hai chữ số thập phân, tồn kho không âm và tối đa 10 attribute value IDs hợp lệ. Danh mục/brand phải đang hoạt động. Ảnh chỉ nhận URL HTTPS. Tạo/sửa sản phẩm đặt trạng thái `PENDING`; chỉnh tồn kho thêm `stock_movements` trong cùng transaction. Khi sửa biến thể hiện có, gửi `id` để giữ nguyên liên kết đơn hàng; biến thể bị bỏ sẽ chuyển `INACTIVE`. Xóa sản phẩm là soft-delete và disable biến thể, không xóa cứng dữ liệu đơn hàng.
+Mỗi sản phẩm cần 1–10 ảnh và 1–50 biến thể; mỗi biến thể có SKU duy nhất, giá tối đa hai chữ số thập phân, tồn kho không âm và tối đa 10 attribute value IDs. Danh mục/brand phải đang hoạt động. Giá trị biến thể phải thuộc thuộc tính được cấu hình cho danh mục; mỗi biến thể phải có đủ thuộc tính bắt buộc, chỉ chọn tối đa một value cho mỗi attribute, và mọi biến thể của cùng sản phẩm phải dùng cùng tập attribute với tổ hợp value duy nhất. Danh mục chưa cấu hình thuộc tính vẫn hỗ trợ sản phẩm không có attribute IDs. Lỗi validation trả `400` với các mã như `invalid_category_variant_attribute`, `missing_required_variant_attribute`, `duplicate_variant_attribute`, `inconsistent_variant_attributes`, `duplicate_variant_combination`.
+
+FE tải cấu hình trước khi dựng form qua `GET /api/v1/categories/{id}/attributes`; response có `category_id` và `attributes[]` với `id`, `name`, `required`, `values[]` (`id`, `value`). ADMIN thay toàn bộ cấu hình bằng `PUT /api/v1/admin/categories/{id}/attributes`, body ví dụ:
+
+```json
+{
+  "attributes": [
+    { "attribute_id": 950001, "required": true, "sort_order": 1 },
+    { "attribute_id": 950002, "required": true, "sort_order": 2 },
+    { "attribute_id": 950005, "required": false, "sort_order": 3 }
+  ]
+}
+```
+
+Mỗi danh mục tối đa 10 thuộc tính; ID không được trùng, mọi attribute phải tồn tại và có ít nhất một value. Cấu hình áp dụng trực tiếp cho category ID, không tự kế thừa từ danh mục cha. Không thể gỡ attribute đang được biến thể sản phẩm hiện hữu dùng hoặc đặt thuộc tính bắt buộc nếu biến thể active hiện tại chưa có value tương ứng. Thay đổi cấu hình và seller ghi sản phẩm khóa cùng hàng danh mục, tránh seller ghi dựa trên cấu hình cũ. Seed local minh họa áo khoác cần màu/kích cỡ và máy tính cần CPU/RAM, dung lượng là tùy chọn.
+
+Ảnh chỉ nhận URL HTTPS. Tạo/sửa sản phẩm đặt trạng thái `PENDING`; chỉnh tồn kho thêm `stock_movements` trong cùng transaction. Khi sửa biến thể hiện có, gửi `id` để giữ nguyên liên kết đơn hàng; biến thể bị bỏ sẽ chuyển `INACTIVE`. Xóa sản phẩm là soft-delete và disable biến thể, không xóa cứng dữ liệu đơn hàng.
 
 Danh sách hỗ trợ `page`, `limit` (tối đa 100) và `status`. Response list có `products`, `total`, `page`, `limit`; chi tiết/tạo/sửa trả `data` là product kèm `images` và `variants`.
 
