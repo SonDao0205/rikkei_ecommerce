@@ -91,6 +91,25 @@
           }]
         },
         {
+          "name": "Get category variant attributes",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/categories/930006/attributes"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Returns required jacket attributes and their values', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const attributes = pm.response.json().data.attributes;",
+              "  pm.expect(attributes).to.have.length(2);",
+              "  pm.expect(attributes.every((attribute) => attribute.required)).to.eql(true);",
+              "  pm.expect(attributes.every((attribute) => attribute.values.length > 0)).to.eql(true);",
+              "});"
+            ]}
+          }]
+        },
+        {
           "name": "List products with pagination",
           "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/products?page=1&limit=20&sort=latest" },
           "event": [{
@@ -1081,6 +1100,49 @@
           }]
         },
         {
+          "name": "Login as approved business seller",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"identifier\": \"{{businessEmail}}\",\n  \"password\": \"{{businessPassword}}\"\n}" },
+            "url": "{{baseUrl}}/api/v1/auth/login"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Refreshes the business session after seller approval', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const data = pm.response.json().data;",
+              "  pm.expect(data.user.role).to.eql('SELLER');",
+              "  pm.collectionVariables.set('businessToken', data.access_token);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Reject seller variant missing a required attribute",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{businessToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Invalid jacket test\",\n  \"description\": \"Validation fixture\",\n  \"category_id\": 930006,\n  \"price\": 120000,\n  \"images\": [{ \"url\": \"https://cdn.example.test/postman-invalid-product.png\", \"is_primary\": true }],\n  \"variants\": [{ \"sku\": \"{{businessSKU}}-INVALID\", \"price\": 120000, \"stock\": 1, \"attribute_value_ids\": [951001] }]\n}" },
+            "url": "{{baseUrl}}/api/v1/seller/products"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Rejects variants without all required category attributes', function () {",
+              "  pm.response.to.have.status(400);",
+              "  pm.expect(pm.response.json().errors[0].code).to.eql('missing_required_variant_attribute');",
+              "});"
+            ]}
+          }]
+        },
+        {
           "name": "Create seller product with image variant and stock",
           "request": {
             "method": "POST",
@@ -1088,7 +1150,7 @@
               { "key": "Content-Type", "value": "application/json" },
               { "key": "Authorization", "value": "Bearer {{businessToken}}" }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Postman test product\",\n  \"description\": \"Disposable seller API fixture\",\n  \"category_id\": 930005,\n  \"brand_id\": 940003,\n  \"price\": 120000,\n  \"images\": [{ \"url\": \"https://cdn.example.test/postman-product.png\", \"is_primary\": true }],\n  \"variants\": [{ \"sku\": \"{{businessSKU}}\", \"name\": \"Black 128GB\", \"price\": 120000, \"stock\": 2, \"attribute_value_ids\": [951001, 951003] }]\n}" },
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Postman test jacket\",\n  \"description\": \"Disposable seller API fixture\",\n  \"category_id\": 930006,\n  \"price\": 120000,\n  \"images\": [{ \"url\": \"https://cdn.example.test/postman-product.png\", \"is_primary\": true }],\n  \"variants\": [{ \"sku\": \"{{businessSKU}}\", \"name\": \"Black / M\", \"price\": 120000, \"stock\": 2, \"attribute_value_ids\": [951001, 951003] }]\n}" },
             "url": "{{baseUrl}}/api/v1/seller/products"
           },
           "event": [{
@@ -1129,7 +1191,7 @@
               { "key": "Content-Type", "value": "application/json" },
               { "key": "Authorization", "value": "Bearer {{businessToken}}" }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Postman test product updated\",\n  \"description\": \"Updated disposable seller API fixture\",\n  \"category_id\": 930005,\n  \"brand_id\": 940003,\n  \"price\": 125000,\n  \"images\": [{ \"url\": \"https://cdn.example.test/postman-product.png\", \"is_primary\": true }],\n  \"variants\": [{ \"id\": {{businessVariantId}}, \"sku\": \"{{businessSKU}}\", \"name\": \"Black 128GB\", \"price\": 125000, \"stock\": 3, \"attribute_value_ids\": [951001, 951003] }]\n}" },
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Postman test jacket updated\",\n  \"description\": \"Updated disposable seller API fixture\",\n  \"category_id\": 930006,\n  \"price\": 125000,\n  \"images\": [{ \"url\": \"https://cdn.example.test/postman-product.png\", \"is_primary\": true }],\n  \"variants\": [{ \"id\": {{businessVariantId}}, \"sku\": \"{{businessSKU}}\", \"name\": \"Black / M\", \"price\": 125000, \"stock\": 3, \"attribute_value_ids\": [951001, 951003] }]\n}" },
             "url": "{{baseUrl}}/api/v1/seller/products/{{businessProductId}}"
           },
           "event": [{

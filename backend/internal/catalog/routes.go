@@ -11,6 +11,8 @@ type routeAuthorizer func(http.HandlerFunc) http.HandlerFunc
 func RegisterRoutes(mux *http.ServeMux, db *sql.DB, requireAdmin, requireClient routeAuthorizer, userID func(*http.Request) string) {
 	h := handler{db: db, userID: userID}
 	mux.HandleFunc("GET /api/v1/categories", h.categories)
+	mux.HandleFunc("GET /api/v1/categories/{id}/attributes", h.categoryAttributes)
+	mux.Handle("PUT /api/v1/admin/categories/{id}/attributes", requireAdmin(h.replaceCategoryAttributes))
 	mux.HandleFunc("GET /api/v1/products", h.products)
 	mux.HandleFunc("GET /api/v1/products/{id}", h.productDetail)
 	mux.HandleFunc("GET /api/v1/shops/{id}", h.shopDetail)

@@ -35,7 +35,9 @@ INSERT INTO categories (id,parent_id,name,slug,image_url,sort_order,is_active) V
  (930002,930001,'Áo và phụ kiện','seed-fashion-accessories','https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=300',2,1),
  (930003,NULL,'Nhà cửa và đời sống','seed-home-living','https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=300',3,1),
  (930004,NULL,'Thực phẩm và đồ uống','seed-food-drink','https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=300',4,1),
- (930005,NULL,'Điện thoại và phụ kiện','seed-electronics','https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300',5,1)
+ (930005,NULL,'Điện thoại và phụ kiện','seed-electronics','https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300',5,1),
+ (930006,930001,'Áo khoác','seed-jackets','https://images.unsplash.com/photo-1551028719-00167b16eac5?w=300',6,1),
+ (930007,930005,'Máy tính','seed-computers','https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=300',7,1)
 ON DUPLICATE KEY UPDATE parent_id=VALUES(parent_id),name=VALUES(name),slug=VALUES(slug),image_url=VALUES(image_url),sort_order=VALUES(sort_order),is_active=VALUES(is_active);
 
 INSERT INTO brands (id,name,slug,is_active) VALUES
@@ -44,11 +46,20 @@ INSERT INTO brands (id,name,slug,is_active) VALUES
  (940003,'Apple','seed-apple',1)
 ON DUPLICATE KEY UPDATE name=VALUES(name),is_active=VALUES(is_active);
 
-INSERT INTO attributes (id,name) VALUES (950001,'Màu sắc'),(950002,'Kích cỡ')
+INSERT INTO attributes (id,name) VALUES
+ (950001,'Màu sắc'),(950002,'Kích cỡ'),(950003,'CPU'),(950004,'RAM'),(950005,'Dung lượng lưu trữ')
 ON DUPLICATE KEY UPDATE name=VALUES(name);
 INSERT INTO attribute_values (id,attribute_id,value) VALUES
- (951001,950001,'Đen'),(951002,950001,'Trắng'),(951003,950002,'M'),(951004,950002,'L')
+ (951001,950001,'Đen'),(951002,950001,'Trắng'),(951003,950002,'M'),(951004,950002,'L'),
+ (951005,950003,'Intel Core i5'),(951006,950003,'Intel Core i7'),
+ (951007,950004,'16GB'),(951008,950004,'32GB'),
+ (951009,950005,'512GB SSD'),(951010,950005,'1TB SSD')
 ON DUPLICATE KEY UPDATE attribute_id=VALUES(attribute_id),value=VALUES(value);
+
+INSERT INTO category_attributes (category_id,attribute_id,is_required,sort_order) VALUES
+ (930006,950001,1,1),(930006,950002,1,2),
+ (930007,950003,1,1),(930007,950004,1,2),(930007,950005,0,3)
+ON DUPLICATE KEY UPDATE is_required=VALUES(is_required),sort_order=VALUES(sort_order);
 
 INSERT INTO products (id,shop_id,category_id,brand_id,name,slug,description,thumbnail_url,price,sold_count,rating_avg,rating_count,status,is_deleted) VALUES
  (960001,920001,930002,940001,'Áo thun cotton cơ bản','seed-cotton-tee','Sản phẩm mẫu để phát triển catalog và tồn kho.','https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800',250000,18,4.80,4,'ACTIVE',0),
@@ -59,7 +70,9 @@ INSERT INTO products (id,shop_id,category_id,brand_id,name,slug,description,thum
  (960006,920003,930005,940003,'Apple iPhone 15 128GB','seed-iphone-15-128gb','Điện thoại mẫu cơ bản để so sánh tỷ lệ khớp từ khóa.','https://images.unsplash.com/photo-1696446701796-da61225697cc?w=800',19990000,120,4.70,24,'ACTIVE',0),
  (960007,920003,930005,NULL,'Ốp lưng MagSafe cho iPhone 15 Pro Max','seed-iphone-15-pro-max-case','Phụ kiện mẫu giúp kiểm tra xếp hạng theo tỷ lệ từ khóa trong tên.','https://images.unsplash.com/photo-1603313011105-34b1b4e5e9f1?w=800',390000,80,4.60,17,'ACTIVE',0),
  (960008,920003,930005,NULL,'Cáp USB-C sạc nhanh 20W','seed-usb-c-20w-cable','Phụ kiện công nghệ mẫu không chứa từ khóa iPhone.','https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800',190000,65,4.50,12,'ACTIVE',0),
- (960009,920003,930005,NULL,'Postman API Test Product','seed-postman-api-test-product','Local-only fixture used by the Postman collection to test admin inventory actions.','https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800',100000,0,0,0,'ACTIVE',0)
+ (960009,920003,930005,NULL,'Postman API Test Product','seed-postman-api-test-product','Local-only fixture used by the Postman collection to test admin inventory actions.','https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800',100000,0,0,0,'ACTIVE',0),
+ (960010,920001,930006,NULL,'Áo khoác gió mẫu','seed-jacket-windbreaker','Sản phẩm local minh họa biến thể màu sắc và kích cỡ bắt buộc.','https://images.unsplash.com/photo-1551028719-00167b16eac5?w=800',650000,0,0,0,'ACTIVE',0),
+ (960011,920003,930007,NULL,'Laptop mẫu cấu hình','seed-laptop-configurable','Sản phẩm local minh họa CPU và RAM bắt buộc, dung lượng lưu trữ tùy chọn.','https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800',22990000,0,0,0,'ACTIVE',0)
 ON DUPLICATE KEY UPDATE shop_id=VALUES(shop_id),category_id=VALUES(category_id),brand_id=VALUES(brand_id),name=VALUES(name),description=VALUES(description),thumbnail_url=VALUES(thumbnail_url),price=VALUES(price),sold_count=VALUES(sold_count),rating_avg=VALUES(rating_avg),rating_count=VALUES(rating_count),status=VALUES(status),is_deleted=VALUES(is_deleted);
 
 INSERT INTO product_images (id,product_id,url,sort_order,is_primary) VALUES
@@ -72,7 +85,9 @@ INSERT INTO product_images (id,product_id,url,sort_order,is_primary) VALUES
  (960107,960006,'https://images.unsplash.com/photo-1696446701796-da61225697cc?w=800',1,1),
  (960108,960007,'https://images.unsplash.com/photo-1603313011105-34b1b4e5e9f1?w=800',1,1),
  (960109,960008,'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800',1,1),
- (960110,960009,'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800',1,1)
+ (960110,960009,'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800',1,1),
+ (960111,960010,'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=800',1,1),
+ (960112,960011,'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800',1,1)
 ON DUPLICATE KEY UPDATE product_id=VALUES(product_id),url=VALUES(url),sort_order=VALUES(sort_order),is_primary=VALUES(is_primary);
 
 INSERT INTO product_variants (id,product_id,sku,name,price,stock,status) VALUES
@@ -85,11 +100,18 @@ INSERT INTO product_variants (id,product_id,sku,name,price,stock,status) VALUES
  (961007,960006,'SEED-IPHONE-15-128','iPhone 15 / 128GB',19990000,14,'ACTIVE'),
  (961008,960007,'SEED-IPHONE-15-PRO-MAX-CASE','Ốp lưng / Trong suốt',390000,30,'ACTIVE'),
  (961009,960008,'SEED-USB-C-20W-CABLE','Cáp USB-C / 1m',190000,45,'ACTIVE'),
- (961010,960009,'SEED-POSTMAN-API-TEST','Postman API test fixture',100000,12,'ACTIVE')
+ (961010,960009,'SEED-POSTMAN-API-TEST','Postman API test fixture',100000,12,'ACTIVE'),
+ (961011,960010,'SEED-JACKET-BLK-M','Đen / M',650000,5,'ACTIVE'),
+ (961012,960010,'SEED-JACKET-WHT-L','Trắng / L',650000,4,'ACTIVE'),
+ (961013,960011,'SEED-LAPTOP-I5-16-512','Core i5 / 16GB / 512GB',22990000,3,'ACTIVE'),
+ (961014,960011,'SEED-LAPTOP-I7-32-1TB','Core i7 / 32GB / 1TB',32990000,2,'ACTIVE')
 ON DUPLICATE KEY UPDATE product_id=VALUES(product_id),name=VALUES(name),price=VALUES(price),stock=VALUES(stock),status=VALUES(status);
 
 INSERT INTO variant_attribute_values (variant_id,attribute_value_id) VALUES
- (961001,951001),(961001,951003),(961002,951002),(961002,951004)
+ (961001,951001),(961001,951003),(961002,951002),(961002,951004),
+ (961011,951001),(961011,951003),(961012,951002),(961012,951004),
+ (961013,951005),(961013,951007),(961013,951009),
+ (961014,951006),(961014,951008),(961014,951010)
 ON DUPLICATE KEY UPDATE variant_id=VALUES(variant_id);
 
 INSERT INTO stock_movements (id,variant_id,change_qty,stock_after,reason,created_by) VALUES

@@ -10,6 +10,7 @@ import (
 	"math"
 	"net/http"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 	"unicode"
@@ -180,11 +181,9 @@ func (a *Handler) createSellerProduct(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tx.Rollback()
 	if err = validateProductRelations(r, tx, &request); err != nil {
-		if errors.Is(err, errInvalidProductRelation) {
-			writeError(w, http.StatusBadRequest, "invalid_product_relation", "Category, brand, or attribute values are invalid or inactive")
-			return
+		if !writeProductRelationError(w, err) {
+			a.serverError(w, r, err)
 		}
-		a.serverError(w, r, err)
 		return
 	}
 	slug, err := productSlug(request.Name)
@@ -291,11 +290,9 @@ func (a *Handler) updateSellerProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err = validateProductRelations(r, tx, &request); err != nil {
-		if errors.Is(err, errInvalidProductRelation) {
-			writeError(w, http.StatusBadRequest, "invalid_product_relation", "Category, brand, or attribute values are invalid or inactive")
-			return
+		if !writeProductRelationError(w, err) {
+			a.serverError(w, r, err)
 		}
-		a.serverError(w, r, err)
 		return
 	}
 	slug, err := productSlug(request.Name)
@@ -621,13 +618,13 @@ func validateSellerProductRequest(w http.ResponseWriter, request *sellerProductR
 }
 
 func validateProductRelations(r *http.Request, tx *sql.Tx, request *sellerProductRequest) error {
-	var active bool
-	if err := tx.QueryRowContext(r.Context(), `SELECT EXISTS(SELECT 1 FROM categories WHERE id=? AND is_active=1)`, request.CategoryID).Scan(&active); err != nil {
+	var categoryID int64
+	if err := tx.QueryRowContext(r.Context(), `SELECT id FROM categories WHERE id=? AND is_active=1 FOR SHARE`, request.CategoryID).Scan(&categoryID); errors.Is(err, sql.ErrNoRows) {
+		return errInvalidProductRelation
+	} else if err != nil {
 		return err
 	}
-	if !active {
-		return errInvalidProductRelation
-	}
+	var active bool
 	if request.BrandID != nil {
 		if err := tx.QueryRowContext(r.Context(), `SELECT EXISTS(SELECT 1 FROM brands WHERE id=? AND is_active=1)`, *request.BrandID).Scan(&active); err != nil {
 			return err
@@ -636,36 +633,136 @@ func validateProductRelations(r *http.Request, tx *sql.Tx, request *sellerProduc
 			return errInvalidProductRelation
 		}
 	}
-	allIDs := make([]int64, 0)
-	seenIDs := make(map[int64]struct{})
-	for _, variant := range request.Variants {
-		for _, id := range variant.AttributeValueIDs {
-			if _, exists := seenIDs[id]; !exists {
-				seenIDs[id] = struct{}{}
-				allIDs = append(allIDs, id)
-			}
-		}
+	return validateCategoryVariantAttributes(r, tx, request.CategoryID, request.Variants)
+}
+
+var errInvalidProductRelation = errors.New("invalid or inactive product relation")
+
+type categoryVariantValidationError struct {
+	code    string
+	message string
+}
+
+func (e *categoryVariantValidationError) Error() string { return e.message }
+
+func writeProductRelationError(w http.ResponseWriter, err error) bool {
+	if errors.Is(err, errInvalidProductRelation) {
+		writeError(w, http.StatusBadRequest, "invalid_product_relation", "Category or brand is invalid or inactive")
+		return true
 	}
-	if len(allIDs) == 0 {
-		return nil
+	var validationErr *categoryVariantValidationError
+	if errors.As(err, &validationErr) {
+		writeError(w, http.StatusBadRequest, validationErr.code, validationErr.message)
+		return true
 	}
-	placeholders := strings.TrimSuffix(strings.Repeat("?,", len(allIDs)), ",")
-	args := make([]any, len(allIDs))
-	for i, id := range allIDs {
-		args[i] = id
-	}
-	var count int
-	query := fmt.Sprintf(`SELECT COUNT(DISTINCT id) FROM attribute_values WHERE id IN (%s)`, placeholders)
-	if err := tx.QueryRowContext(r.Context(), query, args...).Scan(&count); err != nil {
+	return false
+}
+
+func validateCategoryVariantAttributes(r *http.Request, tx *sql.Tx, categoryID int64, variants []sellerProductVariant) error {
+	rows, err := tx.QueryContext(r.Context(), `SELECT ca.attribute_id,ca.is_required,av.id
+		FROM category_attributes ca
+		LEFT JOIN attribute_values av ON av.attribute_id=ca.attribute_id
+		WHERE ca.category_id=? ORDER BY ca.sort_order,ca.attribute_id,av.id`, categoryID)
+	if err != nil {
 		return err
 	}
-	if count != len(allIDs) {
-		return errInvalidProductRelation
+	allowedValues := make(map[int64]int64)
+	requiredAttributes := make(map[int64]struct{})
+	for rows.Next() {
+		var attributeID int64
+		var required bool
+		var valueID sql.NullInt64
+		if err = rows.Scan(&attributeID, &required, &valueID); err != nil {
+			rows.Close()
+			return err
+		}
+		if required {
+			requiredAttributes[attributeID] = struct{}{}
+		}
+		if valueID.Valid {
+			allowedValues[valueID.Int64] = attributeID
+		}
+	}
+	if err = rows.Err(); err != nil {
+		rows.Close()
+		return err
+	}
+	if err = rows.Close(); err != nil {
+		return err
+	}
+	return validateVariantAttributeSets(variants, requiredAttributes, allowedValues)
+}
+
+func validateVariantAttributeSets(
+	variants []sellerProductVariant,
+	requiredAttributes map[int64]struct{},
+	allowedValues map[int64]int64,
+) error {
+	var expectedAttributes map[int64]struct{}
+	seenCombinations := make(map[string]struct{}, len(variants))
+	for _, variant := range variants {
+		selectedAttributes := make(map[int64]struct{}, len(variant.AttributeValueIDs))
+		valueIDs := append([]int64(nil), variant.AttributeValueIDs...)
+		sort.Slice(valueIDs, func(i, j int) bool { return valueIDs[i] < valueIDs[j] })
+		for _, valueID := range valueIDs {
+			attributeID, allowed := allowedValues[valueID]
+			if !allowed {
+				return &categoryVariantValidationError{
+					code:    "invalid_category_variant_attribute",
+					message: "Variant attribute values must belong to attributes configured for the selected category",
+				}
+			}
+			if _, exists := selectedAttributes[attributeID]; exists {
+				return &categoryVariantValidationError{
+					code:    "duplicate_variant_attribute",
+					message: "A variant can only select one value for each attribute",
+				}
+			}
+			selectedAttributes[attributeID] = struct{}{}
+		}
+		for attributeID := range requiredAttributes {
+			if _, exists := selectedAttributes[attributeID]; !exists {
+				return &categoryVariantValidationError{
+					code:    "missing_required_variant_attribute",
+					message: "Every variant must include a value for each required category attribute",
+				}
+			}
+		}
+		if expectedAttributes == nil {
+			expectedAttributes = selectedAttributes
+		} else if !sameAttributeSet(expectedAttributes, selectedAttributes) {
+			return &categoryVariantValidationError{
+				code:    "inconsistent_variant_attributes",
+				message: "All variants of a product must use the same set of attributes",
+			}
+		}
+		combination := make([]string, len(valueIDs))
+		for i, valueID := range valueIDs {
+			combination[i] = strconv.FormatInt(valueID, 10)
+		}
+		key := strings.Join(combination, ",")
+		if _, exists := seenCombinations[key]; exists {
+			return &categoryVariantValidationError{
+				code:    "duplicate_variant_combination",
+				message: "Each variant must have a unique attribute combination",
+			}
+		}
+		seenCombinations[key] = struct{}{}
 	}
 	return nil
 }
 
-var errInvalidProductRelation = errors.New("invalid or inactive product relation")
+func sameAttributeSet(left, right map[int64]struct{}) bool {
+	if len(left) != len(right) {
+		return false
+	}
+	for attributeID := range left {
+		if _, exists := right[attributeID]; !exists {
+			return false
+		}
+	}
+	return true
+}
 
 func persistProductChildren(r *http.Request, tx *sql.Tx, productID int64, request *sellerProductRequest) error {
 	for index, image := range request.Images {

@@ -7,6 +7,7 @@ import (
 
 	"rikkei-ecommerce/internal/address"
 	"rikkei-ecommerce/internal/auth"
+	"rikkei-ecommerce/internal/catalog"
 	"rikkei-ecommerce/internal/shop"
 )
 
@@ -17,6 +18,7 @@ func Run(ctx context.Context, db *sql.DB) error {
 	}{
 		{name: "auth", run: auth.Migrate},
 		{name: "address", run: address.Migrate},
+		{name: "catalog", run: catalog.Migrate},
 		{name: "shop", run: shop.Migrate},
 	}
 	for _, migration := range migrations {
