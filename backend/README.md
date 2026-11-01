@@ -2,7 +2,23 @@
 
 Backend REST API cho MVP Rikkei E-Commerce, viết bằng Go 1.24+, `net/http` và MySQL `database/sql`. Tài liệu này hướng dẫn DevOps chạy/vận hành BE và FE tích hợp các API **đang có**.
 
-> BE hiện cung cấp auth/RBAC, hồ sơ cơ bản, catalog công khai, chi tiết sản phẩm/shop, theo dõi shop và một số API admin inventory. Các luồng mở shop, seller CRUD sản phẩm, giỏ hàng, voucher, checkout, thanh toán, đơn hàng, đánh giá và địa chỉ vẫn chưa có API. Không dùng API mẫu/mock của FE thay cho bảo đảm nghiệp vụ từ BE.
+> BE hiện cung cấp auth/RBAC, catalog công khai, quản lý shop và duyệt shop, seller CRUD sản phẩm/biến thể/tồn kho ban đầu, sổ địa chỉ, theo dõi shop và một số API admin inventory. Giỏ hàng, voucher, checkout, thanh toán, đơn hàng và đánh giá vẫn chưa có API.
+
+## Cấu trúc mã nguồn
+
+Code được chia theo domain; từng package quản lý routes/handlers của domain đó. `internal/server` lắp các domain vào HTTP mux, `internal/httpx` chứa helper HTTP dùng chung, còn `internal/migrations` điều phối migration. `internal/auth` chỉ phụ trách đăng nhập, phiên/token, xác thực, phân quyền và bảo mật; shop, seller product, địa chỉ và catalog thuộc các package riêng.
+
+```text
+internal/
+  address/     # Sổ địa chỉ và migration riêng
+  auth/        # Xác thực, phiên, JWT/OTP, RBAC và security middleware
+  catalog/     # Catalog, theo dõi shop và admin inventory
+  httpx/       # Decode/response/validation HTTP dùng chung
+  migrations/  # Điều phối migration theo domain
+  seller/      # Seller product và variants
+  server/      # Composition root đăng ký routes/middleware
+  shop/        # Quản lý shop và duyệt shop
+```
 
 Contract đầy đủ của catalog và inventory nằm tại [`docs/catalog-api.md`](../docs/catalog-api.md). Hướng dẫn Compose/seed local nằm tại [`docs/local-development.md`](../docs/local-development.md).
 
@@ -68,7 +84,7 @@ Không chạy hai backend cùng bind một host port. API gốc mặc định `h
 | `OTP_TTL` | Tuổi thọ OTP | `10m`; 1–30 phút |
 | `CORS_ALLOWED_ORIGINS` | Allowlist origin, phân cách dấu phẩy | Local `http://localhost:5173`; production chỉ origin HTTPS tường minh |
 | `COOKIE_SECURE` | Chỉ gửi refresh cookie qua HTTPS | `false` local; production bắt buộc `true` |
-| `AUTO_MIGRATE` | Áp dụng auth migration khi API khởi động | `true` development; production bắt buộc `false` |
+| `AUTO_MIGRATE` | Áp dụng migration theo domain khi API khởi động | `true` development; production bắt buộc `false` |
 | `SMTP_HOST`, `SMTP_PORT` | SMTP STARTTLS gửi OTP | Port mặc định `587`; production cần SMTP hoạt động |
 | `SMTP_USER`, `SMTP_PASSWORD` | SMTP authentication nếu nhà cung cấp yêu cầu | Không commit credentials |
 | `SMTP_FROM` | Email gửi OTP | Production bắt buộc email hợp lệ |
@@ -77,7 +93,7 @@ Không commit `.env`, DSN/password DB, SMTP credentials hoặc JWT secret. Dùng
 
 ### Migration và production
 
-`AUTO_MIGRATE=true` chạy migration auth/security khi API khởi động. Migration nằm tại `internal/auth/migrations/001_security.sql`, tạo các bảng security còn thiếu, bổ sung index cần thiết và dọn refresh token/OTP hết hạn. Migration **không tạo database và không thay thế schema commerce** trong `database/scriptDb.sql`.
+`AUTO_MIGRATE=true` chạy migration của các domain khi API khởi động. Migration security nằm tại `internal/auth/migrations/001_security.sql`; migration address/shop bổ sung các cột/constraint cần thiết, và auth migration dọn refresh token/OTP hết hạn. Migration **không tạo database và không thay thế schema commerce** trong `database/scriptDb.sql`.
 
 Production nên triển khai migration riêng bằng tài khoản có DDL, sau khi xác nhận schema và backup:
 
@@ -145,6 +161,24 @@ Postman collection importable bao phủ các route BE hiện có, kèm local env
 | `GET` | `/api/v1/shops/{id}` | Không | Hồ sơ shop đang hoạt động |
 | `GET` | `/api/v1/shops/{id}/products` | Không | Sản phẩm công khai của shop |
 | `GET` | `/api/v1/shops/{id}/follow` | CLIENT | Trạng thái follow của user hiện tại |
+| `POST` | `/api/v1/shops` | CLIENT | Gửi hồ sơ mở shop; trạng thái ban đầu `PENDING` |
+| `GET` | `/api/v1/me/shop` | Access token | Xem shop của tài khoản hiện tại |
+| `PUT` | `/api/v1/me/shop` | Access token | Sửa hồ sơ shop của chủ shop |
+| `GET` | `/api/v1/admin/shops` | ADMIN | Lọc/danh sách shop |
+| `PATCH` | `/api/v1/admin/shops/{id}/status` | ADMIN | Duyệt/từ chối/khóa shop |
+| `PATCH` | `/api/v1/admin/shops/{id}/approve` | ADMIN | Duyệt shop, cấp role SELLER |
+| `PATCH` | `/api/v1/admin/shops/{id}/reject` | ADMIN | Từ chối shop |
+| `PATCH` | `/api/v1/admin/shops/{id}/lock` | ADMIN | Chuyển shop sang SUSPENDED |
+| `GET` | `/api/v1/seller/products` | SELLER | Danh sách sản phẩm của shop ACTIVE |
+| `POST` | `/api/v1/seller/products` | SELLER | Tạo sản phẩm, ảnh, SKU/biến thể và tồn kho |
+| `GET` | `/api/v1/seller/products/{id}` | SELLER | Xem sản phẩm do shop sở hữu |
+| `PUT` | `/api/v1/seller/products/{id}` | SELLER | Cập nhật và gửi lại sản phẩm để duyệt |
+| `DELETE` | `/api/v1/seller/products/{id}` | SELLER | Xóa mềm sản phẩm, vô hiệu hóa biến thể |
+| `GET` | `/api/v1/addresses` | Access token | Danh sách địa chỉ của tài khoản |
+| `POST` | `/api/v1/addresses` | Access token | Thêm địa chỉ |
+| `PUT` | `/api/v1/addresses/{id}` | Access token | Sửa địa chỉ thuộc tài khoản |
+| `DELETE` | `/api/v1/addresses/{id}` | Access token | Xóa địa chỉ thuộc tài khoản |
+| `PATCH` | `/api/v1/addresses/{id}/default` | Access token | Đặt địa chỉ mặc định |
 | `POST` | `/api/v1/shops/{id}/follow` | CLIENT | Theo dõi shop |
 | `DELETE` | `/api/v1/shops/{id}/follow` | CLIENT | Bỏ theo dõi shop |
 | `GET` | `/api/v1/admin/products` | ADMIN | Danh sách/tìm kiếm/lọc/sort inventory |
@@ -152,6 +186,18 @@ Postman collection importable bao phủ các route BE hiện có, kèm local env
 | `PATCH` | `/api/v1/admin/products/{id}/status` | ADMIN | Bật/tắt sản phẩm đã duyệt |
 | `DELETE` | `/api/v1/admin/products/{id}` | ADMIN | Xóa mềm sản phẩm |
 | `POST` | `/api/v1/admin/products/bulk` | ADMIN | Activate/deactivate/delete tối đa 100 ID |
+
+### Những route FE đang gọi nhưng BE chưa triển khai
+
+FE hiện có API client cho dashboard/admin shop/order nhưng BE chưa có các endpoint dưới đây. Các module FE bắt lỗi và trả dữ liệu mock khi request thất bại, nên UI hiển thị được không đồng nghĩa dữ liệu đã được lưu ở BE. Không coi những phần này là tích hợp hoàn chỉnh cho tới khi BE có contract/API tương ứng và bỏ fallback mock trong môi trường tích hợp:
+
+| Nhóm | Endpoint FE đang gọi nhưng BE chưa có |
+|---|---|
+| Admin dashboard | `GET /api/v1/admin/dashboard`, `GET /api/v1/admin/dashboard/export` |
+| Admin shops | `GET /api/v1/admin/shops/metrics`, `PATCH /api/v1/admin/shops/{id}/toggle-live`, `PATCH /api/v1/admin/shops/{id}/unlock`, `PATCH /api/v1/admin/shops/{id}/commission`, `GET /api/v1/admin/shops/export` |
+| Admin orders | `GET /api/v1/admin/orders`, `GET /api/v1/admin/orders/counts`, `GET /api/v1/admin/orders/{id}`, `PATCH /api/v1/admin/orders/{id}/confirm`, `PATCH /api/v1/admin/orders/{id}/cancel`, `PATCH /api/v1/admin/orders/{id}/courier`, `POST /api/v1/admin/orders/bulk-confirm`, `GET /api/v1/admin/orders/export` |
+
+BE có các route quản trị shop riêng được liệt kê ở bảng API phía trên (`approve`, `reject`, `lock`, `status`); chúng không thay thế ngữ nghĩa toggle-live, unlock, commission hoặc metrics của FE. Cart/checkout/payment/order cũng chưa nằm trong phạm vi BE hiện tại.
 
 API path/query phải theo đúng tên và giới hạn dưới đây. Contract catalog/admin inventory và ví dụ response đầy đủ: [`docs/catalog-api.md`](../docs/catalog-api.md).
 
@@ -267,6 +313,50 @@ Các endpoint follow chỉ dành cho user role `CLIENT` đã đăng nhập:
 
 Gửi access token dạng Bearer. Gọi lặp là idempotent, follower count được cập nhật cùng transaction; user không thể theo dõi shop của chính mình. Seller/Admin không được dùng các route này.
 
+### Mở và quản lý shop
+
+- `POST /api/v1/shops` yêu cầu role `CLIENT`. Body gồm `name`, `description`, `logo_url`, `banner_url`, `phone`, `warehouse_address`; tên dài 2–150 ký tự, URL nếu có phải là HTTPS. Mỗi tài khoản và tên shop chỉ được dùng một lần.
+- `GET /api/v1/me/shop` và `PUT /api/v1/me/shop` chỉ truy cập shop thuộc user hiện tại. Sửa hồ sơ đã bị từ chối sẽ gửi lại về trạng thái `PENDING`.
+- `GET /api/v1/admin/shops` hỗ trợ `statusTab` (`all`, `pending`, `active`, `rejected`, `suspended`), `search`, `page`, `pageSize`; alias `status`/`limit` cũng được hỗ trợ. Các filter `category`, `commissionTier`, `rating` chỉ chấp nhận `all` vì schema hiện tại chưa lưu dữ liệu tương ứng.
+- Admin duyệt qua `/approve` body `{ "notes": "..." }` (optional) hoặc `PATCH /status` body `{ "status": "ACTIVE", "notes": "..." }`; chỉ khi user còn `ACTIVE` mới duyệt được và role chuyển thành `SELLER`. Ghi chú duyệt được lưu; tài khoản `ADMIN` không bị hạ role. `/reject` nhận `{ "reason": "..." }`; `/lock` nhận `{ "reason": "..." }`. Lý do bắt buộc khi từ chối/khóa. API không có toggle-live độc lập, metrics hoặc hoa hồng.
+
+### Seller products
+
+Seller endpoints kiểm tra đồng thời role `SELLER`, trạng thái tài khoản, chủ sở hữu shop và shop `ACTIVE`; role đơn thuần không cho phép thao tác khi shop chưa duyệt/bị khóa.
+
+`POST /api/v1/seller/products` và `PUT /api/v1/seller/products/{id}` nhận cùng cấu trúc:
+
+```json
+{
+  "name": "Phone Model",
+  "description": "Product description",
+  "category_id": 930001,
+  "brand_id": 940001,
+  "price": 199.99,
+  "images": [
+    { "url": "https://cdn.example.test/product.png", "is_primary": true }
+  ],
+  "variants": [
+    {
+      "sku": "PHONE-BLACK-128",
+      "name": "Black / 128GB",
+      "price": 199.99,
+      "stock": 10,
+      "image_url": "https://cdn.example.test/black.png",
+      "attribute_value_ids": [1, 2]
+    }
+  ]
+}
+```
+
+Mỗi sản phẩm cần 1–10 ảnh và 1–50 biến thể; mỗi biến thể có SKU duy nhất, giá tối đa hai chữ số thập phân, tồn kho không âm và tối đa 10 attribute value IDs hợp lệ. Danh mục/brand phải đang hoạt động. Ảnh chỉ nhận URL HTTPS. Tạo/sửa sản phẩm đặt trạng thái `PENDING`; chỉnh tồn kho thêm `stock_movements` trong cùng transaction. Khi sửa biến thể hiện có, gửi `id` để giữ nguyên liên kết đơn hàng; biến thể bị bỏ sẽ chuyển `INACTIVE`. Xóa sản phẩm là soft-delete và disable biến thể, không xóa cứng dữ liệu đơn hàng.
+
+Danh sách hỗ trợ `page`, `limit` (tối đa 100) và `status`. Response list có `products`, `total`, `page`, `limit`; chi tiết/tạo/sửa trả `data` là product kèm `images` và `variants`.
+
+### Sổ địa chỉ
+
+`GET /api/v1/addresses` trả mảng địa chỉ của user hiện tại. Create/update nhận `recipient_name`, `phone`, `province`, `district`, `ward`, `street_detail`, `address_type` (`HOME`, `OFFICE`, `OTHER`) và `is_default` (`true`/`false` hoặc `1`/`0` để tương thích FE). `address_type` mặc định `HOME`; tối đa 20 địa chỉ mỗi tài khoản. Tạo/cập nhật/xóa/đổi mặc định khóa hàng user và thực hiện trong transaction để tránh hai địa chỉ mặc định đồng thời. Nếu xóa/bỏ mặc định hiện tại, địa chỉ còn lại đầu tiên được chọn; nếu không còn địa chỉ thì không có default.
+
 ### Admin inventory
 
 Các route `/api/v1/admin/*` yêu cầu role `ADMIN`; thiếu/hết hạn phiên trả `401`, role không đủ trả `403`.
@@ -277,7 +367,7 @@ Các route `/api/v1/admin/*` yêu cầu role `ADMIN`; thiếu/hết hạn phiên
 - `DELETE /api/v1/admin/products/{id}`: xóa mềm.
 - `POST /api/v1/admin/products/bulk`: body `{ "action": "deactivate", "product_ids": [960001, 960002] }`; action là `activate`, `deactivate`, `delete`; từ 1 đến 100 ID dương. ID trùng được tính một lần.
 
-Admin list/status transitions là API hiện có nhưng chưa bao gồm duyệt sản phẩm/shop hay CRUD danh mục/brand. Body JSON bị giới hạn kích thước, field lạ, JSON sai/nhiều JSON values và content type khác `application/json` bị từ chối.
+Body JSON bị giới hạn kích thước, field lạ, JSON sai/nhiều JSON values và content type khác `application/json` bị từ chối.
 
 ### Lỗi và phản hồi FE
 
@@ -297,20 +387,27 @@ Admin list/status transitions là API hiện có nhưng chưa bao gồm duyệt 
 - Protected API kiểm tra user status/role và trạng thái phiên trong DB; access JWT dùng HS256. Refresh token chỉ lưu dạng hash, xoay vòng và phát hiện replay.
 - Rate limiter hiện nằm trong memory của một process; khi scale nhiều replica cần chuyển giới hạn sang gateway hoặc shared store.
 - OTP delivery qua SMTP STARTTLS cần được kiểm thử trên môi trường tích hợp; không ghi OTP hoặc secret ra log ngoài development.
-- Chưa có OAuth Google/Facebook, MFA, xác minh email/phone, quản lý thiết bị/session UI, seller API, cart/checkout/order/payment hoặc address API.
+- Chưa có OAuth Google/Facebook, MFA, xác minh email/phone, quản lý thiết bị/session UI, cart/checkout/order/payment.
 - Role `SELLER`/`ADMIN` phải được cấp bằng quy trình vận hành tin cậy; đăng ký public chỉ tạo `CLIENT`.
-- Security migration không thay thế full commerce schema. Kiểm tra schema/backup trước migration tại database đã có dữ liệu.
+- Security migration không thay thế full commerce schema; migration hiện có bổ sung an toàn `addresses.address_type` và `shops.approval_notes` cho schema đã tồn tại. Kiểm tra schema/backup trước migration tại database đã có dữ liệu.
 
 ## 4. Cấu trúc BE
 
 ```text
 cmd/api/                         Entry point HTTP và graceful shutdown
 cmd/migrate/                     Chạy migration thủ công
-internal/auth/                   Auth, JWT, OTP, RBAC, middleware và routes
-internal/auth/migrations/        Migration MySQL được embed
+internal/address/                Sổ địa chỉ và migration của domain
+internal/auth/                   Auth/session, JWT, OTP, RBAC và security middleware
+internal/auth/migrations/        Migration bảo mật được embed
 internal/catalog/                Catalog, product/shop detail, follow, admin inventory
-internal/catalog/*_test.go       Unit tests cho validation/filter
+internal/httpx/                  JSON, response và validation dùng chung
+internal/migrations/             Điều phối migration các domain
+internal/seller/                 Seller products/variants
+internal/server/                 Composition root đăng ký routes/middleware
+internal/shop/                   Onboarding và quản trị shop
 scripts/smoke-api.ps1             Smoke test API local
 ```
 
-API routes được đăng ký tập trung tại `internal/auth/routes.go`; các route catalog được gom tại `internal/catalog/routes.go`. Catalog dùng MySQL parameterized queries, allowlist sort, giới hạn phân trang và validate query/body tại BE.
+Mỗi domain tự đăng ký routes; `internal/server` lắp các domain vào HTTP mux, còn `internal/migrations` chạy migration theo thứ tự. `internal/auth` không sở hữu routes shop/seller/address. So với mẫu `proj-mau`, đây đã là cải thiện về ranh giới domain; tuy nhiên một số handler vẫn gộp xử lý HTTP, nghiệp vụ và SQL trong cùng file (đặc biệt auth/seller/shop). Khi domain tiếp tục mở rộng, nên tách các phần này thành handler/service/repository theo từng domain thay vì thêm logic vào handler lớn.
+
+Catalog dùng MySQL parameterized queries, allowlist sort, giới hạn phân trang và validate query/body tại BE. Gửi thay đổi có kiểm thử liên quan và chạy `go test ./...`, `go vet ./...`, `go build ./...` trước khi merge.

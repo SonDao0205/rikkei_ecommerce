@@ -8,13 +8,10 @@ import (
 	"crypto/tls"
 	"database/sql"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"log"
 	"math/big"
-	"mime"
 	"net"
 	"net/http"
 	"net/mail"
@@ -27,6 +24,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
+	"rikkei-ecommerce/internal/httpx"
 )
 
 type App struct {
@@ -52,6 +50,13 @@ func NewApp(c Config, db *sql.DB, l *log.Logger) *App {
 	return a
 }
 func (a *App) Handler() http.Handler { return a.securityHeaders(a.cors(a.mux)) }
+func (a *App) Mux() *http.ServeMux   { return a.mux }
+func (a *App) RequireAuth(next http.HandlerFunc) http.HandlerFunc {
+	return a.requireAuth(next)
+}
+func (a *App) RequireRole(role string, next http.HandlerFunc) http.HandlerFunc {
+	return a.requireRole(role, next)
+}
 func (a *App) health(w http.ResponseWriter, r *http.Request) {
 	ctx, c := context.WithTimeout(r.Context(), 2*time.Second)
 	defer c()
@@ -629,6 +634,10 @@ func current(r *http.Request) contextUser {
 	u, _ := r.Context().Value(ctxKey{}).(contextUser)
 	return u
 }
+func CurrentUser(r *http.Request) Identity {
+	user := current(r)
+	return Identity{ID: user.ID, Role: user.Role, SessionID: user.SessionID}
+}
 func (a *App) setRefreshCookie(w http.ResponseWriter, v string, ttl time.Duration) {
 	http.SetCookie(w, &http.Cookie{Name: "refresh_token", Value: v, Path: "/api/v1/auth/refresh", HttpOnly: true, Secure: a.cfg.CookieSecure, SameSite: http.SameSiteStrictMode, MaxAge: max(1, int(ttl.Seconds()))})
 }
@@ -759,32 +768,13 @@ func (a *App) sendOTP(to, otp string) error {
 	return c.Quit()
 }
 func decode(w http.ResponseWriter, r *http.Request, v any) bool {
-	mediaType, _, e := mime.ParseMediaType(r.Header.Get("Content-Type"))
-	if e != nil || mediaType != "application/json" {
-		writeError(w, 415, "unsupported_media_type", "Content-Type must be application/json")
-		return false
-	}
-	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
-	d := json.NewDecoder(r.Body)
-	d.DisallowUnknownFields()
-	if e := d.Decode(v); e != nil {
-		writeError(w, 400, "invalid_request", "Request body is invalid")
-		return false
-	}
-	var extra any
-	if e := d.Decode(&extra); e != io.EOF {
-		writeError(w, 400, "invalid_request", "Request body must contain one JSON value")
-		return false
-	}
-	return true
+	return httpx.Decode(w, r, v)
 }
 func writeJSON(w http.ResponseWriter, status int, v any) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(v)
+	httpx.WriteJSON(w, status, v)
 }
 func writeError(w http.ResponseWriter, status int, code, msg string) {
-	writeJSON(w, status, map[string]any{"success": false, "message": msg, "errors": []map[string]string{{"code": code, "message": msg}}})
+	httpx.WriteError(w, status, code, msg)
 }
 func validPassword(v string) bool {
 	if len(v) < 10 || len(v) > 72 {
@@ -802,18 +792,7 @@ func validPassword(v string) bool {
 	return digit && letter
 }
 func validPhone(v string) bool {
-	if strings.HasPrefix(v, "+") {
-		v = v[1:]
-	}
-	if len(v) < 9 || len(v) > 15 {
-		return false
-	}
-	for _, r := range v {
-		if r < '0' || r > '9' {
-			return false
-		}
-	}
-	return true
+	return httpx.ValidPhone(v)
 }
 func roleFromDB(v string) string {
 	switch strings.ToLower(v) {

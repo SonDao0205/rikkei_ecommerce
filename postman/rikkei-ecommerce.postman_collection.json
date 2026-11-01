@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "548fb440-44a7-4a2d-b59e-41bec88e8f20",
     "name": "Rikkei E-Commerce API",
-    "description": "Local API collection for the implemented Rikkei E-Commerce backend routes. Run only against a local/test database. Run database/seed-local.ps1 first; the collection registers disposable users and mutates the dedicated product 960009.",
+    "description": "Local API collection for implemented backend routes, including shop onboarding/approval, seller product/variant/inventory CRUD, and owner-scoped addresses. Run only against a disposable local/test database: requests create users/shops, soft-delete a generated product, and mutate the dedicated fixture 960009.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -19,7 +19,18 @@
     { "key": "clientToken", "value": "" },
     { "key": "adminToken", "value": "" },
     { "key": "sellerToken", "value": "" },
-    { "key": "resetOtp", "value": "" }
+    { "key": "resetOtp", "value": "" },
+    { "key": "businessToken", "value": "" },
+    { "key": "businessAdminToken", "value": "" },
+    { "key": "businessEmail", "value": "" },
+    { "key": "businessPassword", "value": "BusinessTest123!" },
+    { "key": "businessPhone", "value": "" },
+    { "key": "businessShopName", "value": "" },
+    { "key": "businessShopId", "value": "" },
+    { "key": "businessProductId", "value": "" },
+    { "key": "businessVariantId", "value": "" },
+    { "key": "businessSKU", "value": "" },
+    { "key": "businessAddressId", "value": "" }
   ],
   "item": [
     {
@@ -927,6 +938,442 @@
               }
             }
           ]
+        }
+      ]
+    },
+{
+      "name": "Shop, Seller Products, and Addresses",
+      "description": "Integration tests create a disposable client and shop, approve it as admin, then exercise owner-scoped seller product and address APIs. Local/test database only.",
+      "item": [
+        {
+          "name": "Register business test client",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{businessEmail}}\",\n  \"password\": \"{{businessPassword}}\",\n  \"full_name\": \"Postman Business Test\",\n  \"phone\": \"{{businessPhone}}\"\n}" },
+            "url": "{{baseUrl}}/api/v1/auth/register"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const stamp = Date.now().toString();",
+                  "pm.collectionVariables.set('businessEmail', 'postman-business-' + stamp + '@example.test');",
+                  "pm.collectionVariables.set('businessPhone', '+8498' + stamp.slice(-8));",
+                  "pm.collectionVariables.set('businessShopName', 'PostmanShop-' + stamp);",
+                  "pm.collectionVariables.set('businessSKU', 'POSTMAN-' + stamp);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Creates a disposable CLIENT account', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "  pm.expect(pm.response.json().data.role).to.eql('CLIENT');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login business test client",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"identifier\": \"{{businessEmail}}\",\n  \"password\": \"{{businessPassword}}\"\n}" },
+            "url": "{{baseUrl}}/api/v1/auth/login"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Logs in the business test client', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.collectionVariables.set('businessToken', pm.response.json().data.access_token);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Submit shop application",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{businessToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"{{businessShopName}}\",\n  \"description\": \"Disposable Postman shop\",\n  \"phone\": \"{{businessPhone}}\",\n  \"warehouse_address\": \"12 Postman Test Street\"\n}" },
+            "url": "{{baseUrl}}/api/v1/shops"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Creates a pending shop application', function () {",
+              "  pm.response.to.have.status(201);",
+              "  const shop = pm.response.json().data;",
+              "  pm.expect(shop.status).to.eql('PENDING');",
+              "  pm.collectionVariables.set('businessShopId', shop.id);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Login shop administrator",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"identifier\": \"seed-admin@local.test\",\n  \"password\": \"{{seedPassword}}\"\n}" },
+            "url": "{{baseUrl}}/api/v1/auth/login"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Logs in the seeded administrator', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.collectionVariables.set('businessAdminToken', pm.response.json().data.access_token);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "List pending shops by search",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{businessAdminToken}}" }],
+            "url": "{{baseUrl}}/api/v1/admin/shops?statusTab=pending&search={{businessShopName}}&page=1&pageSize=5"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Filters shop list by status and search', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data.shops[0].name).to.eql(pm.collectionVariables.get('businessShopName'));",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Approve shop and grant seller role",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{businessAdminToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{ \"notes\": \"Postman approval test\" }" },
+            "url": "{{baseUrl}}/api/v1/admin/shops/{{businessShopId}}/approve"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Approves shop and records notes', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const shop = pm.response.json().data;",
+              "  pm.expect(shop.status).to.eql('ACTIVE');",
+              "  pm.expect(shop.approval_notes).to.eql('Postman approval test');",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Create seller product with image variant and stock",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{businessToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Postman test product\",\n  \"description\": \"Disposable seller API fixture\",\n  \"category_id\": 930005,\n  \"brand_id\": 940003,\n  \"price\": 120000,\n  \"images\": [{ \"url\": \"https://cdn.example.test/postman-product.png\", \"is_primary\": true }],\n  \"variants\": [{ \"sku\": \"{{businessSKU}}\", \"name\": \"Black 128GB\", \"price\": 120000, \"stock\": 2, \"attribute_value_ids\": [951001, 951003] }]\n}" },
+            "url": "{{baseUrl}}/api/v1/seller/products"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Creates a pending product and records its variant', function () {",
+              "  pm.response.to.have.status(201);",
+              "  const product = pm.response.json().data;",
+              "  pm.expect(product.status).to.eql('PENDING');",
+              "  pm.collectionVariables.set('businessProductId', product.id);",
+              "  pm.collectionVariables.set('businessVariantId', product.variants[0].id);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Read seller product",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{businessToken}}" }],
+            "url": "{{baseUrl}}/api/v1/seller/products/{{businessProductId}}"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Returns only the owning seller product', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data.variants[0].attribute_value_ids).to.include(951001);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Update seller product and stock",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{businessToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Postman test product updated\",\n  \"description\": \"Updated disposable seller API fixture\",\n  \"category_id\": 930005,\n  \"brand_id\": 940003,\n  \"price\": 125000,\n  \"images\": [{ \"url\": \"https://cdn.example.test/postman-product.png\", \"is_primary\": true }],\n  \"variants\": [{ \"id\": {{businessVariantId}}, \"sku\": \"{{businessSKU}}\", \"name\": \"Black 128GB\", \"price\": 125000, \"stock\": 3, \"attribute_value_ids\": [951001, 951003] }]\n}" },
+            "url": "{{baseUrl}}/api/v1/seller/products/{{businessProductId}}"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Updates product, variant and inventory transactionally', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data.status).to.eql('PENDING');",
+              "  pm.expect(pm.response.json().data.variants[0].stock).to.eql(3);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Soft delete seller product",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{businessToken}}" }],
+            "url": "{{baseUrl}}/api/v1/seller/products/{{businessProductId}}"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Soft-deletes product without deleting order-linked variants', function () {",
+              "  pm.response.to.have.status(200);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Create address with numeric default flag",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{businessToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"recipient_name\": \"Postman Test User\",\n  \"phone\": \"{{businessPhone}}\",\n  \"province\": \"Ha Noi\",\n  \"district\": \"Cau Giay\",\n  \"ward\": \"Dich Vong\",\n  \"street_detail\": \"12 Postman Test Street\",\n  \"address_type\": \"OFFICE\",\n  \"is_default\": 1\n}" },
+            "url": "{{baseUrl}}/api/v1/addresses"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Creates an address and accepts FE numeric boolean', function () {",
+              "  pm.response.to.have.status(201);",
+              "  const address = pm.response.json().data;",
+              "  pm.expect(address.is_default).to.eql(true);",
+              "  pm.expect(address.address_type).to.eql('OFFICE');",
+              "  pm.collectionVariables.set('businessAddressId', address.id);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Update and set default address",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{businessToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"id\": {{businessAddressId}},\n  \"recipient_name\": \"Postman Test User Updated\",\n  \"phone\": \"{{businessPhone}}\",\n  \"province\": \"Ha Noi\",\n  \"district\": \"Cau Giay\",\n  \"ward\": \"Dich Vong\",\n  \"street_detail\": \"15 Postman Test Street\",\n  \"address_type\": \"HOME\",\n  \"is_default\": true\n}" },
+            "url": "{{baseUrl}}/api/v1/addresses/{{businessAddressId}}"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Updates address matching both owner and ID', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data.is_default).to.eql(true);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "List addresses for authenticated owner",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{businessToken}}" }],
+            "url": "{{baseUrl}}/api/v1/addresses"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Lists only this user address book', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data).to.be.an('array');",
+              "  pm.expect(pm.response.json().data.some(function (item) { return item.id === Number(pm.collectionVariables.get('businessAddressId')); })).to.eql(true);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Set address as default",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{businessToken}}" }],
+            "url": "{{baseUrl}}/api/v1/addresses/{{businessAddressId}}/default"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Sets the selected address as default', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data.is_default).to.eql(true);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Delete address",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{businessToken}}" }],
+            "url": "{{baseUrl}}/api/v1/addresses/{{businessAddressId}}"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Deletes only the selected owner address', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data).to.eql(Number(pm.collectionVariables.get('businessAddressId')));",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Read current seller shop",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{businessToken}}" }],
+            "url": "{{baseUrl}}/api/v1/me/shop"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Returns only the current user shop', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data.id).to.eql(Number(pm.collectionVariables.get('businessShopId')));",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Update current seller shop",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{businessToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"{{businessShopName}}\",\n  \"description\": \"Updated disposable Postman shop\",\n  \"phone\": \"{{businessPhone}}\",\n  \"warehouse_address\": \"12 Postman Test Street\"\n}" },
+            "url": "{{baseUrl}}/api/v1/me/shop"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Updates only the owner shop profile', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data.id).to.eql(Number(pm.collectionVariables.get('businessShopId')));",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "List seller products",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{businessToken}}" }],
+            "url": "{{baseUrl}}/api/v1/seller/products?page=1&limit=10&status=PENDING"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Returns a paginated seller product list', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data.products).to.be.an('array');",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Lock shop",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{businessAdminToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{ \"reason\": \"Postman lock test\" }" },
+            "url": "{{baseUrl}}/api/v1/admin/shops/{{businessShopId}}/lock"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Suspends shop with an audit reason', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data.status).to.eql('SUSPENDED');",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Restore shop via status route",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{businessAdminToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{ \"status\": \"ACTIVE\", \"notes\": \"Postman status restore\" }" },
+            "url": "{{baseUrl}}/api/v1/admin/shops/{{businessShopId}}/status"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Supports the generic shop status endpoint', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data.status).to.eql('ACTIVE');",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Reject shop application",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{businessAdminToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{ \"reason\": \"Postman rejection test\" }" },
+            "url": "{{baseUrl}}/api/v1/admin/shops/{{businessShopId}}/reject"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Rejects shop with a reason and returns it to CLIENT role', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data.status).to.eql('REJECTED');",
+              "  pm.expect(pm.response.json().data.reject_reason).to.eql('Postman rejection test');",
+              "});"
+            ]}
+          }]
         }
       ]
     }

@@ -47,12 +47,14 @@ CREATE TABLE addresses (
   district       VARCHAR(100) NOT NULL,
   ward           VARCHAR(100) NOT NULL,
   street_detail  VARCHAR(255) NOT NULL,
+  address_type   VARCHAR(10)  NOT NULL DEFAULT 'HOME',
   is_default     TINYINT(1)   NOT NULL DEFAULT 0,
   created_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   KEY idx_addresses_user (user_id),
-  CONSTRAINT fk_addresses_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+  CONSTRAINT fk_addresses_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+  CONSTRAINT chk_addresses_type CHECK (address_type IN ('HOME','OFFICE','OTHER'))
 );
 
 -- ---------------------------------------------------------------------
@@ -70,6 +72,7 @@ CREATE TABLE shops (
   warehouse_address VARCHAR(500) NULL,
   status         VARCHAR(20)  NOT NULL DEFAULT 'PENDING',
   reject_reason  VARCHAR(500) NULL,
+  approval_notes VARCHAR(500) NULL,
   follower_count INT UNSIGNED NOT NULL DEFAULT 0,
   approved_at    DATETIME     NULL,
   created_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,

@@ -23,4 +23,5 @@ type tokenPair struct {
 	ExpiresIn   int64  `json:"expires_in"`
 }
 type contextUser struct{ ID, Role, SessionID string }
+type Identity struct{ ID, Role, SessionID string }
 type ctxKey struct{}
