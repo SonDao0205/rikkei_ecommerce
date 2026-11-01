@@ -97,7 +97,7 @@ export const ShopProductGrid: React.FC<ShopProductGridProps> = ({
             <div
               key={product.id}
               onClick={() => navigate(`/product/${product.id}`)}
-              className="group rounded-2xl bg-surface-container-lowest shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col overflow-hidden relative border border-outline-variant/40 cursor-pointer"
+              className="group rounded-2xl bg-surface-container-lowest shadow-sm hover:shadow-2xl hover:-translate-y-2 hover:border-primary/40 transition-all duration-300 ease-out flex flex-col overflow-hidden relative border border-outline-variant/40 cursor-pointer will-change-transform"
             >
               {/* Product Thumbnail Box */}
               <div className="relative w-full aspect-square overflow-hidden bg-surface-container-low">

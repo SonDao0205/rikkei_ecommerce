@@ -85,9 +85,9 @@ export const ShopBannerCard: React.FC<ShopBannerCardProps> = ({
         </div>
       </div>
 
-      <div className="w-full max-w-[1440px] mx-auto px-4 md:px-margin-lg pt-4">
+      <div className="w-full max-w-[1440px] mx-auto px-4 md:px-margin-lg pt-4 pb-6">
         {/* Storefront Hero Banner */}
-        <div className="relative w-full h-[260px] md:h-[320px] rounded-2xl overflow-hidden shadow-md">
+        <div className="relative w-full h-[260px] md:h-[380px] rounded-2xl overflow-hidden shadow-md">
           <div
             className="w-full h-full bg-cover bg-center transition-transform duration-700 hover:scale-102"
             style={{ backgroundImage: `url('${bannerBg}')` }}
@@ -102,18 +102,18 @@ export const ShopBannerCard: React.FC<ShopBannerCardProps> = ({
             </span>
           </div>
 
-          <div className="absolute bottom-6 left-6 md:left-8 text-on-primary hidden md:block">
-            <span className="font-label-sm text-label-sm uppercase tracking-widest text-primary-fixed font-bold">
+          <div className="absolute bottom-16 md:bottom-16 left-6 md:left-8 text-on-primary hidden md:block">
+            <span className="font-label-sm text-label-sm uppercase tracking-widest text-primary-fixed font-bold drop-shadow-sm">
               Flagship Marketplace Partner
             </span>
-            <h1 className="font-headline-lg text-headline-lg text-on-primary font-bold mt-1 shadow-xs">
+            <h1 className="font-headline-lg text-headline-lg text-on-primary font-bold mt-1 drop-shadow-md">
               {shop.name}
             </h1>
           </div>
         </div>
 
         {/* Floating Shop Identity Card (Negative margin overlap) */}
-        <div className="relative z-10 -mt-10 mx-2 md:mx-6 rounded-2xl bg-surface-container-lowest border border-outline-variant/60 shadow-lg p-5 lg:p-6 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap- space-lg gap-5">
+        <div className="relative z-10 -mt-10 mx-2 md:mx-6 rounded-2xl bg-surface-container-lowest border border-outline-variant/60 shadow-lg p-5 lg:p-6 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-5 lg:gap-6">
           {/* Shop Details */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-1 min-w-0">
             <div className="relative shrink-0">

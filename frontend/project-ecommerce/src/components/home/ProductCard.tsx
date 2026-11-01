@@ -38,7 +38,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   return (
     <div
       onClick={() => onClick?.(product)}
-      className="group relative flex flex-col rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden cursor-pointer"
+      className="group relative flex flex-col rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-2xl hover:-translate-y-2 border border-outline-variant/30 hover:border-primary/40 transition-all duration-300 ease-out overflow-hidden cursor-pointer will-change-transform"
     >
       {/* Image Box (4:5 Ratio) */}
       <div className="relative w-full aspect-[4/5] bg-surface-container-low overflow-hidden">
