@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import type { UserOrder } from "../../../../types/ecommerce";
+import type { UserOrder } from "../../../../types";
 
 export interface OrderDetailHeaderProps {
   order: UserOrder;

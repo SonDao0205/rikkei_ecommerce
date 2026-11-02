@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import type { UserOrder, ShopOrderGroup, OrderItem } from '../../../../types/ecommerce';
+import type { UserOrder, ShopOrderGroup, OrderItem } from '../../../../types/order';
 
 interface OrderDetailShopSectionProps {
   order: UserOrder;

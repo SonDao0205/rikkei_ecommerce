@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import OrderItemRow from "./OrderItemRow";
-import type { UserOrder } from "../../../types/ecommerce";
+import type { UserOrder } from "../../../types";
 
 interface OrderCardProps {
   order: UserOrder;

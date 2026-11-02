@@ -4,7 +4,7 @@ import type {
   ShopFollowState,
   CatalogQueryParams,
   ProductListResponse,
-} from "../../types/ecommerce";
+} from "../../types";
 import {
   cleanCatalogQueryParams,
   mapBackendProductToProductItem,

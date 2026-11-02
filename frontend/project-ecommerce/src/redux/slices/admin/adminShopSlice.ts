@@ -6,7 +6,7 @@ import type {
   ShopFilterParams,
   ShopTier,
   AdminShopStatus,
-} from "../../../types/ecommerce";
+} from "../../../types";
 
 interface AdminShopState {
   shops: AdminShopItem[];

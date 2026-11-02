@@ -4,7 +4,7 @@ import type {
   KpiCardOrders,
   KpiCardInventory,
   KpiCardCustomers,
-} from "../../../types/ecommerce";
+} from "../../../types/admin";
 
 interface DashboardKpiCardsProps {
   revenue: KpiCardRevenue;

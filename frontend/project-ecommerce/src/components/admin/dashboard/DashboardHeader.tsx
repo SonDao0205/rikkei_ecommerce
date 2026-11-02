@@ -1,5 +1,5 @@
 import React from "react";
-import type { TimeRangeFilter } from "../../../types/ecommerce";
+import type { TimeRangeFilter } from "../../../types";
 
 interface DashboardHeaderProps {
   timeRange: TimeRangeFilter;

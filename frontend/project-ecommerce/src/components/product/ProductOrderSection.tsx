@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import type { ProductItem, ProductVariant } from "../../types/ecommerce";
+import type { ProductItem, ProductVariant } from "../../types/product";
 
 interface ProductOrderSectionProps {
   product: ProductItem;

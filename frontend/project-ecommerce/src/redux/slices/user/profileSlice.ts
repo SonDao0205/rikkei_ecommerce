@@ -4,7 +4,7 @@ import type {
   UserProfileDetails,
   UpdateProfilePayload,
   ChangePasswordPayload,
-} from "../../../types/ecommerce";
+} from "../../../types/user";
 
 interface ProfileState {
   profile: UserProfileDetails | null;

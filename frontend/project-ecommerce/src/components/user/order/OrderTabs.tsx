@@ -2,7 +2,7 @@ import React from "react";
 import type {
   UserOrderStatusTab,
   UserOrderStatusCounts,
-} from "../../../types/ecommerce";
+} from "../../../types/order";
 
 interface OrderTabsProps {
   currentTab: UserOrderStatusTab;

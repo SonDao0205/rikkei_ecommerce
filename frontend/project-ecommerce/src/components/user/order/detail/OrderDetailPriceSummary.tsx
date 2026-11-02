@@ -1,5 +1,5 @@
 import React from 'react';
-import type { UserOrder } from '../../../../types/ecommerce';
+import type { UserOrder } from '../../../../types';
 
 interface OrderDetailPriceSummaryProps {
   order: UserOrder;

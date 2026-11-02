@@ -3,7 +3,7 @@ import type {
   UserOrder,
   UserOrderStatusCounts,
   UserOrderFilterParams,
-} from "../../types/ecommerce";
+} from "../../types/order";
 
 interface ApiResponse<T> {
   success: boolean;

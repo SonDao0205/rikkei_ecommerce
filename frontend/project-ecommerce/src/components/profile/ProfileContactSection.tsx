@@ -1,5 +1,5 @@
 import React from "react";
-import type { UserProfileDetails } from "../../types/ecommerce";
+import type { UserProfileDetails } from "../../types";
 
 interface ProfileContactSectionProps {
   profile: UserProfileDetails | null;

@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import type { UserOrderItem } from "../../../types/ecommerce";
+import type { UserOrderItem } from "../../../types";
 
 interface OrderItemRowProps {
   item: UserOrderItem;

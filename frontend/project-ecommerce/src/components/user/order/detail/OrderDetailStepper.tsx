@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import type { UserOrder } from "../../../../types/ecommerce";
+import type { UserOrder } from "../../../../types";
 
 export interface OrderDetailStepperProps {
   order: UserOrder;

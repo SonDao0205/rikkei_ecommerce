@@ -4,7 +4,7 @@ import type {
   OrderStatusCounts,
   OrderFilterParams,
   AdminOrderDetailData,
-} from "../../types/ecommerce";
+} from "../../types";
 
 interface ApiResponse<T> {
   success: boolean;

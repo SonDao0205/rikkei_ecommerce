@@ -1,5 +1,5 @@
 import React from "react";
-import type { OrderDetailFinancial } from "../../../../types/ecommerce";
+import type { OrderDetailFinancial } from "../../../../types";
 
 interface OrderFinancialCardProps {
   financial: OrderDetailFinancial;

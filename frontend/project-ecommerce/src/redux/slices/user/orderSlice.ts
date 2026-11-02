@@ -5,7 +5,7 @@ import type {
   UserOrderStatusCounts,
   UserOrderStatusTab,
   UserOrderFilterParams,
-} from "../../../types/ecommerce";
+} from "../../../types/order";
 
 interface UserOrderState {
   orders: UserOrder[];

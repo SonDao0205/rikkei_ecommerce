@@ -19,7 +19,7 @@ import {
   confirmReceivedAction,
 } from "../../redux/slices/user/orderSlice";
 import { fetchUserProfile } from "../../redux/slices/user/profileSlice";
-import type { UserOrder, UserOrderStatusTab } from "../../types/ecommerce";
+import type { UserOrder, UserOrderStatusTab } from "../../types/order";
 
 export const MyOrder: React.FC = () => {
   const dispatch = useAppDispatch();

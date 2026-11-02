@@ -1,5 +1,5 @@
 import React from "react";
-import type { OrderDetailProductItem } from "../../../../types/ecommerce";
+import type { OrderDetailProductItem } from "../../../../types";
 
 interface OrderItemsCardProps {
   items: OrderDetailProductItem[];

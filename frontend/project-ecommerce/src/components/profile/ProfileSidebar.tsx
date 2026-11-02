@@ -4,7 +4,7 @@ import { useAppDispatch } from "../../redux/store";
 import { openLogoutModal } from "../../redux/slices/auth/authSlice";
 import { setLocalAvatarPreview } from "../../redux/slices/user/profileSlice";
 import { getDefaultAvatar } from "../../utils/avatar";
-import type { UserProfileDetails } from "../../types/ecommerce";
+import type { UserProfileDetails } from "../../types";
 
 interface ProfileSidebarProps {
   profile: UserProfileDetails | null;

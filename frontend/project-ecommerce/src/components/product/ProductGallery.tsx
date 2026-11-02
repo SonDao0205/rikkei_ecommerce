@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import type { ProductImage } from "../../types/ecommerce";
+import type { ProductImage } from "../../types";
 
 interface ProductGalleryProps {
   mainImageUrl: string;

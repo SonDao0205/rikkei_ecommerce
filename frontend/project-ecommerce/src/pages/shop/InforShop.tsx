@@ -15,7 +15,7 @@ import {
   getShopFollowState,
   clearCurrentShop,
 } from "../../redux/slices/shop/publicShopSlice";
-import type { CatalogQueryParams } from "../../types/ecommerce";
+import type { CatalogQueryParams } from "../../types";
 
 export const InforShop: React.FC = () => {
   const { id } = useParams<{ id: string }>();

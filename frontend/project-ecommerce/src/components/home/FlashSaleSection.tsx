@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import ProductCard from "./ProductCard";
-import type { ProductItem } from "../../types/ecommerce";
+import type { ProductItem } from "../../types";
 
 interface FlashSaleSectionProps {
   products: ProductItem[];

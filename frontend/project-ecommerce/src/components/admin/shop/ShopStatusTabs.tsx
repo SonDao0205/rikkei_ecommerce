@@ -1,5 +1,5 @@
 import React from "react";
-import type { ShopMetricStats, AdminShopStatus } from "../../../types/ecommerce";
+import type { ShopMetricStats, AdminShopStatus } from "../../../types/admin";
 
 interface ShopStatusTabsProps {
   currentTab?: AdminShopStatus;
