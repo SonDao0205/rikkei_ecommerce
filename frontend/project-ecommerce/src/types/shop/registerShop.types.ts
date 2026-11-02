@@ -7,6 +7,8 @@ export interface SellerAccountData {
   agreeTerms: boolean;
 }
 
+export type ShopAccountData = SellerAccountData;
+
 export interface ShopStoreData {
   logoUrl: string;
   shopName: string;
@@ -21,6 +23,19 @@ export interface ShopStoreData {
   addressDetail: string;
   pickupNote?: string;
   sameReturnAddress: boolean;
+  bannerUrl?: string;
+  bannerName?: string;
+  slug?: string;
+  description?: string;
+  pickupAddress?: {
+    addressLine?: string;
+    ward?: string;
+    district?: string;
+    province?: string;
+    contactName?: string;
+    contactPhone?: string;
+  };
+  returnSameAsPickup?: boolean;
 }
 
 export interface ShopKycData {

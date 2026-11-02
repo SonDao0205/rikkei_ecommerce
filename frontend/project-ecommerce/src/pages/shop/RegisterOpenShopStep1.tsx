@@ -35,8 +35,10 @@ export const RegisterOpenShopStep1: React.FC = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [dispatch]);
 
-  const handleStepClick = (_step: number) => {
-    // Unreached steps cannot be jumped to
+  const handleStepClick = (step: number) => {
+    if (step === 1) {
+      dispatch(setStep(1));
+    }
   };
 
   const handleNext = () => {

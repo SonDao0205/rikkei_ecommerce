@@ -46,6 +46,7 @@ export const Step2Stepper: React.FC<Step2StepperProps> = ({ onStepClick }) => {
           {/* Step 1: Hoàn thành - Có thể bấm để quay lại */}
           <Link
             to="/register-open-shop"
+            onClick={() => onStepClick?.(1)}
             className="flex items-center gap-3 group text-left cursor-pointer"
           >
             <div className="relative flex items-center justify-center flex-shrink-0">

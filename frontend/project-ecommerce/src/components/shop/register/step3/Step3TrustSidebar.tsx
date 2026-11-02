@@ -30,12 +30,20 @@ export const Step3TrustSidebar: React.FC<Step3TrustSidebarProps> = ({
         <div className="space-y-3 pt-1">
           {/* Item 1 */}
           <div className="flex items-start gap-2.5 text-body-sm">
-            <span className="material-symbols-outlined text-[18px] text-secondary shrink-0 mt-0.5">
-              check_circle
+            <span
+              className={`material-symbols-outlined text-[18px] shrink-0 mt-0.5 ${
+                hasIdNumber ? "text-secondary" : "text-primary"
+              }`}
+            >
+              {hasIdNumber ? "check_circle" : "badge"}
             </span>
             <div className="min-w-0 flex-1">
               <span className="font-medium text-on-surface block">Mặt trước CCCD gắn chip</span>
-              <span className="text-on-surface-variant text-xs">Đã nhận diện OCR độ phân giải cao</span>
+              <span className="text-on-surface-variant text-xs">
+                {hasIdNumber
+                  ? "Đã nhận diện OCR độ phân giải cao"
+                  : "Chờ tải ảnh chụp CCCD gắn chip"}
+              </span>
             </div>
           </div>
 

@@ -11,7 +11,7 @@ interface ApiResponse<T> {
   message?: string;
 }
 
-export let mockUserOrders: UserOrder[] = [
+export const mockUserOrders: UserOrder[] = [
   {
     id: 1,
     orderCode: "#ORD-9821",

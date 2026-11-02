@@ -7,12 +7,11 @@ interface Step4StoreCardProps {
 }
 
 export const Step4StoreCard: React.FC<Step4StoreCardProps> = ({ store }) => {
-  const pickup = store.pickupAddress;
   const fullAddress = [
-    pickup?.addressLine,
-    pickup?.ward,
-    pickup?.district,
-    pickup?.province,
+    store.addressDetail || store.pickupAddress?.addressLine,
+    store.ward || store.pickupAddress?.ward,
+    store.district || store.pickupAddress?.district,
+    store.province || store.pickupAddress?.province,
   ]
     .filter(Boolean)
     .join(", ") ||
@@ -122,15 +121,15 @@ export const Step4StoreCard: React.FC<Step4StoreCardProps> = ({ store }) => {
           <span>
             Người phụ trách kho:{" "}
             <strong className="text-on-surface">
-              {pickup?.contactName || "Nguyễn Văn An"}
+              {store.warehouseContact || store.pickupAddress?.contactName || "Nguyễn Văn An"}
             </strong>{" "}
-            ({pickup?.contactPhone || "0909 123 456"})
+            ({store.warehousePhone || store.pickupAddress?.contactPhone || "0909 123 456"})
           </span>
           <span>•</span>
           <span className="flex items-center gap-1">
             <span className="material-symbols-outlined text-[16px] text-secondary">sync</span>
             Kho hoàn trả:{" "}
-            {store.returnSameAsPickup
+            {store.sameReturnAddress || store.returnSameAsPickup
               ? "Sử dụng chung địa chỉ kho lấy hàng"
               : "Địa chỉ kho riêng biệt"}
           </span>

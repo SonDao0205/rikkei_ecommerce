@@ -150,10 +150,10 @@ export const OrderDetailShopSection: React.FC<OrderDetailShopSectionProps> = ({
             {/* Item Rows for this shop */}
             <div className="flex flex-col gap-4">
               {shop.items.map((item: OrderItem) => {
-                const itemPrice = item.unitPrice ?? (item as any).price ?? 0;
+                const itemPrice = item.unitPrice ?? 0;
                 const itemTotal = itemPrice * item.quantity;
-                const defaultBadge = item.shopBadge || (item as any).badge || 'Chính hãng 100%';
-                const itemImage = item.imageUrl || (item as any).productImage || '';
+                const defaultBadge = item.shopBadge || 'Chính hãng 100%';
+                const itemImage = item.imageUrl || '';
 
                 return (
                   <div

@@ -17,7 +17,7 @@ export const OrderDetailPriceSummary: React.FC<OrderDetailPriceSummaryProps> = (
 
   // Subtotal of items
   const subtotal = (order.items || []).reduce(
-    (acc, curr) => acc + (curr.unitPrice ?? (curr as any).price ?? 0) * curr.quantity,
+    (acc, curr) => acc + (curr.unitPrice ?? 0) * curr.quantity,
     0
   );
 

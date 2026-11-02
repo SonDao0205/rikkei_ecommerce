@@ -46,6 +46,7 @@ export const Step3Stepper: React.FC<Step3StepperProps> = ({ onStepClick }) => {
           {/* Step 1: Hoàn thành - Bấm để quay lại */}
           <Link
             to="/register-open-shop"
+            onClick={() => onStepClick?.(1)}
             className="flex items-center gap-3 group text-left cursor-pointer"
           >
             <div className="relative flex items-center justify-center flex-shrink-0">
@@ -69,6 +70,7 @@ export const Step3Stepper: React.FC<Step3StepperProps> = ({ onStepClick }) => {
           {/* Step 2: Hoàn thành - Bấm để quay lại */}
           <Link
             to="/register-open-shop/step2"
+            onClick={() => onStepClick?.(2)}
             className="flex items-center gap-3 group text-left cursor-pointer"
           >
             <div className="relative flex items-center justify-center flex-shrink-0">
