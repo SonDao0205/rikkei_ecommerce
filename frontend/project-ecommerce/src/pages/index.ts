@@ -26,3 +26,7 @@ export { default as ProductDetail } from "./product/ProductDetail";
 
 // Shop page
 export { default as InforShop } from "./shop/InforShop";
+export { default as RegisterOpenShopStep1 } from "./shop/RegisterOpenShopStep1";
+export { default as RegisterOpenShopStep2 } from "./shop/RegisterOpenShopStep2";
+export { default as RegisterOpenShopStep3 } from "./shop/RegisterOpenShopStep3";
+export { default as RegisterOpenShopStep4 } from "./shop/RegisterOpenShopStep4";
