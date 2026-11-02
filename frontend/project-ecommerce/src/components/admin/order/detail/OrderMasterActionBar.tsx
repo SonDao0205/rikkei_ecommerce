@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import type { AdminOrderDetailData } from "../../../../types/ecommerce";
+import type { AdminOrderDetailData } from "../../../../types";
 
 interface OrderMasterActionBarProps {
   order: AdminOrderDetailData;

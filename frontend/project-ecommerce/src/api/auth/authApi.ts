@@ -13,7 +13,7 @@ import type {
   ResetPasswordPayload,
   ResetPasswordResponse,
   ChangePasswordPayload,
-} from "../../types/ecommerce";
+} from "../../types";
 
 /**
  * Interface describing user schema returned from Go backend (internal/auth/model.go)

@@ -1,5 +1,5 @@
 import React from "react";
-import type { Category } from "../../types/ecommerce";
+import type { Category } from "../../types";
 
 interface CategoryBarProps {
   categories: Category[];

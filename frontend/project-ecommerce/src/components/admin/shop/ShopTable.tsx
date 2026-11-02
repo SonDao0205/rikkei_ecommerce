@@ -1,5 +1,5 @@
 import React from "react";
-import type { AdminShopItem } from "../../../types/ecommerce";
+import type { AdminShopItem } from "../../../types";
 
 interface ShopTableProps {
   shops: AdminShopItem[];

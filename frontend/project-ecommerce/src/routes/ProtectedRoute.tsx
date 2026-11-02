@@ -1,7 +1,7 @@
 import React, { type ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import { useAppSelector } from "../redux/store";
-import type { UserRole } from "../types/ecommerce";
+import type { UserRole } from "../types";
 
 interface ProtectedRouteProps {
   children: ReactNode;

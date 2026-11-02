@@ -1,5 +1,5 @@
 import React from "react";
-import type { OrderStatusCounts } from "../../../types/ecommerce";
+import type { OrderStatusCounts } from "../../../types";
 
 interface OrderStatusTabsProps {
   activeTab: 'all' | 'pending' | 'shipping' | 'delivered' | 'cancelled';

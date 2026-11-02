@@ -19,3 +19,4 @@ export * from "./product/productApi";
 
 // Public Shop API
 export * from "./shop/shopApi";
+export * from "./shop/shopRegisterApi";

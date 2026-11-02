@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import type { ProductItem } from "../../types/ecommerce";
+import type { ProductItem } from "../../types";
 
 interface ProductCardProps {
   product: ProductItem;

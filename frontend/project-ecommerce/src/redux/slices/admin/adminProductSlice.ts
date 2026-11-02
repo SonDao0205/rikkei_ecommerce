@@ -6,7 +6,7 @@ import type {
   AdminProductQueryParams,
   AdminProductSortOption,
   AdminStockStatus,
-} from "../../../types/ecommerce";
+} from "../../../types";
 
 interface AdminProductState {
   products: AdminProductItem[];

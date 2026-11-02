@@ -4,7 +4,7 @@ import { useAppDispatch } from "../../redux/store";
 import { openLogoutModal } from "../../redux/slices/auth/authSlice";
 import { setLocalAvatarPreview } from "../../redux/slices/user/profileSlice";
 import { getDefaultAvatar } from "../../utils/avatar";
-import type { UserProfileDetails } from "../../types/ecommerce";
+import type { UserProfileDetails } from "../../types";
 
 interface ProfileSidebarProps {
   profile: UserProfileDetails | null;
@@ -58,8 +58,8 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
       id: "my-orders",
       label: "My Orders",
       icon: "shopping_bag",
-      href: "#my-orders",
-      badge: "2 Active",
+      href: "/profile/orders",
+      badge: "6 Active",
       badgeType: "primary",
     },
     {

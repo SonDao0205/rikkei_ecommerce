@@ -24,7 +24,7 @@ import {
   clearAdminProductError,
 } from "../../redux/slices/admin/adminProductSlice";
 import { getCategories } from "../../redux/slices/product/productSlice";
-import type { AdminProductItem, AdminProductSortOption, AdminStockStatus } from "../../types/ecommerce";
+import type { AdminProductItem, AdminProductSortOption, AdminStockStatus } from "../../types/admin";
 
 const AdminProduct: React.FC = () => {
   const dispatch = useAppDispatch();

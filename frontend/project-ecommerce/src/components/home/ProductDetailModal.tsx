@@ -6,7 +6,7 @@ import {
   toggleFollowShop,
   setFollowState,
 } from "../../redux/slices/shop/publicShopSlice";
-import type { ProductVariant } from "../../types/ecommerce";
+import type { ProductVariant } from "../../types";
 
 interface ProductDetailModalProps {
   productId: number | null;

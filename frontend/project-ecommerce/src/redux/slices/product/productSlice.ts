@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from "@reduxjs/toolkit";
 import { productApi } from "../../../api/product/productApi";
-import type { Category, ProductItem, CatalogQueryParams, ProductDetailData } from "../../../types/ecommerce";
+import type { Category, ProductItem, CatalogQueryParams, ProductDetailData } from "../../../types/product";
 
 interface ProductState {
   categories: Category[];

@@ -26,7 +26,7 @@ import {
   closeOrderDetail,
   setCurrentPage,
 } from "../../redux/slices/admin/adminOrderSlice";
-import type { AdminOrderItem } from "../../types/ecommerce";
+import type { AdminOrderItem } from "../../types";
 
 const AdminOrder: React.FC = () => {
   const dispatch = useAppDispatch();

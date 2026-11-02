@@ -6,7 +6,7 @@ import type {
   ProductSortOption,
   AdminProductSortOption,
   AdminStockStatus,
-} from "../types/ecommerce";
+} from "../types";
 
 /**
  * Mapping giữa nhãn sắp xếp trên giao diện và query value chuẩn của Backend Go

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import type { OrderDetailShipping } from "../../../../types/ecommerce";
+import type { OrderDetailShipping } from "../../../../types";
 
 interface OrderShippingCardProps {
   shipping: OrderDetailShipping;

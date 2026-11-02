@@ -1,5 +1,5 @@
 import React from "react";
-import type { ShopMetricStats } from "../../../types/ecommerce";
+import type { ShopMetricStats } from "../../../types";
 
 interface ShopMetricStripProps {
   metrics: ShopMetricStats;

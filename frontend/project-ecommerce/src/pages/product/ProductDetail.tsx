@@ -12,7 +12,7 @@ import {
   getShopFollowState,
   setFollowState,
 } from "../../redux/slices/shop/publicShopSlice";
-import type { ProductVariant } from "../../types/ecommerce";
+import type { ProductVariant } from "../../types";
 
 export const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();

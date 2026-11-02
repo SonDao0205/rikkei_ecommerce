@@ -8,7 +8,7 @@ import type {
   ProductDetailData,
   AdminProductQueryParams,
   AdminProductListResponse,
-} from "../../types/ecommerce";
+} from "../../types";
 import {
   cleanCatalogQueryParams,
   cleanAdminProductQueryParams,

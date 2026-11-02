@@ -4,7 +4,7 @@ import type {
   ShopMetricStats,
   ShopFilterParams,
   ShopTier,
-} from "../../types/ecommerce";
+} from "../../types";
 
 interface ApiResponse<T> {
   success: boolean;

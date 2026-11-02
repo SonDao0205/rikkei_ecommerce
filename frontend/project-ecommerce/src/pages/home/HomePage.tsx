@@ -13,7 +13,7 @@ import {
   setSelectedCategory,
   setSortBy,
 } from "../../redux/slices/product/productSlice";
-import type { ProductItem } from "../../types/ecommerce";
+import type { ProductItem } from "../../types";
 
 const HomePage: React.FC = () => {
   const dispatch = useAppDispatch();

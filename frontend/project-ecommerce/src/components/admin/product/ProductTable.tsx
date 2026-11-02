@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from "react";
-import type { AdminProductItem } from "../../../types/ecommerce";
+import type { AdminProductItem } from "../../../types";
 
 interface ProductTableProps {
   products: AdminProductItem[];

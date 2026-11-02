@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../redux/store";
 import { toggleFollowShop } from "../../redux/slices/shop/publicShopSlice";
-import type { PublicShop } from "../../types/ecommerce";
+import type { PublicShop } from "../../types";
 
 interface ShopBannerCardProps {
   shop: PublicShop;

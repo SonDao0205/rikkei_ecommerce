@@ -5,7 +5,7 @@ import type {
   ProductItem,
   ShopFollowState,
   CatalogQueryParams,
-} from "../../../types/ecommerce";
+} from "../../../types";
 
 interface PublicShopState {
   currentShop: PublicShop | null;
