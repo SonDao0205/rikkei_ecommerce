@@ -1,0 +1,233 @@
+<!DOCTYPE html><html lang="en" class="h-full bg-slate-50"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In - MarketPulse Marketplace</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              800: '#3730a3',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+  </style>
+</head>
+<body class="min-h-full flex flex-col justify-center bg-slate-50 text-slate-800 antialiased selection:bg-indigo-100 selection:text-indigo-800">
+  <div class="min-h-screen w-full flex flex-col lg:flex-row">
+    
+    <!-- LEFT PANEL: Visual Showcase & Brand Story (Desktop 50%, hidden or banner on small mobile) -->
+    <div class="relative w-full lg:w-1/2 min-h-[260px] sm:min-h-[340px] lg:min-h-screen bg-slate-950 flex flex-col justify-between p-6 sm:p-10 lg:p-16 overflow-hidden">
+      <!-- Background Image with Modern Gradient Overlays -->
+      <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuB-xUVBKcK_79vlU0-jCp_HgtF6jdC_MaUXGJ4QhfDI2yzlKDtR3E2qZkTltVeraBco2cwpnbj1yy82-XGkgbwHmT_U-Hn5rORhHBZjYGZsWaJ-aeDR2sbEaS5IyM-Rdog8exIgGNShXfWEQayKR7amD4J1hcfermpW92FOeGBOqc8uiqXAi815xMCbAmayptoAeYdq_AJO8ZvR7bIK4z0ryE1ez4j4vF2804RgcLetGhXdOgzp9hHq" alt="Multi-vendor e-commerce shopping lifestyle" class="absolute inset-0 w-full h-full object-cover object-center filter brightness-[0.82] contrast-[1.08] scale-105 transition-transform duration-1000 ease-out hover:scale-100">
+      <!-- Soft dark gradient overlay for typography readability -->
+      <div class="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-950/50 to-slate-950/70 backdrop-blur-[2px]"></div>
+      
+      <!-- Brand Logo & Header Area on Left Panel -->
+      <div class="relative z-10 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <img src="https://lh3.googleusercontent.com/aida/AEtjO1UiPfLpEO_giJTvhb0TJ5Z6C4NsKVuQXgvPhPxdC3poSTKNH3896U9JeOD6_X73uVNoqYl-iQWPOvQZtqkJC99u4UsMaG9Ok9J9SvcntxCrE1AQ2GA9VjNr8Z4qx0e2yUbM8Vbwve4r9GYVhPiMWbumVDCAf5PrcGs-4wyg6SdaBW6N9bo6caFDybK40qF8bV_MXiEANbOu-nGefB47yr8zrJhEZAf0k6V5XqMDsIRUUGtxRbTuU_JbMw" alt="MarketPulse Logo" class="h-10 sm:h-12 w-auto drop-shadow-md brightness-0 invert">
+        </div>
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/10 text-white/90 backdrop-blur-md border border-white/15">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Multi-Store Hub
+        </span>
+      </div>
+
+      <!-- Mid/Bottom Content: Tagline, Key Value Props -->
+      <div class="relative z-10 mt-auto pt-8 max-w-lg">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-indigo-500/25 border border-indigo-400/30 text-indigo-200 text-xs font-medium mb-3 backdrop-blur-sm">
+          <span>✨ Discover over 12,000+ verified artisan vendors</span>
+        </div>
+        <h2 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight leading-snug lg:leading-tight">
+          Your favorite multi-store shopping destination <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 via-violet-200 to-pink-200">in one place.</span>
+        </h2>
+        <p class="mt-3 text-sm sm:text-base text-slate-300 font-normal leading-relaxed">
+          Access thousands of curated independent brands, direct-to-consumer storefronts, and unified cross-vendor checkout with single-click tracking.
+        </p>
+
+        <!-- Social Proof Metrics Bar -->
+        <div class="mt-6 pt-5 border-t border-white/15 grid grid-cols-3 gap-4">
+          <div>
+            <div class="text-lg lg:text-xl font-bold text-white tracking-tight">4.9/5</div>
+            <div class="text-xs text-slate-400 font-medium mt-0.5">Customer Rating</div>
+          </div>
+          <div>
+            <div class="text-lg lg:text-xl font-bold text-white tracking-tight">2.4M+</div>
+            <div class="text-xs text-slate-400 font-medium mt-0.5">Orders Delivered</div>
+          </div>
+          <div>
+            <div class="text-lg lg:text-xl font-bold text-white tracking-tight">100%</div>
+            <div class="text-xs text-slate-400 font-medium mt-0.5">Buyer Protection</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL: Authentication Form Area -->
+    <div class="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-10 lg:p-16 bg-white min-h-[600px] lg:min-h-screen">
+      <div class="w-full max-w-md mx-auto space-y-7">
+        
+        <!-- Mobile Header Bar (shown if user views on mobile viewports) -->
+        <div class="flex lg:hidden items-center justify-between pb-2 border-b border-slate-100">
+          <img src="https://lh3.googleusercontent.com/aida/AEtjO1UiPfLpEO_giJTvhb0TJ5Z6C4NsKVuQXgvPhPxdC3poSTKNH3896U9JeOD6_X73uVNoqYl-iQWPOvQZtqkJC99u4UsMaG9Ok9J9SvcntxCrE1AQ2GA9VjNr8Z4qx0e2yUbM8Vbwve4r9GYVhPiMWbumVDCAf5PrcGs-4wyg6SdaBW6N9bo6caFDybK40qF8bV_MXiEANbOu-nGefB47yr8zrJhEZAf0k6V5XqMDsIRUUGtxRbTuU_JbMw" alt="MarketPulse Logo" class="h-8 w-auto">
+          <a href="#" class="text-xs font-semibold text-indigo-600 hover:text-indigo-700">Need help?</a>
+        </div>
+
+        <!-- Form Header -->
+        <div class="space-y-2">
+          <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700">
+            Welcome back
+          </div>
+          <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            Sign In to MarketPulse
+          </h1>
+          <p class="text-sm text-slate-500 font-normal">
+            Enter your account credentials to continue shopping or managing your orders
+          </p>
+        </div>
+
+        <!-- Social Auth Buttons -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <!-- Google Button -->
+          <button type="button" class="group w-full inline-flex items-center justify-center gap-2.5 px-4 py-2.5 bg-white hover:bg-slate-50 active:bg-slate-100 border border-slate-200 hover:border-slate-300 rounded-[11px] text-xs sm:text-sm font-semibold text-slate-700 shadow-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1">
+            <svg class="w-4 h-4" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"></path>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"></path>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"></path>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"></path>
+            </svg>
+            <span>Google</span>
+          </button>
+
+          <!-- Facebook Button -->
+          <button type="button" class="group w-full inline-flex items-center justify-center gap-2.5 px-4 py-2.5 bg-white hover:bg-slate-50 active:bg-slate-100 border border-slate-200 hover:border-slate-300 rounded-[11px] text-xs sm:text-sm font-semibold text-slate-700 shadow-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1">
+            <svg class="w-4 h-4 fill-[#1877F2]" viewBox="0 0 24 24">
+              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"></path>
+            </svg>
+            <span>Facebook</span>
+          </button>
+        </div>
+
+        <!-- Divider with Label -->
+        <div class="relative flex py-1 items-center">
+          <div class="flex-grow border-t border-slate-200"></div>
+          <span class="flex-shrink mx-4 text-xs font-medium text-slate-400 uppercase tracking-wider">Or continue with email</span>
+          <div class="flex-grow border-t border-slate-200"></div>
+        </div>
+
+        <!-- Authentication Form -->
+        <form class="space-y-4" onsubmit="event.preventDefault();">
+          
+          <!-- Email / Phone Field -->
+          <div class="space-y-1.5">
+            <label for="identifier" class="block text-xs font-semibold text-slate-700">
+              Email or Phone Number
+            </label>
+            <div class="relative rounded-[11px] shadow-sm">
+              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                </svg>
+              </div>
+              <input type="text" id="identifier" name="identifier" placeholder="name@example.com" required="" class="block w-full pl-10 pr-3.5 py-2.5 text-sm rounded-[11px] border border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 transition-all focus:border-indigo-600 focus:outline-none focus:ring-4 focus:ring-indigo-100">
+            </div>
+          </div>
+
+          <!-- Password Field with Show/Hide Toggle -->
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between">
+              <label for="password" class="block text-xs font-semibold text-slate-700">
+                Password
+              </label>
+            </div>
+            <div class="relative rounded-[11px] shadow-sm">
+              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                </svg>
+              </div>
+              <input type="password" id="password" name="password" placeholder="••••••••••••" required="" class="block w-full pl-10 pr-10 py-2.5 text-sm rounded-[11px] border border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 transition-all focus:border-indigo-600 focus:outline-none focus:ring-4 focus:ring-indigo-100">
+              <button type="button" id="togglePassword" onclick="const pwd = document.getElementById('password'); const icon = document.getElementById('eyeIcon'); if(pwd.type === 'password'){ pwd.type='text'; icon.classList.add('text-indigo-600'); } else { pwd.type='password'; icon.classList.remove('text-indigo-600'); }" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors focus:outline-none" aria-label="Toggle password visibility">
+                <svg id="eyeIcon" class="w-4 h-4 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Utility Row: Remember Me & Forgot Password -->
+          <div class="flex items-center justify-between pt-1">
+            <label class="flex items-center gap-2 cursor-pointer group">
+              <input type="checkbox" name="remember" class="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-0 transition">
+              <span class="text-xs font-medium text-slate-600 group-hover:text-slate-800 transition-colors">
+                Remember me
+              </span>
+            </label>
+            <a href="#" class="text-xs font-semibold text-indigo-600 hover:text-indigo-700 hover:underline transition-colors">
+              Forgot password?
+            </a>
+          </div>
+
+          <!-- Primary Action Button: Sign In -->
+          <div class="pt-2">
+            <button type="submit" class="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-[11px] bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold text-sm shadow-md shadow-indigo-600/20 hover:shadow-lg hover:shadow-indigo-600/30 transition-all duration-150 transform active:scale-[0.99] focus:outline-none focus:ring-4 focus:ring-indigo-200">
+              <span>Sign In</span>
+              <svg class="w-4 h-4 ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+              </svg>
+            </button>
+          </div>
+        </form>
+
+        <!-- Footer Switch / Registration Link -->
+        <div class="pt-2 text-center border-t border-slate-100">
+          <p class="text-xs sm:text-sm text-slate-600">
+            Don't have an account? 
+            <a href="#" class="font-bold text-indigo-600 hover:text-indigo-700 hover:underline transition-colors ml-1">
+              Sign up
+            </a>
+          </p>
+        </div>
+
+        <!-- Trust Badges & Secure Checkout Footer -->
+        <div class="flex items-center justify-center gap-4 pt-2 text-[11px] text-slate-400">
+          <span class="flex items-center gap-1">
+            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+            </svg>
+            256-bit SSL Encrypted
+          </span>
+          <span>•</span>
+          <a href="#" class="hover:text-slate-600 transition-colors">Privacy Policy</a>
+          <span>•</span>
+          <a href="#" class="hover:text-slate-600 transition-colors">Terms of Service</a>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+
+</body></html>
