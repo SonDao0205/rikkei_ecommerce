@@ -6,7 +6,7 @@ Backend REST API cho MVP Rikkei E-Commerce, viết bằng Go 1.24+, `net/http` v
 
 ## Cấu trúc mã nguồn
 
-Code được chia theo domain; từng package quản lý routes/handlers của domain đó. `internal/server` lắp các domain vào HTTP mux, `internal/httpx` chứa helper HTTP dùng chung, còn `internal/migrations` điều phối migration. `internal/auth` chỉ phụ trách đăng nhập, phiên/token, xác thực, phân quyền và bảo mật; shop, seller product, địa chỉ và catalog thuộc các package riêng.
+Code được chia theo domain; từng package quản lý routes/handlers của domain đó. `internal/server` lắp các domain vào HTTP mux, `internal/httpx` chứa helper HTTP dùng chung, còn `internal/migrations` điều phối migration. `internal/auth` chỉ phụ trách đăng nhập, hồ sơ/phiên, token, khôi phục mật khẩu, middleware và bảo mật; các luồng này được tách thành file theo trách nhiệm. Shop, seller product, địa chỉ và catalog thuộc các package riêng.
 
 ```text
 internal/
