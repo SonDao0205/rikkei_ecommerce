@@ -15,6 +15,8 @@ export { default as MyProfile } from "./user/MyProfile";
 export { default as ChangePassword } from "./user/ChangePassword";
 export { default as Address } from "./user/Address";
 export { default as AccountPage } from "./user/AccountPage";
+export { default as MyOrder } from "./user/MyOrder";
+export { default as MyOrderDetail } from "./user/MyOrderDetail";
 
 // Home page
 export { default as HomePage } from "./home/HomePage";

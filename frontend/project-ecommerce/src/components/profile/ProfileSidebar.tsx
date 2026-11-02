@@ -58,8 +58,8 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
       id: "my-orders",
       label: "My Orders",
       icon: "shopping_bag",
-      href: "#my-orders",
-      badge: "2 Active",
+      href: "/profile/orders",
+      badge: "6 Active",
       badgeType: "primary",
     },
     {

@@ -702,6 +702,119 @@ export interface ShopFilterParams {
   pageSize?: number;
 }
 
+/**
+ * User / Client Order Interfaces matching scriptDb.sql and my_order.html
+ */
+export type UserOrderStatusTab =
+  | "all"
+  | "pending"
+  | "packing"
+  | "shipping"
+  | "completed"
+  | "cancelled"
+  | "returned";
+
+export interface UserOrderShop {
+  shopId: number;
+  shopName: string;
+  shopBadge?: "MALL" | "ARTISAN" | "OFFICIAL";
+  logoUrl?: string;
+}
+
+export interface UserOrderItem {
+  id: number;
+  shopId: number;
+  shopName: string;
+  shopBadge?: "MALL" | "ARTISAN" | "OFFICIAL";
+  productId: number;
+  productName: string;
+  variantName: string;
+  sku: string;
+  imageUrl: string;
+  quantity: number;
+  unitPrice: number;
+  discountVoucherText?: string;
+}
+
+export interface UserOrderTimelineLog {
+  id: string;
+  time: string;
+  title: string;
+  subtitle?: string;
+  isLatest?: boolean;
+}
+
+export interface UserOrderRecipient {
+  name: string;
+  phone: string;
+  address: string;
+  addressType: string;
+  tag?: string;
+  note?: string;
+  notes?: string;
+}
+
+export interface UserOrder {
+  id: number;
+  orderCode: string;
+  userId: number;
+  status: UserOrderStatusTab;
+  statusLabel: string;
+  subtotal: number;
+  shippingFee: number;
+  shippingDiscount?: number;
+  shopDiscount?: number;
+  totalAmount: number;
+  shippingCarrier?: string;
+  paymentMethod: "COD" | "MOMO" | "VISA" | "ZALOPAY";
+  paymentStatusText: string;
+  shippingInfoText?: string;
+  estimatedDeliveryDate?: string;
+  courierName?: string;
+  trackingCode?: string;
+  createdAt: string;
+  updatedAtText?: string;
+  note?: string;
+  cancelReason?: string;
+  cancelledAt?: string;
+  items: UserOrderItem[];
+  shops: UserOrderShop[];
+  recipient?: UserOrderRecipient;
+  timeline?: UserOrderTimelineLog[];
+}
+
+export interface ShopOrderGroup {
+  shopId: number;
+  shopName: string;
+  shopAvatar?: string;
+  logoUrl?: string;
+  isMall?: boolean;
+  isArtisan?: boolean;
+  rating?: number;
+  responseRate?: number;
+  items: UserOrderItem[];
+}
+
+export type OrderItem = UserOrderItem;
+
+export interface UserOrderStatusCounts {
+  all: number;
+  pending: number;
+  packing: number;
+  shipping: number;
+  completed: number;
+  cancelled: number;
+  returned: number;
+}
+
+export interface UserOrderFilterParams {
+  tab?: UserOrderStatusTab;
+  search?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+
 
 
 
