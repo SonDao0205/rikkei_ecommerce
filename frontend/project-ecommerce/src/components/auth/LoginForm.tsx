@@ -127,9 +127,11 @@ const LoginForm = () => {
 
     const resultAction = await dispatch(loginUser(formData));
     if (loginUser.fulfilled.match(resultAction)) {
-      const userRole = (resultAction.payload.user?.role || "").toLowerCase().trim();
+            const userRole = (resultAction.payload.user?.role || "").toLowerCase().trim();
       if (userRole === "admin") {
         navigate("/admin/dashboard");
+      } else if (userRole === "seller") {
+        navigate("/shop/dashboard");
       } else {
         navigate("/home");
       }

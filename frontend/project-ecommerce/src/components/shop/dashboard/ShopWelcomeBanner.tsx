@@ -24,72 +24,60 @@ export const ShopWelcomeBanner: React.FC<ShopWelcomeBannerProps> = ({
   isLoading = false,
 }) => {
   return (
-    <div className="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-space-md">
-      {/* Left Shop Welcome Info */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-space-md">
-        <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
-          <span className="material-symbols-outlined text-[32px]">storefront</span>
+    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 py-6 border-b border-outline-variant/30">
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center flex-wrap gap-2">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-label-sm text-label-sm tracking-wider uppercase font-bold">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+            {shopInfo.tierBadge}
+          </span>
+          <span className="text-outline font-body-sm text-body-sm">
+            • Mã gian hàng: <strong className="text-on-surface font-mono">{shopInfo.shopCode}</strong>
+          </span>
+          <span className="text-outline font-body-sm text-body-sm">
+            • Đồng bộ lúc: {shopInfo.lastSyncTime}
+          </span>
         </div>
-        <div className="space-y-1">
-          <div className="flex flex-wrap items-center gap-space-sm">
-            <h1 className="font-headline-lg text-headline-lg text-on-surface">
-              Xin chào, {shopInfo.shopName}
-            </h1>
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm">
-              <span className="material-symbols-outlined text-[14px]">verified</span>
-              {shopInfo.tierBadge}
-            </span>
-          </div>
-          <div className="flex flex-wrap items-center gap-space-md font-body-sm text-body-sm text-on-surface-variant">
-            <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-secondary"></span>
-              Vận hành:{" "}
-              <strong className="text-on-surface font-label-md text-label-md">
-                {shopInfo.operationalStatusText}
-              </strong>
-            </span>
-            <span className="hidden sm:inline text-outline-variant">•</span>
-            <span>
-              Mã gian hàng: <strong className="text-on-surface">{shopInfo.shopCode}</strong>
-            </span>
-            <span className="hidden sm:inline text-outline-variant">•</span>
-            <span className="flex items-center gap-1 text-outline">
-              <span className={`material-symbols-outlined text-[16px] ${isLoading ? "animate-spin" : ""}`}>
-                sync
-              </span>
-              Đồng bộ lúc: {shopInfo.lastSyncTime}
-            </span>
-          </div>
-        </div>
+
+        <h1 className="font-headline-xl text-headline-xl text-on-surface tracking-tight font-bold">
+          Xin chào, {shopInfo.shopName}
+        </h1>
+        <p className="font-body-md text-body-md text-on-surface-variant">
+          Chỉ số vận hành hệ thống:{" "}
+          <strong className="text-on-surface font-semibold">{shopInfo.operationalStatusText}</strong>
+        </p>
       </div>
 
-      {/* Quick Date Filter Bar */}
-      <div className="flex flex-wrap items-center gap-space-xs bg-surface-container-low p-1.5 rounded-lg self-start xl:self-center">
-        {FILTER_OPTIONS.map((opt) => {
-          const isActive = activeFilter === opt.id;
-          return (
-            <button
-              key={opt.id}
-              type="button"
-              onClick={() => onFilterChange(opt.id)}
-              className={`px-3 py-1.5 rounded-lg font-label-md text-label-md transition-colors ${
-                isActive
-                  ? "bg-surface-container-lowest text-primary shadow-sm"
-                  : "text-on-surface-variant hover:text-on-surface"
-              }`}
-            >
-              {opt.label}
-            </button>
-          );
-        })}
+      {/* Toolbar Filters & Refresh matching DashboardHeader */}
+      <div className="flex items-center flex-wrap gap-3">
+        <div className="inline-flex p-1 rounded-xl bg-surface-container shadow-sm border border-outline-variant/30">
+          {FILTER_OPTIONS.map((opt) => {
+            const isActive = activeFilter === opt.id;
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => onFilterChange(opt.id)}
+                className={`px-3.5 py-1.5 rounded-lg font-label-md text-label-md transition-all cursor-pointer ${
+                  isActive
+                    ? "bg-primary-container text-on-primary font-semibold shadow-sm"
+                    : "text-on-surface-variant hover:text-on-surface"
+                }`}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
+
         <button
           type="button"
           onClick={onRefresh}
-          className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors"
+          className="p-2 rounded-xl bg-surface-container-lowest border border-outline-variant/40 hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors shadow-sm cursor-pointer"
           title="Làm mới dữ liệu"
           aria-label="Làm mới dữ liệu"
         >
-          <span className={`material-symbols-outlined text-[18px] ${isLoading ? "animate-spin" : ""}`}>
+          <span className={`material-symbols-outlined text-[20px] ${isLoading ? "animate-spin" : ""}`}>
             refresh
           </span>
         </button>
@@ -97,5 +85,5 @@ export const ShopWelcomeBanner: React.FC<ShopWelcomeBannerProps> = ({
     </div>
   );
 };
-export default ShopWelcomeBanner;
 
+export default ShopWelcomeBanner;

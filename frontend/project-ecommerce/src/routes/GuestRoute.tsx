@@ -8,7 +8,7 @@ interface GuestRouteProps {
 
 /**
  * Route Guard dành cho các trang chỉ cho phép người dùng chưa đăng nhập truy cập (Login, Register, Forgot Password).
- * - Nếu người dùng đã đăng nhập: Chuyển hướng về trang chủ (/home) hoặc trang quản trị (/admin/products) nếu là Admin.
+ * - Nếu người dùng đã đăng nhập: Chuyển hướng về trang chủ (/home), trang quản trị (/admin/dashboard) nếu là Admin, hoặc (/shop/dashboard) nếu là Seller.
  * - Nếu đang tải / kiểm tra phiên: Hiển thị trạng thái chờ xác thực để tránh giật giao diện.
  */
 export const GuestRoute: React.FC<GuestRouteProps> = ({ children }) => {
@@ -32,8 +32,12 @@ export const GuestRoute: React.FC<GuestRouteProps> = ({ children }) => {
 
   // Nếu đã đăng nhập thành công, không cho phép vào lại trang login/register
   if (isAuthenticated) {
-    if ((role || "").toLowerCase().trim() === "admin") {
+    const userRole = (role || "").toLowerCase().trim();
+    if (userRole === "admin") {
       return <Navigate to="/admin/dashboard" replace />;
+    }
+    if (userRole === "seller") {
+      return <Navigate to="/shop/dashboard" replace />;
     }
     return <Navigate to="/home" replace />;
   }

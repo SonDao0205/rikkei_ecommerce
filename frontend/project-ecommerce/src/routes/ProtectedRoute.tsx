@@ -14,6 +14,7 @@ interface ProtectedRouteProps {
  * - Khi chưa đăng nhập: chuyển hướng về trang chủ ("/")
  * - Khi người dùng truy cập route không đúng phân quyền:
  *   + Nếu là admin: chuyển hướng về trang quản trị ("/admin/dashboard")
+ *   + Nếu là seller: chuyển hướng về trang người bán ("/shop/dashboard")
  *   + Nếu là người dùng thường: chuyển hướng về trang chủ ("/")
  *   + Trạng thái đăng nhập được giữ nguyên hoàn toàn.
  */
@@ -55,6 +56,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       if (userRole === "admin") {
         return <Navigate to="/admin/dashboard" replace />;
       }
+      if (userRole === "seller") {
+        return <Navigate to="/shop/dashboard" replace />;
+      }
       return <Navigate to="/" replace />;
     }
   }
@@ -65,6 +69,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     if (!hasRole) {
       if (userRole === "admin") {
         return <Navigate to="/admin/dashboard" replace />;
+      }
+      if (userRole === "seller") {
+        return <Navigate to="/shop/dashboard" replace />;
       }
       return <Navigate to="/" replace />;
     }

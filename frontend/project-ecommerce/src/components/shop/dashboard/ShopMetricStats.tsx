@@ -7,133 +7,183 @@ interface ShopMetricStatsProps {
 }
 
 export const ShopMetricStats: React.FC<ShopMetricStatsProps> = ({ metrics }) => {
+  // Sparkline generator for conversion rate & revenue
+  const renderSparkline = () => {
+    return (
+      <svg
+        className="w-full h-8 overflow-visible"
+        viewBox="0 0 200 32"
+        preserveAspectRatio="none"
+        fill="none"
+      >
+        <defs>
+          <linearGradient id="metricSparkGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#10b981" stopOpacity="0.25" />
+            <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
+          </linearGradient>
+        </defs>
+        <path
+          d="M0,26 C30,22 60,28 90,14 C120,6 150,16 180,4 L200,8 L200,32 L0,32 Z"
+          fill="url(#metricSparkGrad)"
+        />
+        <path
+          d="M0,26 C30,22 60,28 90,14 C120,6 150,16 180,4 L200,8"
+          fill="none"
+          stroke="#059669"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+        <circle cx="200" cy="8" r="3" fill="#059669" className="animate-pulse" />
+      </svg>
+    );
+  };
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
-      {/* Metric 1: Revenue */}
-      <div className="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm flex flex-col justify-between">
-        <div className="space-y-space-xs">
-          <div className="flex items-center justify-between">
-            <span className="font-label-md text-label-md text-on-surface-variant">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mt-6">
+      {/* Metric 1: Revenue GMV */}
+      <div className="relative overflow-hidden bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-outline-variant/40 flex flex-col justify-between group hover:shadow-md transition-all">
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col">
+            <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">
               Doanh thu hôm nay
             </span>
-            <span className="w-8 h-8 rounded-lg bg-primary-fixed flex items-center justify-center text-primary">
-              <span className="material-symbols-outlined text-[18px]">payments</span>
+            <span className="font-headline-lg text-headline-lg font-bold text-on-surface mt-2 font-mono tracking-tight">
+              {metrics.formattedRevenue}
             </span>
           </div>
-          <div className="font-headline-xl text-headline-xl text-on-surface">
-            {metrics.formattedRevenue}
+          <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <span className="material-symbols-outlined text-[22px]">payments</span>
           </div>
         </div>
-        <div className="mt-space-md flex items-center gap-1.5 font-label-md text-label-md text-secondary">
-          <span className="material-symbols-outlined text-[18px]">
-            {metrics.isRevenuePositive ? "trending_up" : "trending_down"}
-          </span>
-          <span>{metrics.revenueChangePercent > 0 ? `+${metrics.revenueChangePercent}%` : `${metrics.revenueChangePercent}%`}</span>
-          <span className="font-body-sm text-body-sm text-on-surface-variant font-normal">
+
+        <div className="mt-4 flex items-center justify-between">
+          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md font-mono">
+            <span className="material-symbols-outlined text-[14px]">trending_up</span>
+            {metrics.revenueChangePercent > 0 ? `+${metrics.revenueChangePercent}%` : `${metrics.revenueChangePercent}%`}{" "}
             {metrics.revenueChangeLabel}
           </span>
+          <span className="font-label-sm text-label-sm text-outline font-mono">
+            Chỉ tiêu: 20M ₫
+          </span>
+        </div>
+
+        {/* Micro Sparkline */}
+        <div className="mt-3 w-full h-8 overflow-hidden">
+          {renderSparkline()}
         </div>
       </div>
 
-      {/* Metric 2: Orders */}
-      <div className="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm flex flex-col justify-between">
-        <div className="space-y-space-xs">
-          <div className="flex items-center justify-between">
-            <span className="font-label-md text-label-md text-on-surface-variant">Đơn hàng mới</span>
-            <span className="w-8 h-8 rounded-lg bg-secondary-fixed flex items-center justify-center text-secondary">
-              <span className="material-symbols-outlined text-[18px]">shopping_bag</span>
+      {/* Metric 2: Today's Orders */}
+      <div className="relative overflow-hidden bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-outline-variant/40 flex flex-col justify-between group hover:shadow-md transition-all">
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col">
+            <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">
+              Đơn hàng mới
+            </span>
+            <span className="font-headline-lg text-headline-lg font-bold text-on-surface mt-2 font-mono tracking-tight">
+              {metrics.todayOrders} Đơn
             </span>
           </div>
-          <div className="font-headline-xl text-headline-xl text-on-surface">
-            {metrics.todayOrders}{" "}
-            <span className="font-body-lg text-body-lg text-on-surface-variant font-normal">đơn</span>
+          <div className="w-10 h-10 rounded-xl bg-secondary-fixed text-secondary flex items-center justify-center shrink-0">
+            <span className="material-symbols-outlined text-[22px]">shopping_bag</span>
           </div>
         </div>
-        <div className="mt-space-md space-y-1">
-          <div className="flex items-center justify-between font-body-sm text-body-sm text-on-surface-variant">
-            <span>
-              COD: {metrics.codOrdersCount} ({metrics.codOrdersPercent}%)
-            </span>
-            <span>
-              MoMo/Bank: {metrics.digitalOrdersCount} ({metrics.digitalOrdersPercent}%)
+
+        <div className="mt-4">
+          <div className="flex items-center justify-between text-label-sm font-label-sm mb-1.5">
+            <span className="font-medium text-on-surface-variant">Tỷ lệ thanh toán</span>
+            <span className="font-mono font-semibold text-secondary">
+              {metrics.codOrdersPercent}% COD • {metrics.digitalOrdersPercent}% MoMo
             </span>
           </div>
-          <div className="w-full bg-surface-container h-1.5 rounded-full overflow-hidden flex">
+          {/* Segmented bar matching admin orders card */}
+          <div className="w-full h-2 rounded-full bg-surface-container flex overflow-hidden">
             <div
-              className="bg-primary h-full"
+              className="h-full bg-primary"
               style={{ width: `${metrics.codOrdersPercent}%` }}
+              title={`COD: ${metrics.codOrdersCount} đơn`}
             />
             <div
-              className="bg-secondary-container h-full"
+              className="h-full bg-secondary-container"
               style={{ width: `${metrics.digitalOrdersPercent}%` }}
+              title={`Digital: ${metrics.digitalOrdersCount} đơn`}
             />
           </div>
+        </div>
+
+        <div className="mt-3 flex items-center justify-between font-label-sm text-label-sm text-outline-variant">
+          <span>COD: {metrics.codOrdersCount} đơn</span>
+          <span>Ví MoMo: {metrics.digitalOrdersCount} đơn</span>
         </div>
       </div>
 
       {/* Metric 3: Conversion Rate */}
-      <div className="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm flex flex-col justify-between">
-        <div className="space-y-space-xs">
-          <div className="flex items-center justify-between">
-            <span className="font-label-md text-label-md text-on-surface-variant">
-              Tỷ lệ chuyển đổi gian hàng
+      <div className="relative overflow-hidden bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-outline-variant/40 flex flex-col justify-between group hover:shadow-md transition-all">
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col">
+            <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">
+              Tỷ lệ chuyển đổi
             </span>
-            <span className="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-on-surface-variant">
-              <span className="material-symbols-outlined text-[18px]">query_stats</span>
+            <span className="font-headline-lg text-headline-lg font-bold text-on-surface mt-2 font-mono tracking-tight">
+              {metrics.conversionRate}%
             </span>
           </div>
-          <div className="font-headline-xl text-headline-xl text-on-surface">
-            {metrics.conversionRate}%
+          <div className="w-10 h-10 rounded-xl bg-surface-container-high flex items-center justify-center text-on-surface-variant shrink-0">
+            <span className="material-symbols-outlined text-[22px]">query_stats</span>
           </div>
         </div>
-        <div className="mt-space-md flex items-center justify-between">
-          <div className="flex items-center gap-1 font-label-md text-label-md text-secondary">
-            <span className="material-symbols-outlined text-[16px]">arrow_upward</span>
-            <span>+{metrics.conversionChangePercent}%</span>
-            <span className="font-body-sm text-body-sm text-on-surface-variant font-normal">
-              {metrics.conversionChangeLabel}
-            </span>
-          </div>
-          {/* Sparkline */}
-          <svg className="w-16 h-6 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 64 24">
-            <path
-              d="M1 18l12-6 12 4 14-10 12 6 12-10"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-            />
-          </svg>
+
+        <div className="mt-4 flex items-center justify-between">
+          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md font-mono">
+            <span className="material-symbols-outlined text-[14px]">arrow_upward</span>
+            +{metrics.conversionChangePercent}% {metrics.conversionChangeLabel}
+          </span>
+          <span className="font-label-sm text-label-sm text-outline font-mono">
+            Top 15% ngành
+          </span>
+        </div>
+
+        <div className="mt-3 w-full h-8 overflow-hidden">
+          {renderSparkline()}
         </div>
       </div>
 
       {/* Metric 4: Merchant Wallet Balance */}
-      <div className="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm flex flex-col justify-between">
-        <div className="space-y-space-xs">
-          <div className="flex items-center justify-between">
-            <span className="font-label-md text-label-md text-on-surface-variant">
-              Số dư Ví người bán
+      <div className="relative overflow-hidden bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-outline-variant/40 flex flex-col justify-between group hover:shadow-md transition-all">
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col">
+            <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">
+              Số dư ví người bán
             </span>
-            <Link
-              to="/shop/finances/withdraw"
-              className="font-label-sm text-label-sm text-primary hover:underline flex items-center gap-0.5"
-            >
-              Rút tiền
-              <span className="material-symbols-outlined text-[14px]">north_east</span>
-            </Link>
+            <span className="font-headline-lg text-headline-lg font-bold text-on-surface mt-2 font-mono tracking-tight">
+              {metrics.formattedWalletBalance}
+            </span>
           </div>
-          <div className="font-headline-xl text-headline-xl text-on-surface">
-            {metrics.formattedWalletBalance}
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
+            <span className="material-symbols-outlined text-[22px]">account_balance_wallet</span>
           </div>
         </div>
-        <div className="mt-space-md flex items-center justify-between font-body-sm text-body-sm text-on-surface-variant bg-surface-container-low px-2.5 py-1.5 rounded-lg">
-          <span>Chờ đối soát:</span>
-          <strong className="text-on-surface font-label-md text-label-md">
+
+        <div className="mt-4 flex items-center justify-between bg-surface-container-low px-3 py-1.5 rounded-lg border border-outline-variant/20">
+          <span className="font-label-sm text-label-sm text-on-surface-variant">Chờ đối soát:</span>
+          <span className="font-mono font-bold text-on-surface text-label-sm">
             {metrics.formattedPendingSettlement}
-          </strong>
+          </span>
+        </div>
+
+        <div className="mt-3 flex items-center justify-between">
+          <Link
+            to="/shop/finances"
+            className="inline-flex items-center gap-1 font-label-md text-label-md text-primary font-semibold hover:underline"
+          >
+            Rút tiền nhanh
+            <span className="material-symbols-outlined text-[16px]">north_east</span>
+          </Link>
+          <span className="text-[11px] text-outline font-mono">Chu kỳ T+2</span>
         </div>
       </div>
     </div>
   );
 };
-export default ShopMetricStats;
 
+export default ShopMetricStats;

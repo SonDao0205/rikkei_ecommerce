@@ -126,15 +126,8 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
           </nav>
         </div>
 
-        {/* Footer info & Storefront link */}
+        {/* Footer info */}
         <div className="p-space-md border-t border-outline/20 flex flex-col gap-space-sm">
-          <Link
-            to="/shop/infor"
-            className="w-full py-2 px-space-sm rounded-lg bg-surface-container-highest/20 hover:bg-surface-container-highest/40 text-inverse-on-surface font-label-md text-label-md flex items-center justify-center gap-1.5 transition-colors"
-          >
-            <span>Xem gian hàng</span>
-            <span className="material-symbols-outlined text-[16px]">open_in_new</span>
-          </Link>
           <div className="flex items-center justify-between px-space-xs font-body-sm text-body-sm text-outline-variant">
             <span>Hotline hỗ trợ:</span>
             <span className="font-label-md text-label-md text-inverse-on-surface">1900 6868</span>
@@ -145,4 +138,3 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
   );
 };
 export default ShopSidebar;
-
