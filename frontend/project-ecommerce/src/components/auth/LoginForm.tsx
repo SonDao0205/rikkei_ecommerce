@@ -127,9 +127,11 @@ const LoginForm = () => {
 
     const resultAction = await dispatch(loginUser(formData));
     if (loginUser.fulfilled.match(resultAction)) {
-      const userRole = (resultAction.payload.user?.role || "").toLowerCase().trim();
+            const userRole = (resultAction.payload.user?.role || "").toLowerCase().trim();
       if (userRole === "admin") {
         navigate("/admin/dashboard");
+      } else if (userRole === "seller") {
+        navigate("/shop/dashboard");
       } else {
         navigate("/home");
       }
@@ -145,14 +147,14 @@ const LoginForm = () => {
 
         {/* Mobile Header — chỉ hiện trên màn hình nhỏ */}
         <div className="flex lg:hidden items-center justify-between pb-2 border-b border-slate-100">
-          <div className="flex items-center space-x-2.5">
+          <Link to="/" className="flex items-center space-x-2.5 group cursor-pointer transition-transform hover:scale-[1.02]" title="Về trang chủ MarketPulse">
             <div className="w-8 h-8 rounded-lg bg-brand-700 shadow-md flex items-center justify-center p-1.5">
               <svg className="w-full h-full text-white" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
               </svg>
             </div>
             <span className="text-base font-bold tracking-tight text-slate-900">{APP_CONFIG.appName}</span>
-          </div>
+          </Link>
           <a href="#" className="text-xs font-semibold text-indigo-600 hover:text-indigo-700">
             Need help?
           </a>

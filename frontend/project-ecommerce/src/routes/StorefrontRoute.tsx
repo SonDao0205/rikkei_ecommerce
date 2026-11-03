@@ -7,10 +7,11 @@ interface StorefrontRouteProps {
 }
 
 /**
- * Route Guard cho các trang storefront bán hàng (ví dụ: Trang chủ / và /home):
+ * Route Guard cho các trang storefront bán hàng (ví dụ: Trang chủ / và /home, chi tiết sản phẩm):
  * - Khách (chưa đăng nhập) hoặc khách hàng (client, customer...): Truy cập bình thường.
  * - Quản trị viên (admin): Tự động chuyển hướng về trang quản trị ("/admin/dashboard").
- * - Trạng thái đăng nhập của admin được giữ nguyên.
+ * - Người bán (seller): Tự động chuyển hướng về trang của shop ("/shop/dashboard"), không cho phép thao tác ở trang người dùng.
+ * - Trạng thái đăng nhập của admin và seller được giữ nguyên hoàn toàn.
  */
 export const StorefrontRoute: React.FC<StorefrontRouteProps> = ({ children }) => {
   const { isAuthenticated, role, isInitialized } = useAppSelector(
@@ -31,9 +32,15 @@ export const StorefrontRoute: React.FC<StorefrontRouteProps> = ({ children }) =>
     );
   }
 
-  // Nếu là tài khoản Admin, chuyển hướng thẳng về Admin Dashboard
-  if (isAuthenticated && (role || "").toLowerCase().trim() === "admin") {
-    return <Navigate to="/admin/dashboard" replace />;
+  // Phân quyền chặt chẽ: Admin và Seller không được vào trang người dùng
+  if (isAuthenticated) {
+    const userRole = (role || "").toLowerCase().trim();
+    if (userRole === "admin") {
+      return <Navigate to="/admin/dashboard" replace />;
+    }
+    if (userRole === "seller") {
+      return <Navigate to="/shop/dashboard" replace />;
+    }
   }
 
   return <>{children}</>;

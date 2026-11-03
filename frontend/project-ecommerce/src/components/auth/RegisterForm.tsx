@@ -188,6 +188,28 @@ const RegisterForm = () => {
 
   return (
     <>
+      {/* Mobile Header — chỉ hiện trên màn hình nhỏ */}
+      <div className="flex lg:hidden items-center justify-between pb-3 mb-6 border-b border-slate-100">
+        <Link
+          to="/"
+          className="flex items-center space-x-2.5 group cursor-pointer transition-transform hover:scale-[1.02]"
+          title="Về trang chủ MarketPulse"
+        >
+          <div className="w-8 h-8 rounded-lg bg-brand-700 shadow-md flex items-center justify-center p-1.5">
+            <svg className="w-full h-full text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+            </svg>
+          </div>
+          <span className="text-base font-bold tracking-tight text-slate-900 group-hover:text-brand-700 transition-colors">
+            MarketPulse
+          </span>
+        </Link>
+        <Link to="/login" className="text-xs font-semibold text-indigo-600 hover:text-indigo-700">
+          Sign In
+        </Link>
+      </div>
+
+
       {/* Welcome Badge & Headers */}
       <div className="mb-7">
         <span className="inline-block px-3 py-1 bg-indigo-50 text-brand-700 text-xs font-semibold rounded-full mb-3">

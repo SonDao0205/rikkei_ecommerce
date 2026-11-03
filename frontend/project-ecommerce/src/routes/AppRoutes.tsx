@@ -10,6 +10,7 @@ import RegisterOpenShopStep2 from "../pages/shop/RegisterOpenShopStep2";
 import RegisterOpenShopStep3 from "../pages/shop/RegisterOpenShopStep3";
 import RegisterOpenShopStep4 from "../pages/shop/RegisterOpenShopStep4";
 import ShopDashboard from "../pages/shop/ShopDashboard";
+import ShopProductManagement from "../pages/shop/ShopProductManagement";
 import AdminProduct from "../pages/admin/AdminProduct";
 import AdminDashBoard from "../pages/admin/AdminDashBoard";
 import AdminOrder from "../pages/admin/AdminOrder";
@@ -206,30 +207,53 @@ const router = createBrowserRouter([
     ),
   },
   {
+    path: "/shop",
+    element: (
+      <ProtectedRoute allowedRoles={["seller", "SELLER"]}>
+        <Navigate to="/shop/dashboard" replace />
+      </ProtectedRoute>
+    ),
+  },
+  {
     path: "/shop/dashboard",
     element: (
-      <StorefrontRoute>
+      <ProtectedRoute allowedRoles={["seller", "SELLER"]}>
         <ShopDashboard />
-      </StorefrontRoute>
+      </ProtectedRoute>
     ),
   },
   {
     path: "/seller/dashboard",
     element: (
-      <StorefrontRoute>
-        <ShopDashboard />
-      </StorefrontRoute>
+      <ProtectedRoute allowedRoles={["seller", "SELLER"]}>
+        <Navigate to="/shop/dashboard" replace />
+      </ProtectedRoute>
     ),
   },
   {
-    path: "/shop-dashboard",
+    path: "/shop/products",
     element: (
-      <StorefrontRoute>
-        <ShopDashboard />
-      </StorefrontRoute>
+      <ProtectedRoute allowedRoles={["seller", "SELLER"]}>
+        <ShopProductManagement />
+      </ProtectedRoute>
     ),
   },
-
+  {
+    path: "/shop/product",
+    element: (
+      <ProtectedRoute allowedRoles={["seller", "SELLER"]}>
+        <ShopProductManagement />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/shop/*",
+    element: (
+      <ProtectedRoute allowedRoles={["seller", "SELLER"]}>
+        <Navigate to="/shop/dashboard" replace />
+      </ProtectedRoute>
+    ),
+  },
   {
     path: "/register",
     element: (
@@ -257,7 +281,7 @@ const router = createBrowserRouter([
   {
     path: "/profile",
     element: (
-      <ProtectedRoute disallowedRoles={["admin"]}>
+      <ProtectedRoute disallowedRoles={["admin", "seller", "ADMIN", "SELLER"]}>
         <MyProfile />
       </ProtectedRoute>
     ),
@@ -265,7 +289,7 @@ const router = createBrowserRouter([
   {
     path: "/my-profile",
     element: (
-      <ProtectedRoute disallowedRoles={["admin"]}>
+      <ProtectedRoute disallowedRoles={["admin", "seller", "ADMIN", "SELLER"]}>
         <MyProfile />
       </ProtectedRoute>
     ),
@@ -273,7 +297,7 @@ const router = createBrowserRouter([
   {
     path: "/profile/change-password",
     element: (
-      <ProtectedRoute disallowedRoles={["admin"]}>
+      <ProtectedRoute disallowedRoles={["admin", "seller", "ADMIN", "SELLER"]}>
         <ChangePassword />
       </ProtectedRoute>
     ),
@@ -281,7 +305,7 @@ const router = createBrowserRouter([
   {
     path: "/change-password",
     element: (
-      <ProtectedRoute disallowedRoles={["admin"]}>
+      <ProtectedRoute disallowedRoles={["admin", "seller", "ADMIN", "SELLER"]}>
         <ChangePassword />
       </ProtectedRoute>
     ),
@@ -289,7 +313,7 @@ const router = createBrowserRouter([
   {
     path: "/profile/address",
     element: (
-      <ProtectedRoute disallowedRoles={["admin"]}>
+      <ProtectedRoute disallowedRoles={["admin", "seller", "ADMIN", "SELLER"]}>
         <Address />
       </ProtectedRoute>
     ),
@@ -297,7 +321,7 @@ const router = createBrowserRouter([
   {
     path: "/address",
     element: (
-      <ProtectedRoute disallowedRoles={["admin"]}>
+      <ProtectedRoute disallowedRoles={["admin", "seller", "ADMIN", "SELLER"]}>
         <Address />
       </ProtectedRoute>
     ),
@@ -305,7 +329,7 @@ const router = createBrowserRouter([
   {
     path: "/profile/orders",
     element: (
-      <ProtectedRoute disallowedRoles={["admin"]}>
+      <ProtectedRoute disallowedRoles={["admin", "seller", "ADMIN", "SELLER"]}>
         <MyOrder />
       </ProtectedRoute>
     ),
@@ -313,7 +337,7 @@ const router = createBrowserRouter([
   {
     path: "/orders",
     element: (
-      <ProtectedRoute disallowedRoles={["admin"]}>
+      <ProtectedRoute disallowedRoles={["admin", "seller", "ADMIN", "SELLER"]}>
         <MyOrder />
       </ProtectedRoute>
     ),
@@ -321,7 +345,7 @@ const router = createBrowserRouter([
   {
     path: "/my-orders",
     element: (
-      <ProtectedRoute disallowedRoles={["admin"]}>
+      <ProtectedRoute disallowedRoles={["admin", "seller", "ADMIN", "SELLER"]}>
         <MyOrder />
       </ProtectedRoute>
     ),
@@ -329,7 +353,7 @@ const router = createBrowserRouter([
   {
     path: "/my-order",
     element: (
-      <ProtectedRoute disallowedRoles={["admin"]}>
+      <ProtectedRoute disallowedRoles={["admin", "seller", "ADMIN", "SELLER"]}>
         <MyOrder />
       </ProtectedRoute>
     ),
@@ -337,7 +361,7 @@ const router = createBrowserRouter([
   {
     path: "/profile/orders/:id",
     element: (
-      <ProtectedRoute disallowedRoles={["admin"]}>
+      <ProtectedRoute disallowedRoles={["admin", "seller", "ADMIN", "SELLER"]}>
         <MyOrderDetail />
       </ProtectedRoute>
     ),
@@ -345,7 +369,7 @@ const router = createBrowserRouter([
   {
     path: "/orders/:id",
     element: (
-      <ProtectedRoute disallowedRoles={["admin"]}>
+      <ProtectedRoute disallowedRoles={["admin", "seller", "ADMIN", "SELLER"]}>
         <MyOrderDetail />
       </ProtectedRoute>
     ),
@@ -353,7 +377,7 @@ const router = createBrowserRouter([
   {
     path: "/my-order/:id",
     element: (
-      <ProtectedRoute disallowedRoles={["admin"]}>
+      <ProtectedRoute disallowedRoles={["admin", "seller", "ADMIN", "SELLER"]}>
         <MyOrderDetail />
       </ProtectedRoute>
     ),
@@ -361,7 +385,7 @@ const router = createBrowserRouter([
   {
     path: "/my-orders/:id",
     element: (
-      <ProtectedRoute disallowedRoles={["admin"]}>
+      <ProtectedRoute disallowedRoles={["admin", "seller", "ADMIN", "SELLER"]}>
         <MyOrderDetail />
       </ProtectedRoute>
     ),
