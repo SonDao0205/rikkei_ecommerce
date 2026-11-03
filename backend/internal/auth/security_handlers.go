@@ -1,8 +1,10 @@
 package auth
 
 import (
+	"context"
 	"crypto/hmac"
 	"database/sql"
+	"errors"
 	"net/http"
 	"strings"
 	"time"
@@ -115,11 +117,31 @@ func (a *App) verifyResetOTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	email, err := a.resetEmailForIdentifier(r, identifier)
-	if err != nil {
+	if errors.Is(err, sql.ErrNoRows) {
 		writeError(w, http.StatusBadRequest, "invalid_or_expired_otp", "Verification code is invalid or expired")
 		return
 	}
-	if !a.checkResetOTP(w, r, email, q.OTP) {
+	if err != nil {
+		a.serverError(w, r, err)
+		return
+	}
+	tx, err := a.db.BeginTx(r.Context(), nil)
+	if err != nil {
+		a.serverError(w, r, err)
+		return
+	}
+	defer tx.Rollback()
+	valid, err := checkResetOTP(r.Context(), tx, a.cfg.JWTSecret, email, q.OTP)
+	if err != nil {
+		a.serverError(w, r, err)
+		return
+	}
+	if err = tx.Commit(); err != nil {
+		a.serverError(w, r, err)
+		return
+	}
+	if !valid {
+		writeError(w, http.StatusBadRequest, "invalid_or_expired_otp", "Verification code is invalid or expired")
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"success": true, "message": "Verification code is valid"})
@@ -144,41 +166,32 @@ func (a *App) resetEmailForIdentifier(r *http.Request, identifier string) (strin
 	}
 	var email string
 	err := a.db.QueryRowContext(r.Context(), query, identifier).Scan(&email)
-	if err != nil || email == "" {
+	if errors.Is(err, sql.ErrNoRows) || err == nil && email == "" {
 		return "", sql.ErrNoRows
 	}
-	return email, nil
+	return email, err
 }
 
-func (a *App) checkResetOTP(w http.ResponseWriter, r *http.Request, email, otp string) bool {
-	tx, err := a.db.BeginTx(r.Context(), nil)
-	if err != nil {
-		a.serverError(w, r, err)
-		return false
-	}
-	defer tx.Rollback()
+func checkResetOTP(ctx context.Context, tx *sql.Tx, secret, email, otp string) (bool, error) {
 	var hash string
 	var expires time.Time
 	var attempts int
-	err = tx.QueryRowContext(r.Context(), `SELECT otp_hash,expires_at,attempts FROM password_reset_otps WHERE email=? FOR UPDATE`, email).Scan(&hash, &expires, &attempts)
-	valid := err == nil && attempts < 5 && time.Now().Before(expires) && hmac.Equal([]byte(hash), []byte(hmacDigest(a.cfg.JWTSecret, otp)))
+	err := tx.QueryRowContext(ctx, `SELECT otp_hash,expires_at,attempts FROM password_reset_otps WHERE email=? FOR UPDATE`, email).Scan(&hash, &expires, &attempts)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	valid := attempts < 5 && time.Now().Before(expires) &&
+		hmac.Equal([]byte(hash), []byte(hmacDigest(secret, otp)))
 	if !valid {
-		if err == nil && attempts < 5 {
-			if _, err = tx.ExecContext(r.Context(), `UPDATE password_reset_otps SET attempts=attempts+1 WHERE email=?`, email); err != nil {
-				a.serverError(w, r, err)
-				return false
-			}
-			if err = tx.Commit(); err != nil {
-				a.serverError(w, r, err)
-				return false
+		if attempts < 5 {
+			if _, err = tx.ExecContext(ctx, `UPDATE password_reset_otps SET attempts=attempts+1 WHERE email=?`, email); err != nil {
+				return false, err
 			}
 		}
-		writeError(w, http.StatusBadRequest, "invalid_or_expired_otp", "Verification code is invalid or expired")
-		return false
+		return false, nil
 	}
-	if err = tx.Commit(); err != nil {
-		a.serverError(w, r, err)
-		return false
-	}
-	return true
+	return true, nil
 }

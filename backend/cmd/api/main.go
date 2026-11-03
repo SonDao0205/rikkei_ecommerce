@@ -13,6 +13,8 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"rikkei-ecommerce/internal/auth"
+	"rikkei-ecommerce/internal/migrations"
+	"rikkei-ecommerce/internal/server"
 )
 
 func main() {
@@ -34,12 +36,11 @@ func main() {
 		log.Fatalf("database connection failed: %v", err)
 	}
 	if cfg.AutoMigrate {
-		if err = auth.Migrate(ctx, db); err != nil {
+		if err = migrations.Run(ctx, db); err != nil {
 			log.Fatal(err)
 		}
 	}
-	app := auth.NewApp(cfg, db, log.Default())
-	srv := &http.Server{Addr: cfg.HTTPAddr, Handler: app.Handler(), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, WriteTimeout: 20 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 1 << 20}
+	srv := &http.Server{Addr: cfg.HTTPAddr, Handler: server.NewHandler(cfg, db, log.Default()), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, WriteTimeout: 20 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 1 << 20}
 	go func() {
 		log.Printf("API listening on %s", cfg.HTTPAddr)
 		if e := srv.ListenAndServe(); e != nil && !errors.Is(e, http.ErrServerClosed) {

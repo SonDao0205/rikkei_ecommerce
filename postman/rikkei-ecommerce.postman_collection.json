@@ -1,0 +1,1443 @@
+{
+  "info": {
+    "_postman_id": "548fb440-44a7-4a2d-b59e-41bec88e8f20",
+    "name": "Rikkei E-Commerce API",
+    "description": "Local API collection for implemented backend routes, including shop onboarding/approval, seller product/variant/inventory CRUD, and owner-scoped addresses. Run only against a disposable local/test database: requests create users/shops, soft-delete a generated product, and mutate the dedicated fixture 960009.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "noauth"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:18080" },
+    { "key": "seedPassword", "value": "LocalTest123!" },
+    { "key": "shopId", "value": "920001" },
+    { "key": "productId", "value": "960001" },
+    { "key": "adminTestProductId", "value": "960009" },
+    { "key": "categoryId", "value": "930005" },
+    { "key": "brandId", "value": "940003" },
+    { "key": "clientToken", "value": "" },
+    { "key": "adminToken", "value": "" },
+    { "key": "sellerToken", "value": "" },
+    { "key": "resetOtp", "value": "" },
+    { "key": "businessToken", "value": "" },
+    { "key": "businessAdminToken", "value": "" },
+    { "key": "businessEmail", "value": "" },
+    { "key": "businessPassword", "value": "BusinessTest123!" },
+    { "key": "businessPhone", "value": "" },
+    { "key": "businessShopName", "value": "" },
+    { "key": "businessShopId", "value": "" },
+    { "key": "businessProductId", "value": "" },
+    { "key": "businessVariantId", "value": "" },
+    { "key": "businessSKU", "value": "" },
+    { "key": "businessAddressId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health check",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/healthz"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('API and database are healthy', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().data.status).to.eql('ok');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Public Catalog and Shops",
+      "item": [
+        {
+          "name": "List active categories",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/categories" },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Returns active categories and All entry', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const data = pm.response.json().data;",
+              "  pm.expect(data).to.be.an('array');",
+              "  pm.expect(data[0].id).to.eql(0);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Reject unexpected category query",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/categories?unexpected=1" },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Rejects unknown query parameters', function () {",
+              "  pm.response.to.have.status(400);",
+              "  pm.expect(pm.response.json().errors[0].code).to.eql('invalid_query');",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Get category variant attributes",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/categories/930006/attributes"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Returns required jacket attributes and their values', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const attributes = pm.response.json().data.attributes;",
+              "  pm.expect(attributes).to.have.length(2);",
+              "  pm.expect(attributes.every((attribute) => attribute.required)).to.eql(true);",
+              "  pm.expect(attributes.every((attribute) => attribute.values.length > 0)).to.eql(true);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "List products with pagination",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/products?page=1&limit=20&sort=latest" },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Returns a paginated catalog response', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const data = pm.response.json().data;",
+              "  pm.expect(data.products).to.be.an('array');",
+              "  pm.expect(data.page).to.eql(1);",
+              "  pm.expect(data.limit).to.eql(20);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Search products by non-adjacent name tokens",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/products?q=iphone%20pro%20max&page=1&limit=20" },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Matches and ranks products by name-token coverage', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const products = pm.response.json().data.products;",
+              "  const ids = products.map(function (product) { return product.id; });",
+              "  pm.expect(ids.length).to.be.at.least(3);",
+              "  pm.expect([960004, 960007]).to.include(ids[0]);",
+              "  pm.expect([960004, 960007]).to.include(ids[1]);",
+              "  pm.expect(ids[2]).to.eql(960005);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Filter products by category, brand, price and rating",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/products?q=cotton&category_id=930002&brand_id=940001&min_price=100000&max_price=300000&min_rating=4.5&sort=price_asc&page=1&limit=10" },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Applies catalog filters and sort', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const products = pm.response.json().data.products;",
+              "  pm.expect(products.length).to.be.at.least(1);",
+              "  pm.expect(products[0].id).to.eql(960001);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Reject invalid catalog filters",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/products?page=0" },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Rejects invalid pagination input', function () {",
+              "  pm.response.to.have.status(400);",
+              "  pm.expect(pm.response.json().errors[0].code).to.eql('invalid_product_filters');",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Product detail",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/products/{{productId}}" },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Returns product, images, active variants and public shop', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const data = pm.response.json().data;",
+              "  pm.expect(data.product.id).to.eql(Number(pm.collectionVariables.get('productId')));",
+              "  pm.expect(data.images).to.be.an('array');",
+              "  pm.expect(data.variants).to.be.an('array');",
+              "  pm.expect(data.shop).to.have.property('id');",
+              "  pm.expect(data.shop).not.to.have.property('warehouse_address');",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Reject unavailable product detail",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/products/960003" },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Does not expose an unapproved product', function () {",
+              "  pm.response.to.have.status(404);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Reject invalid product ID",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/products/not-an-id" },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Rejects malformed product IDs', function () {",
+              "  pm.response.to.have.status(400);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Shop detail",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/shops/{{shopId}}" },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Returns only public shop fields', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const shop = pm.response.json().data.shop;",
+              "  pm.expect(shop.id).to.eql(Number(pm.collectionVariables.get('shopId')));",
+              "  pm.expect(shop).not.to.have.property('warehouse_address');",
+              "  pm.expect(shop).not.to.have.property('owner_id');",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Shop product listing",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/shops/{{shopId}}/products?page=1&limit=10" },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Returns products from the requested active shop', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const data = pm.response.json().data;",
+              "  pm.expect(data.products).to.be.an('array');",
+              "  pm.expect(data.products.length).to.be.at.least(1);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Reject query parameters on shop detail",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/shops/{{shopId}}?debug=1" },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Rejects unsupported shop detail query parameters', function () {",
+              "  pm.response.to.have.status(400);",
+              "});"
+            ]}
+          }]
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register disposable CLIENT",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "const runId = Date.now().toString() + Math.floor(Math.random() * 100000).toString().padStart(5, '0');",
+              "pm.collectionVariables.set('runId', runId);",
+              "pm.collectionVariables.set('testEmail', 'postman-' + runId + '@example.test');",
+              "pm.collectionVariables.set('testPhone', '+849' + runId.slice(-9));",
+              "pm.collectionVariables.set('testPassword', 'PostmanTest123!');",
+              "pm.environment.set('testEmail', 'postman-' + runId + '@example.test');",
+              "pm.environment.set('testPassword', 'PostmanTest123!');"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Creates a CLIENT account with valid input', function () {",
+              "  pm.response.to.have.status(201);",
+              "  const user = pm.response.json().data;",
+              "  pm.expect(user.email).to.eql(pm.collectionVariables.get('testEmail'));",
+              "  pm.expect(user.role).to.eql('CLIENT');",
+              "  pm.collectionVariables.set('clientId', String(user.id));",
+              "});"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\",\n  \"full_name\": \"Postman API Test\",\n  \"phone\": \"{{testPhone}}\"\n}" },
+            "url": "{{baseUrl}}/api/v1/auth/register"
+          }
+        },
+        {
+          "name": "Reject duplicate registration",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\",\n  \"full_name\": \"Postman API Test\",\n  \"phone\": \"{{testPhone}}\"\n}" },
+            "url": "{{baseUrl}}/api/v1/auth/register"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Returns conflict for duplicate account data', function () {",
+              "  pm.response.to.have.status(409);",
+              "  pm.expect(pm.response.json().errors[0].code).to.eql('account_exists');",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Reject weak registration password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"invalid-{{runId}}@example.test\",\n  \"password\": \"weak\",\n  \"full_name\": \"Invalid User\",\n  \"phone\": \"+84912345678\"\n}" },
+            "url": "{{baseUrl}}/api/v1/auth/register"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Rejects weak passwords', function () {",
+              "  pm.response.to.have.status(400);",
+              "  pm.expect(pm.response.json().errors[0].code).to.eql('weak_password');",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Login disposable CLIENT",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"identifier\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\"\n}" },
+            "url": "{{baseUrl}}/api/v1/auth/login"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Logs in and sets an HttpOnly refresh cookie', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const data = pm.response.json().data;",
+              "  pm.expect(data.access_token).to.be.a('string');",
+              "  pm.expect(data.token_type).to.eql('Bearer');",
+              "  pm.expect(pm.response.headers.get('Set-Cookie')).to.include('HttpOnly');",
+              "  pm.collectionVariables.set('clientToken', data.access_token);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Get current user",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "url": "{{baseUrl}}/api/v1/auth/me"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Returns authenticated profile', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data.email).to.eql(pm.collectionVariables.get('testEmail'));",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Update current profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{clientToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"full_name\": \"Postman Profile Updated\",\n  \"phone\": \"{{testPhone}}\"\n}" },
+            "url": "{{baseUrl}}/api/v1/auth/profile"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Updates the current user profile', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data.full_name).to.eql('Postman Profile Updated');",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Reject invalid login credentials",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"identifier\": \"{{testEmail}}\",\n  \"password\": \"wrong-password\"\n}" },
+            "url": "{{baseUrl}}/api/v1/auth/login"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Rejects invalid credentials without leaking account details', function () {",
+              "  pm.response.to.have.status(401);",
+              "  pm.expect(pm.response.json().errors[0].code).to.eql('invalid_credentials');",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Request password reset OTP",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"identifier\": \"{{testEmail}}\"\n}" },
+            "url": "{{baseUrl}}/api/v1/auth/forgot-password"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Returns the same generic response for password recovery', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().message).to.include('If the account exists');",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Reject malformed reset OTP",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"identifier\": \"{{testEmail}}\",\n  \"otp\": \"abcdef\"\n}" },
+            "url": "{{baseUrl}}/api/v1/auth/verify-reset-otp"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Rejects malformed OTP values', function () {",
+              "  pm.response.to.have.status(400);",
+              "  pm.expect(pm.response.json().errors[0].code).to.eql('invalid_or_expired_otp');",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Refresh access token",
+          "request": { "method": "POST", "url": "{{baseUrl}}/api/v1/auth/refresh" },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Rotates refresh cookie and issues a new access token', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const token = pm.response.json().data.access_token;",
+              "  pm.expect(token).to.be.a('string');",
+              "  pm.collectionVariables.set('clientToken', token);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Change password",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{clientToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"current_password\": \"{{testPassword}}\",\n  \"new_password\": \"ChangedPass123!\",\n  \"confirm_password\": \"ChangedPass123!\"\n}" },
+            "url": "{{baseUrl}}/api/v1/auth/password"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Changes password and invalidates sessions', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "pm.collectionVariables.set('testPassword', 'ChangedPass123!');",
+              "pm.environment.set('testPassword', 'ChangedPass123!');"
+            ]}
+          }]
+        },
+        {
+          "name": "Reject login with old password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"identifier\": \"{{testEmail}}\",\n  \"password\": \"PostmanTest123!\"\n}" },
+            "url": "{{baseUrl}}/api/v1/auth/login"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Old password no longer authenticates', function () {",
+              "  pm.response.to.have.status(401);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Login with changed password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"identifier\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\"\n}" },
+            "url": "{{baseUrl}}/api/v1/auth/login"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('New password authenticates', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.collectionVariables.set('clientToken', pm.response.json().data.access_token);",
+              "});"
+            ]}
+          }]
+        }
+      ]
+    },
+    {
+      "name": "Client Shop Follow",
+      "item": [
+        {
+          "name": "Read follow state",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "url": "{{baseUrl}}/api/v1/shops/{{shopId}}/follow"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('CLIENT can read follow state', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data.following).to.be.a('boolean');",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Follow shop",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "url": "{{baseUrl}}/api/v1/shops/{{shopId}}/follow"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Follows shop and reports updated count', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data.following).to.eql(true);",
+              "  pm.collectionVariables.set('followCount', String(pm.response.json().data.follower_count));",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Follow shop again (idempotent)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "url": "{{baseUrl}}/api/v1/shops/{{shopId}}/follow"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Repeated follow does not increment follower count', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(String(pm.response.json().data.follower_count)).to.eql(pm.collectionVariables.get('followCount'));",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Unfollow shop",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "url": "{{baseUrl}}/api/v1/shops/{{shopId}}/follow"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Unfollows shop', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data.following).to.eql(false);",
+              "  pm.collectionVariables.set('unfollowCount', String(pm.response.json().data.follower_count));",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Unfollow shop again (idempotent)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "url": "{{baseUrl}}/api/v1/shops/{{shopId}}/follow"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Repeated unfollow does not decrement follower count', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(String(pm.response.json().data.follower_count)).to.eql(pm.collectionVariables.get('unfollowCount'));",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Reject CLIENT access to admin inventory",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "url": "{{baseUrl}}/api/v1/admin/products"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('CLIENT cannot access admin inventory', function () {",
+              "  pm.response.to.have.status(403);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Logout disposable CLIENT",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "url": "{{baseUrl}}/api/v1/auth/logout"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Revokes the current session', function () {",
+              "  pm.response.to.have.status(200);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Reject protected request after logout",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "url": "{{baseUrl}}/api/v1/auth/me"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Revoked access session cannot be reused', function () {",
+              "  pm.response.to.have.status(401);",
+              "});"
+            ]}
+          }]
+        }
+      ]
+    },
+    {
+      "name": "Admin Inventory",
+      "item": [
+        {
+          "name": "Login local SELLER",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"identifier\": \"seed-seller-a@local.test\",\n  \"password\": \"{{seedPassword}}\"\n}" },
+            "url": "{{baseUrl}}/api/v1/auth/login"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Logs in the local seller fixture', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const data = pm.response.json().data;",
+              "  pm.expect(data.user.role).to.eql('SELLER');",
+              "  pm.collectionVariables.set('sellerToken', data.access_token);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Reject SELLER access to admin inventory",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{sellerToken}}" }],
+            "url": "{{baseUrl}}/api/v1/admin/products"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('SELLER cannot access admin inventory', function () {",
+              "  pm.response.to.have.status(403);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Login local ADMIN",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"identifier\": \"seed-admin@local.test\",\n  \"password\": \"{{seedPassword}}\"\n}" },
+            "url": "{{baseUrl}}/api/v1/auth/login"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('ADMIN login succeeds', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const data = pm.response.json().data;",
+              "  pm.expect(data.user.role).to.eql('ADMIN');",
+              "  pm.collectionVariables.set('adminToken', data.access_token);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "List users (ADMIN only)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/v1/admin/users"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('ADMIN can list users', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data).to.be.an('array');",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "List inventory with filters",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/v1/admin/products?search=Postman&category=Điện%20thoại%20và%20phụ%20kiện&vendor=Tech%20World&stock_status=in_stock&sort_by=stock_desc"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('ADMIN inventory query supports filters and stock sort', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const data = pm.response.json().data;",
+              "  pm.expect(data.products).to.be.an('array');",
+              "  pm.expect(data.products.some(function (item) { return item.id === 960009; })).to.eql(true);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Reject invalid inventory filter",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/v1/admin/products?sort_by=invalid"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Rejects invalid admin filter values', function () {",
+              "  pm.response.to.have.status(400);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Get inventory statistics",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/v1/admin/inventory-stats"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Returns inventory summary', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data.totalSkus).to.be.a('number');",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Deactivate dedicated test product",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{ \"is_active\": false }" },
+            "url": "{{baseUrl}}/api/v1/admin/products/{{adminTestProductId}}/status"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('ADMIN can hide an approved product', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data.status).to.eql('HIDDEN');",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Reactivate dedicated test product",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{ \"is_active\": true }" },
+            "url": "{{baseUrl}}/api/v1/admin/products/{{adminTestProductId}}/status"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('ADMIN can reactivate an approved product', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data.status).to.eql('ACTIVE');",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Bulk deactivate dedicated test product",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{ \"action\": \"deactivate\", \"product_ids\": [960009, 960009] }" },
+            "url": "{{baseUrl}}/api/v1/admin/products/bulk"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Bulk action deduplicates IDs and deactivates fixture', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data.count).to.eql(1);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Bulk activate dedicated test product",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{ \"action\": \"activate\", \"product_ids\": [960009] }" },
+            "url": "{{baseUrl}}/api/v1/admin/products/bulk"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Bulk action reactivates fixture', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data.count).to.eql(1);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Delete dedicated test product (soft delete)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/v1/admin/products/{{adminTestProductId}}"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('ADMIN soft-deletes the dedicated fixture', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data.id).to.eql(Number(pm.collectionVariables.get('adminTestProductId')));",
+              "});"
+            ]}
+          }]
+        }
+      ]
+    },
+    {
+      "name": "Manual Password Reset (requires OTP)",
+      "description": "Optional manual flow only. First send Request password reset OTP in Authentication, read the development OTP from docker compose logs backend, set resetOtp in the selected Postman environment, then run these requests. A successful reset invalidates sessions and changes the disposable user password.",
+      "item": [
+        {
+          "name": "Verify valid reset OTP",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"identifier\": \"{{testEmail}}\",\n  \"otp\": \"{{resetOtp}}\"\n}" },
+            "url": "{{baseUrl}}/api/v1/auth/verify-reset-otp"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!(pm.environment.get('resetOtp') || pm.collectionVariables.get('resetOtp'))) {",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Verifies a valid reset OTP', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reset password with valid OTP",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"identifier\": \"{{testEmail}}\",\n  \"otp\": \"{{resetOtp}}\",\n  \"new_password\": \"PostmanReset123!\"\n}" },
+            "url": "{{baseUrl}}/api/v1/auth/reset-password"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!(pm.environment.get('resetOtp') || pm.collectionVariables.get('resetOtp'))) {",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Resets password using a valid OTP', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+{
+      "name": "Shop, Seller Products, and Addresses",
+      "description": "Integration tests create a disposable client and shop, approve it as admin, then exercise owner-scoped seller product and address APIs. Local/test database only.",
+      "item": [
+        {
+          "name": "Register business test client",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{businessEmail}}\",\n  \"password\": \"{{businessPassword}}\",\n  \"full_name\": \"Postman Business Test\",\n  \"phone\": \"{{businessPhone}}\"\n}" },
+            "url": "{{baseUrl}}/api/v1/auth/register"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const stamp = Date.now().toString();",
+                  "pm.collectionVariables.set('businessEmail', 'postman-business-' + stamp + '@example.test');",
+                  "pm.collectionVariables.set('businessPhone', '+8498' + stamp.slice(-8));",
+                  "pm.collectionVariables.set('businessShopName', 'PostmanShop-' + stamp);",
+                  "pm.collectionVariables.set('businessSKU', 'POSTMAN-' + stamp);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Creates a disposable CLIENT account', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "  pm.expect(pm.response.json().data.role).to.eql('CLIENT');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login business test client",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"identifier\": \"{{businessEmail}}\",\n  \"password\": \"{{businessPassword}}\"\n}" },
+            "url": "{{baseUrl}}/api/v1/auth/login"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Logs in the business test client', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.collectionVariables.set('businessToken', pm.response.json().data.access_token);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Submit shop application",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{businessToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"{{businessShopName}}\",\n  \"description\": \"Disposable Postman shop\",\n  \"phone\": \"{{businessPhone}}\",\n  \"warehouse_address\": \"12 Postman Test Street\"\n}" },
+            "url": "{{baseUrl}}/api/v1/shops"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Creates a pending shop application', function () {",
+              "  pm.response.to.have.status(201);",
+              "  const shop = pm.response.json().data;",
+              "  pm.expect(shop.status).to.eql('PENDING');",
+              "  pm.collectionVariables.set('businessShopId', shop.id);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Login shop administrator",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"identifier\": \"seed-admin@local.test\",\n  \"password\": \"{{seedPassword}}\"\n}" },
+            "url": "{{baseUrl}}/api/v1/auth/login"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Logs in the seeded administrator', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.collectionVariables.set('businessAdminToken', pm.response.json().data.access_token);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "List pending shops by search",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{businessAdminToken}}" }],
+            "url": "{{baseUrl}}/api/v1/admin/shops?statusTab=pending&search={{businessShopName}}&page=1&pageSize=5"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Filters shop list by status and search', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data.shops[0].name).to.eql(pm.collectionVariables.get('businessShopName'));",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Approve shop and grant seller role",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{businessAdminToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{ \"notes\": \"Postman approval test\" }" },
+            "url": "{{baseUrl}}/api/v1/admin/shops/{{businessShopId}}/approve"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Approves shop and records notes', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const shop = pm.response.json().data;",
+              "  pm.expect(shop.status).to.eql('ACTIVE');",
+              "  pm.expect(shop.approval_notes).to.eql('Postman approval test');",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Login as approved business seller",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"identifier\": \"{{businessEmail}}\",\n  \"password\": \"{{businessPassword}}\"\n}" },
+            "url": "{{baseUrl}}/api/v1/auth/login"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Refreshes the business session after seller approval', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const data = pm.response.json().data;",
+              "  pm.expect(data.user.role).to.eql('SELLER');",
+              "  pm.collectionVariables.set('businessToken', data.access_token);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Reject seller variant missing a required attribute",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{businessToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Invalid jacket test\",\n  \"description\": \"Validation fixture\",\n  \"category_id\": 930006,\n  \"price\": 120000,\n  \"images\": [{ \"url\": \"https://cdn.example.test/postman-invalid-product.png\", \"is_primary\": true }],\n  \"variants\": [{ \"sku\": \"{{businessSKU}}-INVALID\", \"price\": 120000, \"stock\": 1, \"attribute_value_ids\": [951001] }]\n}" },
+            "url": "{{baseUrl}}/api/v1/seller/products"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Rejects variants without all required category attributes', function () {",
+              "  pm.response.to.have.status(400);",
+              "  pm.expect(pm.response.json().errors[0].code).to.eql('missing_required_variant_attribute');",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Create seller product with image variant and stock",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{businessToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Postman test jacket\",\n  \"description\": \"Disposable seller API fixture\",\n  \"category_id\": 930006,\n  \"price\": 120000,\n  \"images\": [{ \"url\": \"https://cdn.example.test/postman-product.png\", \"is_primary\": true }],\n  \"variants\": [{ \"sku\": \"{{businessSKU}}\", \"name\": \"Black / M\", \"price\": 120000, \"stock\": 2, \"attribute_value_ids\": [951001, 951003] }]\n}" },
+            "url": "{{baseUrl}}/api/v1/seller/products"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Creates a pending product and records its variant', function () {",
+              "  pm.response.to.have.status(201);",
+              "  const product = pm.response.json().data;",
+              "  pm.expect(product.status).to.eql('PENDING');",
+              "  pm.collectionVariables.set('businessProductId', product.id);",
+              "  pm.collectionVariables.set('businessVariantId', product.variants[0].id);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Read seller product",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{businessToken}}" }],
+            "url": "{{baseUrl}}/api/v1/seller/products/{{businessProductId}}"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Returns only the owning seller product', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data.variants[0].attribute_value_ids).to.include(951001);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Update seller product and stock",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{businessToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Postman test jacket updated\",\n  \"description\": \"Updated disposable seller API fixture\",\n  \"category_id\": 930006,\n  \"price\": 125000,\n  \"images\": [{ \"url\": \"https://cdn.example.test/postman-product.png\", \"is_primary\": true }],\n  \"variants\": [{ \"id\": {{businessVariantId}}, \"sku\": \"{{businessSKU}}\", \"name\": \"Black / M\", \"price\": 125000, \"stock\": 3, \"attribute_value_ids\": [951001, 951003] }]\n}" },
+            "url": "{{baseUrl}}/api/v1/seller/products/{{businessProductId}}"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Updates product, variant and inventory transactionally', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data.status).to.eql('PENDING');",
+              "  pm.expect(pm.response.json().data.variants[0].stock).to.eql(3);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Soft delete seller product",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{businessToken}}" }],
+            "url": "{{baseUrl}}/api/v1/seller/products/{{businessProductId}}"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Soft-deletes product without deleting order-linked variants', function () {",
+              "  pm.response.to.have.status(200);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Create address with numeric default flag",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{businessToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"recipient_name\": \"Postman Test User\",\n  \"phone\": \"{{businessPhone}}\",\n  \"province\": \"Ha Noi\",\n  \"district\": \"Cau Giay\",\n  \"ward\": \"Dich Vong\",\n  \"street_detail\": \"12 Postman Test Street\",\n  \"address_type\": \"OFFICE\",\n  \"is_default\": 1\n}" },
+            "url": "{{baseUrl}}/api/v1/addresses"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Creates an address and accepts FE numeric boolean', function () {",
+              "  pm.response.to.have.status(201);",
+              "  const address = pm.response.json().data;",
+              "  pm.expect(address.is_default).to.eql(true);",
+              "  pm.expect(address.address_type).to.eql('OFFICE');",
+              "  pm.collectionVariables.set('businessAddressId', address.id);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Update and set default address",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{businessToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"id\": {{businessAddressId}},\n  \"recipient_name\": \"Postman Test User Updated\",\n  \"phone\": \"{{businessPhone}}\",\n  \"province\": \"Ha Noi\",\n  \"district\": \"Cau Giay\",\n  \"ward\": \"Dich Vong\",\n  \"street_detail\": \"15 Postman Test Street\",\n  \"address_type\": \"HOME\",\n  \"is_default\": true\n}" },
+            "url": "{{baseUrl}}/api/v1/addresses/{{businessAddressId}}"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Updates address matching both owner and ID', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data.is_default).to.eql(true);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "List addresses for authenticated owner",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{businessToken}}" }],
+            "url": "{{baseUrl}}/api/v1/addresses"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Lists only this user address book', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data).to.be.an('array');",
+              "  pm.expect(pm.response.json().data.some(function (item) { return item.id === Number(pm.collectionVariables.get('businessAddressId')); })).to.eql(true);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Set address as default",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{businessToken}}" }],
+            "url": "{{baseUrl}}/api/v1/addresses/{{businessAddressId}}/default"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Sets the selected address as default', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data.is_default).to.eql(true);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Delete address",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{businessToken}}" }],
+            "url": "{{baseUrl}}/api/v1/addresses/{{businessAddressId}}"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Deletes only the selected owner address', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data).to.eql(Number(pm.collectionVariables.get('businessAddressId')));",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Read current seller shop",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{businessToken}}" }],
+            "url": "{{baseUrl}}/api/v1/me/shop"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Returns only the current user shop', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data.id).to.eql(Number(pm.collectionVariables.get('businessShopId')));",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Update current seller shop",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{businessToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"{{businessShopName}}\",\n  \"description\": \"Updated disposable Postman shop\",\n  \"phone\": \"{{businessPhone}}\",\n  \"warehouse_address\": \"12 Postman Test Street\"\n}" },
+            "url": "{{baseUrl}}/api/v1/me/shop"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Updates only the owner shop profile', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data.id).to.eql(Number(pm.collectionVariables.get('businessShopId')));",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "List seller products",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{businessToken}}" }],
+            "url": "{{baseUrl}}/api/v1/seller/products?page=1&limit=10&status=PENDING"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Returns a paginated seller product list', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data.products).to.be.an('array');",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Lock shop",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{businessAdminToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{ \"reason\": \"Postman lock test\" }" },
+            "url": "{{baseUrl}}/api/v1/admin/shops/{{businessShopId}}/lock"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Suspends shop with an audit reason', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data.status).to.eql('SUSPENDED');",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Restore shop via status route",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{businessAdminToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{ \"status\": \"ACTIVE\", \"notes\": \"Postman status restore\" }" },
+            "url": "{{baseUrl}}/api/v1/admin/shops/{{businessShopId}}/status"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Supports the generic shop status endpoint', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data.status).to.eql('ACTIVE');",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Reject shop application",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{businessAdminToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{ \"reason\": \"Postman rejection test\" }" },
+            "url": "{{baseUrl}}/api/v1/admin/shops/{{businessShopId}}/reject"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Rejects shop with a reason and returns it to CLIENT role', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data.status).to.eql('REJECTED');",
+              "  pm.expect(pm.response.json().data.reject_reason).to.eql('Postman rejection test');",
+              "});"
+            ]}
+          }]
+        }
+      ]
+    }
+  ]
+}

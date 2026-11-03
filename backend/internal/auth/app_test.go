@@ -39,7 +39,10 @@ func TestPhoneAndRoleValidation(t *testing.T) {
 func TestJWTTypeAndSessionClaims(t *testing.T) {
 	a := testApp()
 	u := User{ID: 42, Role: "CLIENT"}
-	raw := a.issue(u, "access", time.Minute, "session-id")
+	raw, err := a.issue(u, "access", time.Minute, "session-id")
+	if err != nil {
+		t.Fatal(err)
+	}
 	c, err := a.parse(raw, "access")
 	if err != nil {
 		t.Fatal(err)
@@ -58,7 +61,10 @@ func TestJWTTypeAndSessionClaims(t *testing.T) {
 	if _, err = a.parse(mutated, "access"); err == nil {
 		t.Fatal("tampered token accepted")
 	}
-	expired := a.issue(u, "access", -time.Minute, "session-id")
+	expired, err := a.issue(u, "access", -time.Minute, "session-id")
+	if err != nil {
+		t.Fatal(err)
+	}
 	if _, err = a.parse(expired, "access"); err == nil {
 		t.Fatal("expired token accepted")
 	}
@@ -67,10 +73,30 @@ func TestJWTTypeAndSessionClaims(t *testing.T) {
 func TestIssuedTokensAreUniqueWithinSameSecond(t *testing.T) {
 	a := testApp()
 	u := User{ID: 42, Role: "CLIENT"}
-	first := a.issue(u, "refresh", time.Hour, "session-id")
-	second := a.issue(u, "refresh", time.Hour, "session-id")
+	first, err := a.issue(u, "refresh", time.Hour, "session-id")
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := a.issue(u, "refresh", time.Hour, "session-id")
+	if err != nil {
+		t.Fatal(err)
+	}
 	if first == "" || second == "" || first == second {
 		t.Fatal("separate token issuance must produce distinct JWTs")
+	}
+}
+
+func TestRefreshCookieUsesSessionLifetime(t *testing.T) {
+	a := testApp()
+	rec := httptest.NewRecorder()
+	a.setRefreshCookie(rec, "refresh-value", 90*time.Second)
+	cookies := rec.Result().Cookies()
+	if len(cookies) != 1 {
+		t.Fatalf("cookie count=%d want=1", len(cookies))
+	}
+	cookie := cookies[0]
+	if cookie.Name != "refresh_token" || cookie.MaxAge != 90 || !cookie.HttpOnly || cookie.Path != "/api/v1/auth/refresh" {
+		t.Fatalf("unexpected refresh cookie attributes: %+v", cookie)
 	}
 }
 
@@ -97,7 +123,7 @@ func TestPasswordSecurityRoutesAreRegisteredAndProtected(t *testing.T) {
 			rec := httptest.NewRecorder()
 			a.Handler().ServeHTTP(rec, req)
 			if path == "/api/v1/auth/password" && rec.Code != http.StatusUnauthorized {
-				t.Fatalf("password change must require authentication, got %d", rec.Code)
+				t.Fatalf("%s must require authentication, got %d", path, rec.Code)
 			}
 			if path == "/api/v1/auth/verify-reset-otp" && rec.Code != http.StatusBadRequest {
 				t.Fatalf("malformed OTP must be rejected before storage access, got %d", rec.Code)
