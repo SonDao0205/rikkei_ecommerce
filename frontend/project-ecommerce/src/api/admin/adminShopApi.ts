@@ -169,16 +169,86 @@ export const mockShopsState: AdminShopItem[] = [
   },
 ];
 
+export const normalizeAdminShop = (raw: Record<string, unknown>): AdminShopItem => {
+  const id = Number(raw.id) || 0;
+  const rawStatus = String(raw.status || "PENDING").toUpperCase();
+  const status = (
+    rawStatus === "ACTIVE" || rawStatus === "SUSPENDED" || rawStatus === "REJECTED"
+      ? rawStatus
+      : "PENDING"
+  ) as AdminShopItem["status"];
+  const rawTier = String(raw.tier || "STANDARD").toUpperCase();
+  const tier = (
+    rawTier === "MALL" || rawTier === "PREMIUM" ? rawTier : "STANDARD"
+  ) as ShopTier;
+  const commissionRate = typeof raw.commission_rate === "number" ? raw.commission_rate : 5;
+  const skuCount = typeof raw.sku_count === "number" ? raw.sku_count : 0;
+  const orderCount = typeof raw.order_count === "number" ? raw.order_count : 0;
+  const ratingAvg = typeof raw.rating_avg === "number" ? raw.rating_avg : 0;
+  const ratingCount = typeof raw.rating_count === "number" ? raw.rating_count : 0;
+  const availableBalance = typeof raw.available_balance === "number" ? raw.available_balance : 0;
+
+  return {
+    id,
+    code: String(raw.code || `#VN-${String(id).padStart(4, "0")}`),
+    name: String(raw.name || "Gian hàng"),
+    description: typeof raw.description === "string" ? raw.description : undefined,
+    logo_url: typeof raw.logo_url === "string" ? raw.logo_url : null,
+    tier,
+    category: String(raw.category || "General"),
+    category_icon: typeof raw.category_icon === "string" ? raw.category_icon : "store",
+    owner_name: String(raw.owner_name || "Chưa cập nhật"),
+    owner_phone: String(raw.owner_phone || raw.phone || "Chưa cập nhật"),
+    owner_email: String(raw.owner_email || "Chưa cập nhật"),
+    location: String(raw.location || raw.warehouse_address || "Việt Nam"),
+    sku_count: skuCount,
+    sku_label: String(raw.sku_label || `${skuCount} SKUs`),
+    order_count: orderCount,
+    order_label: String(raw.order_label || `${orderCount} orders`),
+    rating_avg: ratingAvg,
+    rating_count: ratingCount,
+    commission_rate: commissionRate,
+    commission_tier_label: String(raw.commission_tier_label || `${commissionRate}% Standard`),
+    available_balance: availableBalance,
+    settlement_cycle: String(raw.settlement_cycle || "Bi-weekly"),
+    status,
+    status_label: String(
+      raw.status_label ||
+        (status === "ACTIVE"
+          ? "Active / Verified"
+          : status === "SUSPENDED"
+          ? "Suspended"
+          : status === "REJECTED"
+          ? "Rejected"
+          : "Pending Approval")
+    ),
+    is_live: typeof raw.is_live === "boolean" ? raw.is_live : status === "ACTIVE",
+    tax_id: typeof raw.tax_id === "string" ? raw.tax_id : undefined,
+    identity_card: typeof raw.identity_card === "string" ? raw.identity_card : undefined,
+    business_license_url:
+      typeof raw.business_license_url === "string" ? raw.business_license_url : undefined,
+    reject_reason: typeof raw.reject_reason === "string" ? raw.reject_reason : null,
+    created_at: String(raw.created_at || new Date().toLocaleDateString("vi-VN")),
+  };
+};
+
 export const adminShopApi = {
   fetchShops: async (
     params?: ShopFilterParams
   ): Promise<{ shops: AdminShopItem[]; total: number }> => {
     try {
       const response = await axiosClient.get<
-        ApiResponse<{ shops: AdminShopItem[]; total: number }>
+        ApiResponse<{ shops: unknown[]; total?: number }>
       >("/api/v1/admin/shops", { params });
-      if (response.data && response.data.data && response.data.data.shops) {
-        return response.data.data;
+      if (response.data && response.data.data && Array.isArray(response.data.data.shops)) {
+        const rawList = response.data.data.shops;
+        const normalized = rawList.map((item) =>
+          normalizeAdminShop(item as Record<string, unknown>)
+        );
+        return {
+          shops: normalized,
+          total: response.data.data.total ?? normalized.length,
+        };
       }
     } catch {
       // In-memory fallback
@@ -300,12 +370,12 @@ export const adminShopApi = {
 
   approveShop: async (shopId: number, notes?: string): Promise<AdminShopItem> => {
     try {
-      const response = await axiosClient.patch<ApiResponse<AdminShopItem>>(
+      const response = await axiosClient.patch<ApiResponse<unknown>>(
         `/api/v1/admin/shops/${shopId}/approve`,
         { notes }
       );
       if (response.data && response.data.data) {
-        return response.data.data;
+        return normalizeAdminShop(response.data.data as Record<string, unknown>);
       }
     } catch {
       // In-memory update
@@ -326,12 +396,12 @@ export const adminShopApi = {
 
   rejectShop: async (shopId: number, reason: string): Promise<AdminShopItem> => {
     try {
-      const response = await axiosClient.patch<ApiResponse<AdminShopItem>>(
+      const response = await axiosClient.patch<ApiResponse<unknown>>(
         `/api/v1/admin/shops/${shopId}/reject`,
         { reason }
       );
       if (response.data && response.data.data) {
-        return response.data.data;
+        return normalizeAdminShop(response.data.data as Record<string, unknown>);
       }
     } catch {
       // In-memory update
@@ -353,12 +423,12 @@ export const adminShopApi = {
 
   toggleShopLive: async (shopId: number, is_live?: boolean): Promise<AdminShopItem> => {
     try {
-      const response = await axiosClient.patch<ApiResponse<AdminShopItem>>(
+      const response = await axiosClient.patch<ApiResponse<unknown>>(
         `/api/v1/admin/shops/${shopId}/toggle-live`,
         { is_live }
       );
       if (response.data && response.data.data) {
-        return response.data.data;
+        return normalizeAdminShop(response.data.data as Record<string, unknown>);
       }
     } catch {
       // In-memory update
@@ -378,12 +448,12 @@ export const adminShopApi = {
 
   lockShop: async (shopId: number, reason?: string): Promise<AdminShopItem> => {
     try {
-      const response = await axiosClient.patch<ApiResponse<AdminShopItem>>(
+      const response = await axiosClient.patch<ApiResponse<unknown>>(
         `/api/v1/admin/shops/${shopId}/lock`,
         { reason }
       );
       if (response.data && response.data.data) {
-        return response.data.data;
+        return normalizeAdminShop(response.data.data as Record<string, unknown>);
       }
     } catch {
       // In-memory update
@@ -405,11 +475,11 @@ export const adminShopApi = {
 
   unlockShop: async (shopId: number): Promise<AdminShopItem> => {
     try {
-      const response = await axiosClient.patch<ApiResponse<AdminShopItem>>(
+      const response = await axiosClient.patch<ApiResponse<unknown>>(
         `/api/v1/admin/shops/${shopId}/unlock`
       );
       if (response.data && response.data.data) {
-        return response.data.data;
+        return normalizeAdminShop(response.data.data as Record<string, unknown>);
       }
     } catch {
       // In-memory update
@@ -435,12 +505,12 @@ export const adminShopApi = {
     rate: number
   ): Promise<AdminShopItem> => {
     try {
-      const response = await axiosClient.patch<ApiResponse<AdminShopItem>>(
+      const response = await axiosClient.patch<ApiResponse<unknown>>(
         `/api/v1/admin/shops/${shopId}/commission`,
         { tier, rate }
       );
       if (response.data && response.data.data) {
-        return response.data.data;
+        return normalizeAdminShop(response.data.data as Record<string, unknown>);
       }
     } catch {
       // In-memory update

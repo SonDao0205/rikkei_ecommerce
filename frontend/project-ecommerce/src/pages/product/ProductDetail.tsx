@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import CustomerLayout from "../../layout/CustomerLayout";
 import ProductBreadcrumb from "../../components/product/ProductBreadcrumb";
 import ProductGallery from "../../components/product/ProductGallery";
@@ -16,7 +16,16 @@ import type { ProductVariant } from "../../types";
 
 export const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const dispatch = useAppDispatch();
+
+  const handleGoBack = () => {
+    if (window.history.state && window.history.state.idx > 0) {
+      navigate(-1);
+    } else {
+      navigate("/");
+    }
+  };
 
   const { selectedProductDetail, detailLoading, detailError } = useAppSelector(
     (state) => state.product
@@ -141,6 +150,22 @@ export const ProductDetail: React.FC = () => {
         {/* Product Content Loaded Successfully */}
         {!detailLoading && !detailError && product && (
           <>
+
+            {/* Back Action: Phía trên thanh điều hướng, không khung */}
+            <div>
+              <button
+                type="button"
+                onClick={handleGoBack}
+                className="inline-flex items-center gap-1.5 text-on-surface-variant hover:text-primary font-label-md text-label-md font-semibold transition-colors cursor-pointer group"
+                title="Quay lại trang trước"
+              >
+                <span className="material-symbols-outlined text-[18px] group-hover:-translate-x-1 transition-transform">
+                  arrow_back
+                </span>
+                <span>Quay lại</span>
+              </button>
+            </div>
+
             {/* Breadcrumb Hierarchy Navigation */}
             <ProductBreadcrumb
               categoryName={product.category_name}

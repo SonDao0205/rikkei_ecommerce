@@ -39,7 +39,7 @@ const CustomerLayout: React.FC<CustomerLayoutProps> = ({
         cartTotal={cartTotal}
         wishlistCount={wishlistCount}
       />
-      <main className="w-full pt-[116px] md:pt-[120px] bg-background flex-1">
+      <main className="w-full pt-16 md:pt-[116px] lg:pt-[120px] bg-background flex-1">
         <div className="flex flex-col w-full">{children}</div>
       </main>
       <Footer />

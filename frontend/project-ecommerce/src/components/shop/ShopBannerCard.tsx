@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../redux/store";
 import { toggleFollowShop } from "../../redux/slices/shop/publicShopSlice";
 import type { PublicShop } from "../../types";
@@ -16,7 +16,16 @@ export const ShopBannerCard: React.FC<ShopBannerCardProps> = ({
   shop,
   totalProducts = 0,
 }) => {
+  const navigate = useNavigate();
   const dispatch = useAppDispatch();
+
+  const handleGoBack = () => {
+    if (window.history.state && window.history.state.idx > 0) {
+      navigate(-1);
+    } else {
+      navigate("/");
+    }
+  };
   const { followState, followLoading } = useAppSelector(
     (state) => state.publicShop
   );
@@ -60,7 +69,22 @@ export const ShopBannerCard: React.FC<ShopBannerCardProps> = ({
     <div className="w-full flex flex-col">
       {/* Breadcrumbs */}
       <div className="w-full bg-surface-container-lowest border-b border-outline-variant/30">
-        <div className="max-w-[1440px] mx-auto px-4 md:px-margin-lg py-2.5">
+        <div className="max-w-[1440px] mx-auto px-4 md:px-margin-lg py-2.5 flex flex-col gap-2">
+          {/* Back Action: Phía trên thanh điều hướng, không khung */}
+          <div>
+            <button
+              type="button"
+              onClick={handleGoBack}
+              className="inline-flex items-center gap-1.5 text-on-surface-variant hover:text-primary font-label-md text-label-md font-semibold transition-colors cursor-pointer group"
+              title="Quay lại trang trước"
+            >
+              <span className="material-symbols-outlined text-[18px] group-hover:-translate-x-1 transition-transform">
+                arrow_back
+              </span>
+              <span>Quay lại</span>
+            </button>
+          </div>
+
           <nav className="flex items-center gap-2 font-label-md text-label-md text-on-surface-variant flex-wrap">
             <Link
               to="/"

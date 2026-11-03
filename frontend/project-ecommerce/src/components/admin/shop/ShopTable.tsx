@@ -32,7 +32,7 @@ export const ShopTable: React.FC<ShopTableProps> = ({
 }) => {
   const isAllSelected = shops.length > 0 && selectedIds.length === shops.length;
 
-  const renderTierBadge = (tier: string) => {
+  const renderTierBadge = (tier?: string) => {
     switch (tier) {
       case "MALL":
         return (
@@ -243,9 +243,9 @@ export const ShopTable: React.FC<ShopTableProps> = ({
                             <span className="material-symbols-outlined text-[14px]">
                               {shop.category_icon || "store"}
                             </span>
-                            <span>{shop.category}</span>
+                            <span>{shop.category || "General"}</span>
                             <span>•</span>
-                            <span className="text-primary font-medium">ID: {shop.code}</span>
+                            <span className="text-primary font-medium">ID: {shop.code || `#VN-${shop.id}`}</span>
                           </div>
                         </div>
                       </div>
@@ -254,13 +254,13 @@ export const ShopTable: React.FC<ShopTableProps> = ({
                     {/* Owner & Contact */}
                     <td className="py-4 px-4">
                       <div className="flex flex-col text-[13px]">
-                        <span className="font-semibold text-on-surface">{shop.owner_name}</span>
-                        <span className="text-on-surface-variant">{shop.owner_phone}</span>
+                        <span className="font-semibold text-on-surface">{shop.owner_name || "Chưa cập nhật"}</span>
+                        <span className="text-on-surface-variant">{shop.owner_phone || "—"}</span>
                         <span className="text-on-surface-variant text-[12px] truncate max-w-[170px]">
-                          {shop.owner_email}
+                          {shop.owner_email || "—"}
                         </span>
                         <span className="text-outline text-[11px] truncate max-w-[170px]">
-                          {shop.location}
+                          {shop.location || (shop as unknown as { warehouse_address?: string }).warehouse_address || "Việt Nam"}
                         </span>
                       </div>
                     </td>
@@ -273,17 +273,17 @@ export const ShopTable: React.FC<ShopTableProps> = ({
                             isSuspended ? "text-error" : "text-on-surface"
                           }`}
                         >
-                          {shop.sku_label}
+                          {shop.sku_label || `${shop.sku_count ?? 0} SKUs`}
                         </span>
                         <span className="text-secondary text-[12px] font-medium">
-                          {shop.order_label}
+                          {shop.order_label || `${shop.order_count ?? 0} orders`}
                         </span>
                         <span
                           className={`text-[11px] ${
                             isSuspended ? "text-error font-medium" : "text-outline"
                           }`}
                         >
-                          {shop.rating_avg > 0
+                          {(shop.rating_avg ?? 0) > 0
                             ? `Rating: ${shop.rating_avg} ★ (${shop.rating_count} reviews)`
                             : isSuspended
                             ? `Rating: ${shop.rating_avg} ★ (Flagged Disputes)`
@@ -296,7 +296,7 @@ export const ShopTable: React.FC<ShopTableProps> = ({
                     <td className="py-4 px-4">
                       <div className="flex flex-col text-[13px]">
                         <span className="font-bold text-primary-container">
-                          {shop.commission_tier_label}
+                          {shop.commission_tier_label || `${shop.commission_rate ?? 5}% Tier`}
                         </span>
                         <span
                           className={
@@ -307,12 +307,12 @@ export const ShopTable: React.FC<ShopTableProps> = ({
                         >
                           {isSuspended
                             ? "Locked / Dispute"
-                            : `${shop.available_balance.toLocaleString("vi-VN")} ₫ Available`}
+                            : `${(shop.available_balance ?? 0).toLocaleString("vi-VN")} ₫ Available`}
                         </span>
                         <span className="text-outline text-[11px]">
                           {isSuspended
                             ? `Escrow: 4.800.000 ₫`
-                            : `Cycle: ${shop.settlement_cycle}`}
+                            : `Cycle: ${shop.settlement_cycle || "Bi-weekly"}`}
                         </span>
                       </div>
                     </td>
@@ -327,7 +327,7 @@ export const ShopTable: React.FC<ShopTableProps> = ({
                         onClick={() => onToggleLive(shop.id, !shop.is_live)}
                         disabled={isSuspended}
                         className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full transition-colors focus:outline-none ${
-                          shop.is_live && !isSuspended
+                          Boolean(shop.is_live) && !isSuspended
                             ? "bg-secondary"
                             : "bg-surface-variant"
                         } ${isSuspended ? "opacity-50 cursor-not-allowed" : ""}`}
@@ -341,7 +341,7 @@ export const ShopTable: React.FC<ShopTableProps> = ({
                       >
                         <span
                           className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-surface-container-lowest shadow-sm transition-transform translate-y-0.5 ${
-                            shop.is_live && !isSuspended ? "translate-x-4" : "translate-x-0.5"
+                            Boolean(shop.is_live) && !isSuspended ? "translate-x-4" : "translate-x-0.5"
                           }`}
                         />
                       </button>
