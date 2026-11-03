@@ -35,13 +35,19 @@ Seed dùng các ID cố định khai báo trong file và có thể chạy lại;
 | Người bán A | `seed-seller-a@local.test` | seller, shop hoạt động |
 | Người mua | `seed-buyer@local.test` | client, hoạt động |
 | Người bán B | `seed-seller-b@local.test` | seller, shop chờ duyệt |
-| Người bán công nghệ | `seed-seller-tech@local.test` | seller, shop Tech World hoạt động |
+| Người bán công nghệ | `seed-seller-tech@local.test` | seller, shop Tech An Việt hoạt động |
 | Tài khoản khóa | `seed-locked@local.test` | client, bị khóa để thử đăng nhập |
 | Chưa xác minh email | `seed-unverified@local.test` | client, `email_verified=0` |
 
 Seed tạo dữ liệu liên kết cho địa chỉ, shop, danh mục, thương hiệu, thuộc tính, sản phẩm/biến thể, kho, giỏ hàng, wishlist, voucher, phương thức giao hàng/thanh toán, đơn hàng, thanh toán, hoàn tiền, đánh giá, thông báo và audit log. Script không chèn vào `refresh_tokens`, `auth_refresh_history`, `password_reset_otps` vì đây là trạng thái phiên/OTP sống; không nên seed token giả.
 
-Seed có các sản phẩm công nghệ `960004`–`960008` để kiểm tra xếp hạng tìm kiếm. Ví dụ gọi `GET /api/v1/products?q=iphone+pro+max`: sản phẩm có đủ ba từ trong tên được xếp trước sản phẩm chỉ khớp một phần. Seed local có thể chạy lại bằng lệnh ở trên.
+Seed có 36 sản phẩm thuộc 12 danh mục và 10 thương hiệu, gồm thời trang, đồ gia dụng, cà phê, điện thoại và máy tính. Mỗi sản phẩm có ảnh và ít nhất một biến thể còn hàng; áo khoác có thuộc tính màu/kích cỡ, laptop có CPU/RAM và tùy chọn dung lượng lưu trữ. Có hai sản phẩm chờ duyệt để thử trạng thái seller; cửa hàng chờ duyệt không xuất hiện trong catalog công khai. Đơn hàng `SEED-ORDER-001` gồm sản phẩm từ hai shop đang hoạt động, có tổng tiền, phí, voucher, thanh toán, tồn kho và đánh giá liên kết nhất quán.
+
+Các tên/description thương mại được dùng trên catalog; tài khoản bị khóa/chưa xác minh, shop pending và sản phẩm `960009` là fixture chuyên biệt để thử auth, duyệt shop và Postman. Giữ nguyên ID `960009` vì collection Postman dùng nó để kiểm thử tồn kho.
+
+FE storefront gọi trực tiếp BE để tải danh mục, danh sách/tìm kiếm/chi tiết sản phẩm và shop công khai; auth, hồ sơ và sổ địa chỉ cũng dùng API BE. Adapter FE không tự tạo giá giảm, phần trăm Flash Sale, đánh giá 5 sao hay nhãn shop đã xác minh khi BE không trả các dữ liệu đó. Có thể kiểm tra nhanh qua FE tại `http://localhost:5173`, hoặc gọi `GET /api/v1/categories`, `GET /api/v1/products?limit=36`, `GET /api/v1/products?q=iphone+pro+max` và `GET /api/v1/products/960004`. Sản phẩm iPhone 15 Pro Max phải đứng trên sản phẩm phụ kiện khi tìm kiếm theo ba từ.
+
+**Giới hạn tích hợp:** dashboard admin và quản lý đơn hàng hiện vẫn có dữ liệu mock phía FE vì BE chưa có API tương ứng. Trang quản lý shop cũng có một số thao tác/số liệu chưa được BE hỗ trợ. Không dùng các màn này để xác nhận dữ liệu đơn hàng/dashboard đã đồng bộ với DB; các API shop admin hiện có gồm danh sách, duyệt, từ chối và khóa shop.
 
 Collection kiểm thử Postman bao phủ tất cả các route backend hiện tại, gồm cả fixture inventory riêng `960009`, được hướng dẫn tại [`postman/README.md`](../postman/README.md). Nạp lại seed sau mỗi lần chạy collection để khôi phục fixture này trước lượt test tiếp theo.
 

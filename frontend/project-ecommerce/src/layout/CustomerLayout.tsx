@@ -11,9 +11,9 @@ interface CustomerLayoutProps {
 
 const CustomerLayout: React.FC<CustomerLayoutProps> = ({
   children,
-  cartItemCount = 2,
-  cartTotal = "₫1.450.000",
-  wishlistCount = 3,
+  cartItemCount = 0,
+  cartTotal = "₫0",
+  wishlistCount = 0,
 }) => {
   return (
     <div className="bg-background font-body-md text-on-surface antialiased min-h-screen flex flex-col">

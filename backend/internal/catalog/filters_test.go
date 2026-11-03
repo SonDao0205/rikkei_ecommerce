@@ -92,6 +92,11 @@ func TestBuildProductSearchUsesFullTextAndRanksNameTokenCoverage(t *testing.T) {
 	if strings.Count(search.relevance, "CASE WHEN p.name LIKE") != 3 || len(search.relevanceArgs) != 3 {
 		t.Fatalf("relevance=%q args=%v, want one name-coverage score per distinct token", search.relevance, search.relevanceArgs)
 	}
+	if strings.Count(search.similarity, "CASE WHEN p.name LIKE") != 6 ||
+		!strings.Contains(search.similarity, "CHAR_LENGTH(p.name)") ||
+		len(search.similarityArgs) != 7 || search.similarityArgs[3] != 3 {
+		t.Fatalf("similarity=%q args=%v, want Jaccard-style title/query token similarity", search.similarity, search.similarityArgs)
+	}
 	if strings.Count(search.fallbackClause, "COALESCE(p.description,'')") != 3 || len(search.fallbackArgs) != 9 {
 		t.Fatalf("fallback=%q args=%v, want name/description/shop fallback per token", search.fallbackClause, search.fallbackArgs)
 	}
