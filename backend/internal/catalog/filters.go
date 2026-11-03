@@ -212,6 +212,8 @@ type productSearch struct {
 	fallbackArgs   []any
 	relevance      string
 	relevanceArgs  []any
+	similarity     string
+	similarityArgs []any
 }
 
 func buildProductSearch(value string) productSearch {
@@ -255,6 +257,8 @@ func buildProductSearch(value string) productSearch {
 	}
 	search.fallbackClause = "(" + strings.Join(fallbackClauses, " OR ") + ")"
 	search.relevance = "(" + strings.Join(relevanceClauses, " + ") + ")"
+	search.similarity = "(" + search.relevance + " / (CHAR_LENGTH(p.name) - CHAR_LENGTH(REPLACE(p.name, ' ', '')) + 1 + ? - " + search.relevance + "))"
+	search.similarityArgs = append(append(append([]any(nil), search.relevanceArgs...), len(tokens)), search.relevanceArgs...)
 	return search
 }
 
@@ -355,7 +359,8 @@ func (h handler) listProducts(w http.ResponseWriter, r *http.Request, forcedShop
 		baseQuery + ` ORDER BY `
 	listArgs := append([]any(nil), args...)
 	if search.relevance != "" {
-		query += search.relevance + ` DESC,`
+		query += search.similarity + ` DESC,` + search.relevance + ` DESC,`
+		listArgs = append(listArgs, search.similarityArgs...)
 		listArgs = append(listArgs, search.relevanceArgs...)
 	}
 	query += productOrder(filters.sort) + ` LIMIT ? OFFSET ?`

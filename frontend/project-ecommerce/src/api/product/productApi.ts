@@ -77,10 +77,7 @@ export const productApi = {
       params: { sort: "best_selling", limit: 4 },
     });
     const products = response.data?.data?.products || [];
-    return products.map((p) => {
-      const item = mapBackendProductToProductItem(p);
-      return { ...item, is_flash_sale: true };
-    });
+    return products.map(mapBackendProductToProductItem);
   },
 
   /**

@@ -6,15 +6,10 @@ const FlashNotificationBar: React.FC = () => {
       <div className="max-w-[1440px] mx-auto flex items-center justify-between text-body-sm font-body-sm">
         <div className="flex items-center gap-space-sm">
           <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-tertiary-container text-on-primary font-label-sm text-[10px] tracking-wider uppercase font-bold">
-            VIP DROP
+            MARKETPLACE
           </span>
           <span className="font-medium text-on-surface">
-            Curated SS25 Saigon Streetwear Capsule released in strictly limited numbers
-          </span>
-        </div>
-        <div className="flex items-center gap-4 text-on-surface-variant font-label-md text-label-md">
-          <span className="flex items-center gap-1 text-primary font-bold cursor-pointer hover:underline">
-            <span className="material-symbols-outlined text-[16px]">bolt</span> Flash pass unlocks in 48h
+            Discover products from active stores on MarketPulse
           </span>
         </div>
       </div>

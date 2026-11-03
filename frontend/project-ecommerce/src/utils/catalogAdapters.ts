@@ -184,16 +184,22 @@ export const mapBackendProductToProductItem = (raw: BackendProductRaw): ProductI
   const price = typeof raw.price === "number" ? raw.price : parseFloat(String(raw.price)) || 0;
   const isFlashSale = Boolean(raw.is_flash_sale);
 
-  // Tính toán discount_percent và original_price nếu chưa có từ BE
   const discountPercent =
-    raw.discount_percent ??
-    (isFlashSale ? 30 : (raw.sold_count ?? 0) > 100 ? 15 : undefined);
+    typeof raw.discount_percent === "number" &&
+    Number.isFinite(raw.discount_percent) &&
+    raw.discount_percent > 0 &&
+    raw.discount_percent < 100
+      ? raw.discount_percent
+      : undefined;
 
   const originalPrice =
-    raw.original_price ??
-    (discountPercent
-      ? Math.round(price / (1 - discountPercent / 100))
-      : undefined);
+    typeof raw.original_price === "number" &&
+    Number.isFinite(raw.original_price) &&
+    raw.original_price > price
+      ? raw.original_price
+      : discountPercent
+        ? Math.round(price / (1 - discountPercent / 100))
+        : undefined;
 
   const validBadges: Array<NonNullable<ProductItem["shop_badge"]>> = [
     "OFFICIAL",
@@ -201,10 +207,10 @@ export const mapBackendProductToProductItem = (raw: BackendProductRaw): ProductI
     "ARTISAN",
     "VERIFIED",
   ];
-  const shopBadge: NonNullable<ProductItem["shop_badge"]> =
+  const shopBadge: ProductItem["shop_badge"] =
     typeof raw.shop_badge === "string" && (validBadges as string[]).includes(raw.shop_badge)
       ? (raw.shop_badge as NonNullable<ProductItem["shop_badge"]>)
-      : "VERIFIED";
+      : undefined;
 
   return {
     id: raw.id,
@@ -217,7 +223,13 @@ export const mapBackendProductToProductItem = (raw: BackendProductRaw): ProductI
     thumbnail_url: raw.thumbnail_url ?? null,
     price,
     sold_count: raw.sold_count ?? 0,
-    rating_avg: typeof raw.rating_avg === "number" ? raw.rating_avg : 5.0,
+    rating_avg:
+      typeof raw.rating_avg === "number" &&
+      Number.isFinite(raw.rating_avg) &&
+      raw.rating_avg >= 0 &&
+      raw.rating_avg <= 5
+        ? raw.rating_avg
+        : 0,
     rating_count: raw.rating_count ?? 0,
     status: (raw.status as ProductItem["status"]) || "ACTIVE",
     reject_reason: raw.reject_reason ?? null,
@@ -227,12 +239,11 @@ export const mapBackendProductToProductItem = (raw: BackendProductRaw): ProductI
     // Thuộc tính mở rộng UI
     category_name: raw.category_name,
     stock: raw.stock ?? 0,
-    shop_name: raw.shop_name || "Aura Official",
+    shop_name: raw.shop_name || "Cửa hàng",
     shop_badge: shopBadge,
     original_price: originalPrice,
     discount_percent: discountPercent,
     is_flash_sale: isFlashSale,
-    claimed_percentage: isFlashSale ? Math.min(Math.round(((raw.sold_count ?? 50) % 50 + 50)), 95) : undefined,
     stock_alert: (raw.stock ?? 0) > 0 && (raw.stock ?? 0) <= 5 ? `Chỉ còn ${raw.stock} sản phẩm` : undefined,
   };
 };

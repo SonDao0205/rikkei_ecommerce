@@ -11,9 +11,9 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({
-  cartItemCount = 2,
-  cartTotal = "₫1.450.000",
-  wishlistCount = 3,
+  cartItemCount = 0,
+  cartTotal = "₫0",
+  wishlistCount = 0,
 }) => {
   const dispatch = useAppDispatch();
   const { user, isAuthenticated } = useAppSelector((state) => state.auth);
