@@ -60,8 +60,8 @@ export const RegisterOpenShopStep2: React.FC = () => {
             {/* Top Navigation Context & Stepper Progress (4 steps) */}
             <Step2Stepper onStepClick={handleStepClick} />
 
-            {/* Centered Form Card (max-w-4xl) */}
-            <div className="w-full max-w-4xl mx-auto flex flex-col gap-space-lg mb-20">
+            {/* Form Container with width matching Stepper */}
+            <div className="w-full flex flex-col gap-space-lg mb-20">
               {/* Header Intro Banner within Card */}
               <Step2IntroBanner />
 

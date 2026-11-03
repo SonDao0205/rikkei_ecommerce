@@ -9,6 +9,7 @@ import RegisterOpenShopStep1 from "../pages/shop/RegisterOpenShopStep1";
 import RegisterOpenShopStep2 from "../pages/shop/RegisterOpenShopStep2";
 import RegisterOpenShopStep3 from "../pages/shop/RegisterOpenShopStep3";
 import RegisterOpenShopStep4 from "../pages/shop/RegisterOpenShopStep4";
+import ShopDashboard from "../pages/shop/ShopDashboard";
 import AdminProduct from "../pages/admin/AdminProduct";
 import AdminDashBoard from "../pages/admin/AdminDashBoard";
 import AdminOrder from "../pages/admin/AdminOrder";
@@ -204,6 +205,31 @@ const router = createBrowserRouter([
       </StorefrontRoute>
     ),
   },
+  {
+    path: "/shop/dashboard",
+    element: (
+      <StorefrontRoute>
+        <ShopDashboard />
+      </StorefrontRoute>
+    ),
+  },
+  {
+    path: "/seller/dashboard",
+    element: (
+      <StorefrontRoute>
+        <ShopDashboard />
+      </StorefrontRoute>
+    ),
+  },
+  {
+    path: "/shop-dashboard",
+    element: (
+      <StorefrontRoute>
+        <ShopDashboard />
+      </StorefrontRoute>
+    ),
+  },
+
   {
     path: "/register",
     element: (

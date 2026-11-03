@@ -35,7 +35,7 @@ export const Step2Stepper: React.FC<Step2StepperProps> = ({ onStepClick }) => {
           >
             verified_user
           </span>
-          <span>Hệ thống bảo mật KYC chuẩn e-Commerce Việt Nam</span>
+          <span>Bảo mật KYC chuẩn e-Commerce Việt Nam (Nghị định 52 &amp; 13/2023/NĐ-CP)</span>
           <span className="w-2 h-2 rounded-full bg-secondary animate-pulse ml-0.5"></span>
         </div>
       </div>

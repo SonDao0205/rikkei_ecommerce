@@ -10,12 +10,14 @@ import {
 } from "../../redux/slices/shop/shopRegisterSlice";
 import {
   OnboardingHeader,
-  OnboardingStepper,
-  Step1AccountPanel,
-  OnboardingFooterBar,
   OnboardingSuccessModal,
   OnboardingFooter,
 } from "../../components/shop/register";
+import {
+  Step1Stepper,
+  Step1AccountPanel,
+  Step1FooterBar,
+} from "../../components/shop/register/step1";
 
 export const RegisterOpenShopStep1: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -67,24 +69,21 @@ export const RegisterOpenShopStep1: React.FC = () => {
       {/* Main Content Area */}
       <main className="w-full pt-20 bg-surface flex-1">
         <div className="flex flex-col w-full">
-          {/* Context subheader & 4-step stepper */}
-          <OnboardingStepper
-            currentStep={1}
-            onStepClick={handleStepClick}
-          />
+          <div className="w-full max-w-[1440px] mx-auto px-gutter py-space-md sm:py-space-lg flex flex-col gap-space-lg">
+            {/* Context subheader & 4-step stepper */}
+            <Step1Stepper onStepClick={handleStepClick} />
 
-          {/* Form Content Wrapper */}
-          <section className="w-full py-space-xl">
-            <div className="max-w-[1080px] mx-auto px-gutter">
-              <div className="bg-surface-container-lowest rounded-2xl shadow-sm p-6 sm:p-10 transition-all">
+            {/* Form Content Wrapper with width matching Stepper */}
+            <div className="w-full flex flex-col gap-space-lg mb-20">
+              <div className="w-full bg-surface-container-lowest rounded-2xl shadow-sm p-6 sm:p-10 transition-all">
                 <Step1AccountPanel
                   data={formData.account}
                   onChange={(fields) => dispatch(updateAccount(fields))}
                 />
               </div>
 
-              {/* Sticky Action Footer Bar */}
-              <OnboardingFooterBar
+              {/* Action Footer Bar */}
+              <Step1FooterBar
                 currentStep={1}
                 onPrevStep={() => {}}
                 onNextStep={handleNext}
@@ -95,7 +94,7 @@ export const RegisterOpenShopStep1: React.FC = () => {
                 lastSavedAt={lastSavedAt}
               />
             </div>
-          </section>
+          </div>
         </div>
       </main>
 

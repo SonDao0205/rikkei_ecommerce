@@ -1,5 +1,6 @@
 import React from "react";
 import type { ShopStoreData } from "../../../../types";
+import { Step2WarehouseMap } from "./Step2WarehouseMap";
 
 interface Step2WarehouseLogisticsProps {
   data: ShopStoreData;
@@ -101,10 +102,6 @@ export const Step2WarehouseLogistics: React.FC<Step2WarehouseLogisticsProps> = (
           <label className="font-label-md text-label-md text-on-surface flex items-center justify-between font-semibold">
             <span className="flex items-center gap-1">
               Số điện thoại lấy hàng <span className="text-error font-bold">*</span>
-            </span>
-            <span className="text-secondary font-label-sm text-label-sm font-semibold flex items-center gap-0.5">
-              <span className="material-symbols-outlined text-[14px]">verified</span>
-              Đã xác thực OTP
             </span>
           </label>
           <div className="relative">
@@ -241,31 +238,14 @@ export const Step2WarehouseLogistics: React.FC<Step2WarehouseLogisticsProps> = (
           </span>
         </div>
 
-        {/* Visual Map Location Preview Pin */}
+        {/* Interactive Leaflet Map for Warehouse GPS Coordinates */}
         <div className="md:col-span-12">
-          <div className="rounded-xl overflow-hidden shadow-sm bg-surface-container relative">
-            <div
-              className="w-full h-44 bg-cover bg-center flex items-end p-4"
-              style={{
-                backgroundImage:
-                  "url('https://lh3.googleusercontent.com/aida-public/AB6AXuAF7l336GRrrFnzy5vQQRJyT45RopPLBefTj0kbLUPd7SxfOHemAuYV2TS1l2GONwng_iHYUFx3YFxGMKw7-CQTAySpcpx-nho6V_-ry4JjNumlvQiC9YaTREl64ndvISM4uC8Q7FrR2VENAPIFlMF_G-r_SSas2KPxyNgMIHMnM0kl4rsfIX4X79YAmxRRYAhPyqsYf-_L_6vkOPvVTta_o39pXIoET3LLKvhGQ6g')",
-              }}
-            >
-              <div className="bg-surface-container-lowest/95 backdrop-blur-md px-4 py-2.5 rounded-xl shadow-md flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-on-primary shadow-sm">
-                  <span className="material-symbols-outlined text-[18px]">pin_drop</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="font-label-md text-label-md text-on-surface font-bold">
-                    Vị trí kho đã định vị tọa độ GPS
-                  </span>
-                  <span className="font-body-sm text-body-sm text-on-surface-variant font-mono">
-                    10.7719° N, 106.7044° E • Hỗ trợ tài xế điều hướng chuẩn xác
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
+          <Step2WarehouseMap
+            province={data.province}
+            district={data.district}
+            ward={data.ward}
+            addressDetail={data.addressDetail}
+          />
         </div>
       </div>
     </section>
