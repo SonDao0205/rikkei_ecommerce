@@ -5,6 +5,11 @@ import ForgotPassword from "../pages/auth/ForgotPassword";
 import HomePage from "../pages/home/HomePage";
 import ProductDetail from "../pages/product/ProductDetail";
 import InforShop from "../pages/shop/InforShop";
+import RegisterOpenShopStep1 from "../pages/shop/RegisterOpenShopStep1";
+import RegisterOpenShopStep2 from "../pages/shop/RegisterOpenShopStep2";
+import RegisterOpenShopStep3 from "../pages/shop/RegisterOpenShopStep3";
+import RegisterOpenShopStep4 from "../pages/shop/RegisterOpenShopStep4";
+import ShopDashboard from "../pages/shop/ShopDashboard";
 import AdminProduct from "../pages/admin/AdminProduct";
 import AdminDashBoard from "../pages/admin/AdminDashBoard";
 import AdminOrder from "../pages/admin/AdminOrder";
@@ -13,6 +18,8 @@ import AdminShop from "../pages/admin/AdminShop";
 import MyProfile from "../pages/user/MyProfile";
 import ChangePassword from "../pages/user/ChangePassword";
 import Address from "../pages/user/Address";
+import MyOrder from "../pages/user/MyOrder";
+import MyOrderDetail from "../pages/user/MyOrderDetail";
 import ProtectedRoute from "./ProtectedRoute";
 import GuestRoute from "./GuestRoute";
 import StorefrontRoute from "./StorefrontRoute";
@@ -70,6 +77,159 @@ const router = createBrowserRouter([
       </StorefrontRoute>
     ),
   },
+  {
+    path: "/register-open-shop",
+    element: (
+      <StorefrontRoute>
+        <RegisterOpenShopStep1 />
+      </StorefrontRoute>
+    ),
+  },
+  {
+    path: "/register-shop",
+    element: (
+      <StorefrontRoute>
+        <RegisterOpenShopStep1 />
+      </StorefrontRoute>
+    ),
+  },
+  {
+    path: "/shop/register",
+    element: (
+      <StorefrontRoute>
+        <RegisterOpenShopStep1 />
+      </StorefrontRoute>
+    ),
+  },
+  {
+    path: "/seller/register",
+    element: (
+      <StorefrontRoute>
+        <RegisterOpenShopStep1 />
+      </StorefrontRoute>
+    ),
+  },
+  {
+    path: "/register-open-shop/step2",
+    element: (
+      <StorefrontRoute>
+        <RegisterOpenShopStep2 />
+      </StorefrontRoute>
+    ),
+  },
+  {
+    path: "/register-open-shop/step-2",
+    element: (
+      <StorefrontRoute>
+        <RegisterOpenShopStep2 />
+      </StorefrontRoute>
+    ),
+  },
+  {
+    path: "/register-open-shop-step2",
+    element: (
+      <StorefrontRoute>
+        <RegisterOpenShopStep2 />
+      </StorefrontRoute>
+    ),
+  },
+  {
+    path: "/shop/register/step-2",
+    element: (
+      <StorefrontRoute>
+        <RegisterOpenShopStep2 />
+      </StorefrontRoute>
+    ),
+  },
+  {
+    path: "/register-open-shop/step3",
+    element: (
+      <StorefrontRoute>
+        <RegisterOpenShopStep3 />
+      </StorefrontRoute>
+    ),
+  },
+  {
+    path: "/register-open-shop/step-3",
+    element: (
+      <StorefrontRoute>
+        <RegisterOpenShopStep3 />
+      </StorefrontRoute>
+    ),
+  },
+  {
+    path: "/register-open-shop-step3",
+    element: (
+      <StorefrontRoute>
+        <RegisterOpenShopStep3 />
+      </StorefrontRoute>
+    ),
+  },
+  {
+    path: "/shop/register/step-3",
+    element: (
+      <StorefrontRoute>
+        <RegisterOpenShopStep3 />
+      </StorefrontRoute>
+    ),
+  },
+  {
+    path: "/register-open-shop/step4",
+    element: (
+      <StorefrontRoute>
+        <RegisterOpenShopStep4 />
+      </StorefrontRoute>
+    ),
+  },
+  {
+    path: "/register-open-shop/step-4",
+    element: (
+      <StorefrontRoute>
+        <RegisterOpenShopStep4 />
+      </StorefrontRoute>
+    ),
+  },
+  {
+    path: "/register-open-shop-step4",
+    element: (
+      <StorefrontRoute>
+        <RegisterOpenShopStep4 />
+      </StorefrontRoute>
+    ),
+  },
+  {
+    path: "/shop/register/step-4",
+    element: (
+      <StorefrontRoute>
+        <RegisterOpenShopStep4 />
+      </StorefrontRoute>
+    ),
+  },
+  {
+    path: "/shop/dashboard",
+    element: (
+      <StorefrontRoute>
+        <ShopDashboard />
+      </StorefrontRoute>
+    ),
+  },
+  {
+    path: "/seller/dashboard",
+    element: (
+      <StorefrontRoute>
+        <ShopDashboard />
+      </StorefrontRoute>
+    ),
+  },
+  {
+    path: "/shop-dashboard",
+    element: (
+      <StorefrontRoute>
+        <ShopDashboard />
+      </StorefrontRoute>
+    ),
+  },
+
   {
     path: "/register",
     element: (
@@ -139,6 +299,70 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute disallowedRoles={["admin"]}>
         <Address />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/profile/orders",
+    element: (
+      <ProtectedRoute disallowedRoles={["admin"]}>
+        <MyOrder />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/orders",
+    element: (
+      <ProtectedRoute disallowedRoles={["admin"]}>
+        <MyOrder />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/my-orders",
+    element: (
+      <ProtectedRoute disallowedRoles={["admin"]}>
+        <MyOrder />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/my-order",
+    element: (
+      <ProtectedRoute disallowedRoles={["admin"]}>
+        <MyOrder />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/profile/orders/:id",
+    element: (
+      <ProtectedRoute disallowedRoles={["admin"]}>
+        <MyOrderDetail />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/orders/:id",
+    element: (
+      <ProtectedRoute disallowedRoles={["admin"]}>
+        <MyOrderDetail />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/my-order/:id",
+    element: (
+      <ProtectedRoute disallowedRoles={["admin"]}>
+        <MyOrderDetail />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/my-orders/:id",
+    element: (
+      <ProtectedRoute disallowedRoles={["admin"]}>
+        <MyOrderDetail />
       </ProtectedRoute>
     ),
   },

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import type { AdminShopItem, ShopTier } from "../../../types/ecommerce";
+import type { AdminShopItem, ShopTier } from "../../../types/shop";
 
 interface KycReviewDrawerProps {
   isOpen: boolean;

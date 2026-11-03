@@ -5,7 +5,7 @@ import type {
   UpdateProfilePayload,
   ChangePasswordPayload,
   UserRole,
-} from "../../types/ecommerce";
+} from "../../types";
 
 // These presentation fields are not part of the current backend user schema.
 let cachedProfileExt: Partial<UserProfileDetails> = {};

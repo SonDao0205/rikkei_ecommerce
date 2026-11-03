@@ -4,7 +4,7 @@ import type {
   AdminDashboardData,
   TimeRangeFilter,
   TrendMetricType,
-} from "../../../types/ecommerce";
+} from "../../../types/admin";
 
 interface AdminDashboardState {
   data: AdminDashboardData | null;

@@ -1,5 +1,5 @@
 import React from "react";
-import type { CodSettlementItem } from "../../../types/ecommerce";
+import type { CodSettlementItem } from "../../../types";
 
 interface CodSettlementDonutProps {
   totalActiveBatch: number;

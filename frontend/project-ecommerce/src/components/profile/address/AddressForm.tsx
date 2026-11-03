@@ -5,7 +5,7 @@ import {
   updateAddressThunk,
   closeForm,
 } from "../../../redux/slices/user/addressSlice";
-import type { AddressType } from "../../../types/ecommerce";
+import type { AddressType } from "../../../types";
 
 // Cascading Vietnam administrative location data
 const VIETNAM_LOCATIONS: Record<

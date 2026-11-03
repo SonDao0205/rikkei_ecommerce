@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import type { ProductItem } from "../../types/ecommerce";
+import type { ProductItem } from "../../types";
 
 interface ShopProductGridProps {
   products: ProductItem[];

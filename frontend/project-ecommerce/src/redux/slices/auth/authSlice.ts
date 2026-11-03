@@ -12,7 +12,7 @@ import type {
   VerifyPasswordResetOtpResponse,
   ResetPasswordPayload,
   ResetPasswordResponse,
-} from "../../../types/ecommerce";
+} from "../../../types/auth";
 
 interface AuthState {
   user: UserProfile | null;

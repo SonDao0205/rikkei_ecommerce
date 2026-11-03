@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import type {
   OperationalAlertItem,
   MarketplaceActivityItem,
-} from "../../../types/ecommerce";
+} from "../../../types/admin";
 
 interface DashboardOperationsFeedProps {
   operations: OperationalAlertItem[];

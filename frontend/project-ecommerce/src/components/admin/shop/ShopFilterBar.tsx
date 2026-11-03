@@ -1,5 +1,5 @@
 import React from "react";
-import type { ShopFilterParams } from "../../../types/ecommerce";
+import type { ShopFilterParams } from "../../../types";
 
 interface ShopFilterBarProps {
   filters: ShopFilterParams;

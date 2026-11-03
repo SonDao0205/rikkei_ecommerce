@@ -66,7 +66,16 @@ const Footer: React.FC = () => {
             <h4 className="font-label-lg text-label-lg text-on-surface font-bold mb-2">
               Merchant Ecosystem
             </h4>
-            <Link className="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" to="#">
+            <div className="font-body-md text-body-md text-on-surface flex items-center gap-1.5 py-1">
+              <span>Đăng ký mở shop:</span>
+              <Link
+                className="text-primary font-bold hover:underline"
+                to="/register-open-shop"
+              >
+                Đăng ký ngay
+              </Link>
+            </div>
+            <Link className="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" to="/register-open-shop">
               Sell on MarketPulse
             </Link>
             <Link className="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" to="#">
@@ -78,7 +87,7 @@ const Footer: React.FC = () => {
             <Link className="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" to="#">
               Artisan Incubator Grants
             </Link>
-            <Link className="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" to="#">
+            <Link className="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" to="/admin/shops">
               Merchant Dashboard Login
             </Link>
           </div>

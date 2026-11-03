@@ -5,7 +5,7 @@ import type {
   OrderStatusCounts,
   OrderFilterParams,
   AdminOrderDetailData,
-} from "../../../types/ecommerce";
+} from "../../../types";
 
 interface AdminOrderState {
   orders: AdminOrderItem[];

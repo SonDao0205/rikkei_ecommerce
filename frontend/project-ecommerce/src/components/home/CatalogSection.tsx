@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import ProductCard from "./ProductCard";
-import type { ProductItem } from "../../types/ecommerce";
+import type { ProductItem } from "../../types";
 
 interface CatalogSectionProps {
   products: ProductItem[];

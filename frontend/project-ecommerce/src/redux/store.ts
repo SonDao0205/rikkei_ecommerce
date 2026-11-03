@@ -9,6 +9,9 @@ import adminOrderReducer from "./slices/admin/adminOrderSlice";
 import addressReducer from "./slices/user/addressSlice";
 import adminShopReducer from "./slices/admin/adminShopSlice";
 import publicShopReducer from "./slices/shop/publicShopSlice";
+import shopRegisterReducer from "./slices/shop/shopRegisterSlice";
+import shopDashboardReducer from "./slices/shop/shopDashboardSlice";
+import userOrderReducer from "./slices/user/orderSlice";
 
 export const store = configureStore({
   reducer: {
@@ -21,6 +24,9 @@ export const store = configureStore({
     address: addressReducer,
     adminShop: adminShopReducer,
     publicShop: publicShopReducer,
+    shopRegister: shopRegisterReducer,
+    shopDashboard: shopDashboardReducer,
+    userOrder: userOrderReducer,
   },
 });
 

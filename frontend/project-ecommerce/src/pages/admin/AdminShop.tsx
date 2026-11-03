@@ -34,7 +34,7 @@ import {
   closeKycDrawer,
   clearMessages,
 } from "../../redux/slices/admin/adminShopSlice";
-import type { AdminShopItem, ShopTier, AdminShopStatus } from "../../types/ecommerce";
+import type { AdminShopItem, ShopTier, AdminShopStatus } from "../../types";
 
 export const AdminShop: React.FC = () => {
   const dispatch = useAppDispatch();

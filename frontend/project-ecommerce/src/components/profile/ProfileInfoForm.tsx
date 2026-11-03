@@ -6,7 +6,7 @@ import {
   setLocalAvatarPreview,
 } from "../../redux/slices/user/profileSlice";
 import { getDefaultAvatar } from "../../utils/avatar";
-import type { UserProfileDetails } from "../../types/ecommerce";
+import type { UserProfileDetails } from "../../types";
 
 interface ProfileInfoFormProps {
   profile: UserProfileDetails | null;

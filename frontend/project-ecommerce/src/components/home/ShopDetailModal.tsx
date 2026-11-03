@@ -8,7 +8,7 @@ import {
   clearCurrentShop,
 } from "../../redux/slices/shop/publicShopSlice";
 import ProductCard from "./ProductCard";
-import type { ProductItem } from "../../types/ecommerce";
+import type { ProductItem } from "../../types";
 
 interface ShopDetailModalProps {
   shopId: number | null;

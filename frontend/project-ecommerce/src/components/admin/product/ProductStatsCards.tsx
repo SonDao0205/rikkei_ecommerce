@@ -1,5 +1,5 @@
 import React from "react";
-import type { InventoryStats } from "../../../types/ecommerce";
+import type { InventoryStats } from "../../../types";
 
 interface ProductStatsCardsProps {
   stats: InventoryStats | null;

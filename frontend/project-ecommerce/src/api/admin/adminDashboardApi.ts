@@ -2,7 +2,7 @@ import axiosClient from "../axiosClient";
 import type {
   AdminDashboardData,
   TimeRangeFilter,
-} from "../../types/ecommerce";
+} from "../../types/admin";
 
 interface ApiResponse<T> {
   success: boolean;

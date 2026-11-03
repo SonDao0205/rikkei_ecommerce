@@ -1,5 +1,5 @@
 import React from "react";
-import type { AdminOrderItem } from "../../../types/ecommerce";
+import type { AdminOrderItem } from "../../../types";
 
 interface OrderDetailDrawerProps {
   order: AdminOrderItem | null;

@@ -3,7 +3,7 @@ import type {
   Address,
   CreateAddressPayload,
   UpdateAddressPayload,
-} from "../../types/ecommerce";
+} from "../../types/user";
 
 interface ApiResponse<T> {
   success: boolean;

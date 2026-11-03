@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import type {
   RevenueTrendItem,
   TrendMetricType,
-} from "../../../types/ecommerce";
+} from "../../../types/admin";
 
 interface RevenueTrendChartProps {
   weekLabel: string;

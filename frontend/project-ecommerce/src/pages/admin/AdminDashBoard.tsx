@@ -12,7 +12,7 @@ import DashboardKpiCards from "../../components/admin/dashboard/DashboardKpiCard
 import RevenueTrendChart from "../../components/admin/dashboard/RevenueTrendChart";
 import CodSettlementDonut from "../../components/admin/dashboard/CodSettlementDonut";
 import DashboardOperationsFeed from "../../components/admin/dashboard/DashboardOperationsFeed";
-import type { TimeRangeFilter, TrendMetricType } from "../../types/ecommerce";
+import type { TimeRangeFilter, TrendMetricType } from "../../types/admin";
 
 const AdminDashBoard: React.FC = () => {
   const dispatch = useAppDispatch();

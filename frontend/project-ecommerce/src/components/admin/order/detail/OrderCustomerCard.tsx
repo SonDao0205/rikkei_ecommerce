@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import type { OrderDetailCustomer } from "../../../../types/ecommerce";
+import type { OrderDetailCustomer } from "../../../../types";
 
 interface OrderCustomerCardProps {
   customer: OrderDetailCustomer;

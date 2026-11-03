@@ -5,7 +5,7 @@ import {
   deleteAddressThunk,
   setDefaultAddressThunk,
 } from "../../../redux/slices/user/addressSlice";
-import type { Address } from "../../../types/ecommerce";
+import type { Address } from "../../../types";
 
 interface AddressListProps {
   onAddNewClick: () => void;

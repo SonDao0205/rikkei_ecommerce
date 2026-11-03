@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import type { Category } from "../../../types/ecommerce";
+import type { Category } from "../../../types";
 
 interface ProductFiltersProps {
   searchQuery: string;
