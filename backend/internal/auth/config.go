@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"bufio"
 	"fmt"
 	"net"
 	"net/mail"
@@ -22,7 +21,9 @@ type Config struct {
 }
 
 func LoadConfig() (Config, error) {
-	loadDotEnv(".env")
+	if err := loadDotEnv(".env"); err != nil {
+		return Config{}, err
+	}
 	appEnv := env("APP_ENV", "development")
 	if appEnv != "development" && appEnv != "production" {
 		return Config{}, fmt.Errorf("APP_ENV must be development or production")
@@ -123,26 +124,4 @@ func port(k string, d int) int {
 		return 0
 	}
 	return n
-}
-func loadDotEnv(path string) {
-	f, err := os.Open(path)
-	if err != nil {
-		return
-	}
-	defer f.Close()
-	s := bufio.NewScanner(f)
-	for s.Scan() {
-		line := strings.TrimSpace(s.Text())
-		if line == "" || strings.HasPrefix(line, "#") {
-			continue
-		}
-		key, value, ok := strings.Cut(line, "=")
-		if !ok {
-			continue
-		}
-		key, value = strings.TrimSpace(key), strings.Trim(strings.TrimSpace(value), `"'`)
-		if _, exists := os.LookupEnv(key); !exists {
-			_ = os.Setenv(key, value)
-		}
-	}
 }
