@@ -177,15 +177,15 @@ const normalizeAdminShop = (raw: Record<string, unknown>): AdminShopItem => {
     id <= 0 ||
     typeof raw.name !== "string" ||
     typeof raw.status !== "string" ||
-    !["PENDING", "ACTIVE", "SUSPENDED", "REJECTED"].includes(rawStatus)
+    !["DRAFT", "PENDING", "NEEDS_INFO", "ACTIVE", "SUSPENDED", "REJECTED"].includes(rawStatus)
   ) {
-    throw new Error("Backend trả về dữ liệu shop không hợp lệ.");
+    throw new Error(
+      rawStatus
+        ? `Backend trả về trạng thái shop không được hỗ trợ: ${rawStatus}.`
+        : "Backend trả về dữ liệu shop không hợp lệ."
+    );
   }
-  const status = (
-    rawStatus === "ACTIVE" || rawStatus === "SUSPENDED" || rawStatus === "REJECTED"
-      ? rawStatus
-      : "PENDING"
-  ) as AdminShopItem["status"];
+  const status = rawStatus as AdminShopItem["status"];
   const rawTier = String(raw.tier || "STANDARD").toUpperCase();
   const tier = (
     rawTier === "MALL" || rawTier === "PREMIUM" ? rawTier : "STANDARD"
@@ -244,7 +244,11 @@ const normalizeAdminShop = (raw: Record<string, unknown>): AdminShopItem => {
 export const adminShopApi = {
   fetchShops: async (
     params?: ShopFilterParams
-  ): Promise<{ shops: AdminShopItem[]; total: number }> => {
+  ): Promise<{
+    shops: AdminShopItem[];
+    total: number;
+    statusCounts: NonNullable<ShopMetricStats["statusCounts"]>;
+  }> => {
     const unsupportedFilters = [
       params?.category && !["all", "all categories"].includes(params.category.toLowerCase()),
       params?.commissionTier && !["all", "all tiers"].includes(params.commissionTier.toLowerCase()),
@@ -256,7 +260,11 @@ export const adminShopApi = {
 
     try {
       const response = await axiosClient.get<
-        ApiResponse<{ shops: unknown[]; total?: number }>
+        ApiResponse<{
+          shops: unknown[];
+          total?: number;
+          status_counts?: Record<string, unknown>;
+        }>
       >("/api/v1/admin/shops", {
         params: {
           search: params?.search,
@@ -269,7 +277,10 @@ export const adminShopApi = {
       if (!response.data?.success || !data || !Array.isArray(data.shops)) {
         throw new Error("Backend trả về danh sách shop không đúng định dạng.");
       }
-      if (data.total !== undefined && typeof data.total !== "number") {
+      if (
+        data.total !== undefined &&
+        (typeof data.total !== "number" || !Number.isSafeInteger(data.total) || data.total < 0)
+      ) {
         throw new Error("Backend trả về tổng số shop không hợp lệ.");
       }
       const normalized = data.shops.map((item) => {
@@ -278,9 +289,29 @@ export const adminShopApi = {
         }
         return normalizeAdminShop(item as Record<string, unknown>);
       });
+      const rawCounts = data.status_counts;
+      const statuses = ["DRAFT", "PENDING", "NEEDS_INFO", "ACTIVE", "REJECTED", "SUSPENDED"] as const;
+      const counts = Object.fromEntries(
+        statuses.map((status) => {
+          const value = rawCounts?.[status];
+          if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 0) {
+            throw new Error(`Backend trả về số lượng shop ${status} không hợp lệ.`);
+          }
+          return [status, value];
+        })
+      ) as Record<(typeof statuses)[number], number>;
       return {
         shops: normalized,
         total: typeof data.total === "number" ? data.total : normalized.length,
+        statusCounts: {
+          all: Object.values(counts).reduce((sum, count) => sum + count, 0),
+          draft: counts.DRAFT,
+          pending: counts.PENDING,
+          needs_info: counts.NEEDS_INFO,
+          active: counts.ACTIVE,
+          rejected: counts.REJECTED,
+          suspended: counts.SUSPENDED,
+        },
       };
     } catch (error) {
       if (!shouldFallbackToMock(error)) {
@@ -357,37 +388,27 @@ export const adminShopApi = {
     const pageSize = params?.pageSize || 5;
     const startIndex = (page - 1) * pageSize;
     const paginated = filtered.slice(startIndex, startIndex + pageSize);
+    const statusCounts = mockShopsState.reduce(
+      (counts, shop) => {
+        counts[shop.status.toLowerCase() as keyof Omit<typeof counts, "all">] += 1;
+        counts.all += 1;
+        return counts;
+      },
+      {
+        all: 0,
+        draft: 0,
+        active: 0,
+        pending: 0,
+        needs_info: 0,
+        suspended: 0,
+        rejected: 0,
+      }
+    );
 
     return {
       shops: paginated,
       total: filtered.length,
-    };
-  },
-
-  fetchShopMetrics: async (): Promise<ShopMetricStats> => {
-    return {
-      totalShops: 55,
-      activeShops: 48,
-      activeRateText: "92% active rate",
-      pendingKycCount: 5,
-      pendingActionRequired: 3,
-      suspendedCount: 2,
-      suspendedNote: "Policy violations",
-      totalGmvFormatted: "₫ 842.500.000",
-      totalGmvChange: "+14.2% MoM",
-      statusCounts: {
-        all: 55,
-        active: 48,
-        pending: 5,
-        suspended: 2,
-      },
-      totalActive: 48,
-      activeGrowth: "+3 this month",
-      pendingKyc: 5,
-      suspended: 2,
-      totalGmv: 128450000,
-      formattedGmv: "128.450.000 ₫",
-      gmvGrowth: "+14.2% vs last month",
+      statusCounts,
     };
   },
 

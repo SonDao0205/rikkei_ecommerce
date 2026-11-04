@@ -127,7 +127,7 @@ $env:API_BASE_URL = 'http://localhost:18080' # đổi theo cổng host đang dù
 
 Smoke test tạo tài khoản ngẫu nhiên và kiểm tra catalog, tìm kiếm/filter, chi tiết sản phẩm/shop, follow/unfollow, auth, refresh replay, RBAC và password. Không trỏ script đến production/shared DB. OTP được ghi log chỉ ở development; không bật development mode với dữ liệu production.
 
-Postman collection importable bao phủ các route BE hiện có, kèm local environment và hướng dẫn chạy bằng Collection Runner/Newman tại [`postman/`](../postman/README.md). Nạp lại seed trước mỗi lần chạy vì collection xóa mềm fixture kiểm thử inventory `960009`.
+Postman collection importable kiểm thử các luồng API chính (không kiểm thử đầy đủ mọi route/nhánh), kèm local environment và hướng dẫn chạy bằng Collection Runner/Newman tại [`postman/`](../postman/README.md). Collection kiểm tra contract `status_counts` và input lỗi của admin shop; các thao tác ghi/xóa và fixture bị ảnh hưởng được liệt kê trong hướng dẫn Postman. Chỉ chạy trên database local/test riêng.
 
 ## 2. Hướng dẫn FE tích hợp API
 
@@ -325,6 +325,7 @@ Gửi access token dạng Bearer. Gọi lặp là idempotent, follower count đ�
 - `PUT /api/v1/me/shop` chỉ cập nhật shop thuộc user hiện tại và không tự gửi duyệt. Bản nháp, hồ sơ bị từ chối/yêu cầu bổ sung và hồ sơ đang xét duyệt có thể chỉnh sửa; `POST /api/v1/me/shop/submit` chuyển `DRAFT`, `NEEDS_INFO` hoặc `REJECTED` về `PENDING`. Gửi lại hồ sơ `PENDING` là idempotent.
 - Luồng admin: `PENDING → ACTIVE`, `PENDING → NEEDS_INFO/REJECTED`, `ACTIVE → SUSPENDED`; shop `SUSPENDED` có thể được khôi phục sang `ACTIVE`. Mỗi thao tác kiểm tra chuyển trạng thái và tài khoản chủ shop; duyệt shop cùng cấp `SELLER` trong một transaction. Từ chối/đình chỉ không xóa `CLIENT`.
 - `GET /api/v1/admin/shops` hỗ trợ `statusTab` (`all`, `draft`, `pending`, `needs_info`, `active`, `rejected`, `suspended`), `search`, `page`, `pageSize`; alias `status`/`limit` cũng được hỗ trợ. Các filter `category`, `commissionTier`, `rating` chỉ chấp nhận `all` vì schema hiện tại chưa lưu dữ liệu tương ứng.
+- Response có `data.shops`, `data.total`, `data.page`, `data.pageSize`, `data.limit` và `data.status_counts`. `total` là số shop khớp bộ lọc/tìm kiếm hiện tại; `status_counts` luôn đếm toàn bộ shop theo các trạng thái `DRAFT`, `PENDING`, `NEEDS_INFO`, `ACTIVE`, `REJECTED`, `SUSPENDED`, không phụ thuộc tab hay tìm kiếm. FE nên dùng `status_counts` cho tab/thống kê và xử lý đủ sáu trạng thái để shop ở trạng thái nháp hoặc cần bổ sung không làm hỏng toàn bộ danh sách.
 - Admin duyệt qua `/approve` body `{ "notes": "..." }` (optional) hoặc `PATCH /status` body `{ "status": "ACTIVE", "notes": "..." }`; chỉ khi user còn `ACTIVE` và có `CLIENT` mới duyệt được. Role `SELLER` được thêm, không thay thế `CLIENT`/`ADMIN`. `/reject` nhận `{ "reason": "..." }`; `/lock` nhận `{ "reason": "..." }`; lý do bắt buộc khi từ chối/đình chỉ. API không có toggle-live độc lập, metrics hoặc hoa hồng.
 
 ### Seller products
