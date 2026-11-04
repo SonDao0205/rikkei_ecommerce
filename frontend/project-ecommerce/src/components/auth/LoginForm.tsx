@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../redux/store";
 import { loginUser, clearAuthError } from "../../redux/slices/auth/authSlice";
 import { APP_CONFIG } from "../../config/appConfig";
@@ -80,6 +80,7 @@ const inputClass = (hasError: boolean, extra = "") =>
 
 const LoginForm = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const isResetSuccess = searchParams.get("reset") === "success";
   const dispatch = useAppDispatch();
@@ -127,11 +128,13 @@ const LoginForm = () => {
 
     const resultAction = await dispatch(loginUser(formData));
     if (loginUser.fulfilled.match(resultAction)) {
-            const userRole = (resultAction.payload.user?.role || "").toLowerCase().trim();
-      if (userRole === "admin") {
+      const requestedPath = (
+        location.state as { from?: { pathname?: string } } | null
+      )?.from?.pathname;
+      if (requestedPath?.startsWith("/") && !requestedPath.startsWith("//")) {
+        navigate(requestedPath, { replace: true });
+      } else if (resultAction.payload.user.roles?.includes("admin")) {
         navigate("/admin/dashboard");
-      } else if (userRole === "seller") {
-        navigate("/shop/dashboard");
       } else {
         navigate("/home");
       }

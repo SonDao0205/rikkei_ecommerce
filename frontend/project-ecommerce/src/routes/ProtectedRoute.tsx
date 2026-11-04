@@ -1,5 +1,5 @@
 import React, { type ReactNode } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAppSelector } from "../redux/store";
 import type { UserRole } from "../types";
 
@@ -11,7 +11,7 @@ interface ProtectedRouteProps {
 
 /**
  * Route Guard:
- * - Khi chưa đăng nhập: chuyển hướng về trang chủ ("/")
+ * - Khi chưa đăng nhập: chuyển hướng đến đăng nhập và lưu route đích
  * - Khi người dùng truy cập route không đúng phân quyền:
  *   + Nếu là admin: chuyển hướng về trang quản trị ("/admin/dashboard")
  *   + Nếu là seller: chuyển hướng về trang người bán ("/shop/dashboard")
@@ -23,7 +23,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   allowedRoles,
   disallowedRoles,
 }) => {
-  const { isAuthenticated, role, isInitialized } = useAppSelector(
+  const location = useLocation();
+  const { isAuthenticated, user, role, isInitialized } = useAppSelector(
     (state) => state.auth
   );
 
@@ -42,21 +43,32 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  const userRole = (role || "").toLowerCase().trim();
+  const userRoles = new Set(
+    (user?.roles?.length ? user.roles : role ? [role] : []).map((value) =>
+      value.toLowerCase().trim()
+    )
+  );
+  if (
+    location.pathname.startsWith("/shop") &&
+    userRoles.has("seller") &&
+    user?.shop_status !== "ACTIVE"
+  ) {
+    return <Navigate to="/register-open-shop" replace />;
+  }
 
   // Kiểm tra danh sách vai trò bị cấm (disallowedRoles)
   if (disallowedRoles && disallowedRoles.length > 0) {
-    const isDisallowed = disallowedRoles.some(
-      (r) => r.toLowerCase().trim() === userRole
+    const isDisallowed = disallowedRoles.some((r) =>
+      userRoles.has(r.toLowerCase().trim())
     );
     if (isDisallowed) {
-      if (userRole === "admin") {
+      if (userRoles.has("admin")) {
         return <Navigate to="/admin/dashboard" replace />;
       }
-      if (userRole === "seller") {
+      if (userRoles.has("seller")) {
         return <Navigate to="/shop/dashboard" replace />;
       }
       return <Navigate to="/" replace />;
@@ -65,12 +77,14 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Kiểm tra danh sách vai trò được phép (allowedRoles)
   if (allowedRoles && allowedRoles.length > 0) {
-    const hasRole = allowedRoles.some((r) => r.toLowerCase().trim() === userRole);
+    const hasRole = allowedRoles.some((r) =>
+      userRoles.has(r.toLowerCase().trim())
+    );
     if (!hasRole) {
-      if (userRole === "admin") {
+      if (userRoles.has("admin")) {
         return <Navigate to="/admin/dashboard" replace />;
       }
-      if (userRole === "seller") {
+      if (userRoles.has("seller")) {
         return <Navigate to="/shop/dashboard" replace />;
       }
       return <Navigate to="/" replace />;

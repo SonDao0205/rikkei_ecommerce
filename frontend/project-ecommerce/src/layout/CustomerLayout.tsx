@@ -1,8 +1,6 @@
 import React, { type ReactNode } from "react";
-import { Navigate } from "react-router-dom";
 import Header from "../components/common/Header";
 import Footer from "../components/common/Footer";
-import { useAppSelector } from "../redux/store";
 
 interface CustomerLayoutProps {
   children: ReactNode;
@@ -17,21 +15,6 @@ const CustomerLayout: React.FC<CustomerLayoutProps> = ({
   cartTotal = "₫0",
   wishlistCount = 0,
 }) => {
-  const { isAuthenticated, role, isInitialized } = useAppSelector(
-    (state) => state.auth
-  );
-
-  // Safeguard: Seller và Admin tuyệt đối không truy cập giao diện khách hàng
-  if (isInitialized && isAuthenticated) {
-    const userRole = (role || "").toLowerCase().trim();
-    if (userRole === "seller") {
-      return <Navigate to="/shop/dashboard" replace />;
-    }
-    if (userRole === "admin") {
-      return <Navigate to="/admin/dashboard" replace />;
-    }
-  }
-
   return (
     <div className="bg-background font-body-md text-on-surface antialiased min-h-screen flex flex-col">
       <Header

@@ -16,11 +16,15 @@ export const ShopLayout: React.FC<ShopLayoutProps> = ({ children }) => {
   );
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Enforce authentication & role 'seller'
+  // Seller Center requires both an assigned SELLER role and an ACTIVE shop.
   if (isInitialized) {
-    const userRole = (user?.role || "").toLowerCase().trim();
-    if (!isAuthenticated || userRole !== "seller") {
-      return <Navigate to="/" replace />;
+    const userRoles = user?.roles?.length
+      ? user.roles
+      : user?.role
+        ? [user.role]
+        : [];
+    if (!isAuthenticated || !userRoles.includes("seller") || user?.shop_status !== "ACTIVE") {
+      return <Navigate to="/register-open-shop" replace />;
     }
   }
 
@@ -276,4 +280,3 @@ export const ShopLayout: React.FC<ShopLayoutProps> = ({ children }) => {
 };
 
 export default ShopLayout;
-

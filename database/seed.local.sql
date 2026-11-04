@@ -10,7 +10,7 @@ INSERT INTO users (id,email,phone,password_hash,full_name,email_verified,status,
  (900001,'seed-admin@local.test','+84910000001','$2a$12$lk6XmQ5LPsgzOv8RKJmux.tjH81CcAGXZHCboFl099d6B8.mHTzgO','Quản trị hệ thống',1,'ACTIVE','admin'),
  (900002,'seed-seller-a@local.test','+84910000002','$2a$12$lk6XmQ5LPsgzOv8RKJmux.tjH81CcAGXZHCboFl099d6B8.mHTzgO','Nguyễn Minh Anh',1,'ACTIVE','seller'),
  (900003,'seed-buyer@local.test','+84910000003','$2a$12$lk6XmQ5LPsgzOv8RKJmux.tjH81CcAGXZHCboFl099d6B8.mHTzgO','Trần Ngọc Hà',1,'ACTIVE','client'),
- (900004,'seed-seller-b@local.test','+84910000004','$2a$12$lk6XmQ5LPsgzOv8RKJmux.tjH81CcAGXZHCboFl099d6B8.mHTzgO','Lê Hoàng Nam',1,'ACTIVE','seller'),
+ (900004,'seed-seller-b@local.test','+84910000004','$2a$12$lk6XmQ5LPsgzOv8RKJmux.tjH81CcAGXZHCboFl099d6B8.mHTzgO','Lê Hoàng Nam',1,'ACTIVE','client'),
  (900005,'seed-locked@local.test','+84910000005','$2a$12$lk6XmQ5LPsgzOv8RKJmux.tjH81CcAGXZHCboFl099d6B8.mHTzgO','Tài khoản kiểm thử khóa',1,'LOCKED','client'),
  (900006,'seed-unverified@local.test','+84910000006','$2a$12$lk6XmQ5LPsgzOv8RKJmux.tjH81CcAGXZHCboFl099d6B8.mHTzgO','Tài khoản chưa xác minh',0,'ACTIVE','client'),
  (900007,'seed-seller-tech@local.test','+84910000007','$2a$12$lk6XmQ5LPsgzOv8RKJmux.tjH81CcAGXZHCboFl099d6B8.mHTzgO','Phạm Minh Đức',1,'ACTIVE','seller')
@@ -26,6 +26,14 @@ INSERT INTO shops (id,owner_id,name,description,logo_url,banner_url,phone,wareho
  (920002,900004,'Bếp Nhà Mộc','Đồ gia dụng và cà phê chọn lọc từ các nhà cung cấp trong nước.','https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=300','https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=1200','+84910000014','Quận 1, TP Hồ Chí Minh','PENDING',0,NULL),
  (920003,900007,'Tech An Việt','Thiết bị công nghệ chính hãng, phụ kiện tương thích và máy tính cho học tập, làm việc.','https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=300','https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1200','+84910000017','Quận 3, TP Hồ Chí Minh','ACTIVE',0,UTC_TIMESTAMP())
 ON DUPLICATE KEY UPDATE owner_id=VALUES(owner_id),name=VALUES(name),description=VALUES(description),logo_url=VALUES(logo_url),banner_url=VALUES(banner_url),phone=VALUES(phone),warehouse_address=VALUES(warehouse_address),status=VALUES(status),follower_count=VALUES(follower_count),approved_at=VALUES(approved_at);
+
+DELETE FROM user_roles WHERE user_id=900004 AND role_code='SELLER';
+INSERT IGNORE INTO user_roles (user_id,role_code)
+SELECT id,'CLIENT' FROM users WHERE id BETWEEN 900001 AND 900007;
+INSERT IGNORE INTO user_roles (user_id,role_code)
+SELECT id,'ADMIN' FROM users WHERE id=900001;
+INSERT IGNORE INTO user_roles (user_id,role_code)
+SELECT owner_id,'SELLER' FROM shops WHERE owner_id IN (900002,900004,900007) AND status='ACTIVE';
 
 INSERT INTO shop_followers (shop_id,user_id) VALUES (920001,900003)
 ON DUPLICATE KEY UPDATE shop_id=VALUES(shop_id);

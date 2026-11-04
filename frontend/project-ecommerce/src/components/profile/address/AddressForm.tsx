@@ -7,7 +7,7 @@ import {
 } from "../../../redux/slices/user/addressSlice";
 import type { AddressType } from "../../../types";
 
-// Cascading Vietnam administrative location data
+// Suggestions only; users can enter administrative areas missing from this sample.
 const VIETNAM_LOCATIONS: Record<
   string,
   Record<string, string[]>
@@ -50,20 +50,9 @@ export const AddressForm: React.FC = () => {
   const initialPhone = editingAddress
     ? (editingAddress.phone || "").replace(/^\+84\s?/, "").replace(/^0/, "")
     : "";
-  const initialProvince =
-    editingAddress && VIETNAM_LOCATIONS[editingAddress.province]
-      ? editingAddress.province
-      : "TP. Hồ Chí Minh";
-  const initialDistricts = Object.keys(VIETNAM_LOCATIONS[initialProvince] || {});
-  const initialDistrict =
-    editingAddress && initialDistricts.includes(editingAddress.district)
-      ? editingAddress.district
-      : initialDistricts[0] || "Quận 1";
-  const initialWards = VIETNAM_LOCATIONS[initialProvince]?.[initialDistrict] || [];
-  const initialWard =
-    editingAddress && initialWards.includes(editingAddress.ward)
-      ? editingAddress.ward
-      : initialWards[0] || "Phường Bến Nghé";
+  const initialProvince = editingAddress?.province || "TP. Hồ Chí Minh";
+  const initialDistrict = editingAddress?.district || "Quận 1";
+  const initialWard = editingAddress?.ward || "Phường Bến Nghé";
 
   const [recipientName, setRecipientName] = useState(editingAddress?.recipient_name || "");
   const [phone, setPhone] = useState(initialPhone);
@@ -84,22 +73,9 @@ export const AddressForm: React.FC = () => {
       const cleanPhone = (editingAddress.phone || "").replace(/^\+84\s?/, "").replace(/^0/, "");
       setPhone(cleanPhone);
 
-      const targetProvince = VIETNAM_LOCATIONS[editingAddress.province]
-        ? editingAddress.province
-        : "TP. Hồ Chí Minh";
-      setProvince(targetProvince);
-
-      const availableDistricts = Object.keys(VIETNAM_LOCATIONS[targetProvince] || {});
-      const targetDistrict = availableDistricts.includes(editingAddress.district)
-        ? editingAddress.district
-        : availableDistricts[0] || "";
-      setDistrict(targetDistrict);
-
-      const availableWards = VIETNAM_LOCATIONS[targetProvince]?.[targetDistrict] || [];
-      const targetWard = availableWards.includes(editingAddress.ward)
-        ? editingAddress.ward
-        : availableWards[0] || "";
-      setWard(targetWard);
+      setProvince(editingAddress.province || "");
+      setDistrict(editingAddress.district || "");
+      setWard(editingAddress.ward || "");
 
       setStreetDetail(editingAddress.street_detail || "");
       setAddressType(editingAddress.address_type || "HOME");
@@ -118,22 +94,15 @@ export const AddressForm: React.FC = () => {
   }
 
   // Handle province change
-  const handleProvinceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newProv = e.target.value;
-    setProvince(newProv);
-    const districts = Object.keys(VIETNAM_LOCATIONS[newProv] || {});
-    const firstDist = districts[0] || "";
-    setDistrict(firstDist);
-    const wards = VIETNAM_LOCATIONS[newProv]?.[firstDist] || [];
-    setWard(wards[0] || "");
+  const handleProvinceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setProvince(e.target.value);
+    setDistrict("");
+    setWard("");
   };
 
-  // Handle district change
-  const handleDistrictChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newDist = e.target.value;
-    setDistrict(newDist);
-    const wards = VIETNAM_LOCATIONS[province]?.[newDist] || [];
-    setWard(wards[0] || "");
+  const handleDistrictChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setDistrict(e.target.value);
+    setWard("");
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -145,9 +114,13 @@ export const AddressForm: React.FC = () => {
       setValidationError("Vui lòng nhập họ và tên người nhận");
       return;
     }
-    const cleanPhone = phone.trim().replace(/\s+/g, "");
-    if (!cleanPhone || cleanPhone.length < 9) {
-      setValidationError("Vui lòng nhập số điện thoại hợp lệ (tối thiểu 9 số)");
+    const cleanPhone = phone.trim().replace(/[\s().-]/g, "");
+    if (!/^\+?\d{9,15}$/.test(cleanPhone)) {
+      setValidationError("Vui lòng nhập số điện thoại hợp lệ (9-15 chữ số)");
+      return;
+    }
+    if (!province.trim() || !district.trim() || !ward.trim()) {
+      setValidationError("Vui lòng nhập đầy đủ tỉnh/thành phố, quận/huyện và phường/xã");
       return;
     }
     if (!streetDetail.trim()) {
@@ -155,9 +128,10 @@ export const AddressForm: React.FC = () => {
       return;
     }
 
-    const formattedPhone = cleanPhone.startsWith("0")
-      ? cleanPhone
-      : `0${cleanPhone}`;
+    const normalizedPhone = cleanPhone.replace(/^\+84/, "0");
+    const formattedPhone = normalizedPhone.startsWith("0")
+      ? normalizedPhone
+      : `0${normalizedPhone}`;
 
     if (isEditMode && editingAddress) {
       dispatch(
@@ -204,9 +178,7 @@ export const AddressForm: React.FC = () => {
             {isEditMode ? "Chỉnh sửa địa chỉ" : "Thêm địa chỉ giao hàng mới"}
           </span>
         </div>
-        <span className="text-body-sm font-body-sm text-outline">
-          Production-ready reactive form view
-        </span>
+        <span className="text-body-sm font-body-sm text-outline">Tối đa 20 địa chỉ</span>
       </div>
 
       {/* Styled Form Container */}
@@ -263,6 +235,7 @@ export const AddressForm: React.FC = () => {
                 value={recipientName}
                 onChange={(e) => setRecipientName(e.target.value)}
                 placeholder="e.g. Nguyễn Văn A"
+                maxLength={120}
                 className="h-11 px-3.5 rounded-xl bg-surface-container-lowest border border-outline-variant text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 transition-all"
                 required
               />
@@ -282,6 +255,7 @@ export const AddressForm: React.FC = () => {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="09xx xxx xxx"
+                  maxLength={20}
                   className="w-full h-11 pl-12 pr-3 rounded-xl bg-surface-container-lowest border border-outline-variant text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 transition-all"
                   required
                 />
@@ -289,7 +263,7 @@ export const AddressForm: React.FC = () => {
             </div>
           </div>
 
-          {/* 3-Level Administrative Cascading Selects */}
+          {/* Administrative area fields with suggestions and free-text support */}
           <div className="space-y-1.5">
             <label className="font-label-sm text-label-sm text-on-surface font-bold">
               Administrative Area (Tỉnh / Thành phố, Quận / Huyện, Phường / Xã){" "}
@@ -297,57 +271,66 @@ export const AddressForm: React.FC = () => {
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {/* Province/City */}
-              <div className="relative">
-                <select
+              <div>
+                <input
+                  type="text"
+                  list="vietnam-provinces"
                   value={province}
                   onChange={handleProvinceChange}
-                  className="w-full h-11 px-3 pr-8 rounded-xl bg-surface-container-lowest border border-outline-variant text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 appearance-none shadow-xs cursor-pointer"
-                >
+                  placeholder="Tỉnh / Thành phố"
+                  maxLength={100}
+                  required
+                  className="w-full h-11 px-3 rounded-xl bg-surface-container-lowest border border-outline-variant text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 shadow-xs"
+                />
+                <datalist id="vietnam-provinces">
                   {Object.keys(VIETNAM_LOCATIONS).map((p) => (
                     <option key={p} value={p}>
                       {p}
                     </option>
                   ))}
-                </select>
-                <span className="material-symbols-outlined absolute right-2.5 top-3 text-outline text-[18px] pointer-events-none">
-                  expand_more
-                </span>
+                </datalist>
               </div>
 
               {/* District */}
-              <div className="relative">
-                <select
+              <div>
+                <input
+                  type="text"
+                  list="vietnam-districts"
                   value={district}
                   onChange={handleDistrictChange}
-                  className="w-full h-11 px-3 pr-8 rounded-xl bg-surface-container-lowest border border-outline-variant text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 appearance-none shadow-xs cursor-pointer"
-                >
+                  placeholder="Quận / Huyện"
+                  maxLength={100}
+                  required
+                  className="w-full h-11 px-3 rounded-xl bg-surface-container-lowest border border-outline-variant text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 shadow-xs"
+                />
+                <datalist id="vietnam-districts">
                   {districtOptions.map((d) => (
                     <option key={d} value={d}>
                       {d}
                     </option>
                   ))}
-                </select>
-                <span className="material-symbols-outlined absolute right-2.5 top-3 text-outline text-[18px] pointer-events-none">
-                  expand_more
-                </span>
+                </datalist>
               </div>
 
               {/* Ward */}
-              <div className="relative">
-                <select
+              <div>
+                <input
+                  type="text"
+                  list="vietnam-wards"
                   value={ward}
                   onChange={(e) => setWard(e.target.value)}
-                  className="w-full h-11 px-3 pr-8 rounded-xl bg-surface-container-lowest border border-outline-variant text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 appearance-none shadow-xs cursor-pointer"
-                >
+                  placeholder="Phường / Xã"
+                  maxLength={100}
+                  required
+                  className="w-full h-11 px-3 rounded-xl bg-surface-container-lowest border border-outline-variant text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 shadow-xs"
+                />
+                <datalist id="vietnam-wards">
                   {wardOptions.map((w) => (
                     <option key={w} value={w}>
                       {w}
                     </option>
                   ))}
-                </select>
-                <span className="material-symbols-outlined absolute right-2.5 top-3 text-outline text-[18px] pointer-events-none">
-                  expand_more
-                </span>
+                </datalist>
               </div>
             </div>
           </div>
@@ -363,6 +346,7 @@ export const AddressForm: React.FC = () => {
               value={streetDetail}
               onChange={(e) => setStreetDetail(e.target.value)}
               placeholder="Ví dụ: Tầng 4, Tòa nhà Bitexco Financial Tower, số 2 Hải Triều..."
+              maxLength={255}
               className="w-full p-3 rounded-xl bg-surface-container-lowest border border-outline-variant text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 resize-none transition-all shadow-xs"
               required
             />
@@ -419,6 +403,7 @@ export const AddressForm: React.FC = () => {
             <button
               type="button"
               onClick={() => dispatch(closeForm())}
+              disabled={saving}
               className="h-11 px-5 rounded-xl border border-outline-variant hover:bg-surface-container text-on-surface font-label-md text-label-md font-semibold transition-colors cursor-pointer"
             >
               Cancel

@@ -1,16 +1,10 @@
-import axiosClient from "../axiosClient";
 import type {
   AdminOrderItem,
   OrderStatusCounts,
   OrderFilterParams,
   AdminOrderDetailData,
+  OrderCourier,
 } from "../../types";
-
-interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  message?: string;
-}
 
 export let mockOrdersState: AdminOrderItem[] = [
   {
@@ -205,20 +199,9 @@ export let mockOrdersState: AdminOrderItem[] = [
   },
 ];
 
+// Admin order endpoints are not implemented by the backend; keep this client mock-only.
 export const adminOrderApi = {
   fetchOrders: async (params?: OrderFilterParams): Promise<{ orders: AdminOrderItem[]; total: number }> => {
-    try {
-      const response = await axiosClient.get<ApiResponse<{ orders: AdminOrderItem[]; total: number }>>(
-        "/api/v1/admin/orders",
-        { params }
-      );
-      if (response.data && response.data.data && response.data.data.orders) {
-        return response.data.data;
-      }
-    } catch {
-      // Fallback to in-memory mock data
-    }
-
     let filtered = [...mockOrdersState];
 
     // Status Tab Filter
@@ -260,39 +243,21 @@ export const adminOrderApi = {
 
     return {
       orders: filtered,
-      total: 48, // matching the total 48 active orders in admin_order.html
+      total: filtered.length,
     };
   },
 
   fetchStatusCounts: async (): Promise<OrderStatusCounts> => {
-    try {
-      const response = await axiosClient.get<ApiResponse<OrderStatusCounts>>("/api/v1/admin/orders/counts");
-      if (response.data && response.data.data) {
-        return response.data.data;
-      }
-    } catch {
-      // Fallback
-    }
-
     return {
-      all: 48,
-      pending: 5,
-      shipping: 18,
-      delivered: 23,
-      cancelled: 2,
+      all: mockOrdersState.length,
+      pending: mockOrdersState.filter((order) => order.status === "pending").length,
+      shipping: mockOrdersState.filter((order) => order.status === "shipping" || order.status === "packing").length,
+      delivered: mockOrdersState.filter((order) => order.status === "delivered").length,
+      cancelled: mockOrdersState.filter((order) => order.status === "cancelled").length,
     };
   },
 
   confirmOrder: async (orderId: string): Promise<AdminOrderItem> => {
-    try {
-      const response = await axiosClient.patch<ApiResponse<AdminOrderItem>>(`/api/v1/admin/orders/${orderId}/confirm`);
-      if (response.data && response.data.data) {
-        return response.data.data;
-      }
-    } catch {
-      // In-memory update
-    }
-
     const index = mockOrdersState.findIndex((o) => o.id === orderId);
     if (index !== -1) {
       mockOrdersState[index] = {
@@ -306,12 +271,10 @@ export const adminOrderApi = {
   },
 
   bulkConfirmOrders: async (orderIds: string[]): Promise<string[]> => {
-    try {
-      await axiosClient.post("/api/v1/admin/orders/bulk-confirm", { orderIds });
-    } catch {
-      // In-memory update
+    const knownIds = new Set(mockOrdersState.map((order) => order.id));
+    if (orderIds.some((orderId) => !knownIds.has(orderId))) {
+      throw new Error("Một hoặc nhiều đơn hàng không tồn tại");
     }
-
     mockOrdersState = mockOrdersState.map((o) =>
       orderIds.includes(o.id)
         ? { ...o, status: "shipping", statusLabel: "Đang giao hàng" }
@@ -322,15 +285,6 @@ export const adminOrderApi = {
   },
 
   cancelOrder: async (orderId: string): Promise<AdminOrderItem> => {
-    try {
-      const response = await axiosClient.patch<ApiResponse<AdminOrderItem>>(`/api/v1/admin/orders/${orderId}/cancel`);
-      if (response.data && response.data.data) {
-        return response.data.data;
-      }
-    } catch {
-      // In-memory update
-    }
-
     const index = mockOrdersState.findIndex((o) => o.id === orderId);
     if (index !== -1) {
       mockOrdersState[index] = {
@@ -345,36 +299,22 @@ export const adminOrderApi = {
   },
 
   exportCsv: async (): Promise<Blob> => {
-    try {
-      const response = await axiosClient.get("/api/v1/admin/orders/export", { responseType: "blob" });
-      return response.data;
-    } catch {
-      const headers = "Order ID,Date,Customer,Phone,Address,Shop,Payment,Total,Status,Courier\n";
-      const rows = mockOrdersState
-        .map(
-          (o) =>
-            `"${o.id}","${o.createdAt}","${o.customer.name}","${o.customer.phone}","${o.customer.address}","${o.shopName}","${o.paymentMethod}","${o.totalAmount}","${o.statusLabel}","${o.courierLabel}"`
-        )
-        .join("\n");
-      return new Blob([headers + rows], { type: "text/csv;charset=utf-8;" });
-    }
+    const headers = "Order ID,Date,Customer,Phone,Address,Shop,Payment,Total,Status,Courier\n";
+    const rows = mockOrdersState
+      .map(
+        (o) =>
+          `"${o.id}","${o.createdAt}","${o.customer.name}","${o.customer.phone}","${o.customer.address}","${o.shopName}","${o.paymentMethod}","${o.totalAmount}","${o.statusLabel}","${o.courierLabel}"`
+      )
+      .join("\n");
+    return new Blob([headers + rows], { type: "text/csv;charset=utf-8;" });
   },
 
   getOrderDetailById: async (orderId: string): Promise<AdminOrderDetailData> => {
-    try {
-      const response = await axiosClient.get<ApiResponse<AdminOrderDetailData>>(
-        `/api/v1/admin/orders/${orderId}`
-      );
-      if (response.data && response.data.data) {
-        return response.data.data;
-      }
-    } catch {
-      // In-memory fallback
-    }
-
-    // Default mock detail matching admin_orderDetail.html
     const normalizedId = orderId.startsWith("#") ? orderId : `#${orderId}`;
-    const baseOrder = mockOrdersState.find((o) => o.id === normalizedId) || mockOrdersState[0];
+    const baseOrder = mockOrdersState.find((o) => o.id === normalizedId);
+    if (!baseOrder) {
+      throw new Error("Không tìm thấy đơn hàng");
+    }
 
     return {
       id: normalizedId,
@@ -489,17 +429,30 @@ export const adminOrderApi = {
   },
 
   changeCourier: async (orderId: string, courierName: string, trackingCode: string): Promise<string> => {
-    try {
-      await axiosClient.patch(`/api/v1/admin/orders/${orderId}/courier`, {
-        courier: courierName,
-        trackingCode,
-      });
-    } catch {
-      // Mock update
+    const index = mockOrdersState.findIndex((order) => order.id === orderId);
+    if (index < 0) {
+      throw new Error("Không tìm thấy đơn hàng");
     }
+    const courierCodes: Record<string, OrderCourier> = {
+      "GHTK": "GHTK",
+      "GHTK Express": "GHTK",
+      "GHN": "GHN",
+      "GHN Logistics": "GHN",
+      "Viettel Post": "VIETTEL_POST",
+      "VIETTEL_POST": "VIETTEL_POST",
+    };
+    const courier = courierCodes[courierName];
+    if (!courier) {
+      throw new Error("Đơn vị vận chuyển không hợp lệ");
+    }
+    mockOrdersState[index] = {
+      ...mockOrdersState[index],
+      courier,
+      courierLabel: courierName,
+      trackingCode,
+    };
     return courierName;
   },
 };
 
 export default adminOrderApi;
-

@@ -36,6 +36,24 @@ func TestPhoneAndRoleValidation(t *testing.T) {
 	}
 }
 
+func TestMultiRoleAuthorization(t *testing.T) {
+	roles := []string{"CLIENT", "SELLER"}
+	for _, role := range []string{"CLIENT", "SELLER"} {
+		if !hasRole(roles, role) {
+			t.Errorf("expected role %s to be present", role)
+		}
+	}
+	if hasRole(roles, "ADMIN") {
+		t.Fatal("account must not receive ADMIN implicitly")
+	}
+	if got := primaryRole(roles); got != "SELLER" {
+		t.Fatalf("primaryRole(%v)=%q want SELLER", roles, got)
+	}
+	if got := primaryRole([]string{"CLIENT", "ADMIN"}); got != "ADMIN" {
+		t.Fatalf("primaryRole must preserve admin precedence, got %q", got)
+	}
+}
+
 func TestJWTTypeAndSessionClaims(t *testing.T) {
 	a := testApp()
 	u := User{ID: 42, Role: "CLIENT"}
@@ -191,5 +209,27 @@ func TestRateLimitReturns429(t *testing.T) {
 	rec := httptest.NewRecorder()
 	if a.allow(rec, req, 2, time.Minute) || rec.Code != http.StatusTooManyRequests {
 		t.Fatalf("request should be rate limited; status=%d", rec.Code)
+	}
+}
+
+func TestRateLimitUsesForwardedIPOnlyFromTrustedProxy(t *testing.T) {
+	a := testApp()
+	a.cfg.TrustedProxyCIDRs = []string{"172.22.0.2/32"}
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", nil)
+	req.RemoteAddr = "198.51.100.10:1234"
+	req.Header.Set("X-Real-IP", "203.0.113.8")
+	if got := a.clientIP(req); got != "198.51.100.10" {
+		t.Fatalf("untrusted forwarded header changed rate-limit identity: got %q", got)
+	}
+
+	req.RemoteAddr = "172.22.0.2:8080"
+	if got := a.clientIP(req); got != "203.0.113.8" {
+		t.Fatalf("trusted proxy client IP = %q, want 203.0.113.8", got)
+	}
+
+	req.Header.Set("X-Real-IP", "not-an-ip")
+	if got := a.clientIP(req); got != "172.22.0.2" {
+		t.Fatalf("invalid forwarded address should fall back to proxy address, got %q", got)
 	}
 }

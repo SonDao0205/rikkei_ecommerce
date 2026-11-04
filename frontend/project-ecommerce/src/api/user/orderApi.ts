@@ -1,15 +1,8 @@
-import axiosClient from "../axiosClient";
 import type {
   UserOrder,
   UserOrderStatusCounts,
   UserOrderFilterParams,
 } from "../../types/order";
-
-interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  message?: string;
-}
 
 export const mockUserOrders: UserOrder[] = [
   {
@@ -514,6 +507,7 @@ export const mockUserOrders: UserOrder[] = [
   },
 ];
 
+// User order endpoints are not implemented by the backend; keep this client mock-only.
 export const userOrderApi = {
   /**
    * Lấy danh sách đơn hàng của người dùng hiện tại (lọc theo tab, tìm kiếm, phân trang)
@@ -521,18 +515,6 @@ export const userOrderApi = {
   fetchUserOrders: async (
     params?: UserOrderFilterParams
   ): Promise<{ orders: UserOrder[]; total: number }> => {
-    try {
-      const response = await axiosClient.get<ApiResponse<{ orders: UserOrder[]; total: number }>>(
-        "/api/v1/user/orders",
-        { params }
-      );
-      if (response.data?.success && response.data?.data?.orders) {
-        return response.data.data;
-      }
-    } catch {
-      // Fallback về mock data
-    }
-
     let filtered = [...mockUserOrders];
 
     // Lọc theo tab
@@ -567,17 +549,6 @@ export const userOrderApi = {
    * Lấy số lượng đơn hàng theo từng trạng thái (để hiển thị badge đếm trên tab)
    */
   fetchUserOrderStatusCounts: async (): Promise<UserOrderStatusCounts> => {
-    try {
-      const response = await axiosClient.get<ApiResponse<UserOrderStatusCounts>>(
-        "/api/v1/user/orders/counts"
-      );
-      if (response.data?.success && response.data?.data) {
-        return response.data.data;
-      }
-    } catch {
-      // Fallback về mock data
-    }
-
     const counts: UserOrderStatusCounts = {
       all: mockUserOrders.length,
       pending: mockUserOrders.filter((o) => o.status === "pending").length,
@@ -598,20 +569,11 @@ export const userOrderApi = {
     orderId: number,
     cancelReason: string
   ): Promise<UserOrder> => {
-    try {
-      const response = await axiosClient.post<ApiResponse<UserOrder>>(
-        `/api/v1/user/orders/${orderId}/cancel`,
-        { cancelReason }
-      );
-      if (response.data?.success && response.data?.data) {
-        return response.data.data;
-      }
-    } catch {
-      // Fallback update mock data
-    }
-
     const order = mockUserOrders.find((o) => o.id === orderId);
     if (order) {
+      if (order.status !== "pending") {
+        throw new Error("Chỉ có thể hủy đơn hàng đang chờ xác nhận");
+      }
       order.status = "cancelled";
       order.statusLabel = "ĐÃ HỦY";
       order.cancelReason = cancelReason;
@@ -625,19 +587,11 @@ export const userOrderApi = {
    * Xác nhận đã nhận được hàng (khi đơn đang vận chuyển)
    */
   confirmOrderReceived: async (orderId: number): Promise<UserOrder> => {
-    try {
-      const response = await axiosClient.post<ApiResponse<UserOrder>>(
-        `/api/v1/user/orders/${orderId}/confirm-received`
-      );
-      if (response.data?.success && response.data?.data) {
-        return response.data.data;
-      }
-    } catch {
-      // Fallback update mock data
-    }
-
     const order = mockUserOrders.find((o) => o.id === orderId);
     if (order) {
+      if (order.status !== "shipping") {
+        throw new Error("Chỉ có thể xác nhận đơn hàng đang vận chuyển");
+      }
       order.status = "completed";
       order.statusLabel = "HOÀN THÀNH";
       order.shippingInfoText = "Giao hàng thành công (Đã xác nhận nhận hàng)";
@@ -652,23 +606,11 @@ export const userOrderApi = {
   fetchUserOrderDetail: async (
     orderIdOrCode: string | number
   ): Promise<UserOrder> => {
-    try {
-      const response = await axiosClient.get<ApiResponse<UserOrder>>(
-        `/api/v1/user/orders/${orderIdOrCode}`
-      );
-      if (response.data?.success && response.data?.data) {
-        return response.data.data;
-      }
-    } catch {
-      // Fallback update mock data
-    }
-
     const cleanCode = String(orderIdOrCode).replace(/^#/, "").toLowerCase().trim();
     const order = mockUserOrders.find(
       (o) =>
         String(o.id) === String(orderIdOrCode).trim() ||
-        o.orderCode.toLowerCase().replace(/^#/, "").trim() === cleanCode ||
-        o.orderCode.toLowerCase().includes(cleanCode)
+        o.orderCode.toLowerCase().replace(/^#/, "").trim() === cleanCode
     );
 
     if (order) {
@@ -787,7 +729,6 @@ export const userOrderApi = {
       };
     }
 
-    // Default to the first order if none matched
-    return mockUserOrders[0];
+    throw new Error("Không tìm thấy đơn hàng");
   },
 };

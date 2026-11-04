@@ -390,7 +390,8 @@ func activeSellerShop(w http.ResponseWriter, r *http.Request, a *Handler) (int64
 	}
 	var shopID int64
 	err := a.db.QueryRowContext(r.Context(), `SELECT s.id FROM shops s JOIN users u ON u.id=s.owner_id
-		WHERE s.owner_id=? AND s.status='ACTIVE' AND u.status='ACTIVE' AND u.role='seller'`, userID).Scan(&shopID)
+		JOIN user_roles ur ON ur.user_id=u.id AND ur.role_code='SELLER'
+		WHERE s.owner_id=? AND s.status='ACTIVE' AND u.status='ACTIVE'`, userID).Scan(&shopID)
 	if errors.Is(err, sql.ErrNoRows) {
 		writeError(w, http.StatusForbidden, "active_shop_required", "An approved active shop is required")
 		return 0, false

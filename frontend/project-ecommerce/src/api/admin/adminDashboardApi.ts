@@ -1,14 +1,7 @@
-import axiosClient from "../axiosClient";
 import type {
   AdminDashboardData,
   TimeRangeFilter,
 } from "../../types/admin";
-
-interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  message?: string;
-}
 
 const mockDashboardData: Record<TimeRangeFilter, AdminDashboardData> = {
   today: {
@@ -850,33 +843,15 @@ const mockDashboardData: Record<TimeRangeFilter, AdminDashboardData> = {
   },
 };
 
+// Dashboard/report endpoints are not implemented by the backend; keep this client mock-only.
 export const adminDashboardApi = {
   fetchDashboardData: async (timeRange: TimeRangeFilter = "today"): Promise<AdminDashboardData> => {
-    try {
-      const response = await axiosClient.get<ApiResponse<AdminDashboardData>>(
-        "/api/v1/admin/dashboard",
-        { params: { timeRange } }
-      );
-      if (response.data && response.data.data) {
-        return response.data.data;
-      }
-    } catch {
-      // Fallback to local mock data matching database scriptDb.sql & admin_dashboard.html
-    }
     return mockDashboardData[timeRange] || mockDashboardData.today;
   },
 
-  exportReport: async (timeRange: TimeRangeFilter): Promise<Blob> => {
-    try {
-      const response = await axiosClient.get("/api/v1/admin/dashboard/export", {
-        params: { timeRange },
-        responseType: "blob",
-      });
-      return response.data;
-    } catch {
-      // Mock CSV generation
-      const csvContent = "Metric,Value\nTotal Revenue,42850000\nTotal Orders,38\nActive Inventory,124\nNew Customers,12";
-      return new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    }
+  exportReport: async (_timeRange: TimeRangeFilter): Promise<Blob> => {
+    void _timeRange;
+    const csvContent = "Metric,Value\nTotal Revenue,42850000\nTotal Orders,38\nActive Inventory,124\nNew Customers,12";
+    return new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
   },
 };
