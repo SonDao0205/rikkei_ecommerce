@@ -193,3 +193,25 @@ func TestRateLimitReturns429(t *testing.T) {
 		t.Fatalf("request should be rate limited; status=%d", rec.Code)
 	}
 }
+
+func TestRateLimitUsesForwardedIPOnlyFromTrustedProxy(t *testing.T) {
+	a := testApp()
+	a.cfg.TrustedProxyCIDRs = []string{"172.22.0.2/32"}
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", nil)
+	req.RemoteAddr = "198.51.100.10:1234"
+	req.Header.Set("X-Real-IP", "203.0.113.8")
+	if got := a.clientIP(req); got != "198.51.100.10" {
+		t.Fatalf("untrusted forwarded header changed rate-limit identity: got %q", got)
+	}
+
+	req.RemoteAddr = "172.22.0.2:8080"
+	if got := a.clientIP(req); got != "203.0.113.8" {
+		t.Fatalf("trusted proxy client IP = %q, want 203.0.113.8", got)
+	}
+
+	req.Header.Set("X-Real-IP", "not-an-ip")
+	if got := a.clientIP(req); got != "172.22.0.2" {
+		t.Fatalf("invalid forwarded address should fall back to proxy address, got %q", got)
+	}
+}

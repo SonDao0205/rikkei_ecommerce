@@ -67,7 +67,7 @@ export const RegisterOpenShopStep1: React.FC = () => {
       <OnboardingHeader />
 
       {/* Main Content Area */}
-      <main className="w-full pt-20 bg-surface flex-1">
+      <main className="w-full pt-28 bg-surface flex-1">
         <div className="flex flex-col w-full">
           <div className="w-full max-w-[1440px] mx-auto px-gutter py-space-md sm:py-space-lg flex flex-col gap-space-lg">
             {/* Context subheader & 4-step stepper */}
@@ -102,9 +102,10 @@ export const RegisterOpenShopStep1: React.FC = () => {
       <OnboardingSuccessModal
         isOpen={isSuccessModalOpen}
         onClose={handleCloseModal}
-        applicationId={registrationResult?.applicationId || "#REQ-SHOP-8812"}
+        applicationId={registrationResult?.applicationId}
         shopName={registrationResult?.shopName || formData.store.shopName}
         ownerEmail={registrationResult?.ownerEmail || formData.account.email}
+        message={registrationResult?.message}
       />
 
       {/* Bottom Global Footer */}

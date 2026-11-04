@@ -56,7 +56,7 @@ export const RegisterOpenShopStep3: React.FC = () => {
       <OnboardingHeader />
 
       {/* Main Content Canvas */}
-      <main className="w-full pt-20 bg-surface flex-1">
+      <main className="w-full pt-28 bg-surface flex-1">
         <div className="flex flex-col w-full">
           <div className="w-full max-w-[1440px] mx-auto px-gutter py-space-md sm:py-space-lg flex flex-col gap-space-lg">
             {/* Top Navigation Context & Stepper Progress (4 steps) */}

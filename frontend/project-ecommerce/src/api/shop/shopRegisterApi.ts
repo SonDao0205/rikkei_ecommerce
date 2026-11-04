@@ -1,14 +1,7 @@
-import axiosClient from "../axiosClient";
 import type {
   ShopRegistrationFormData,
   ShopRegistrationResponse,
 } from "../../types";
-
-interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  message?: string;
-}
 
 export const initialShopRegistrationData: ShopRegistrationFormData = {
   account: {
@@ -57,53 +50,24 @@ export const initialShopRegistrationData: ShopRegistrationFormData = {
 };
 
 export const shopRegisterApi = {
-  /**
-   * Gửi hồ sơ đăng ký mở gian hàng (Onboarding)
-   * POST /api/v1/shops/register
-   */
   submitRegistration: async (
     data: ShopRegistrationFormData
   ): Promise<ShopRegistrationResponse> => {
-    try {
-      const response = await axiosClient.post<ApiResponse<ShopRegistrationResponse>>(
-        "/api/v1/shops/register",
-        data
-      );
-      if (response.data && response.data.data) {
-        return response.data.data;
-      }
-    } catch {
-      // Mock fallback response if endpoint is not implemented on backend
-    }
-
-    // Mock response simulating successful submission
-    await new Promise((resolve) => setTimeout(resolve, 600));
     return {
-      applicationId: "#REQ-SHOP-" + Math.floor(1000 + Math.random() * 9000),
-      status: "PENDING_APPROVAL",
+      applicationId: `#LOCAL-DEMO-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
+      status: "MOCKED",
       shopName: data.store.shopName || "UrbanStep Official Store",
-      ownerEmail: data.account.email || "nguyen.vana@gmail.com",
-      submittedAt: new Date().toLocaleTimeString("vi-VN", {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      estimatedReviewTime: "Trong vòng 24 - 48 giờ làm việc",
-      message: "Hồ sơ mở gian hàng đã được gửi thành công!",
+      ownerEmail: data.account.email,
+      submittedAt: new Date().toISOString(),
+      estimatedReviewTime: "",
+      message: "Backend chưa có API tiếp nhận hồ sơ onboarding/KYC. Đây chỉ là bản mô phỏng; hồ sơ chưa được gửi hoặc lưu trên máy chủ.",
     };
   },
 
-  /**
-   * Lưu bản nháp hồ sơ
-   */
   saveDraft: async (
-    data: Partial<ShopRegistrationFormData>
+    _data: Partial<ShopRegistrationFormData>
   ): Promise<{ savedAt: string }> => {
-    try {
-      await axiosClient.post("/api/v1/shops/register/draft", data);
-    } catch {
-      // Fallback local save
-    }
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    void _data;
     const now = new Date();
     const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(
       now.getMinutes()

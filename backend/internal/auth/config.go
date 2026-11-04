@@ -3,6 +3,7 @@ package auth
 import (
 	"bufio"
 	"fmt"
+	"net"
 	"net/mail"
 	"net/url"
 	"os"
@@ -16,7 +17,7 @@ type Config struct {
 	SMTPHost, SMTPUser, SMTPPassword, SMTPFrom string
 	SMTPPort                                   int
 	AccessTTL, RefreshTTL, OTPTTL              time.Duration
-	Origins                                    []string
+	Origins, TrustedProxyCIDRs                 []string
 	CookieSecure, AutoMigrate                  bool
 }
 
@@ -34,12 +35,17 @@ func LoadConfig() (Config, error) {
 	if autoValue != "true" && autoValue != "false" {
 		return Config{}, fmt.Errorf("AUTO_MIGRATE must be true or false")
 	}
-	c := Config{AppEnv: appEnv, HTTPAddr: env("HTTP_ADDR", ":8080"), DatabaseDSN: os.Getenv("DATABASE_DSN"), JWTSecret: os.Getenv("JWT_SECRET"), SMTPHost: os.Getenv("SMTP_HOST"), SMTPUser: os.Getenv("SMTP_USER"), SMTPPassword: os.Getenv("SMTP_PASSWORD"), SMTPFrom: os.Getenv("SMTP_FROM"), SMTPPort: port("SMTP_PORT", 587), AccessTTL: duration("ACCESS_TOKEN_TTL", 15*time.Minute), RefreshTTL: duration("REFRESH_TOKEN_TTL", 7*24*time.Hour), OTPTTL: duration("OTP_TTL", 10*time.Minute), Origins: split(os.Getenv("CORS_ALLOWED_ORIGINS")), CookieSecure: os.Getenv("COOKIE_SECURE") == "true", AutoMigrate: autoValue == "true"}
+	c := Config{AppEnv: appEnv, HTTPAddr: env("HTTP_ADDR", ":8080"), DatabaseDSN: os.Getenv("DATABASE_DSN"), JWTSecret: os.Getenv("JWT_SECRET"), SMTPHost: os.Getenv("SMTP_HOST"), SMTPUser: os.Getenv("SMTP_USER"), SMTPPassword: os.Getenv("SMTP_PASSWORD"), SMTPFrom: os.Getenv("SMTP_FROM"), SMTPPort: port("SMTP_PORT", 587), AccessTTL: duration("ACCESS_TOKEN_TTL", 15*time.Minute), RefreshTTL: duration("REFRESH_TOKEN_TTL", 7*24*time.Hour), OTPTTL: duration("OTP_TTL", 10*time.Minute), Origins: split(os.Getenv("CORS_ALLOWED_ORIGINS")), TrustedProxyCIDRs: split(os.Getenv("TRUSTED_PROXY_CIDRS")), CookieSecure: os.Getenv("COOKIE_SECURE") == "true", AutoMigrate: autoValue == "true"}
 	if c.DatabaseDSN == "" {
 		return c, fmt.Errorf("DATABASE_DSN is required")
 	}
 	if len(c.JWTSecret) < 32 {
 		return c, fmt.Errorf("JWT_SECRET must contain at least 32 characters")
+	}
+	for _, cidr := range c.TrustedProxyCIDRs {
+		if _, _, err := net.ParseCIDR(cidr); err != nil {
+			return c, fmt.Errorf("TRUSTED_PROXY_CIDRS contains an invalid CIDR %q", cidr)
+		}
 	}
 	if c.AppEnv == "production" {
 		if c.AutoMigrate {
@@ -50,6 +56,9 @@ func LoadConfig() (Config, error) {
 		}
 		if len(c.Origins) == 0 {
 			return c, fmt.Errorf("CORS_ALLOWED_ORIGINS must be explicit in production")
+		}
+		if len(c.TrustedProxyCIDRs) == 0 {
+			return c, fmt.Errorf("TRUSTED_PROXY_CIDRS must explicitly list reverse proxy networks in production")
 		}
 		for _, o := range c.Origins {
 			if o == "*" {

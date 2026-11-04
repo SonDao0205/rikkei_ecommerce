@@ -83,6 +83,7 @@ Không chạy hai backend cùng bind một host port. API gốc mặc định `h
 | `REFRESH_TOKEN_TTL` | Tuổi thọ refresh session | `168h` (7 ngày); tối thiểu 1 giờ |
 | `OTP_TTL` | Tuổi thọ OTP | `10m`; 1–30 phút |
 | `CORS_ALLOWED_ORIGINS` | Allowlist origin, phân cách dấu phẩy | Local `http://localhost:5173`; production chỉ origin HTTPS tường minh |
+| `TRUSTED_PROXY_CIDRS` | CIDR của reverse proxy được phép cung cấp `X-Real-IP` | Để trống nếu truy cập trực tiếp; khi chạy sau proxy phải khai báo đúng IP/CIDR |
 | `COOKIE_SECURE` | Chỉ gửi refresh cookie qua HTTPS | `false` local; production bắt buộc `true` |
 | `AUTO_MIGRATE` | Áp dụng migration theo domain khi API khởi động | `true` development; production bắt buộc `false` |
 | `SMTP_HOST`, `SMTP_PORT` | SMTP STARTTLS gửi OTP | Port mặc định `587`; production cần SMTP hoạt động |
@@ -103,7 +104,7 @@ $env:AUTO_MIGRATE = "false"
 go run ./cmd/migrate
 ```
 
-Chạy API production với `AUTO_MIGRATE=false`, HTTPS, `COOKIE_SECURE=true`, JWT secret riêng, CORS allowlist HTTPS chính xác và SMTP STARTTLS. Dùng reverse proxy/load balancer để kết thúc TLS và giới hạn truy cập mạng tới API/DB. Khi FE/API khác site, cần thiết kế cookie và CSRF protection phù hợp trước khi triển khai.
+Chạy API production với `AUTO_MIGRATE=false`, HTTPS, `COOKIE_SECURE=true`, JWT secret riêng, CORS allowlist HTTPS chính xác và SMTP STARTTLS. Nếu API nằm sau reverse proxy, khai báo `TRUSTED_PROXY_CIDRS` chỉ cho IP/CIDR của proxy thực tế; API chỉ tin `X-Real-IP` khi TCP peer thuộc danh sách này, các header forwarded từ client trực tiếp bị bỏ qua. Với Docker local, lấy IP frontend/Nginx từ `docker inspect` và cập nhật `.env`; không dùng một CIDR rộng hơn network proxy cần thiết. Dùng reverse proxy/load balancer để kết thúc TLS và giới hạn truy cập mạng tới API/DB. Khi FE/API khác site, cần thiết kế cookie và CSRF protection phù hợp trước khi triển khai.
 
 `GET /healthz` trả `200` khi API truy vấn được DB và `503` khi DB chưa sẵn sàng; đây là health check cơ bản, không thay thế monitoring/backup.
 

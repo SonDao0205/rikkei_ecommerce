@@ -1,4 +1,4 @@
-import axiosClient from "../axiosClient";
+import axiosClient, { shouldFallbackToMock } from "../axiosClient";
 import type {
   AdminShopItem,
   ShopMetricStats,
@@ -169,9 +169,18 @@ export const mockShopsState: AdminShopItem[] = [
   },
 ];
 
-export const normalizeAdminShop = (raw: Record<string, unknown>): AdminShopItem => {
-  const id = Number(raw.id) || 0;
-  const rawStatus = String(raw.status || "PENDING").toUpperCase();
+const normalizeAdminShop = (raw: Record<string, unknown>): AdminShopItem => {
+  const id = Number(raw.id);
+  const rawStatus = typeof raw.status === "string" ? raw.status.toUpperCase() : "";
+  if (
+    !Number.isSafeInteger(id) ||
+    id <= 0 ||
+    typeof raw.name !== "string" ||
+    typeof raw.status !== "string" ||
+    !["PENDING", "ACTIVE", "SUSPENDED", "REJECTED"].includes(rawStatus)
+  ) {
+    throw new Error("Backend trả về dữ liệu shop không hợp lệ.");
+  }
   const status = (
     rawStatus === "ACTIVE" || rawStatus === "SUSPENDED" || rawStatus === "REJECTED"
       ? rawStatus
@@ -236,22 +245,47 @@ export const adminShopApi = {
   fetchShops: async (
     params?: ShopFilterParams
   ): Promise<{ shops: AdminShopItem[]; total: number }> => {
+    const unsupportedFilters = [
+      params?.category && !["all", "all categories"].includes(params.category.toLowerCase()),
+      params?.commissionTier && !["all", "all tiers"].includes(params.commissionTier.toLowerCase()),
+      params?.rating && !["all", "all ratings"].includes(params.rating.toLowerCase()),
+    ];
+    if (unsupportedFilters.some(Boolean)) {
+      throw new Error("Bộ lọc danh mục, hoa hồng và đánh giá chưa được backend hỗ trợ.");
+    }
+
     try {
       const response = await axiosClient.get<
         ApiResponse<{ shops: unknown[]; total?: number }>
-      >("/api/v1/admin/shops", { params });
-      if (response.data && response.data.data && Array.isArray(response.data.data.shops)) {
-        const rawList = response.data.data.shops;
-        const normalized = rawList.map((item) =>
-          normalizeAdminShop(item as Record<string, unknown>)
-        );
-        return {
-          shops: normalized,
-          total: response.data.data.total ?? normalized.length,
-        };
+      >("/api/v1/admin/shops", {
+        params: {
+          search: params?.search,
+          status: params?.statusTab,
+          page: params?.page,
+          pageSize: params?.pageSize,
+        },
+      });
+      const data = response.data?.data;
+      if (!response.data?.success || !data || !Array.isArray(data.shops)) {
+        throw new Error("Backend trả về danh sách shop không đúng định dạng.");
       }
-    } catch {
-      // In-memory fallback
+      if (data.total !== undefined && typeof data.total !== "number") {
+        throw new Error("Backend trả về tổng số shop không hợp lệ.");
+      }
+      const normalized = data.shops.map((item) => {
+        if (typeof item !== "object" || item === null || Array.isArray(item)) {
+          throw new Error("Backend trả về dữ liệu shop không hợp lệ.");
+        }
+        return normalizeAdminShop(item as Record<string, unknown>);
+      });
+      return {
+        shops: normalized,
+        total: typeof data.total === "number" ? data.total : normalized.length,
+      };
+    } catch (error) {
+      if (!shouldFallbackToMock(error)) {
+        throw error;
+      }
     }
 
     let filtered = [...mockShopsState];
@@ -325,23 +359,12 @@ export const adminShopApi = {
     const paginated = filtered.slice(startIndex, startIndex + pageSize);
 
     return {
-      shops: paginated.length > 0 ? paginated : filtered,
+      shops: paginated,
       total: filtered.length,
     };
   },
 
   fetchShopMetrics: async (): Promise<ShopMetricStats> => {
-    try {
-      const response = await axiosClient.get<ApiResponse<ShopMetricStats>>(
-        "/api/v1/admin/shops/metrics"
-      );
-      if (response.data && response.data.data) {
-        return response.data.data;
-      }
-    } catch {
-      // Fallback
-    }
-
     return {
       totalShops: 55,
       activeShops: 48,
@@ -374,11 +397,14 @@ export const adminShopApi = {
         `/api/v1/admin/shops/${shopId}/approve`,
         { notes }
       );
-      if (response.data && response.data.data) {
+      if (response.data?.success && response.data.data) {
         return normalizeAdminShop(response.data.data as Record<string, unknown>);
       }
-    } catch {
-      // In-memory update
+      throw new Error("Backend không trả về shop đã duyệt.");
+    } catch (error) {
+      if (!shouldFallbackToMock(error)) {
+        throw error;
+      }
     }
 
     const idx = mockShopsState.findIndex((s) => s.id === shopId);
@@ -400,11 +426,14 @@ export const adminShopApi = {
         `/api/v1/admin/shops/${shopId}/reject`,
         { reason }
       );
-      if (response.data && response.data.data) {
+      if (response.data?.success && response.data.data) {
         return normalizeAdminShop(response.data.data as Record<string, unknown>);
       }
-    } catch {
-      // In-memory update
+      throw new Error("Backend không trả về shop đã từ chối.");
+    } catch (error) {
+      if (!shouldFallbackToMock(error)) {
+        throw error;
+      }
     }
 
     const idx = mockShopsState.findIndex((s) => s.id === shopId);
@@ -422,18 +451,6 @@ export const adminShopApi = {
   },
 
   toggleShopLive: async (shopId: number, is_live?: boolean): Promise<AdminShopItem> => {
-    try {
-      const response = await axiosClient.patch<ApiResponse<unknown>>(
-        `/api/v1/admin/shops/${shopId}/toggle-live`,
-        { is_live }
-      );
-      if (response.data && response.data.data) {
-        return normalizeAdminShop(response.data.data as Record<string, unknown>);
-      }
-    } catch {
-      // In-memory update
-    }
-
     const idx = mockShopsState.findIndex((s) => s.id === shopId);
     if (idx !== -1) {
       const newLive = is_live !== undefined ? is_live : !mockShopsState[idx].is_live;
@@ -452,11 +469,14 @@ export const adminShopApi = {
         `/api/v1/admin/shops/${shopId}/lock`,
         { reason }
       );
-      if (response.data && response.data.data) {
+      if (response.data?.success && response.data.data) {
         return normalizeAdminShop(response.data.data as Record<string, unknown>);
       }
-    } catch {
-      // In-memory update
+      throw new Error("Backend không trả về shop đã khóa.");
+    } catch (error) {
+      if (!shouldFallbackToMock(error)) {
+        throw error;
+      }
     }
 
     const idx = mockShopsState.findIndex((s) => s.id === shopId);
@@ -474,17 +494,6 @@ export const adminShopApi = {
   },
 
   unlockShop: async (shopId: number): Promise<AdminShopItem> => {
-    try {
-      const response = await axiosClient.patch<ApiResponse<unknown>>(
-        `/api/v1/admin/shops/${shopId}/unlock`
-      );
-      if (response.data && response.data.data) {
-        return normalizeAdminShop(response.data.data as Record<string, unknown>);
-      }
-    } catch {
-      // In-memory update
-    }
-
     const idx = mockShopsState.findIndex((s) => s.id === shopId);
     if (idx !== -1) {
       mockShopsState[idx] = {
@@ -504,18 +513,6 @@ export const adminShopApi = {
     tier: ShopTier,
     rate: number
   ): Promise<AdminShopItem> => {
-    try {
-      const response = await axiosClient.patch<ApiResponse<unknown>>(
-        `/api/v1/admin/shops/${shopId}/commission`,
-        { tier, rate }
-      );
-      if (response.data && response.data.data) {
-        return normalizeAdminShop(response.data.data as Record<string, unknown>);
-      }
-    } catch {
-      // In-memory update
-    }
-
     const idx = mockShopsState.findIndex((s) => s.id === shopId);
     if (idx !== -1) {
       mockShopsState[idx] = {
@@ -530,22 +527,15 @@ export const adminShopApi = {
   },
 
   exportCsv: async (): Promise<Blob> => {
-    try {
-      const response = await axiosClient.get("/api/v1/admin/shops/export", {
-        responseType: "blob",
-      });
-      return response.data;
-    } catch {
-      const headers =
-        "Shop Code,Shop Name,Tier,Category,Owner Name,Phone,Email,Location,SKUs,Orders,Rating,Commission,Balance,Status\n";
-      const rows = mockShopsState
-        .map(
-          (s) =>
-            `"${s.code}","${s.name}","${s.tier}","${s.category}","${s.owner_name}","${s.owner_phone}","${s.owner_email}","${s.location}","${s.sku_count}","${s.order_count}","${s.rating_avg}","${s.commission_tier_label}","${s.available_balance}","${s.status_label}"`
-        )
-        .join("\n");
-      return new Blob([headers + rows], { type: "text/csv;charset=utf-8;" });
-    }
+    const headers =
+      "Shop Code,Shop Name,Tier,Category,Owner Name,Phone,Email,Location,SKUs,Orders,Rating,Commission,Balance,Status\n";
+    const rows = mockShopsState
+      .map(
+        (s) =>
+          `"${s.code}","${s.name}","${s.tier}","${s.category}","${s.owner_name}","${s.owner_phone}","${s.owner_email}","${s.location}","${s.sku_count}","${s.order_count}","${s.rating_avg}","${s.commission_tier_label}","${s.available_balance}","${s.status_label}"`
+      )
+      .join("\n");
+    return new Blob([headers + rows], { type: "text/csv;charset=utf-8;" });
   },
 };
 
