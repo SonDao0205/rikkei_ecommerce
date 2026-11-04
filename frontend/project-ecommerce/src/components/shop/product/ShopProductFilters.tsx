@@ -117,11 +117,11 @@ export const ShopProductFilters: React.FC<ShopProductFiltersProps> = ({
               className="w-full appearance-none px-3.5 py-2 pr-9 rounded-xl bg-surface-container-lowest text-on-surface font-body-sm text-body-sm shadow-sm border border-outline-variant/30 focus:outline-none focus:border-primary cursor-pointer"
             >
               <option value="all">Ngành hàng: Tất cả</option>
-              <option value="art">Gốm nghệ thuật &amp; Hỏa biến</option>
-              <option value="tea">Trà cụ &amp; Ấm chén Tử Sa</option>
-              <option value="dining">Phụ kiện bàn ăn Ceramic</option>
-              <option value="lighting">Đèn trang trí &amp; Tinh dầu</option>
-              <option value="vases">Lọ hoa Wabi Sabi</option>
+              <option value="930002">Áo và phụ kiện</option>
+              <option value="930001">Thời trang</option>
+              <option value="930003">Nhà cửa &amp; Đời sống</option>
+              <option value="930004">Thực phẩm &amp; Đồ uống</option>
+              <option value="930005">Điện thoại &amp; Phụ kiện</option>
             </select>
             <span className="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-outline pointer-events-none text-[18px]">
               arrow_drop_down

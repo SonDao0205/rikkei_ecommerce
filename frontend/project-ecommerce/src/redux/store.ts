@@ -13,6 +13,7 @@ import shopRegisterReducer from "./slices/shop/shopRegisterSlice";
 import shopDashboardReducer from "./slices/shop/shopDashboardSlice";
 import shopProductReducer from "./slices/shop/shopProductSlice";
 import userOrderReducer from "./slices/user/orderSlice";
+import myShopReducer from "./slices/shop/myShopSlice";
 
 export const store = configureStore({
   reducer: {
@@ -29,6 +30,7 @@ export const store = configureStore({
     shopDashboard: shopDashboardReducer,
     shopProduct: shopProductReducer,
     userOrder: userOrderReducer,
+    myShop: myShopReducer,
   },
 });
 

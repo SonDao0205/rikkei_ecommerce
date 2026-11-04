@@ -1,16 +1,19 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import CustomerLayout from "../../layout/CustomerLayout";
 import ProfileSidebar from "../../components/profile/ProfileSidebar";
 import AddressList from "../../components/profile/address/AddressList";
 import AddressForm from "../../components/profile/address/AddressForm";
+import DeleteAddressModal from "../../components/profile/address/DeleteAddressModal";
 import { useAppDispatch, useAppSelector } from "../../redux/store";
 import { fetchUserProfile } from "../../redux/slices/user/profileSlice";
 import {
   fetchAddresses,
   openCreateForm,
   clearAddressMessages,
+  deleteAddressThunk,
 } from "../../redux/slices/user/addressSlice";
+import type { Address as AddressItem } from "../../types/user/address.types";
 
 export const Address: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -21,6 +24,10 @@ export const Address: React.FC = () => {
   const { isFormOpen, successMessage, error } = useAppSelector(
     (state) => state.address
   );
+
+  // State cho popup xác nhận xóa địa chỉ
+  const [addressToDelete, setAddressToDelete] = useState<AddressItem | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     dispatch(fetchUserProfile());
@@ -56,6 +63,19 @@ export const Address: React.FC = () => {
 
   const handleOpenAddForm = () => {
     dispatch(openCreateForm());
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!addressToDelete) return;
+    setIsDeleting(true);
+    try {
+      await dispatch(deleteAddressThunk(addressToDelete.id)).unwrap();
+      setAddressToDelete(null);
+    } catch {
+      // Error message is stored in addressSlice.error
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -149,6 +169,25 @@ export const Address: React.FC = () => {
           </div>
         )}
 
+        {/* Error Alert Banner */}
+        {error && (
+          <div className="mb-6 p-4 rounded-2xl bg-red-50 border border-red-200 text-red-800 flex items-center justify-between shadow-xs animate-fadeIn">
+            <div className="flex items-center gap-2.5">
+              <span className="material-symbols-outlined text-red-600 text-[20px]">
+                error
+              </span>
+              <span className="font-medium text-sm">{error}</span>
+            </div>
+            <button
+              onClick={() => dispatch(clearAddressMessages())}
+              className="text-red-600 hover:text-red-900 cursor-pointer"
+              type="button"
+            >
+              <span className="material-symbols-outlined text-[18px]">close</span>
+            </button>
+          </div>
+        )}
+
         {/* Main Two-Column Structure */}
         <div className="flex flex-col lg:flex-row items-start gap-8">
           {/* LEFT SIDEBAR (Sticky Navigation) */}
@@ -189,11 +228,23 @@ export const Address: React.FC = () => {
               </div>
             )}
 
-            {/* Address List */}
-            <AddressList onAddNewClick={handleOpenAddForm} />
+            {/* Address List with custom delete confirmation popup */}
+            <AddressList
+              onAddNewClick={handleOpenAddForm}
+              onDeleteClick={(addr) => setAddressToDelete(addr)}
+            />
           </main>
         </div>
       </div>
+
+      {/* Popup xác nhận xóa địa chỉ */}
+      <DeleteAddressModal
+        isOpen={Boolean(addressToDelete)}
+        address={addressToDelete}
+        onClose={() => setAddressToDelete(null)}
+        onConfirm={handleConfirmDelete}
+        isDeleting={isDeleting}
+      />
     </CustomerLayout>
   );
 };

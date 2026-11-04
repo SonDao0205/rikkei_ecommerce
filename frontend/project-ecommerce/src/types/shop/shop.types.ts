@@ -1,3 +1,13 @@
+
+export interface ShopProfilePayload {
+  name: string;
+  description: string;
+  logo_url?: string | null;
+  banner_url?: string | null;
+  phone: string;
+  warehouse_address: string;
+}
+
 export interface Shop {
   id: number;
   owner_id: number;

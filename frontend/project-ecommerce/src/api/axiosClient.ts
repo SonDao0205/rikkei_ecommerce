@@ -134,6 +134,78 @@ axiosClient.interceptors.response.use(
             message = "Chỉ có thể thay đổi trạng thái cho sản phẩm đã được duyệt.";
         } else if (errorCode === "invalid_product_filters") {
             message = "Bộ lọc hoặc tham số tìm kiếm không hợp lệ.";
+        } else if (errorCode === "address_limit_exceeded") {
+            message = "Bạn đã đạt giới hạn tối đa 20 địa chỉ giao hàng.";
+        } else if (errorCode === "address_not_found") {
+            message = "Địa chỉ giao hàng không tồn tại hoặc đã bị xóa.";
+        } else if (errorCode === "invalid_recipient_name") {
+            message = "Họ và tên người nhận phải từ 2 đến 120 ký tự.";
+        } else if (errorCode === "invalid_phone") {
+            message = "Số điện thoại phải từ 9 đến 15 chữ số.";
+        } else if (errorCode === "invalid_street_detail") {
+            message = "Địa chỉ chi tiết (số nhà, tên đường) phải từ 3 đến 255 ký tự.";
+        } else if (
+            errorCode === "invalid_province" ||
+            errorCode === "invalid_district" ||
+            errorCode === "invalid_ward"
+        ) {
+            message = "Thông tin Tỉnh/Thành, Quận/Huyện hoặc Phường/Xã không hợp lệ.";
+        } else if (errorCode === "invalid_address_type") {
+            message = "Loại địa chỉ phải là HOME, OFFICE hoặc OTHER.";
+        } else if (errorCode === "shop_already_exists") {
+            message = "Tài khoản của bạn đã có gian hàng hoặc tên gian hàng này đã được sử dụng.";
+        } else if (errorCode === "shop_name_in_use") {
+            message = "Tên gian hàng đã được sử dụng bởi người khác.";
+        } else if (errorCode === "invalid_shop_name") {
+            message = "Tên gian hàng phải từ 2 đến 150 ký tự.";
+        } else if (errorCode === "invalid_shop_description") {
+            message = "Mô tả gian hàng không được vượt quá 2000 ký tự.";
+        } else if (errorCode === "invalid_shop_phone") {
+            message = "Số điện thoại gian hàng phải từ 9 đến 15 chữ số.";
+        } else if (errorCode === "invalid_warehouse_address") {
+            message = "Địa chỉ kho hàng phải từ 5 đến 500 ký tự.";
+        } else if (errorCode === "invalid_logo_url") {
+            message = "Logo gian hàng phải là đường dẫn HTTPS hợp lệ.";
+        } else if (errorCode === "invalid_banner_url") {
+            message = "Ảnh bìa gian hàng phải là đường dẫn HTTPS hợp lệ.";
+        } else if (errorCode === "invalid_shop_id") {
+            message = "Mã định danh gian hàng không hợp lệ.";
+        } else if (errorCode === "invalid_shop_status") {
+            message = "Trạng thái gian hàng không hợp lệ.";
+        } else if (errorCode === "invalid_reject_reason") {
+            message = "Lý do là bắt buộc khi từ chối hoặc khóa gian hàng (tối đa 500 ký tự).";
+        } else if (errorCode === "invalid_notes") {
+            message = "Ghi chú không được vượt quá 500 ký tự.";
+        } else if (errorCode === "shop_owner_inactive") {
+            message = "Tài khoản chủ gian hàng đang bị vô hiệu hóa hoặc bị khóa, không thể duyệt.";
+        } else if (errorCode === "invalid_shop_owner_role") {
+            message = "Tài khoản chủ sở hữu không thể nâng cấp lên vai trò Người bán.";
+        } else if (errorCode === "active_shop_required") {
+            message = "Yêu cầu gian hàng được duyệt và đang hoạt động để thực hiện thao tác.";
+        } else if (errorCode === "unexpected_variant_id") {
+            message = "Mã biến thể chỉ được chấp nhận khi cập nhật sản phẩm.";
+        } else if (errorCode === "invalid_variant_id") {
+            message = "Mã biến thể không thuộc về sản phẩm này.";
+        } else if (errorCode === "sku_in_use") {
+            message = "Mã SKU này đã tồn tại trong hệ thống. Vui lòng chọn SKU khác.";
+        } else if (errorCode === "product_conflict") {
+            message = "Tên hoặc đường dẫn sản phẩm bị trùng lặp trong gian hàng.";
+        } else if (errorCode === "invalid_category_variant_attribute") {
+            message = "Thuộc tính biến thể không khớp với danh mục ngành hàng đã chọn.";
+        } else if (errorCode === "missing_required_variant_attribute") {
+            message = "Biến thể thiếu thuộc tính bắt buộc của danh mục.";
+        } else if (errorCode === "duplicate_variant_attribute") {
+            message = "Mỗi biến thể chỉ được chọn một giá trị cho mỗi thuộc tính.";
+        } else if (errorCode === "inconsistent_variant_attributes") {
+            message = "Tất cả biến thể của sản phẩm phải có cùng cấu trúc thuộc tính.";
+        } else if (errorCode === "duplicate_variant_combination") {
+            message = "Mỗi biến thể phải có sự kết hợp thuộc tính riêng biệt, không được trùng nhau.";
+        } else if (errorCode === "invalid_product_images") {
+            message = "Sản phẩm phải có từ 1 đến 10 hình ảnh.";
+        } else if (errorCode === "invalid_product_variants") {
+            message = "Sản phẩm phải có từ 1 đến 50 biến thể.";
+        } else if (errorCode === "invalid_product_image_url") {
+            message = "Đường dẫn hình ảnh sản phẩm phải là liên kết HTTPS hợp lệ.";
         } else if (errorCode === "rate_limited" || error.response?.status === 429) {
             message = "Thao tác quá nhanh. Vui lòng thử lại sau giây lát.";
         }

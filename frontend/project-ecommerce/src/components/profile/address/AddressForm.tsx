@@ -170,7 +170,7 @@ export const AddressForm: React.FC = () => {
           ward,
           street_detail: streetDetail.trim(),
           address_type: addressType,
-          is_default: isDefault ? 1 : 0,
+          is_default: isDefault,
         })
       );
     } else {
@@ -183,7 +183,7 @@ export const AddressForm: React.FC = () => {
           ward,
           street_detail: streetDetail.trim(),
           address_type: addressType,
-          is_default: isDefault ? 1 : 0,
+          is_default: isDefault,
         })
       );
     }

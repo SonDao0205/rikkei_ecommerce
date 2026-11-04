@@ -88,13 +88,6 @@ export const Step4StoreCard: React.FC<Step4StoreCardProps> = ({ store }) => {
               </span>
             </div>
 
-            <div className="flex items-center gap-space-xs text-primary font-label-md text-label-md">
-              <span className="material-symbols-outlined text-[16px]">link</span>
-              <span className="font-mono">
-                marketpulse.vn/shop/{store.slug || "urbanstep-sneaker"}
-              </span>
-            </div>
-
             <p className="font-body-sm text-body-sm text-on-surface-variant line-clamp-2 mt-0.5">
               {store.description ||
                 "Chuyên phân phối các dòng giày sneaker và phụ kiện thời trang đường phố chính hãng, dịch vụ bảo hành đế giày 12 tháng, đổi size miễn phí trong 7 ngày."}

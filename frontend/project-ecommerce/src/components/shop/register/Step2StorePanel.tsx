@@ -47,6 +47,7 @@ export const Step2StorePanel: React.FC<Step2StorePanelProps> = ({
   onChange,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -64,6 +65,24 @@ export const Step2StorePanel: React.FC<Step2StorePanelProps> = ({
   };
 
   const districts = DISTRICTS_MAP[data.province] || DISTRICTS_MAP["TP. Hồ Chí Minh"];
+  const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const previewUrl = URL.createObjectURL(file);
+      onChange({
+        bannerUrl: previewUrl,
+        bannerName: file.name,
+      });
+    }
+  };
+
+  const handleRemoveBanner = () => {
+    onChange({
+      bannerUrl: "",
+      bannerName: "",
+    });
+  };
+
   const wards = WARDS_MAP[data.district] || WARDS_MAP["Quận 1"];
 
   return (
@@ -140,6 +159,68 @@ export const Step2StorePanel: React.FC<Step2StorePanelProps> = ({
               {data.logoUrl && (
                 <button
                   onClick={handleRemoveLogo}
+                  className="px-3 py-1 rounded bg-surface-container-lowest text-error font-label-sm text-label-sm hover:bg-error-container transition-colors cursor-pointer"
+                  type="button"
+                >
+                  Xóa
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Banner Upload Row */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-space-lg py-2 border-t border-outline-variant/20 pt-4">
+          <div className="relative group">
+            <div className="w-40 h-20 rounded-xl bg-surface-container-highest flex items-center justify-center overflow-hidden shadow-sm border border-outline-variant/30">
+              {data.bannerUrl ? (
+                <img
+                  className="w-full h-full object-cover"
+                  alt="Store Banner"
+                  src={data.bannerUrl}
+                />
+              ) : (
+                <span className="material-symbols-outlined text-[36px] text-outline">
+                  panorama
+                </span>
+              )}
+            </div>
+            <button
+              onClick={() => bannerInputRef.current?.click()}
+              className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-md hover:scale-105 transition-transform cursor-pointer"
+              type="button"
+              title="Thay đổi ảnh bìa"
+            >
+              <span className="material-symbols-outlined text-[16px]">photo_camera</span>
+            </button>
+            <input
+              type="file"
+              ref={bannerInputRef}
+              onChange={handleBannerUpload}
+              accept="image/*"
+              className="hidden"
+            />
+          </div>
+
+          <div className="space-y-1 flex-1">
+            <div className="font-label-lg text-label-lg text-on-surface font-bold flex items-center gap-2">
+              <span>Ảnh bìa gian hàng (Banner)</span>
+              <span className="text-on-surface-variant text-xs font-normal">(Tùy chọn)</span>
+            </div>
+            <div className="font-body-sm text-body-sm text-on-surface-variant">
+              Khuyến nghị định dạng PNG, JPG hoặc WEBP tỷ lệ 3:1 hoặc 16:9 (1200x400px hoặc 1920x600px, dưới 5MB).
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={() => bannerInputRef.current?.click()}
+                className="px-3 py-1 rounded bg-surface-container text-primary font-label-sm text-label-sm hover:bg-surface-container-high transition-colors cursor-pointer"
+                type="button"
+              >
+                Tải ảnh bìa mới
+              </button>
+              {data.bannerUrl && (
+                <button
+                  onClick={handleRemoveBanner}
                   className="px-3 py-1 rounded bg-surface-container-lowest text-error font-label-sm text-label-sm hover:bg-error-container transition-colors cursor-pointer"
                   type="button"
                 >

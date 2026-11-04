@@ -82,9 +82,10 @@ export const RegisterOpenShopStep4: React.FC = () => {
     try {
       await dispatch(submitShopRegistration(formData)).unwrap();
       dispatch(setSuccessModalOpen(true));
-    } catch {
-      // If error or mock, still trigger modal for presentation
-      dispatch(setSuccessModalOpen(true));
+    } catch (err: unknown) {
+      const msg = typeof err === "string" ? err : "Đăng ký mở gian hàng thất bại. Vui lòng kiểm tra lại thông tin.";
+      setToastMessage(msg);
+      setTimeout(() => setToastMessage(null), 6000);
     }
   };
 

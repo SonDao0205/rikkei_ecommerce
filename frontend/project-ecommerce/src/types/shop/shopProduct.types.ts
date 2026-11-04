@@ -17,11 +17,76 @@ export type ShopProductStockStatus =
   | "critical"
   | "out";
 
+export interface BackendSellerProductImage {
+  url: string;
+  is_primary: boolean;
+}
+
+export interface BackendSellerProductVariant {
+  id?: number;
+  sku: string;
+  name: string;
+  price: number;
+  stock: number;
+  image_url: string | null;
+  attribute_value_ids: number[];
+}
+
+export interface BackendSellerProduct {
+  id: number;
+  shop_id: number;
+  category_id: number;
+  brand_id: number | null;
+  name: string;
+  slug: string;
+  description: string | null;
+  thumbnail_url: string | null;
+  price: number;
+  status: string;
+  images: BackendSellerProductImage[];
+  variants: BackendSellerProductVariant[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BackendCategoryAttributeValue {
+  id: number;
+  value: string;
+}
+
+export interface BackendCategoryAttribute {
+  id: number;
+  name: string;
+  required: boolean;
+  values: BackendCategoryAttributeValue[];
+}
+
+export interface CreateSellerProductPayload {
+  name: string;
+  description?: string;
+  category_id: number;
+  brand_id?: number | null;
+  price: number;
+  images: BackendSellerProductImage[];
+  variants: Omit<BackendSellerProductVariant, "id">[];
+}
+
+export interface UpdateSellerProductPayload {
+  name: string;
+  description?: string;
+  category_id: number;
+  brand_id?: number | null;
+  price: number;
+  images: BackendSellerProductImage[];
+  variants: BackendSellerProductVariant[];
+}
+
 export interface ShopProductItem {
   id: string;
   name: string;
   sku: string;
   category: string;
+  categoryId?: number;
   categoryLabel: string;
   imageUrl: string;
   imageAlt: string;
@@ -36,7 +101,9 @@ export interface ShopProductItem {
   stock: number;
   stockStatus: ShopProductStockStatus;
   stockStatusLabel: string;
-  status: "ACTIVE" | "LOW_STOCK" | "OUT_OF_STOCK" | "PENDING" | "HIDDEN";
+  status: "ACTIVE" | "LOW_STOCK" | "OUT_OF_STOCK" | "PENDING" | "HIDDEN" | "DRAFT" | "REJECTED";
+  rawVariants?: BackendSellerProductVariant[];
+  rawImages?: BackendSellerProductImage[];
 }
 
 export interface ShopProductStats {

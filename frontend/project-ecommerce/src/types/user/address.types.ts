@@ -1,5 +1,5 @@
 /**
- * Address Book Interfaces matching scriptDb.sql addresses table & address.html
+ * Address Book Interfaces matching scriptDb.sql addresses table & Go backend address domain
  */
 export type AddressType = 'HOME' | 'OFFICE' | 'OTHER';
 
@@ -12,7 +12,7 @@ export interface Address {
   district: string;
   ward: string;
   street_detail: string;
-  is_default: number | boolean;
+  is_default: boolean;
   address_type?: AddressType;
   created_at?: string;
   updated_at?: string;

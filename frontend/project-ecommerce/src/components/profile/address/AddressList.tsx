@@ -9,13 +9,22 @@ import type { Address } from "../../../types";
 
 interface AddressListProps {
   onAddNewClick: () => void;
+  onDeleteClick?: (addr: Address) => void;
 }
 
-export const AddressList: React.FC<AddressListProps> = ({ onAddNewClick }) => {
+export const AddressList: React.FC<AddressListProps> = ({
+  onAddNewClick,
+  onDeleteClick,
+}) => {
   const dispatch = useAppDispatch();
   const { addresses, loading } = useAppSelector((state) => state.address);
 
   const handleDelete = (addr: Address) => {
+    if (onDeleteClick) {
+      onDeleteClick(addr);
+      return;
+    }
+    // Fallback nếu không truyền handler mở popup
     const isConfirmed = window.confirm(
       `Bạn có chắc chắn muốn xóa địa chỉ của "${addr.recipient_name}" (${addr.street_detail}) không?`
     );

@@ -1,7 +1,9 @@
 import axiosClient from "../axiosClient";
 import type {
+  Shop,
   ShopRegistrationFormData,
   ShopRegistrationResponse,
+  ShopProfilePayload,
 } from "../../types";
 
 interface ApiResponse<T> {
@@ -56,54 +58,95 @@ export const initialShopRegistrationData: ShopRegistrationFormData = {
   },
 };
 
+const sanitizeHttpsUrl = (url?: string | null): string | null => {
+  if (!url) return null;
+  const trimmed = url.trim();
+  return trimmed.startsWith("https://") ? trimmed : null;
+};
+
 export const shopRegisterApi = {
   /**
    * Gửi hồ sơ đăng ký mở gian hàng (Onboarding)
-   * POST /api/v1/shops/register
+   * POST /api/v1/shops (Yêu cầu tài khoản có role CLIENT)
    */
   submitRegistration: async (
     data: ShopRegistrationFormData
   ): Promise<ShopRegistrationResponse> => {
-    try {
-      const response = await axiosClient.post<ApiResponse<ShopRegistrationResponse>>(
-        "/api/v1/shops/register",
-        data
-      );
-      if (response.data && response.data.data) {
-        return response.data.data;
-      }
-    } catch {
-      // Mock fallback response if endpoint is not implemented on backend
-    }
+    // 1. Chuẩn bị địa chỉ kho hàng từ thông tin Step 2 (phải từ 5 đến 500 ký tự)
+    const addressParts = [
+      data.store.addressDetail,
+      data.store.ward,
+      data.store.district,
+      data.store.province,
+    ]
+      .map((s) => (s || "").trim())
+      .filter(Boolean);
 
-    // Mock response simulating successful submission
-    await new Promise((resolve) => setTimeout(resolve, 600));
+    const warehouseAddress =
+      addressParts.join(", ") ||
+      data.store.pickupAddress?.addressLine ||
+      "Địa chỉ kho hàng Việt Nam";
+
+    // 2. Chuẩn bị số điện thoại liên hệ
+    const rawPhone = (
+      data.store.warehousePhone ||
+      data.account.phone ||
+      ""
+    ).trim().replace(/\s+/g, "");
+
+    const phone = rawPhone.startsWith("0") || rawPhone.startsWith("+")
+      ? rawPhone
+      : rawPhone
+      ? `0${rawPhone}`
+      : "";
+
+    // 3. Chuẩn bị payload chuẩn theo contract Go Backend
+    const payload: ShopProfilePayload = {
+      name: data.store.shopName.trim(),
+      description: (data.store.bio || data.store.description || "Gian hàng chính hãng phân phối tại MarketPulse.").trim(),
+      logo_url: sanitizeHttpsUrl(data.store.logoUrl),
+      banner_url: sanitizeHttpsUrl(data.store.bannerUrl),
+      phone,
+      warehouse_address: warehouseAddress,
+    };
+
+    const response = await axiosClient.post<ApiResponse<Shop>>(
+      "/api/v1/shops",
+      payload
+    );
+
+    const shop = response.data?.data;
+
     return {
-      applicationId: "#REQ-SHOP-" + Math.floor(1000 + Math.random() * 9000),
+      applicationId: shop?.id ? `#SHOP-${String(shop.id).padStart(4, "0")}` : "#REQ-SHOP",
       status: "PENDING_APPROVAL",
-      shopName: data.store.shopName || "UrbanStep Official Store",
-      ownerEmail: data.account.email || "nguyen.vana@gmail.com",
-      submittedAt: new Date().toLocaleTimeString("vi-VN", {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
+      shopName: shop?.name || data.store.shopName,
+      ownerEmail: data.account.email,
+      submittedAt: shop?.created_at
+        ? new Date(shop.created_at).toLocaleTimeString("vi-VN", {
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+        : new Date().toLocaleTimeString("vi-VN", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
       estimatedReviewTime: "Trong vòng 24 - 48 giờ làm việc",
-      message: "Hồ sơ mở gian hàng đã được gửi thành công!",
+      message: response.data?.message || "Hồ sơ mở gian hàng đã được gửi thành công!",
     };
   },
 
   /**
-   * Lưu bản nháp hồ sơ
+   * Lưu bản nháp hồ sơ vào LocalStorage để tiếp tục sau
    */
   saveDraft: async (
     data: Partial<ShopRegistrationFormData>
   ): Promise<{ savedAt: string }> => {
     try {
-      await axiosClient.post("/api/v1/shops/register/draft", data);
+      localStorage.setItem("marketpulse_shop_registration_draft", JSON.stringify(data));
     } catch {
-      // Fallback local save
+      // LocalStorage access fallback
     }
-    await new Promise((resolve) => setTimeout(resolve, 300));
     const now = new Date();
     const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(
       now.getMinutes()
