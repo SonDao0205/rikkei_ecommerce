@@ -15,7 +15,6 @@ import {
   Step4HeroBanner,
   Step4AccountCard,
   Step4StoreCard,
-  Step4KycCard,
   Step4TermsCard,
   Step4FooterBar,
   type Step4TermsState,
@@ -27,6 +26,7 @@ export const RegisterOpenShopStep4: React.FC = () => {
 
   const {
     formData,
+    currentStep,
     isSubmitting,
     isSavingDraft,
     lastSavedAt,
@@ -35,17 +35,21 @@ export const RegisterOpenShopStep4: React.FC = () => {
   } = useAppSelector((state) => state.shopRegister);
 
   const [terms, setTerms] = useState<Step4TermsState>({
-    authVerified: true,
-    platformRules: true,
-    antiCounterfeit: true,
+    authVerified: false,
+    platformRules: false,
+    antiCounterfeit: false,
   });
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
+    if (currentStep < 4) {
+      navigate("/register-open-shop", { replace: true });
+      return;
+    }
     dispatch(setStep(4));
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [dispatch]);
+  }, [currentStep, dispatch, navigate]);
 
   const handleStepClick = (targetStep: number) => {
     if (targetStep === 1) {
@@ -64,10 +68,13 @@ export const RegisterOpenShopStep4: React.FC = () => {
     setTerms((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleSaveDraft = () => {
-    dispatch(saveDraftShopRegistration(formData));
-    setToastMessage("Bản nháp chỉ được giữ tạm trong phiên này; chưa lưu lên BE.");
-    setTimeout(() => setToastMessage(null), 3000);
+  const handleSaveDraft = async () => {
+    try {
+      await dispatch(saveDraftShopRegistration(formData)).unwrap();
+      setToastMessage("Bản nháp đã được lưu trên máy chủ.");
+    } catch (error: unknown) {
+      setToastMessage(error instanceof Error ? error.message : typeof error === "string" ? error : "Không thể lưu bản nháp.");
+    }
   };
 
   const canSubmit = terms.authVerified && terms.platformRules && terms.antiCounterfeit;
@@ -81,10 +88,8 @@ export const RegisterOpenShopStep4: React.FC = () => {
 
     try {
       await dispatch(submitShopRegistration(formData)).unwrap();
-      dispatch(setSuccessModalOpen(true));
-    } catch {
-      // If error or mock, still trigger modal for presentation
-      dispatch(setSuccessModalOpen(true));
+    } catch (error: unknown) {
+      setToastMessage(error instanceof Error ? error.message : typeof error === "string" ? error : "Không thể gửi hồ sơ. Vui lòng thử lại.");
     }
   };
 
@@ -111,16 +116,10 @@ export const RegisterOpenShopStep4: React.FC = () => {
               <Step4HeroBanner />
 
               {/* Khối 1: Thông tin mô hình & Tài khoản quản trị (Đã thay Loại hình bằng Thông tin ngân hàng) */}
-              <Step4AccountCard account={formData.account} kyc={formData.kyc} />
+              <Step4AccountCard account={formData.account} />
 
               {/* Khối 2: Thông tin Gian hàng & Vận hành kho lấy hàng */}
               <Step4StoreCard store={formData.store} />
-
-              {/* Khối 3: Định danh pháp lý eKYC & Tài khoản nhận tiền (Payout) */}
-              <Step4KycCard
-                kyc={formData.kyc}
-                accountHolderName={formData.account.fullName}
-              />
 
               {/* Khối 4: Điều khoản & Cam kết tuân thủ sàn TMĐT */}
               <Step4TermsCard terms={terms} onChange={handleTermChange} />
@@ -162,9 +161,9 @@ export const RegisterOpenShopStep4: React.FC = () => {
       <OnboardingSuccessModal
         isOpen={isSuccessModalOpen}
         onClose={handleCloseModal}
-        applicationId={registrationResult?.applicationId || "#REQ-SHOP-8812"}
-        shopName={registrationResult?.shopName || formData.store.shopName || "UrbanStep Sneaker Hub"}
-        ownerEmail={registrationResult?.ownerEmail || formData.account.email || "nguyen.vana@gmail.com"}
+        applicationId={registrationResult?.applicationId}
+        shopName={registrationResult?.shopName || formData.store.shopName}
+        ownerEmail={registrationResult?.ownerEmail || formData.account.email}
       />
 
       {/* Global Bottom Footer */}

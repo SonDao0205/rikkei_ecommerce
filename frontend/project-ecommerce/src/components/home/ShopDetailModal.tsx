@@ -32,7 +32,7 @@ const ShopDetailModal: React.FC<ShopDetailModalProps> = ({
     if (shopId) {
       dispatch(getShopDetail(shopId));
       dispatch(getShopProducts({ shopId }));
-      if (user && user.role?.toLowerCase() === "client") {
+      if (user && (user.roles?.includes("client") || user.role === "client")) {
         dispatch(getShopFollowState(shopId));
       }
     }
@@ -49,7 +49,7 @@ const ShopDetailModal: React.FC<ShopDetailModalProps> = ({
       setTimeout(() => setFollowMessage(null), 3500);
       return;
     }
-    if (user.role?.toLowerCase() !== "client") {
+    if (!user.roles?.includes("client") && user.role !== "client") {
       setFollowMessage("Chức năng theo dõi shop chỉ dành cho người dùng có vai trò Khách hàng.");
       setTimeout(() => setFollowMessage(null), 3500);
       return;

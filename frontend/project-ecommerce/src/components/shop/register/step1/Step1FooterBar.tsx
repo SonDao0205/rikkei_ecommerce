@@ -19,7 +19,7 @@ export const Step1FooterBar: React.FC<Step1FooterBarProps> = ({
   onSaveDraft,
   isSubmitting = false,
   isSavingDraft = false,
-  lastSavedAt = "15:20",
+  lastSavedAt = null,
 }) => {
   return (
     <div className="mt-space-lg bg-surface-container-lowest rounded-xl p-space-md sm:p-space-lg shadow-sm flex flex-col sm:flex-row items-center justify-between gap-space-md">
@@ -39,7 +39,7 @@ export const Step1FooterBar: React.FC<Step1FooterBarProps> = ({
 
         <span className="text-on-surface-variant font-body-sm text-body-sm flex items-center gap-1">
           <span className="w-2 h-2 rounded-full bg-secondary inline-block"></span>
-          Đã lưu tự động lúc {lastSavedAt || "15:20"}
+          {lastSavedAt ? `Đã lưu lên máy chủ lúc ${lastSavedAt}` : "Bản nháp chưa được lưu lên máy chủ"}
         </span>
       </div>
 
@@ -88,4 +88,3 @@ export const Step1FooterBar: React.FC<Step1FooterBarProps> = ({
 
 export const OnboardingFooterBar = Step1FooterBar;
 export default Step1FooterBar;
-

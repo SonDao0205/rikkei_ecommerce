@@ -19,7 +19,17 @@ func (a *App) me(w http.ResponseWriter, r *http.Request) {
 		a.serverError(w, r, e)
 		return
 	}
-	v.Role = roleFromDB(v.Role)
+	v.Roles, e = loadUserRoles(r.Context(), a.db, u.ID)
+	if e != nil {
+		a.serverError(w, r, e)
+		return
+	}
+	v.Role = primaryRole(v.Roles)
+	v.ShopStatus, e = loadUserShopStatus(r.Context(), a.db, u.ID)
+	if e != nil {
+		a.serverError(w, r, e)
+		return
+	}
 	writeJSON(w, 200, map[string]any{"success": true, "data": v})
 }
 
@@ -62,7 +72,17 @@ func (a *App) updateProfile(w http.ResponseWriter, r *http.Request) {
 		a.serverError(w, r, err)
 		return
 	}
-	updated.Role = roleFromDB(updated.Role)
+	updated.Roles, err = loadUserRoles(r.Context(), a.db, u.ID)
+	if err != nil {
+		a.serverError(w, r, err)
+		return
+	}
+	updated.Role = primaryRole(updated.Roles)
+	updated.ShopStatus, err = loadUserShopStatus(r.Context(), a.db, u.ID)
+	if err != nil {
+		a.serverError(w, r, err)
+		return
+	}
 	writeJSON(w, 200, map[string]any{"success": true, "data": updated, "message": "Profile updated"})
 }
 
@@ -80,7 +100,17 @@ func (a *App) listUsers(w http.ResponseWriter, r *http.Request) {
 			a.serverError(w, r, e)
 			return
 		}
-		u.Role = roleFromDB(u.Role)
+		u.Roles, e = loadUserRoles(r.Context(), a.db, u.ID)
+		if e != nil {
+			a.serverError(w, r, e)
+			return
+		}
+		u.Role = primaryRole(u.Roles)
+		u.ShopStatus, e = loadUserShopStatus(r.Context(), a.db, u.ID)
+		if e != nil {
+			a.serverError(w, r, e)
+			return
+		}
 		users = append(users, u)
 	}
 	if e = rows.Err(); e != nil {

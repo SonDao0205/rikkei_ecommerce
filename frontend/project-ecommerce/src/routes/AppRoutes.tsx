@@ -81,129 +81,129 @@ const router = createBrowserRouter([
   {
     path: "/register-open-shop",
     element: (
-      <StorefrontRoute>
+      <ProtectedRoute allowedRoles={["client", "CLIENT"]}>
         <RegisterOpenShopStep1 />
-      </StorefrontRoute>
+      </ProtectedRoute>
     ),
   },
   {
     path: "/register-shop",
     element: (
-      <StorefrontRoute>
+      <ProtectedRoute allowedRoles={["client", "CLIENT"]}>
         <RegisterOpenShopStep1 />
-      </StorefrontRoute>
+      </ProtectedRoute>
     ),
   },
   {
     path: "/shop/register",
     element: (
-      <StorefrontRoute>
+      <ProtectedRoute allowedRoles={["client", "CLIENT"]}>
         <RegisterOpenShopStep1 />
-      </StorefrontRoute>
+      </ProtectedRoute>
     ),
   },
   {
     path: "/seller/register",
     element: (
-      <StorefrontRoute>
+      <ProtectedRoute allowedRoles={["client", "CLIENT"]}>
         <RegisterOpenShopStep1 />
-      </StorefrontRoute>
+      </ProtectedRoute>
     ),
   },
   {
     path: "/register-open-shop/step2",
     element: (
-      <StorefrontRoute>
+      <ProtectedRoute allowedRoles={["client", "CLIENT"]}>
         <RegisterOpenShopStep2 />
-      </StorefrontRoute>
+      </ProtectedRoute>
     ),
   },
   {
     path: "/register-open-shop/step-2",
     element: (
-      <StorefrontRoute>
+      <ProtectedRoute allowedRoles={["client", "CLIENT"]}>
         <RegisterOpenShopStep2 />
-      </StorefrontRoute>
+      </ProtectedRoute>
     ),
   },
   {
     path: "/register-open-shop-step2",
     element: (
-      <StorefrontRoute>
+      <ProtectedRoute allowedRoles={["client", "CLIENT"]}>
         <RegisterOpenShopStep2 />
-      </StorefrontRoute>
+      </ProtectedRoute>
     ),
   },
   {
     path: "/shop/register/step-2",
     element: (
-      <StorefrontRoute>
+      <ProtectedRoute allowedRoles={["client", "CLIENT"]}>
         <RegisterOpenShopStep2 />
-      </StorefrontRoute>
+      </ProtectedRoute>
     ),
   },
   {
     path: "/register-open-shop/step3",
     element: (
-      <StorefrontRoute>
+      <ProtectedRoute allowedRoles={["client", "CLIENT"]}>
         <RegisterOpenShopStep3 />
-      </StorefrontRoute>
+      </ProtectedRoute>
     ),
   },
   {
     path: "/register-open-shop/step-3",
     element: (
-      <StorefrontRoute>
+      <ProtectedRoute allowedRoles={["client", "CLIENT"]}>
         <RegisterOpenShopStep3 />
-      </StorefrontRoute>
+      </ProtectedRoute>
     ),
   },
   {
     path: "/register-open-shop-step3",
     element: (
-      <StorefrontRoute>
+      <ProtectedRoute allowedRoles={["client", "CLIENT"]}>
         <RegisterOpenShopStep3 />
-      </StorefrontRoute>
+      </ProtectedRoute>
     ),
   },
   {
     path: "/shop/register/step-3",
     element: (
-      <StorefrontRoute>
+      <ProtectedRoute allowedRoles={["client", "CLIENT"]}>
         <RegisterOpenShopStep3 />
-      </StorefrontRoute>
+      </ProtectedRoute>
     ),
   },
   {
     path: "/register-open-shop/step4",
     element: (
-      <StorefrontRoute>
+      <ProtectedRoute allowedRoles={["client", "CLIENT"]}>
         <RegisterOpenShopStep4 />
-      </StorefrontRoute>
+      </ProtectedRoute>
     ),
   },
   {
     path: "/register-open-shop/step-4",
     element: (
-      <StorefrontRoute>
+      <ProtectedRoute allowedRoles={["client", "CLIENT"]}>
         <RegisterOpenShopStep4 />
-      </StorefrontRoute>
+      </ProtectedRoute>
     ),
   },
   {
     path: "/register-open-shop-step4",
     element: (
-      <StorefrontRoute>
+      <ProtectedRoute allowedRoles={["client", "CLIENT"]}>
         <RegisterOpenShopStep4 />
-      </StorefrontRoute>
+      </ProtectedRoute>
     ),
   },
   {
     path: "/shop/register/step-4",
     element: (
-      <StorefrontRoute>
+      <ProtectedRoute allowedRoles={["client", "CLIENT"]}>
         <RegisterOpenShopStep4 />
-      </StorefrontRoute>
+      </ProtectedRoute>
     ),
   },
   {
@@ -281,7 +281,7 @@ const router = createBrowserRouter([
   {
     path: "/profile",
     element: (
-      <ProtectedRoute disallowedRoles={["admin", "seller", "ADMIN", "SELLER"]}>
+      <ProtectedRoute disallowedRoles={["admin", "ADMIN"]}>
         <MyProfile />
       </ProtectedRoute>
     ),
@@ -289,7 +289,7 @@ const router = createBrowserRouter([
   {
     path: "/my-profile",
     element: (
-      <ProtectedRoute disallowedRoles={["admin", "seller", "ADMIN", "SELLER"]}>
+      <ProtectedRoute disallowedRoles={["admin", "ADMIN"]}>
         <MyProfile />
       </ProtectedRoute>
     ),
@@ -297,7 +297,7 @@ const router = createBrowserRouter([
   {
     path: "/profile/change-password",
     element: (
-      <ProtectedRoute disallowedRoles={["admin", "seller", "ADMIN", "SELLER"]}>
+      <ProtectedRoute disallowedRoles={["admin", "ADMIN"]}>
         <ChangePassword />
       </ProtectedRoute>
     ),
@@ -305,7 +305,7 @@ const router = createBrowserRouter([
   {
     path: "/change-password",
     element: (
-      <ProtectedRoute disallowedRoles={["admin", "seller", "ADMIN", "SELLER"]}>
+      <ProtectedRoute disallowedRoles={["admin", "ADMIN"]}>
         <ChangePassword />
       </ProtectedRoute>
     ),
@@ -313,7 +313,7 @@ const router = createBrowserRouter([
   {
     path: "/profile/address",
     element: (
-      <ProtectedRoute disallowedRoles={["admin", "seller", "ADMIN", "SELLER"]}>
+      <ProtectedRoute disallowedRoles={["admin", "ADMIN"]}>
         <Address />
       </ProtectedRoute>
     ),
@@ -321,7 +321,7 @@ const router = createBrowserRouter([
   {
     path: "/address",
     element: (
-      <ProtectedRoute disallowedRoles={["admin", "seller", "ADMIN", "SELLER"]}>
+      <ProtectedRoute disallowedRoles={["admin", "ADMIN"]}>
         <Address />
       </ProtectedRoute>
     ),
@@ -329,7 +329,7 @@ const router = createBrowserRouter([
   {
     path: "/profile/orders",
     element: (
-      <ProtectedRoute disallowedRoles={["admin", "seller", "ADMIN", "SELLER"]}>
+      <ProtectedRoute disallowedRoles={["admin", "ADMIN"]}>
         <MyOrder />
       </ProtectedRoute>
     ),
@@ -337,7 +337,7 @@ const router = createBrowserRouter([
   {
     path: "/orders",
     element: (
-      <ProtectedRoute disallowedRoles={["admin", "seller", "ADMIN", "SELLER"]}>
+      <ProtectedRoute disallowedRoles={["admin", "ADMIN"]}>
         <MyOrder />
       </ProtectedRoute>
     ),
@@ -345,7 +345,7 @@ const router = createBrowserRouter([
   {
     path: "/my-orders",
     element: (
-      <ProtectedRoute disallowedRoles={["admin", "seller", "ADMIN", "SELLER"]}>
+      <ProtectedRoute disallowedRoles={["admin", "ADMIN"]}>
         <MyOrder />
       </ProtectedRoute>
     ),
@@ -353,7 +353,7 @@ const router = createBrowserRouter([
   {
     path: "/my-order",
     element: (
-      <ProtectedRoute disallowedRoles={["admin", "seller", "ADMIN", "SELLER"]}>
+      <ProtectedRoute disallowedRoles={["admin", "ADMIN"]}>
         <MyOrder />
       </ProtectedRoute>
     ),
@@ -361,7 +361,7 @@ const router = createBrowserRouter([
   {
     path: "/profile/orders/:id",
     element: (
-      <ProtectedRoute disallowedRoles={["admin", "seller", "ADMIN", "SELLER"]}>
+      <ProtectedRoute disallowedRoles={["admin", "ADMIN"]}>
         <MyOrderDetail />
       </ProtectedRoute>
     ),
@@ -369,7 +369,7 @@ const router = createBrowserRouter([
   {
     path: "/orders/:id",
     element: (
-      <ProtectedRoute disallowedRoles={["admin", "seller", "ADMIN", "SELLER"]}>
+      <ProtectedRoute disallowedRoles={["admin", "ADMIN"]}>
         <MyOrderDetail />
       </ProtectedRoute>
     ),
@@ -377,7 +377,7 @@ const router = createBrowserRouter([
   {
     path: "/my-order/:id",
     element: (
-      <ProtectedRoute disallowedRoles={["admin", "seller", "ADMIN", "SELLER"]}>
+      <ProtectedRoute disallowedRoles={["admin", "ADMIN"]}>
         <MyOrderDetail />
       </ProtectedRoute>
     ),
@@ -385,7 +385,7 @@ const router = createBrowserRouter([
   {
     path: "/my-orders/:id",
     element: (
-      <ProtectedRoute disallowedRoles={["admin", "seller", "ADMIN", "SELLER"]}>
+      <ProtectedRoute disallowedRoles={["admin", "ADMIN"]}>
         <MyOrderDetail />
       </ProtectedRoute>
     ),
@@ -477,4 +477,3 @@ const router = createBrowserRouter([
 ]);
 
 export default router;
-

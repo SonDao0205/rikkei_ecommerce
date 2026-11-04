@@ -9,6 +9,8 @@ export interface UserProfile {
   email_verified: number;
   status: 'ACTIVE' | 'LOCKED';
   role: UserRole;
+  roles?: UserRole[];
+  shop_status?: string;
   created_at: string;
   updated_at: string;
 }

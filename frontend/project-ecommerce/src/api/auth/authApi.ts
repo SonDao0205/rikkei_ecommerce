@@ -24,6 +24,8 @@ export interface BackendUser {
   full_name: string;
   phone: string;
   role: string;
+  roles?: string[];
+  shop_status?: string;
   status: string;
   email_verified?: number | boolean;
   created_at: string;
@@ -47,18 +49,39 @@ export interface ApiResponse<T> {
 /**
  * Normalizes backend user (role in UPPERCASE like "CLIENT", "ADMIN") to frontend UserProfile
  */
-export const mapBackendUser = (u: BackendUser): UserProfile => ({
-  id: u.id,
-  email: u.email,
-  phone: u.phone,
-  full_name: u.full_name,
-  avatar_url: null,
-  email_verified: u.email_verified ? 1 : 0,
-  status: u.status === "LOCKED" ? "LOCKED" : "ACTIVE",
-  role: u.role ? (u.role.toLowerCase() as UserRole) : "client",
-  created_at: u.created_at || new Date().toISOString(),
-  updated_at: u.created_at || new Date().toISOString(),
-});
+const normalizedRole = (role: string): UserRole | null => {
+  const value = role.trim().toLowerCase();
+  return value === "client" || value === "seller" || value === "admin"
+    ? value
+    : null;
+};
+
+export const mapBackendUser = (u: BackendUser): UserProfile => {
+  const roles = [...new Set((u.roles ?? []).map(normalizedRole).filter(
+    (role): role is UserRole => role !== null
+  ))];
+  const legacyRole = normalizedRole(u.role);
+  if (roles.length === 0 && legacyRole) roles.push(legacyRole);
+  const role =
+    (["admin", "seller", "client"] as const).find((candidate) =>
+      roles.includes(candidate)
+    ) ?? legacyRole ?? "client";
+
+  return {
+    id: u.id,
+    email: u.email,
+    phone: u.phone,
+    full_name: u.full_name,
+    avatar_url: null,
+    email_verified: u.email_verified ? 1 : 0,
+    status: u.status === "LOCKED" ? "LOCKED" : "ACTIVE",
+    role,
+    roles,
+    shop_status: u.shop_status,
+    created_at: u.created_at || new Date().toISOString(),
+    updated_at: u.created_at || new Date().toISOString(),
+  };
+};
 
 /**
  * Real API client matching Rikkei E-Commerce Backend (Section 2 - FE Guide)

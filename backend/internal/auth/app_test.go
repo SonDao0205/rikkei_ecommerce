@@ -36,6 +36,24 @@ func TestPhoneAndRoleValidation(t *testing.T) {
 	}
 }
 
+func TestMultiRoleAuthorization(t *testing.T) {
+	roles := []string{"CLIENT", "SELLER"}
+	for _, role := range []string{"CLIENT", "SELLER"} {
+		if !hasRole(roles, role) {
+			t.Errorf("expected role %s to be present", role)
+		}
+	}
+	if hasRole(roles, "ADMIN") {
+		t.Fatal("account must not receive ADMIN implicitly")
+	}
+	if got := primaryRole(roles); got != "SELLER" {
+		t.Fatalf("primaryRole(%v)=%q want SELLER", roles, got)
+	}
+	if got := primaryRole([]string{"CLIENT", "ADMIN"}); got != "ADMIN" {
+		t.Fatalf("primaryRole must preserve admin precedence, got %q", got)
+	}
+}
+
 func TestJWTTypeAndSessionClaims(t *testing.T) {
 	a := testApp()
 	u := User{ID: 42, Role: "CLIENT"}

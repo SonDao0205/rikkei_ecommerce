@@ -8,6 +8,8 @@ type User struct {
 	FullName      string    `json:"full_name"`
 	Phone         string    `json:"phone"`
 	Role          string    `json:"role"`
+	Roles         []string  `json:"roles"`
+	ShopStatus    string    `json:"shop_status,omitempty"`
 	Status        string    `json:"status"`
 	EmailVerified bool      `json:"email_verified"`
 	CreatedAt     time.Time `json:"created_at"`
@@ -22,6 +24,12 @@ type tokenPair struct {
 	AccessToken string `json:"access_token"`
 	ExpiresIn   int64  `json:"expires_in"`
 }
-type contextUser struct{ ID, Role, SessionID string }
-type Identity struct{ ID, Role, SessionID string }
+type contextUser struct {
+	ID, Role, SessionID string
+	Roles               []string
+}
+type Identity struct {
+	ID, Role, SessionID string
+	Roles               []string
+}
 type ctxKey struct{}

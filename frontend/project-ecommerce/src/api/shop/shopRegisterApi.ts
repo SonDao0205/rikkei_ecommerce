@@ -1,3 +1,4 @@
+import axiosClient from "../axiosClient";
 import type {
   ShopRegistrationFormData,
   ShopRegistrationResponse,
@@ -37,7 +38,7 @@ export const initialShopRegistrationData: ShopRegistrationFormData = {
     backCardUrl: "",
     backCardName: "",
     backCardSize: "",
-    bankName: "Vietcombank - Ngân hàng Ngoại thương Việt Nam",
+    bankName: "",
     accountNumber: "",
     accountHolder: "",
     bankBranch: "",
@@ -49,30 +50,160 @@ export const initialShopRegistrationData: ShopRegistrationFormData = {
   },
 };
 
+export interface BackendShop {
+  id: number;
+  name: string;
+  status: string;
+  updated_at: string;
+  description?: string | null;
+  logo_url?: string | null;
+  banner_url?: string | null;
+  phone?: string | null;
+  warehouse_address?: string | null;
+  reject_reason?: string | null;
+}
+
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  message?: string;
+}
+
+const shopProfilePayload = (data: ShopRegistrationFormData) => {
+  const store = data.store;
+  const warehouseAddress = [
+    store.addressDetail,
+    store.ward,
+    store.district,
+    store.province,
+  ]
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .join(", ");
+
+  return {
+    name: store.shopName.trim(),
+    description: store.bio.trim(),
+    logo_url: store.logoUrl.trim() || null,
+    banner_url: store.bannerUrl?.trim() || null,
+    phone: store.warehousePhone.trim() || data.account.phone.trim(),
+    warehouse_address: warehouseAddress,
+  };
+};
+
+const getCurrentShop = async (): Promise<BackendShop | null> => {
+  try {
+    const response = await axiosClient.get<ApiResponse<BackendShop>>(
+      "/api/v1/me/shop",
+    );
+    return response.data.data;
+  } catch (error: unknown) {
+    const status =
+      typeof error === "object" &&
+      error !== null &&
+      "response" in error &&
+      typeof error.response === "object" &&
+      error.response !== null &&
+      "status" in error.response
+        ? error.response.status
+        : undefined;
+    if (status === 404) return null;
+    throw error;
+  }
+};
+
+const saveProfile = async (
+  data: ShopRegistrationFormData,
+): Promise<BackendShop> => {
+  const payload = shopProfilePayload(data);
+  const current = await getCurrentShop();
+  if (!current) {
+    try {
+      const response = await axiosClient.post<ApiResponse<BackendShop>>(
+        "/api/v1/me/shop",
+        payload,
+      );
+      return response.data.data;
+    } catch (error: unknown) {
+      if (!isAxiosStatus(error, 409)) throw error;
+      const createdByAnotherRequest = await getCurrentShop();
+      if (!createdByAnotherRequest) throw error;
+    }
+  }
+  const response = await axiosClient.put<ApiResponse<BackendShop>>(
+    "/api/v1/me/shop",
+    payload,
+  );
+  return response.data.data;
+};
+
+const isAxiosStatus = (error: unknown, status: number): boolean =>
+  typeof error === "object" &&
+  error !== null &&
+  "response" in error &&
+  typeof error.response === "object" &&
+  error.response !== null &&
+  "status" in error.response &&
+  error.response.status === status;
+
 export const shopRegisterApi = {
+  getMyShop: getCurrentShop,
+
   submitRegistration: async (
-    data: ShopRegistrationFormData
+    data: ShopRegistrationFormData,
   ): Promise<ShopRegistrationResponse> => {
+    let shop = await saveProfile(data);
+    if (shop.status !== "PENDING") {
+      try {
+        const response = await axiosClient.post<ApiResponse<BackendShop>>(
+          "/api/v1/me/shop/submit",
+        );
+        shop = response.data.data;
+      } catch (error: unknown) {
+        if (!isAxiosStatus(error, 409)) throw error;
+        const latest = await getCurrentShop();
+        if (!latest || latest.status !== "PENDING") throw error;
+        shop = latest;
+      }
+    }
+
     return {
-      applicationId: `#LOCAL-DEMO-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
-      status: "MOCKED",
-      shopName: data.store.shopName || "UrbanStep Official Store",
+      applicationId: String(shop.id),
+      status: "PENDING_APPROVAL",
+      shopName: shop.name,
       ownerEmail: data.account.email,
-      submittedAt: new Date().toISOString(),
+      submittedAt: shop.updated_at || new Date().toISOString(),
       estimatedReviewTime: "",
-      message: "Backend chưa có API tiếp nhận hồ sơ onboarding/KYC. Đây chỉ là bản mô phỏng; hồ sơ chưa được gửi hoặc lưu trên máy chủ.",
+      message: "Hồ sơ đã được gửi lên máy chủ và đang chờ xét duyệt.",
     };
   },
 
   saveDraft: async (
-    _data: Partial<ShopRegistrationFormData>
+    data: Partial<ShopRegistrationFormData>,
   ): Promise<{ savedAt: string }> => {
-    void _data;
-    const now = new Date();
-    const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(
-      now.getMinutes()
-    ).padStart(2, "0")}`;
-    return { savedAt: timeStr };
+    const formData: ShopRegistrationFormData = {
+      ...initialShopRegistrationData,
+      ...data,
+      account: { ...initialShopRegistrationData.account, ...data.account },
+      store: { ...initialShopRegistrationData.store, ...data.store },
+      kyc: { ...initialShopRegistrationData.kyc, ...data.kyc },
+      agreements: {
+        ...initialShopRegistrationData.agreements,
+        ...data.agreements,
+      },
+    };
+    const shop = await saveProfile(formData);
+    return {
+      savedAt: shop.updated_at
+        ? new Date(shop.updated_at).toLocaleTimeString("vi-VN", {
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+        : new Date().toLocaleTimeString("vi-VN", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+    };
   },
 };
 
