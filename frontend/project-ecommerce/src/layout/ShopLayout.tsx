@@ -3,6 +3,7 @@ import { Link, useLocation, Navigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../redux/store";
 import { openLogoutModal } from "../redux/slices/auth/authSlice";
 import { APP_CONFIG } from "../config/appConfig";
+import { BrandIcon } from "../components/common/BrandLogo";
 
 interface ShopLayoutProps {
   children: ReactNode;
@@ -76,7 +77,7 @@ export const ShopLayout: React.FC<ShopLayoutProps> = ({ children }) => {
           {/* Brand Logo & Shop Info */}
           <div className="flex items-center gap-3 px-3 py-2">
             <div className="w-10 h-10 rounded-xl bg-primary-container flex items-center justify-center text-on-primary shadow-sm shrink-0">
-              <span className="material-symbols-outlined text-[24px]">storefront</span>
+              <BrandIcon className="w-6 h-6 text-on-primary" />
             </div>
             <div className="min-w-0 flex-1">
               <h1 className="font-headline-md text-headline-md leading-none text-white tracking-tight font-bold truncate">

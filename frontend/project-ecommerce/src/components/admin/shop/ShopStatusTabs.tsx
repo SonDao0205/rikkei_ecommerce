@@ -18,7 +18,6 @@ export const ShopStatusTabs: React.FC<ShopStatusTabsProps> = ({
     { value: "active", label: "Đang hoạt động", count: counts?.active ?? 0 },
     { value: "pending", label: "Chờ duyệt", count: counts?.pending ?? 0 },
     { value: "needs_info", label: "Cần bổ sung", count: counts?.needs_info ?? 0 },
-    { value: "draft", label: "Bản nháp", count: counts?.draft ?? 0 },
     { value: "suspended", label: "Đình chỉ", count: counts?.suspended ?? 0, style: "text-error" },
     { value: "rejected", label: "Từ chối", count: counts?.rejected ?? 0 },
   ];

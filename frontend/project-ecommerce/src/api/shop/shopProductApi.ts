@@ -1,169 +1,140 @@
+import axiosClient from "../axiosClient";
 import type {
   ShopProductItem,
   ShopProductStats,
   ShopProductFilterState,
+  BackendSellerProduct,
+  BackendCategoryAttribute,
+  CreateSellerProductPayload,
+  UpdateSellerProductPayload,
+  ShopProductStockStatus,
 } from "../../types/shop/shopProduct.types";
 
-export const initialShopProducts: ShopProductItem[] = [
-  {
-    id: "prod-1",
-    name: "Bình gốm mộc hoả biến vân rêu cổ phong cách Indochine",
-    sku: "VN-CER-00192",
-    category: "art",
-    categoryLabel: "Gốm nghệ thuật",
-    imageUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuBJ5EfnOPri4N6dEKOhMUIP8rqxXkduxGinUXkkdk-ki54I6mmHzOcOOPjcbd23uKAZXNNym25Js8B8YU-yyV_eC1yqXNialcTX1jjc-od6Q-K_LG229JttV_xBGrwwd5P9mXNgumN-ayvaBrDkpYCQTwFMCKokyBq6ObPXsEAw9FfdCUvbh1mbeuZf3Usns3t8wXsS1_-7OpdgdGh0K2lLhrzdmeUgtGp9rPfguaSqd0BMwgmn0vrC",
-    imageAlt: "Bình gốm mộc hoả biến",
-    soldCount: 128,
-    variationTitle: "3 Kích thước (S, M, L)",
-    variationSubtitle: "2 Màu men hỏa biến",
-    price: 1150000,
-    formattedPrice: "1.150.000 ₫",
-    originalPrice: 1350000,
-    formattedOriginalPrice: "1.350.000 ₫",
-    stock: 128,
-    stockStatus: "abundant",
-    stockStatusLabel: "Đủ hàng",
-    status: "ACTIVE",
-  },
-  {
-    id: "prod-2",
-    name: "Bộ tách trà gốm tử sa men rạn cao cấp dát chỉ vàng",
-    sku: "VN-TEA-00481",
-    category: "tea",
-    categoryLabel: "Trà cụ & Ấm chén",
-    imageUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDFaUC6LXV2N-GLs1fyOaKEg52DXMULiwaa4EOd8sLavVu6mgDglVJbwXZZKt_oYgpZPHYYwAH0dshT7YoVL3q9hsjH0dhnzY4B4ENEyo16UTkO2UFo9Kk2RJp6kSmRBGG5xlDV64pDhIoASqpLjlnUzTrkNIRw4_68upW-_HW48Ea03kziZtTS2uTIM1pw97vWW3MSHrNM2JhOZHiDxwd0TPIrt-n08VUcOXwyseHTmEUYkThv1IDI",
-    imageAlt: "Bộ tách trà gốm tử sa",
-    soldCount: 94,
-    variationTitle: "Bộ 6 chén 1 ấm",
-    variationSubtitle: "Kèm khay gốm đồng bộ",
-    price: 890000,
-    formattedPrice: "890.000 ₫",
-    priceNote: "Đồng giá niêm yết",
-    stock: 15,
-    stockStatus: "safe",
-    stockStatusLabel: "An toàn",
-    status: "ACTIVE",
-  },
-  {
-    id: "prod-3",
-    name: "Đĩa lót ly ceramic vân đá xám khói tráng men bóng chống trượt",
-    sku: "VN-MAT-00912",
-    category: "dining",
-    categoryLabel: "Phụ kiện bàn ăn",
-    imageUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuB-2VN67PK8WHOVsLTkb6yVnCdtn_WtMwlD6rp3-PjuTtAbsnMsO5I29kTCK2FAwXIu1ZrVb51XX2RO553bXmxs67Ke4-E6UdczG4n3uYRRwitmPhx_BsBzLs-IJRogwBBABo6CfrCK2ahtSj8Ny8fM-KJrfaPYi8fTFDDjK1KNY_Vg3NE5m-koxseCCCsN_xHiBeCq_GUqJG83gqUvX6iVYToHelkw_4P0BbEIMuNB41cI_oYETd6x",
-    imageAlt: "Đĩa lót ly ceramic vân đá",
-    soldCount: 82,
-    variationTitle: "Set 4 chiếc",
-    variationSubtitle: "2 Họa tiết vân đá",
-    price: 420000,
-    formattedPrice: "420.000 ₫",
-    priceNote: "Giá ưu đãi tuần",
-    stock: 6,
-    stockStatus: "low",
-    stockStatusLabel: "Sắp hết hàng - Cần nhập",
-    status: "LOW_STOCK",
-  },
-  {
-    id: "prod-4",
-    name: "Đèn xông tinh dầu gốm thấu quang thủ công men lam cổ truyền",
-    sku: "VN-LMP-00723",
-    category: "lighting",
-    categoryLabel: "Đèn trang trí & Hương liệu",
-    imageUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuChOEda4NHlf-ObqiUuKrwlVQJCdjHZpI_wxFhW7skFfZjQfTQl86wTQxct-6nFEweEvL6ffoiH-T1ioIMfVdKmw10bpKJFvVOMLoQzNECKLZUKdWgZlPSN9465qC87ywF1iF4o5mUlwQID5uOYUCFOosLSUOgXnqtOc9MjtrKL9qcnT9EaQDFetZ6U6T2MUfAWeT9PjSCY-E9kJjmwS5AJE0hqlDYDRvf50hJWzwFGUpUCiU7OrcLv",
-    imageAlt: "Đèn xông tinh dầu gốm",
-    soldCount: 65,
-    variationTitle: "1 Size tiêu chuẩn",
-    variationSubtitle: "Kèm bóng halogen",
-    price: 360000,
-    formattedPrice: "360.000 ₫",
-    priceNote: "Giá bán buôn",
-    stock: 38,
-    stockStatus: "abundant",
-    stockStatusLabel: "Đủ hàng",
-    status: "ACTIVE",
-  },
-  {
-    id: "prod-5",
-    name: "Lọ hoa mini men rạn phong cách Wabi Sabi mộc mạc",
-    sku: "VN-VAS-00315",
-    category: "vases",
-    categoryLabel: "Gốm trang trí để bàn",
-    imageUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuC9hmbfjqQvkMDncTRabW_Npnq2Eqtv9rIuJo_d28y_21ZNN_niUZ7ldiwnOHubQOeOLu0sxvQq09kk8tPnixcMu6IZiU4hOW8XNBv_A6iipbu_qH7VtdrzmxD2QXpSxuLNC95h7z1ih_IEQfDBiEjWSjFiK-fwJ_0QAZPYSILelhyK86v41zoxiNDxfPX25YeBnBl5caHuOf2EHHtAdD26iu2V7dq9j5Yp27gOwzhfglZ4VkcJDrrR",
-    imageAlt: "Lọ hoa mini men rạn",
-    soldCount: 51,
-    variationTitle: "2 Mẫu hình học",
-    variationSubtitle: "Bản thủ công giới hạn",
-    price: 280000,
-    formattedPrice: "280.000 ₫",
-    originalPrice: 320000,
-    formattedOriginalPrice: "320.000 ₫",
-    stock: 2,
-    stockStatus: "critical",
-    stockStatusLabel: "Nguy cơ hết hàng!",
-    status: "LOW_STOCK",
-  },
-  {
-    id: "prod-6",
-    name: "Tách cà phê men hoả biến lòng men ngọc kèm đĩa lót oval",
-    sku: "VN-CUP-00511",
-    category: "dining",
-    categoryLabel: "Ly cốc gốm sứ",
-    imageUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuBcLUY0_wQAKnDFZ8QBmZAu3RY4wZvw26zH_F6wojTZ6opKfOtQwINuC_08Pg_lG3PhlY-bW8EaN_GTWJ613nhUYJPeXIo6WTc1pA4mV7-etovEj5IMi1tA9b19QSLswKGxvBaytsuoRgTPzF_Q0vOr3rMI6XUpp2xCCUrMEwyoDpe8GYioW6QlKpKLnEv39DQk9ZW2eKHAayqOIGzoxGfVtsZJ8qDIzXkrfnGRybLS58wY7RTo1ord",
-    imageAlt: "Tách cà phê men hoả biến",
-    soldCount: 43,
-    variationTitle: "Dung tích 220ml",
-    variationSubtitle: "Men xanh cobalt",
-    price: 245000,
-    formattedPrice: "245.000 ₫",
-    priceNote: "Tạm hết",
-    stock: 0,
-    stockStatus: "out",
-    stockStatusLabel: "Đã hết hàng",
-    status: "OUT_OF_STOCK",
-  },
-];
+const CATEGORY_NAMES: Record<number, string> = {
+  930001: "Thời trang",
+  930002: "Áo và phụ kiện",
+  930003: "Nhà cửa & Đời sống",
+  930004: "Thực phẩm & Đồ uống",
+  930005: "Điện thoại & Phụ kiện",
+};
+
+export const DEFAULT_PRODUCT_IMAGE =
+  "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800";
+
+export const normalizeSellerProduct = (
+  product: BackendSellerProduct,
+  categoryNames = CATEGORY_NAMES
+): ShopProductItem => {
+  const variants = product.variants || [];
+  const primaryImg =
+    product.images?.find((img) => img.is_primary)?.url ||
+    product.thumbnail_url ||
+    product.images?.[0]?.url ||
+    DEFAULT_PRODUCT_IMAGE;
+
+  const totalStock = variants.reduce((sum, v) => sum + (v.stock || 0), 0);
+  const primarySku = variants[0]?.sku || `SKU-${product.id}`;
+
+  let stockStatus: ShopProductStockStatus;
+  let stockStatusLabel: string;
+  if (totalStock === 0) {
+    stockStatus = "out";
+    stockStatusLabel = "Đã hết hàng";
+  } else if (totalStock <= 5) {
+    stockStatus = "critical";
+    stockStatusLabel = "Nguy cơ hết hàng";
+  } else if (totalStock <= 20) {
+    stockStatus = "low";
+    stockStatusLabel = "Sắp hết hàng";
+  } else {
+    stockStatus = "abundant";
+    stockStatusLabel = "Đủ hàng";
+  }
+
+  const catName =
+    categoryNames[product.category_id] || `Danh mục #${product.category_id}`;
+
+  const variationNames = variants
+    .map((v) => v.name)
+    .filter(Boolean)
+    .join(", ");
+
+  return {
+    id: String(product.id),
+    name: product.name,
+    sku: primarySku,
+    category: String(product.category_id),
+    categoryId: product.category_id,
+    categoryLabel: catName,
+    imageUrl: primaryImg,
+    imageAlt: product.name,
+    soldCount: 0,
+    variationTitle: `${variants.length} biến thể`,
+    variationSubtitle: variationNames || "Tiêu chuẩn",
+    price: product.price,
+    formattedPrice: new Intl.NumberFormat("vi-VN").format(product.price) + " ₫",
+    stock: totalStock,
+    stockStatus,
+    stockStatusLabel,
+    status: (product.status as ShopProductItem["status"]) || "ACTIVE",
+    rawVariants: variants,
+    rawImages: product.images,
+  };
+};
 
 export const initialShopProductStats: ShopProductStats = {
-  totalInventoryValue: 348650000,
-  formattedInventoryValue: "348.650.000 ₫",
-  totalProductsCount: 86,
-  totalStockUnits: 421,
-  readinessRate: 90.7,
-  readinessChangeLabel: "+1.2% tuần này",
-  lowStockSkusCount: 5,
-  outOfStockSkusCount: 3,
-  activeSkusCount: 86,
+  totalInventoryValue: 0,
+  formattedInventoryValue: "0 ₫",
+  totalProductsCount: 0,
+  totalStockUnits: 0,
+  readinessRate: 100,
+  readinessChangeLabel: "Dữ liệu thực tế",
+  lowStockSkusCount: 0,
+  outOfStockSkusCount: 0,
+  activeSkusCount: 0,
   statusTabCounts: {
-    all: 86,
-    active: 78,
-    low_stock: 5,
-    out_of_stock: 3,
+    all: 0,
+    active: 0,
+    low_stock: 0,
+    out_of_stock: 0,
     pending: 0,
-    hidden: 5,
+    hidden: 0,
   },
 };
 
 export const shopProductApi = {
-  fetchStats: async (): Promise<ShopProductStats> => {
-    await new Promise((resolve) => setTimeout(resolve, 150));
-    return { ...initialShopProductStats };
-  },
-
-  fetchProducts: async (filters?: Partial<ShopProductFilterState>): Promise<{
+  fetchProducts: async (
+    filters?: Partial<ShopProductFilterState>
+  ): Promise<{
     items: ShopProductItem[];
     total: number;
   }> => {
-    await new Promise((resolve) => setTimeout(resolve, 200));
-    let items = [...initialShopProducts];
+    const params: Record<string, string | number> = {
+      page: filters?.currentPage || 1,
+      limit: filters?.pageSize || 20,
+    };
+
+    if (filters?.statusTab) {
+      if (filters.statusTab === "active") params.status = "ACTIVE";
+      else if (filters.statusTab === "pending") params.status = "PENDING";
+      else if (filters.statusTab === "hidden") params.status = "HIDDEN";
+    }
+
+    const response = await axiosClient.get<{
+      success: boolean;
+      data: {
+        products: BackendSellerProduct[];
+        total: number;
+        page: number;
+        limit: number;
+      };
+    }>("/api/v1/seller/products", { params });
+
+    const rawProducts = response.data.data?.products || [];
+    let items = rawProducts.map((p) => normalizeSellerProduct(p));
 
     if (filters?.searchQuery) {
-      const q = filters.searchQuery.toLowerCase();
+      const q = filters.searchQuery.toLowerCase().trim();
       items = items.filter(
         (p) =>
           p.name.toLowerCase().includes(q) ||
@@ -173,20 +144,18 @@ export const shopProductApi = {
     }
 
     if (filters?.category && filters.category !== "all") {
-      items = items.filter((p) => p.category === filters.category);
+      items = items.filter(
+        (p) =>
+          p.category === filters.category ||
+          String(p.categoryId) === filters.category
+      );
     }
 
-    if (filters?.statusTab && filters.statusTab !== "all") {
-      if (filters.statusTab === "active") {
-        items = items.filter((p) => p.status === "ACTIVE");
-      } else if (filters.statusTab === "low_stock") {
-        items = items.filter((p) => p.status === "LOW_STOCK");
+    if (filters?.statusTab) {
+      if (filters.statusTab === "low_stock") {
+        items = items.filter((p) => p.stock > 0 && p.stock <= 5);
       } else if (filters.statusTab === "out_of_stock") {
-        items = items.filter((p) => p.status === "OUT_OF_STOCK");
-      } else if (filters.statusTab === "pending") {
-        items = items.filter((p) => p.status === "PENDING");
-      } else if (filters.statusTab === "hidden") {
-        items = items.filter((p) => p.status === "HIDDEN");
+        items = items.filter((p) => p.stock === 0);
       }
     }
 
@@ -212,39 +181,222 @@ export const shopProductApi = {
 
     return {
       items,
-      total: items.length,
+      total: response.data.data?.total ?? items.length,
     };
   },
 
-  deleteProduct: async (id: string): Promise<boolean> => {
-    await new Promise((resolve) => setTimeout(resolve, 200));
-    return Boolean(id);
+  getProduct: async (id: string | number): Promise<ShopProductItem> => {
+    const response = await axiosClient.get<{
+      success: boolean;
+      data: BackendSellerProduct;
+    }>(`/api/v1/seller/products/${id}`);
+    return normalizeSellerProduct(response.data.data);
   },
 
-  saveProduct: async (product: Partial<ShopProductItem>): Promise<ShopProductItem> => {
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    const isNew = !product.id;
-    const item: ShopProductItem = {
-      id: product.id || `prod-${Date.now()}`,
-      name: product.name || "Sản phẩm gốm mới",
-      sku: product.sku || `VN-NEW-${Math.floor(Math.random() * 90000 + 10000)}`,
-      category: product.category || "art",
-      categoryLabel: product.categoryLabel || "Gốm nghệ thuật",
-      imageUrl:
-        product.imageUrl ||
-        "https://lh3.googleusercontent.com/aida-public/AB6AXuBJ5EfnOPri4N6dEKOhMUIP8rqxXkduxGinUXkkdk-ki54I6mmHzOcOOPjcbd23uKAZXNNym25Js8B8YU-yyV_eC1yqXNialcTX1jjc-od6Q-K_LG229JttV_xBGrwwd5P9mXNgumN-ayvaBrDkpYCQTwFMCKokyBq6ObPXsEAw9FfdCUvbh1mbeuZf3Usns3t8wXsS1_-7OpdgdGh0K2lLhrzdmeUgtGp9rPfguaSqd0BMwgmn0vrC",
-      imageAlt: product.name || "Hình ảnh sản phẩm",
-      soldCount: product.soldCount || 0,
-      variationTitle: product.variationTitle || "Tiêu chuẩn",
-      variationSubtitle: product.variationSubtitle || "Mặc định",
-      price: product.price || 500000,
-      formattedPrice: new Intl.NumberFormat("vi-VN").format(product.price || 500000) + " ₫",
-      stock: product.stock || 20,
-      stockStatus: (product.stock || 20) > 10 ? "abundant" : (product.stock || 20) > 0 ? "low" : "out",
-      stockStatusLabel: (product.stock || 20) > 10 ? "Đủ hàng" : (product.stock || 20) > 0 ? "Sắp hết" : "Hết hàng",
-      status: isNew ? "ACTIVE" : (product.status || "ACTIVE"),
+  createProduct: async (
+    payload: CreateSellerProductPayload
+  ): Promise<ShopProductItem> => {
+    const response = await axiosClient.post<{
+      success: boolean;
+      data: BackendSellerProduct;
+    }>("/api/v1/seller/products", payload);
+    return normalizeSellerProduct(response.data.data);
+  },
+
+  updateProduct: async (
+    id: string | number,
+    payload: UpdateSellerProductPayload
+  ): Promise<ShopProductItem> => {
+    const response = await axiosClient.put<{
+      success: boolean;
+      data: BackendSellerProduct;
+    }>(`/api/v1/seller/products/${id}`, payload);
+    return normalizeSellerProduct(response.data.data);
+  },
+
+  deleteProduct: async (id: string | number): Promise<boolean> => {
+    const response = await axiosClient.delete<{
+      success: boolean;
+      data: { id: number };
+    }>(`/api/v1/seller/products/${id}`);
+    return response.data.success;
+  },
+
+  fetchCategoryAttributes: async (
+    categoryId: string | number
+  ): Promise<BackendCategoryAttribute[]> => {
+    const response = await axiosClient.get<{
+      success: boolean;
+      data: {
+        category_id: number;
+        attributes: BackendCategoryAttribute[];
+      };
+    }>(`/api/v1/categories/${categoryId}/attributes`);
+    return response.data.data?.attributes || [];
+  },
+
+  fetchCategories: async (): Promise<
+    Array<{ id: number; name: string; slug: string }>
+  > => {
+    const response = await axiosClient.get<{
+      success: boolean;
+      data: Array<{ id: number; name: string; slug: string }>;
+    }>("/api/v1/categories");
+    return response.data.data || [];
+  },
+
+  fetchStats: async (): Promise<ShopProductStats> => {
+    const response = await axiosClient.get<{
+      success: boolean;
+      data: {
+        products: BackendSellerProduct[];
+        total: number;
+      };
+    }>("/api/v1/seller/products", { params: { limit: 100 } });
+
+    const products = response.data.data?.products || [];
+    const total = response.data.data?.total || products.length;
+
+    let totalInventoryValue = 0;
+    let totalStockUnits = 0;
+    let lowStockCount = 0;
+    let outOfStockCount = 0;
+    let activeCount = 0;
+    let pendingCount = 0;
+    let hiddenCount = 0;
+
+    for (const p of products) {
+      const variants = p.variants || [];
+      const prodStock = variants.reduce((acc, v) => acc + (v.stock || 0), 0);
+      totalStockUnits += prodStock;
+
+      for (const v of variants) {
+        totalInventoryValue += (v.price || p.price || 0) * (v.stock || 0);
+      }
+
+      if (p.status === "ACTIVE") activeCount++;
+      else if (p.status === "PENDING") pendingCount++;
+      else if (p.status === "HIDDEN") hiddenCount++;
+
+      if (prodStock === 0) {
+        outOfStockCount++;
+      } else if (prodStock <= 5) {
+        lowStockCount++;
+      }
+    }
+
+    const readinessRate =
+      total > 0
+        ? Math.round(((total - outOfStockCount) / total) * 1000) / 10
+        : 100;
+
+    return {
+      totalInventoryValue,
+      formattedInventoryValue:
+        new Intl.NumberFormat("vi-VN").format(totalInventoryValue) + " ₫",
+      totalProductsCount: total,
+      totalStockUnits,
+      readinessRate,
+      readinessChangeLabel: "Kho hàng sẵn sàng",
+      lowStockSkusCount: lowStockCount,
+      outOfStockSkusCount: outOfStockCount,
+      activeSkusCount: activeCount,
+      statusTabCounts: {
+        all: total,
+        active: activeCount,
+        low_stock: lowStockCount,
+        out_of_stock: outOfStockCount,
+        pending: pendingCount,
+        hidden: hiddenCount,
+      },
     };
-    return item;
+  },
+
+  saveProduct: async (
+    product: Partial<ShopProductItem> & {
+      description?: string;
+      brand_id?: number | null;
+      categoryId?: number;
+    }
+  ): Promise<ShopProductItem> => {
+    const name = product.name?.trim() || "Sản phẩm mới";
+    const price = Math.max(1000, Number(product.price) || 100000);
+    const stock = Math.max(0, Number(product.stock) || 0);
+    const sku =
+      product.sku?.trim() || `SKU-${Date.now().toString(36).toUpperCase()}`;
+    const imgUrl =
+      product.imageUrl?.trim() && product.imageUrl.startsWith("https://")
+        ? product.imageUrl.trim()
+        : DEFAULT_PRODUCT_IMAGE;
+
+    const parsedCategoryId =
+      product.categoryId ||
+      (product.category && !isNaN(Number(product.category))
+        ? Number(product.category)
+        : 930002);
+
+    const description =
+      product.description ||
+      product.variationSubtitle ||
+      product.name ||
+      "Mô tả sản phẩm";
+
+    if (product.id && !isNaN(Number(product.id))) {
+      const existingVariants = product.rawVariants || [];
+      const primaryVariantId = existingVariants[0]?.id;
+
+      const updatePayload: UpdateSellerProductPayload = {
+        name,
+        description,
+        category_id: parsedCategoryId,
+        brand_id: product.brand_id ?? null,
+        price,
+        images: [
+          {
+            url: imgUrl,
+            is_primary: true,
+          },
+        ],
+        variants: [
+          {
+            id: primaryVariantId,
+            sku,
+            name: product.variationTitle || "Tiêu chuẩn",
+            price,
+            stock,
+            image_url: imgUrl,
+            attribute_value_ids: existingVariants[0]?.attribute_value_ids || [],
+          },
+        ],
+      };
+
+      return await shopProductApi.updateProduct(product.id, updatePayload);
+    } else {
+      const createPayload: CreateSellerProductPayload = {
+        name,
+        description,
+        category_id: parsedCategoryId,
+        brand_id: product.brand_id ?? null,
+        price,
+        images: [
+          {
+            url: imgUrl,
+            is_primary: true,
+          },
+        ],
+        variants: [
+          {
+            sku,
+            name: product.variationTitle || "Tiêu chuẩn",
+            price,
+            stock,
+            image_url: imgUrl,
+            attribute_value_ids: [],
+          },
+        ],
+      };
+
+      return await shopProductApi.createProduct(createPayload);
+    }
   },
 };
-
