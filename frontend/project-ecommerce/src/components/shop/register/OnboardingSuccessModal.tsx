@@ -41,27 +41,26 @@ export const OnboardingSuccessModal: React.FC<OnboardingSuccessModalProps> = ({
           </div>
           <div>
             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 font-label-sm text-label-sm font-bold uppercase tracking-wide">
-              Bản mô phỏng
+              Đang chờ xét duyệt
             </div>
             <h3 className="font-headline-lg text-headline-lg font-bold text-on-surface mt-1">
-              Hồ sơ chưa được gửi lên BE
+              Hồ sơ đã được gửi
             </h3>
           </div>
         </div>
 
         <div role="status" className="p-4 rounded-xl bg-amber-50 border border-amber-200 space-y-2">
           <p className="font-body-md text-body-md text-amber-950">
-            {message ||
-              "Backend hiện chưa có API tiếp nhận hồ sơ onboarding/KYC. Thông tin chưa được gửi hoặc lưu trên máy chủ."}
+            {message || "Hồ sơ shop đã được lưu trên máy chủ và đang chờ xét duyệt."}
           </p>
           <p className="font-body-sm text-body-sm text-amber-900">
-            Không nhập thông tin nhạy cảm vào bản mô phỏng. Dữ liệu chỉ còn trong phiên hiện tại.
+            Thông tin giấy tờ định danh và tài khoản ngân hàng chưa được thu thập trong luồng này.
           </p>
         </div>
 
         <div className="p-4 rounded-xl bg-surface-container-low space-y-2 text-body-sm">
           <div className="flex justify-between gap-4">
-            <span className="text-on-surface-variant">Mã mô phỏng:</span>
+            <span className="text-on-surface-variant">Mã hồ sơ:</span>
             <span className="font-mono font-bold text-on-surface">{applicationId || "Chưa tạo"}</span>
           </div>
           <div className="flex justify-between gap-4">
@@ -69,7 +68,7 @@ export const OnboardingSuccessModal: React.FC<OnboardingSuccessModalProps> = ({
             <span className="font-semibold text-on-surface">{shopName || "Chưa nhập"}</span>
           </div>
           <div className="flex justify-between gap-4">
-            <span className="text-on-surface-variant">Email nhập trong form:</span>
+            <span className="text-on-surface-variant">Email tài khoản:</span>
             <span className="font-mono text-on-surface">{ownerEmail || "Chưa nhập"}</span>
           </div>
         </div>

@@ -1,10 +1,13 @@
 package auth
 
 import (
+	"context"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -56,6 +59,72 @@ func roleFromDB(v string) string {
 	default:
 		return ""
 	}
+}
+
+type roleQueryer interface {
+	QueryContext(context.Context, string, ...any) (*sql.Rows, error)
+	QueryRowContext(context.Context, string, ...any) *sql.Row
+}
+
+func loadUserShopStatus(ctx context.Context, queryer roleQueryer, userID any) (string, error) {
+	var status string
+	err := queryer.QueryRowContext(ctx, `SELECT status FROM shops WHERE owner_id=?`, userID).Scan(&status)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", nil
+	}
+	return status, err
+}
+
+func loadUserRoles(ctx context.Context, queryer roleQueryer, userID any) ([]string, error) {
+	rows, err := queryer.QueryContext(ctx, `SELECT role_code FROM user_roles WHERE user_id=? ORDER BY role_code`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	roles := make([]string, 0, 2)
+	seen := make(map[string]struct{}, 3)
+	for rows.Next() {
+		var role string
+		if err = rows.Scan(&role); err != nil {
+			return nil, err
+		}
+		role = roleFromDB(role)
+		if role == "" {
+			return nil, fmt.Errorf("unknown role assigned to user")
+		}
+		if _, exists := seen[role]; !exists {
+			roles = append(roles, role)
+			seen[role] = struct{}{}
+		}
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	if len(roles) == 0 {
+		return nil, fmt.Errorf("user has no assigned roles")
+	}
+	return roles, nil
+}
+
+func primaryRole(roles []string) string {
+	for _, preferred := range []string{"ADMIN", "SELLER", "CLIENT"} {
+		for _, role := range roles {
+			if role == preferred {
+				return preferred
+			}
+		}
+	}
+	return ""
+}
+
+func hasRole(roles []string, role string) bool {
+	role = strings.ToUpper(strings.TrimSpace(role))
+	for _, assigned := range roles {
+		if assigned == role {
+			return true
+		}
+	}
+	return false
 }
 
 func digest(s string) string { h := sha256.Sum256([]byte(s)); return hex.EncodeToString(h[:]) }

@@ -58,7 +58,7 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
         })
       );
       // Chỉ gọi API trạng thái follow khi đã đăng nhập vai trò CLIENT
-      if (user && user.role?.toLowerCase() === "client") {
+      if (user && (user.roles?.includes("client") || user.role === "client")) {
         dispatch(getShopFollowState(shopId));
       }
     }
@@ -77,7 +77,7 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
       setTimeout(() => setFollowMessage(null), 3500);
       return;
     }
-    if (user.role?.toLowerCase() !== "client") {
+    if (!user.roles?.includes("client") && user.role !== "client") {
       setFollowMessage("Tính năng theo dõi cửa hàng chỉ dành cho tài khoản Người mua.");
       setTimeout(() => setFollowMessage(null), 3500);
       return;

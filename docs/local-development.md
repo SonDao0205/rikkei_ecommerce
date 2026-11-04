@@ -34,7 +34,7 @@ Seed dùng các ID cố định khai báo trong file và có thể chạy lại;
 | Quản trị | `seed-admin@local.test` | admin, hoạt động |
 | Người bán A | `seed-seller-a@local.test` | seller, shop hoạt động |
 | Người mua | `seed-buyer@local.test` | client, hoạt động |
-| Người bán B | `seed-seller-b@local.test` | seller, shop chờ duyệt |
+| Người đăng ký shop B | `seed-seller-b@local.test` | client, shop chờ duyệt; chưa có role seller |
 | Người bán công nghệ | `seed-seller-tech@local.test` | seller, shop Tech An Việt hoạt động |
 | Tài khoản khóa | `seed-locked@local.test` | client, bị khóa để thử đăng nhập |
 | Chưa xác minh email | `seed-unverified@local.test` | client, `email_verified=0` |

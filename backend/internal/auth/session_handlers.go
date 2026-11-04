@@ -60,7 +60,13 @@ func (a *App) register(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 500, "internal_error", "Internal server error")
 		return
 	}
-	res, e := a.db.ExecContext(r.Context(), `INSERT INTO users(email,phone,password_hash,full_name,role) VALUES(?,?,?,?, 'client')`, q.Email, q.Phone, string(hash), q.FullName)
+	tx, e := a.db.BeginTx(r.Context(), nil)
+	if e != nil {
+		a.serverError(w, r, e)
+		return
+	}
+	defer tx.Rollback()
+	res, e := tx.ExecContext(r.Context(), `INSERT INTO users(email,phone,password_hash,full_name,role) VALUES(?,?,?,?, 'client')`, q.Email, q.Phone, string(hash), q.FullName)
 	if e != nil {
 		if strings.Contains(strings.ToLower(e.Error()), "duplicate") {
 			writeError(w, 409, "account_exists", "An account with this email or phone already exists")
@@ -74,7 +80,15 @@ func (a *App) register(w http.ResponseWriter, r *http.Request) {
 		a.serverError(w, r, e)
 		return
 	}
-	u := User{ID: id, Email: q.Email, FullName: q.FullName, Phone: q.Phone, Role: "CLIENT", Status: "ACTIVE", CreatedAt: time.Now().UTC()}
+	if _, e = tx.ExecContext(r.Context(), `INSERT INTO user_roles(user_id,role_code) VALUES(?,'CLIENT')`, id); e != nil {
+		a.serverError(w, r, e)
+		return
+	}
+	if e = tx.Commit(); e != nil {
+		a.serverError(w, r, e)
+		return
+	}
+	u := User{ID: id, Email: q.Email, FullName: q.FullName, Phone: q.Phone, Role: "CLIENT", Roles: []string{"CLIENT"}, Status: "ACTIVE", CreatedAt: time.Now().UTC()}
 	writeJSON(w, 201, map[string]any{"success": true, "data": u, "message": "Account created"})
 }
 
@@ -111,10 +125,20 @@ func (a *App) login(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 401, "invalid_credentials", "Email/phone or password is incorrect")
 		return
 	}
-	u.Role = roleFromDB(u.Role)
-	accessToken, e := a.newSession(r.Context(), w, u)
-	if e != nil {
-		a.serverError(w, r, e)
+	u.Roles, err = loadUserRoles(r.Context(), a.db, u.ID)
+	if err != nil {
+		a.serverError(w, r, err)
+		return
+	}
+	u.Role = primaryRole(u.Roles)
+	u.ShopStatus, err = loadUserShopStatus(r.Context(), a.db, u.ID)
+	if err != nil {
+		a.serverError(w, r, err)
+		return
+	}
+	accessToken, err := a.newSession(r.Context(), w, u)
+	if err != nil {
+		a.serverError(w, r, err)
 		return
 	}
 	writeJSON(w, 200, map[string]any{"success": true, "data": map[string]any{"user": u, "access_token": accessToken, "token_type": "Bearer", "expires_in": int64(a.cfg.AccessTTL.Seconds())}})
@@ -222,7 +246,17 @@ func (a *App) refresh(w http.ResponseWriter, r *http.Request) {
 		a.serverError(w, r, err)
 		return
 	}
-	u.Role = roleFromDB(u.Role)
+	u.Roles, err = loadUserRoles(r.Context(), tx, uid)
+	if err != nil {
+		a.serverError(w, r, err)
+		return
+	}
+	u.Role = primaryRole(u.Roles)
+	u.ShopStatus, err = loadUserShopStatus(r.Context(), tx, uid)
+	if err != nil {
+		a.serverError(w, r, err)
+		return
+	}
 	remaining := time.Until(expiresAt)
 	if remaining <= 0 {
 		a.clearRefreshCookie(w)

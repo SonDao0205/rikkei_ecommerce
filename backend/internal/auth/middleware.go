@@ -20,8 +20,8 @@ func (a *App) requireAuth(next http.HandlerFunc) http.HandlerFunc {
 			writeError(w, 401, "unauthorized", "Access token is invalid or expired")
 			return
 		}
-		var role, status string
-		e = a.db.QueryRowContext(r.Context(), `SELECT role,status FROM users WHERE id=?`, c.UserID).Scan(&role, &status)
+		var status string
+		e = a.db.QueryRowContext(r.Context(), `SELECT status FROM users WHERE id=?`, c.UserID).Scan(&status)
 		if errors.Is(e, sql.ErrNoRows) || e == nil && status != "ACTIVE" {
 			writeError(w, 401, "unauthorized", "Session is invalid")
 			return
@@ -40,13 +40,20 @@ func (a *App) requireAuth(next http.HandlerFunc) http.HandlerFunc {
 			a.serverError(w, r, e)
 			return
 		}
-		next(w, r.WithContext(context.WithValue(r.Context(), ctxKey{}, contextUser{ID: c.UserID, Role: roleFromDB(role), SessionID: c.SessionID})))
+		roles, err := loadUserRoles(r.Context(), a.db, c.UserID)
+		if err != nil {
+			a.serverError(w, r, err)
+			return
+		}
+		next(w, r.WithContext(context.WithValue(r.Context(), ctxKey{}, contextUser{
+			ID: c.UserID, Role: primaryRole(roles), Roles: roles, SessionID: c.SessionID,
+		})))
 	}
 }
 
 func (a *App) requireRole(role string, next http.HandlerFunc) http.HandlerFunc {
 	return a.requireAuth(func(w http.ResponseWriter, r *http.Request) {
-		if current(r).Role != role {
+		if !hasRole(current(r).Roles, role) {
 			writeError(w, 403, "forbidden", "Insufficient permissions")
 			return
 		}
@@ -61,5 +68,5 @@ func current(r *http.Request) contextUser {
 
 func CurrentUser(r *http.Request) Identity {
 	user := current(r)
-	return Identity{ID: user.ID, Role: user.Role, SessionID: user.SessionID}
+	return Identity{ID: user.ID, Role: user.Role, Roles: append([]string(nil), user.Roles...), SessionID: user.SessionID}
 }

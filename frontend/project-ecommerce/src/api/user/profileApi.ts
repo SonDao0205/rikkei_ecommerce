@@ -21,6 +21,9 @@ const mapProfile = (user: BackendUser): UserProfileDetails => ({
   phone_verified: 0,
   status: user.status === "LOCKED" ? "LOCKED" : "ACTIVE",
   role: (user.role ? user.role.toLowerCase() : "client") as UserRole,
+  roles: user.roles?.map((role) => role.toLowerCase() as UserRole) ??
+    [(user.role ? user.role.toLowerCase() : "client") as UserRole],
+  shop_status: user.shop_status,
   date_of_birth: cachedProfileExt.date_of_birth,
   gender: cachedProfileExt.gender,
   membership_tier: cachedProfileExt.membership_tier,

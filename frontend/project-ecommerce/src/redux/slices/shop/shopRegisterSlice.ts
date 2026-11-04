@@ -15,7 +15,7 @@ const initialState: ShopRegisterState = {
   formData: initialShopRegistrationData,
   isSubmitting: false,
   isSavingDraft: false,
-  lastSavedAt: "15:20",
+  lastSavedAt: null,
   registrationResult: null,
   isSuccessModalOpen: false,
   error: null,

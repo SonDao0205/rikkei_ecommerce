@@ -11,6 +11,8 @@ export interface User {
   email_verified: number;
   status: 'ACTIVE' | 'LOCKED';
   role: 'client' | 'seller' | 'admin';
+  roles?: UserRole[];
+  shop_status?: string;
   created_at: string;
   updated_at: string;
 }
