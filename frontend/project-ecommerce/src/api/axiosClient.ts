@@ -11,6 +11,29 @@ export const getInMemoryAccessToken = (): string | null => {
     return inMemoryAccessToken;
 };
 
+export const shouldFallbackToMock = (error: unknown): boolean => {
+    if (
+        typeof error !== "object" ||
+        error === null ||
+        !("isAxiosError" in error) ||
+        error.isAxiosError !== true
+    ) {
+        return false;
+    }
+
+    if (!("response" in error) || error.response == null) {
+        return true;
+    }
+
+    return (
+        typeof error.response === "object" &&
+        error.response !== null &&
+        "status" in error.response &&
+        typeof error.response.status === "number" &&
+        error.response.status >= 500
+    );
+};
+
 const rawApiBase = import.meta.env.VITE_API_BASE_URL;
 const rawBackendHost = import.meta.env.VITE_BACKEND_HOST;
 const baseURL =
@@ -141,6 +164,7 @@ axiosClient.interceptors.response.use(
         const enhancedError = Object.assign(new Error(message), {
             response: error.response,
             errors: data?.errors,
+            isAxiosError: true,
         });
         return Promise.reject(enhancedError);
     }
