@@ -13,7 +13,6 @@ import {
 import { useAppDispatch, useAppSelector } from "../../redux/store";
 import {
   getAdminShops,
-  getShopMetrics,
   approveShopThunk,
   rejectShopThunk,
   toggleShopLiveThunk,
@@ -61,7 +60,6 @@ export const AdminShop: React.FC = () => {
   const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
 
   useEffect(() => {
-    dispatch(getShopMetrics());
     dispatch(getAdminShops());
   }, [dispatch]);
 
@@ -180,8 +178,8 @@ export const AdminShop: React.FC = () => {
           role="note"
           className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-950 text-sm"
         >
-          Danh sách và duyệt/từ chối/khóa shop dùng BE. Thống kê, bật/tắt hiển thị, mở khóa,
-          hoa hồng và xuất CSV hiện là dữ liệu mô phỏng vì BE chưa có các API đó.
+          Danh sách, bộ lọc trạng thái và duyệt/từ chối/khóa shop lấy dữ liệu từ BE. Số liệu
+          doanh thu, bật/tắt hiển thị, mở khóa, hoa hồng và xuất CSV chưa có API BE.
         </div>
 
         {/* 1. Page Header & Quick Metric Strip */}

@@ -263,7 +263,10 @@ export const KycReviewDrawer: React.FC<KycReviewDrawerProps> = ({
           <button
             type="button"
             onClick={() => setIsRejectModalOpen(true)}
-            disabled={isActionLoading || shop.status === "REJECTED"}
+            disabled={
+              isActionLoading ||
+              (shop.status !== "PENDING" && shop.status !== "NEEDS_INFO")
+            }
             className="px-4 py-2.5 rounded-xl border border-error text-error hover:bg-error-container hover:text-on-error-container font-label-md text-label-md transition-colors disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
           >
             <span className="material-symbols-outlined text-[18px]">cancel</span>
@@ -282,7 +285,7 @@ export const KycReviewDrawer: React.FC<KycReviewDrawerProps> = ({
               id="approve-kyc-btn"
               type="button"
               onClick={() => onApprove(shop.id, adminNotes)}
-              disabled={isActionLoading || shop.status === "ACTIVE"}
+              disabled={isActionLoading || shop.status !== "PENDING"}
               className="px-5 py-2.5 rounded-xl bg-primary-container hover:bg-primary text-on-primary font-label-md text-label-md transition-all shadow-md cursor-pointer disabled:opacity-50 flex items-center gap-2"
             >
               {isActionLoading ? (
