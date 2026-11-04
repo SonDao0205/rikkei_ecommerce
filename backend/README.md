@@ -83,6 +83,7 @@ Không chạy hai backend cùng bind một host port. API gốc mặc định `h
 | `REFRESH_TOKEN_TTL` | Tuổi thọ refresh session | `168h` (7 ngày); tối thiểu 1 giờ |
 | `OTP_TTL` | Tuổi thọ OTP | `10m`; 1–30 phút |
 | `CORS_ALLOWED_ORIGINS` | Allowlist origin, phân cách dấu phẩy | Local `http://localhost:5173`; production chỉ origin HTTPS tường minh |
+| `TRUSTED_PROXY_CIDRS` | CIDR của reverse proxy được phép cung cấp `X-Real-IP` | Compose local mặc định `172.22.0.3/32`; thay bằng đúng IP/CIDR proxy thực tế |
 | `COOKIE_SECURE` | Chỉ gửi refresh cookie qua HTTPS | `false` local; production bắt buộc `true` |
 | `AUTO_MIGRATE` | Áp dụng migration theo domain khi API khởi động | `true` development; production bắt buộc `false` |
 | `SMTP_HOST`, `SMTP_PORT` | SMTP STARTTLS gửi OTP | Port mặc định `587`; production cần SMTP hoạt động |
@@ -103,7 +104,7 @@ $env:AUTO_MIGRATE = "false"
 go run ./cmd/migrate
 ```
 
-Chạy API production với `AUTO_MIGRATE=false`, HTTPS, `COOKIE_SECURE=true`, JWT secret riêng, CORS allowlist HTTPS chính xác và SMTP STARTTLS. Dùng reverse proxy/load balancer để kết thúc TLS và giới hạn truy cập mạng tới API/DB. Khi FE/API khác site, cần thiết kế cookie và CSRF protection phù hợp trước khi triển khai.
+Chạy API production với `AUTO_MIGRATE=false`, HTTPS, `COOKIE_SECURE=true`, JWT secret riêng, CORS allowlist HTTPS chính xác và SMTP STARTTLS. Nếu API nằm sau reverse proxy, khai báo `TRUSTED_PROXY_CIDRS` chỉ cho IP/CIDR của proxy thực tế; API chỉ tin `X-Real-IP` khi TCP peer thuộc danh sách này, các header forwarded từ client trực tiếp bị bỏ qua. Với Docker local, Compose mặc định dùng `172.22.0.3/32`; kiểm tra IP frontend bằng `docker inspect` sau khi tạo stack và cập nhật `.env` nếu khác. Không dùng CIDR rộng hơn mạng proxy cần thiết. Dùng reverse proxy/load balancer để kết thúc TLS và giới hạn truy cập mạng tới API/DB. Khi FE/API khác site, cần thiết kế cookie và CSRF protection phù hợp trước khi triển khai.
 
 `GET /healthz` trả `200` khi API truy vấn được DB và `503` khi DB chưa sẵn sàng; đây là health check cơ bản, không thay thế monitoring/backup.
 
@@ -126,7 +127,7 @@ $env:API_BASE_URL = 'http://localhost:18080' # đổi theo cổng host đang dù
 
 Smoke test tạo tài khoản ngẫu nhiên và kiểm tra catalog, tìm kiếm/filter, chi tiết sản phẩm/shop, follow/unfollow, auth, refresh replay, RBAC và password. Không trỏ script đến production/shared DB. OTP được ghi log chỉ ở development; không bật development mode với dữ liệu production.
 
-Postman collection importable bao phủ các route BE hiện có, kèm local environment và hướng dẫn chạy bằng Collection Runner/Newman tại [`postman/`](../postman/README.md). Nạp lại seed trước mỗi lần chạy vì collection xóa mềm fixture kiểm thử inventory `960009`.
+Postman collection importable kiểm thử các luồng API chính (không kiểm thử đầy đủ mọi route/nhánh), kèm local environment và hướng dẫn chạy bằng Collection Runner/Newman tại [`postman/`](../postman/README.md). Collection kiểm tra contract `status_counts` và input lỗi của admin shop; các thao tác ghi/xóa và fixture bị ảnh hưởng được liệt kê trong hướng dẫn Postman. Chỉ chạy trên database local/test riêng.
 
 ## 2. Hướng dẫn FE tích hợp API
 
@@ -163,9 +164,11 @@ Postman collection importable bao phủ các route BE hiện có, kèm local env
 | `GET` | `/api/v1/shops/{id}` | Không | Hồ sơ shop đang hoạt động |
 | `GET` | `/api/v1/shops/{id}/products` | Không | Sản phẩm công khai của shop |
 | `GET` | `/api/v1/shops/{id}/follow` | CLIENT | Trạng thái follow của user hiện tại |
-| `POST` | `/api/v1/shops` | CLIENT | Gửi hồ sơ mở shop; trạng thái ban đầu `PENDING` |
+| `POST` | `/api/v1/shops` | CLIENT | Tương thích API cũ; tạo hồ sơ shop `PENDING` |
+| `POST` | `/api/v1/me/shop` | CLIENT | Tạo bản nháp shop `DRAFT` |
 | `GET` | `/api/v1/me/shop` | Access token | Xem shop của tài khoản hiện tại |
-| `PUT` | `/api/v1/me/shop` | Access token | Sửa hồ sơ shop của chủ shop |
+| `PUT` | `/api/v1/me/shop` | Access token | Sửa hồ sơ shop của chủ shop; không tự gửi duyệt |
+| `POST` | `/api/v1/me/shop/submit` | CLIENT | Gửi bản nháp/yêu cầu bổ sung để xét duyệt |
 | `GET` | `/api/v1/admin/shops` | ADMIN | Lọc/danh sách shop |
 | `PATCH` | `/api/v1/admin/shops/{id}/status` | ADMIN | Duyệt/từ chối/khóa shop |
 | `PATCH` | `/api/v1/admin/shops/{id}/approve` | ADMIN | Duyệt shop, cấp role SELLER |
@@ -307,24 +310,27 @@ Response `data` gồm `products`, `total`, `page`, `limit`. Chỉ trả sản ph
 
 ### Theo dõi shop
 
-Các endpoint follow chỉ dành cho user role `CLIENT` đã đăng nhập:
+Các endpoint follow yêu cầu tài khoản đã đăng nhập có role `CLIENT`. Mọi tài khoản thường có role `CLIENT`; seller vẫn giữ role này nên vừa có thể bán vừa theo dõi shop khác.
 
 - `GET /api/v1/shops/{id}/follow`: trả `following` và `follower_count`.
 - `POST /api/v1/shops/{id}/follow`: theo dõi.
 - `DELETE /api/v1/shops/{id}/follow`: bỏ theo dõi.
 
-Gửi access token dạng Bearer. Gọi lặp là idempotent, follower count được cập nhật cùng transaction; user không thể theo dõi shop của chính mình. Seller/Admin không được dùng các route này.
+Gửi access token dạng Bearer. Gọi lặp là idempotent, follower count được cập nhật cùng transaction; user không thể theo dõi shop của chính mình.
 
 ### Mở và quản lý shop
 
-- `POST /api/v1/shops` yêu cầu role `CLIENT`. Body gồm `name`, `description`, `logo_url`, `banner_url`, `phone`, `warehouse_address`; tên dài 2–150 ký tự, URL nếu có phải là HTTPS. Mỗi tài khoản và tên shop chỉ được dùng một lần.
-- `GET /api/v1/me/shop` và `PUT /api/v1/me/shop` chỉ truy cập shop thuộc user hiện tại. Sửa hồ sơ đã bị từ chối sẽ gửi lại về trạng thái `PENDING`.
-- `GET /api/v1/admin/shops` hỗ trợ `statusTab` (`all`, `pending`, `active`, `rejected`, `suspended`), `search`, `page`, `pageSize`; alias `status`/`limit` cũng được hỗ trợ. Các filter `category`, `commissionTier`, `rating` chỉ chấp nhận `all` vì schema hiện tại chưa lưu dữ liệu tương ứng.
-- Admin duyệt qua `/approve` body `{ "notes": "..." }` (optional) hoặc `PATCH /status` body `{ "status": "ACTIVE", "notes": "..." }`; chỉ khi user còn `ACTIVE` mới duyệt được và role chuyển thành `SELLER`. Ghi chú duyệt được lưu; tài khoản `ADMIN` không bị hạ role. `/reject` nhận `{ "reason": "..." }`; `/lock` nhận `{ "reason": "..." }`. Lý do bắt buộc khi từ chối/khóa. API không có toggle-live độc lập, metrics hoặc hoa hồng.
+- Một tài khoản có thể giữ đồng thời `CLIENT` và `SELLER`. API đăng ký public chỉ tạo `CLIENT`; không nhận role từ body. `GET /api/v1/auth/me`, login và refresh trả trường `roles` dạng mảng, `shop_status` nếu có shop, đồng thời giữ `role` dạng chuỗi để tương thích client cũ.
+- `POST /api/v1/me/shop` tạo bản nháp `DRAFT`; body gồm `name`, `description`, `logo_url`, `banner_url`, `phone`, `warehouse_address`. Tên dài 2–150 ký tự, URL nếu có phải là HTTPS. Mỗi tài khoản và tên shop chỉ được dùng một lần.
+- `PUT /api/v1/me/shop` chỉ cập nhật shop thuộc user hiện tại và không tự gửi duyệt. Bản nháp, hồ sơ bị từ chối/yêu cầu bổ sung và hồ sơ đang xét duyệt có thể chỉnh sửa; `POST /api/v1/me/shop/submit` chuyển `DRAFT`, `NEEDS_INFO` hoặc `REJECTED` về `PENDING`. Gửi lại hồ sơ `PENDING` là idempotent.
+- Luồng admin: `PENDING → ACTIVE`, `PENDING → NEEDS_INFO/REJECTED`, `ACTIVE → SUSPENDED`; shop `SUSPENDED` có thể được khôi phục sang `ACTIVE`. Mỗi thao tác kiểm tra chuyển trạng thái và tài khoản chủ shop; duyệt shop cùng cấp `SELLER` trong một transaction. Từ chối/đình chỉ không xóa `CLIENT`.
+- `GET /api/v1/admin/shops` hỗ trợ `statusTab` (`all`, `draft`, `pending`, `needs_info`, `active`, `rejected`, `suspended`), `search`, `page`, `pageSize`; alias `status`/`limit` cũng được hỗ trợ. Các filter `category`, `commissionTier`, `rating` chỉ chấp nhận `all` vì schema hiện tại chưa lưu dữ liệu tương ứng.
+- Response có `data.shops`, `data.total`, `data.page`, `data.pageSize`, `data.limit` và `data.status_counts`. `total` là số shop khớp bộ lọc/tìm kiếm hiện tại; `status_counts` luôn đếm toàn bộ shop theo các trạng thái `DRAFT`, `PENDING`, `NEEDS_INFO`, `ACTIVE`, `REJECTED`, `SUSPENDED`, không phụ thuộc tab hay tìm kiếm. FE nên dùng `status_counts` cho tab/thống kê và xử lý đủ sáu trạng thái để shop ở trạng thái nháp hoặc cần bổ sung không làm hỏng toàn bộ danh sách.
+- Admin duyệt qua `/approve` body `{ "notes": "..." }` (optional) hoặc `PATCH /status` body `{ "status": "ACTIVE", "notes": "..." }`; chỉ khi user còn `ACTIVE` và có `CLIENT` mới duyệt được. Role `SELLER` được thêm, không thay thế `CLIENT`/`ADMIN`. `/reject` nhận `{ "reason": "..." }`; `/lock` nhận `{ "reason": "..." }`; lý do bắt buộc khi từ chối/đình chỉ. API không có toggle-live độc lập, metrics hoặc hoa hồng.
 
 ### Seller products
 
-Seller endpoints kiểm tra đồng thời role `SELLER`, trạng thái tài khoản, chủ sở hữu shop và shop `ACTIVE`; role đơn thuần không cho phép thao tác khi shop chưa duyệt/bị khóa.
+Seller endpoints kiểm tra đồng thời role `SELLER`, trạng thái tài khoản, chủ sở hữu shop và shop `ACTIVE`; role đơn thuần không cho phép thao tác khi shop chưa duyệt/bị khóa. Shop bị đình chỉ vẫn giữ `CLIENT` và `SELLER`, nên người dùng tiếp tục mua sắm nhưng không thể dùng Seller API.
 
 `POST /api/v1/seller/products` và `PUT /api/v1/seller/products/{id}` nhận cùng cấu trúc:
 
@@ -402,12 +408,13 @@ Body JSON bị giới hạn kích thước, field lạ, JSON sai/nhiều JSON va
 
 ## 3. Bảo mật và giới hạn hiện tại
 
-- Protected API kiểm tra user status/role và trạng thái phiên trong DB; access JWT dùng HS256. Refresh token chỉ lưu dạng hash, xoay vòng và phát hiện replay.
+- Protected API kiểm tra user status, tất cả role đang gán và trạng thái phiên trong DB; access JWT dùng HS256. Refresh token chỉ lưu dạng hash, xoay vòng và phát hiện replay.
 - Rate limiter hiện nằm trong memory của một process; khi scale nhiều replica cần chuyển giới hạn sang gateway hoặc shared store.
 - OTP delivery qua SMTP STARTTLS cần được kiểm thử trên môi trường tích hợp; không ghi OTP hoặc secret ra log ngoài development.
 - Chưa có OAuth Google/Facebook, MFA, xác minh email/phone, quản lý thiết bị/session UI, cart/checkout/order/payment.
-- Role `SELLER`/`ADMIN` phải được cấp bằng quy trình vận hành tin cậy; đăng ký public chỉ tạo `CLIENT`.
-- Security migration không thay thế full commerce schema; migration hiện có bổ sung an toàn `addresses.address_type` và `shops.approval_notes` cho schema đã tồn tại. Kiểm tra schema/backup trước migration tại database đã có dữ liệu.
+- Role `SELLER` được cấp khi admin duyệt shop; `ADMIN` chỉ cấp qua quy trình quản trị tin cậy. Migration `002_multi_role.sql` tạo `roles`/`user_roles` và backfill các role hiện có, luôn bổ sung `CLIENT` mà không xóa role legacy.
+- Migration không xóa cột `users.role` trong giai đoạn tương thích; authorization sử dụng `user_roles`. Cột legacy được giữ để các client cũ không bị gãy.
+- Security migration không thay thế full commerce schema; migration domain bổ sung role assignments, trạng thái shop `DRAFT`/`NEEDS_INFO`, `addresses.address_type` và `shops.approval_notes`. Kiểm tra schema/backup trước migration tại database đã có dữ liệu.
 
 ## 4. Cấu trúc BE
 

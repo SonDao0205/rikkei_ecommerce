@@ -38,7 +38,7 @@ export const Step1Stepper: React.FC<Step1StepperProps> = ({
           >
             verified_user
           </span>
-          <span>Bảo mật KYC chuẩn e-Commerce Việt Nam (Nghị định 52 &amp; 13/2023/NĐ-CP)</span>
+          <span>Hồ sơ shop được gắn với tài khoản hiện tại của bạn</span>
           <span className="w-2 h-2 rounded-full bg-secondary animate-pulse ml-0.5"></span>
         </div>
       </div>
@@ -61,7 +61,7 @@ export const Step1Stepper: React.FC<Step1StepperProps> = ({
                 Bước 01 • Đang làm
               </span>
               <span className="font-label-lg text-label-lg text-primary font-bold truncate">
-                Loại hình &amp; Tài khoản
+                Tài khoản hiện tại
               </span>
               <span className="font-body-sm text-body-sm text-on-surface-variant">
                 Thiết lập hồ sơ
@@ -101,10 +101,10 @@ export const Step1Stepper: React.FC<Step1StepperProps> = ({
                 Bước 03
               </span>
               <span className="font-label-md text-label-md text-on-surface truncate">
-                KYC &amp; Ngân hàng
+                Thông tin bổ sung
               </span>
               <span className="font-body-sm text-body-sm text-on-surface-variant">
-                Định danh doanh nghiệp
+                Chưa thu thập dữ liệu nhạy cảm
               </span>
             </div>
           </div>
@@ -136,4 +136,3 @@ export const Step1Stepper: React.FC<Step1StepperProps> = ({
 
 export const OnboardingStepper = Step1Stepper;
 export default Step1Stepper;
-

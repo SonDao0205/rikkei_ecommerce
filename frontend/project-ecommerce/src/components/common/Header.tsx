@@ -24,6 +24,10 @@ const Header: React.FC<HeaderProps> = ({
 
   const userAvatar =
     profile?.avatar_url || user?.avatar_url || getDefaultAvatar(user?.full_name || profile?.full_name);
+  const hasSellerRole =
+    (user?.roles?.includes("seller") ?? user?.role === "seller") &&
+    user?.shop_status === "ACTIVE";
+  const sellerEntryPath = hasSellerRole ? "/shop/dashboard" : "/register-open-shop";
 
   // Khóa cuộn trang khi mở sidebar trên màn hình điện thoại
   useEffect(() => {
@@ -159,7 +163,7 @@ const Header: React.FC<HeaderProps> = ({
             <div className="flex items-center gap-space-md shrink-0">
               <Link
                 className="hidden lg:inline-flex items-center gap-1 px-space-md py-2 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all"
-                to="/register-open-shop"
+                to={sellerEntryPath}
                 title="Kênh người bán"
               >
                 <span className="material-symbols-outlined text-[18px]">storefront</span>
@@ -448,7 +452,7 @@ const Header: React.FC<HeaderProps> = ({
 
             {/* Phần 1: Kênh người bán (Storefront) */}
             <Link
-              to="/register-open-shop"
+              to={sellerEntryPath}
               onClick={() => setIsMobileDrawerOpen(false)}
               className="flex items-center justify-between p-3 rounded-2xl bg-surface-container-low hover:bg-surface-container border border-outline-variant/60 transition-all text-on-surface cursor-pointer"
             >
@@ -457,8 +461,12 @@ const Header: React.FC<HeaderProps> = ({
                   <span className="material-symbols-outlined text-[22px]">storefront</span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-sm font-semibold text-on-surface">Kênh Người Bán</span>
-                  <span className="text-xs text-outline">Đăng ký & quản lý cửa hàng</span>
+                  <span className="text-sm font-semibold text-on-surface">
+                    {hasSellerRole ? "Seller Center" : "Kênh Người Bán"}
+                  </span>
+                  <span className="text-xs text-outline">
+                    {hasSellerRole ? "Quản lý shop và sản phẩm" : "Đăng ký mở cửa hàng"}
+                  </span>
                 </div>
               </div>
               <span className="material-symbols-outlined text-outline text-[18px]">

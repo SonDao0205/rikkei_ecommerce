@@ -48,6 +48,12 @@ export const OnboardingHeader: React.FC = () => {
           </div>
         </div>
       </div>
+      <div
+        role="alert"
+        className="px-4 py-1.5 bg-amber-50 border-t border-amber-200 text-center text-xs sm:text-sm text-amber-950"
+      >
+        Bản mô phỏng chưa kết nối BE. Không nhập mật khẩu thật, giấy tờ tùy thân hoặc thông tin ngân hàng.
+      </div>
     </header>
   );
 };

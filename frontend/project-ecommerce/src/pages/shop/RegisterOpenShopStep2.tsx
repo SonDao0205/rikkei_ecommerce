@@ -21,15 +21,19 @@ export const RegisterOpenShopStep2: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const [toastMessage, setToastMessage] = React.useState<string | null>(null);
-  const { formData, isSavingDraft, lastSavedAt } = useAppSelector(
+  const { formData, currentStep, isSavingDraft, lastSavedAt } = useAppSelector(
     (state) => state.shopRegister
   );
 
   useEffect(() => {
+    if (currentStep < 2) {
+      navigate("/register-open-shop", { replace: true });
+      return;
+    }
     // Ensure Redux step state is set to 2 when mounting this page
     dispatch(setStep(2));
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [dispatch]);
+  }, [currentStep, dispatch, navigate]);
 
   const handleStepClick = (targetStep: number) => {
     if (targetStep === 1) {
@@ -38,14 +42,23 @@ export const RegisterOpenShopStep2: React.FC = () => {
     }
   };
 
-  const handleNextStep = () => {
-    dispatch(saveDraftShopRegistration(formData));
-    dispatch(setStep(3));
-    navigate("/register-open-shop/step3");
+  const handleNextStep = async () => {
+    try {
+      await dispatch(saveDraftShopRegistration(formData)).unwrap();
+      dispatch(setStep(3));
+      navigate("/register-open-shop/step3");
+    } catch (error: unknown) {
+      setToastMessage(error instanceof Error ? error.message : typeof error === "string" ? error : "Không thể lưu bản nháp. Vui lòng kiểm tra tên shop và địa chỉ kho.");
+    }
   };
 
-  const handleSaveDraft = () => {
-    dispatch(saveDraftShopRegistration(formData));
+  const handleSaveDraft = async () => {
+    try {
+      await dispatch(saveDraftShopRegistration(formData)).unwrap();
+      setToastMessage("Bản nháp đã được lưu trên máy chủ.");
+    } catch (error: unknown) {
+      setToastMessage(error instanceof Error ? error.message : typeof error === "string" ? error : "Không thể lưu bản nháp.");
+    }
   };
 
   return (
@@ -54,7 +67,7 @@ export const RegisterOpenShopStep2: React.FC = () => {
       <OnboardingHeader />
 
       {/* Main Content Canvas */}
-      <main className="w-full pt-20 bg-surface flex-1">
+      <main className="w-full pt-28 bg-surface flex-1">
         <div className="flex flex-col w-full">
           <div className="w-full max-w-[1440px] mx-auto px-gutter py-space-md sm:py-space-lg flex flex-col gap-space-lg">
             {/* Top Navigation Context & Stepper Progress (4 steps) */}

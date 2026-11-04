@@ -55,7 +55,9 @@ export const ShopFilterBar: React.FC<ShopFilterBarProps> = ({
         <select
           value={filters.category || "all"}
           onChange={(e) => onCategoryChange(e.target.value)}
-          className="px-3 py-2 rounded-lg bg-surface-container-low text-on-surface font-label-md text-label-md focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer border border-transparent hover:border-outline-variant"
+          disabled
+          title="Backend chưa hỗ trợ lọc theo danh mục"
+          className="px-3 py-2 rounded-lg bg-surface-container-low text-on-surface font-label-md text-label-md border border-transparent opacity-60 cursor-not-allowed"
         >
           <option value="all">Category (All Categories)</option>
           <option value="Artisan Craft">Artisan Craft</option>
@@ -69,7 +71,9 @@ export const ShopFilterBar: React.FC<ShopFilterBarProps> = ({
         <select
           value={filters.commissionTier || "all"}
           onChange={(e) => onCommissionChange(e.target.value)}
-          className="px-3 py-2 rounded-lg bg-surface-container-low text-on-surface font-label-md text-label-md focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer border border-transparent hover:border-outline-variant"
+          disabled
+          title="Backend chưa hỗ trợ lọc theo mức hoa hồng"
+          className="px-3 py-2 rounded-lg bg-surface-container-low text-on-surface font-label-md text-label-md border border-transparent opacity-60 cursor-not-allowed"
         >
           <option value="all">Commission (All Tiers)</option>
           <option value="STANDARD">Standard (5%)</option>
@@ -81,7 +85,9 @@ export const ShopFilterBar: React.FC<ShopFilterBarProps> = ({
         <select
           value={filters.rating || "all"}
           onChange={(e) => onRatingChange(e.target.value)}
-          className="px-3 py-2 rounded-lg bg-surface-container-low text-on-surface font-label-md text-label-md focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer border border-transparent hover:border-outline-variant"
+          disabled
+          title="Backend chưa hỗ trợ lọc theo đánh giá"
+          className="px-3 py-2 rounded-lg bg-surface-container-low text-on-surface font-label-md text-label-md border border-transparent opacity-60 cursor-not-allowed"
         >
           <option value="all">Rating (All Ratings)</option>
           <option value="4.5">4.5★ &amp; above</option>
@@ -101,6 +107,9 @@ export const ShopFilterBar: React.FC<ShopFilterBarProps> = ({
             <span>Reset</span>
           </button>
         )}
+        <span className="basis-full text-xs text-on-surface-variant" role="note">
+          Bộ lọc danh mục, hoa hồng và đánh giá sẽ mở khi backend hỗ trợ.
+        </span>
       </div>
     </div>
   );

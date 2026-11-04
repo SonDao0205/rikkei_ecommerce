@@ -1,16 +1,8 @@
 import axiosClient from "../axiosClient";
 import type {
-  Shop,
   ShopRegistrationFormData,
   ShopRegistrationResponse,
-  ShopProfilePayload,
 } from "../../types";
-
-interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  message?: string;
-}
 
 export const initialShopRegistrationData: ShopRegistrationFormData = {
   account: {
@@ -46,7 +38,7 @@ export const initialShopRegistrationData: ShopRegistrationFormData = {
     backCardUrl: "",
     backCardName: "",
     backCardSize: "",
-    bankName: "Vietcombank - Ngân hàng Ngoại thương Việt Nam",
+    bankName: "",
     accountNumber: "",
     accountHolder: "",
     bankBranch: "",
@@ -58,72 +50,152 @@ export const initialShopRegistrationData: ShopRegistrationFormData = {
   },
 };
 
-const sanitizeHttpsUrl = (url?: string | null): string | null => {
-  if (!url) return null;
-  const trimmed = url.trim();
-  return trimmed.startsWith("https://") ? trimmed : null;
+export interface BackendShop {
+  id: number;
+  name: string;
+  status: string;
+  updated_at: string;
+  description?: string | null;
+  logo_url?: string | null;
+  banner_url?: string | null;
+  phone?: string | null;
+  warehouse_address?: string | null;
+  reject_reason?: string | null;
+}
+
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  message?: string;
+}
+
+const shopProfilePayload = (data: ShopRegistrationFormData) => {
+  const store = data.store;
+  const warehouseAddress = [
+    store.addressDetail,
+    store.ward,
+    store.district,
+    store.province,
+  ]
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .join(", ");
+
+  return {
+    name: store.shopName.trim(),
+    description: store.bio.trim(),
+    logo_url: store.logoUrl.trim() || null,
+    banner_url: store.bannerUrl?.trim() || null,
+    phone: store.warehousePhone.trim() || data.account.phone.trim(),
+    warehouse_address: warehouseAddress,
+  };
 };
 
-export const shopRegisterApi = {
-  /**
-   * Gửi hồ sơ đăng ký mở gian hàng (Onboarding)
-   * POST /api/v1/shops (Yêu cầu tài khoản có role CLIENT)
-   */
-  submitRegistration: async (
-    data: ShopRegistrationFormData
-  ): Promise<ShopRegistrationResponse> => {
-    // 1. Chuẩn bị địa chỉ kho hàng từ thông tin Step 2 (phải từ 5 đến 500 ký tự)
-    const addressParts = [
-      data.store.addressDetail,
-      data.store.ward,
-      data.store.district,
-      data.store.province,
-    ]
-      .map((s) => (s || "").trim())
-      .filter(Boolean);
-
-    const warehouseAddress =
-      addressParts.join(", ") ||
-      data.store.pickupAddress?.addressLine ||
-      "Địa chỉ kho hàng Việt Nam";
-
-    // 2. Chuẩn bị số điện thoại liên hệ
-    const rawPhone = (
-      data.store.warehousePhone ||
-      data.account.phone ||
-      ""
-    ).trim().replace(/\s+/g, "");
-
-    const phone = rawPhone.startsWith("0") || rawPhone.startsWith("+")
-      ? rawPhone
-      : rawPhone
-      ? `0${rawPhone}`
-      : "";
-
-    // 3. Chuẩn bị payload chuẩn theo contract Go Backend
-    const payload: ShopProfilePayload = {
-      name: data.store.shopName.trim(),
-      description: (data.store.bio || data.store.description || "Gian hàng chính hãng phân phối tại MarketPulse.").trim(),
-      logo_url: sanitizeHttpsUrl(data.store.logoUrl),
-      banner_url: sanitizeHttpsUrl(data.store.bannerUrl),
-      phone,
-      warehouse_address: warehouseAddress,
-    };
-
-    const response = await axiosClient.post<ApiResponse<Shop>>(
-      "/api/v1/shops",
-      payload
+const getCurrentShop = async (): Promise<BackendShop | null> => {
+  try {
+    const response = await axiosClient.get<ApiResponse<BackendShop>>(
+      "/api/v1/me/shop",
     );
+    return response.data.data;
+  } catch (error: unknown) {
+    const status =
+      typeof error === "object" &&
+      error !== null &&
+      "response" in error &&
+      typeof error.response === "object" &&
+      error.response !== null &&
+      "status" in error.response
+        ? error.response.status
+        : undefined;
+    if (status === 404) return null;
+    throw error;
+  }
+};
 
-    const shop = response.data?.data;
+const saveProfile = async (
+  data: ShopRegistrationFormData,
+): Promise<BackendShop> => {
+  const payload = shopProfilePayload(data);
+  const current = await getCurrentShop();
+  if (!current) {
+    try {
+      const response = await axiosClient.post<ApiResponse<BackendShop>>(
+        "/api/v1/me/shop",
+        payload,
+      );
+      return response.data.data;
+    } catch (error: unknown) {
+      if (!isAxiosStatus(error, 409)) throw error;
+      const createdByAnotherRequest = await getCurrentShop();
+      if (!createdByAnotherRequest) throw error;
+    }
+  }
+  const response = await axiosClient.put<ApiResponse<BackendShop>>(
+    "/api/v1/me/shop",
+    payload,
+  );
+  return response.data.data;
+};
+
+const isAxiosStatus = (error: unknown, status: number): boolean =>
+  typeof error === "object" &&
+  error !== null &&
+  "response" in error &&
+  typeof error.response === "object" &&
+  error.response !== null &&
+  "status" in error.response &&
+  error.response.status === status;
+
+export const shopRegisterApi = {
+  getMyShop: getCurrentShop,
+
+  submitRegistration: async (
+    data: ShopRegistrationFormData,
+  ): Promise<ShopRegistrationResponse> => {
+    let shop = await saveProfile(data);
+    if (shop.status !== "PENDING") {
+      try {
+        const response = await axiosClient.post<ApiResponse<BackendShop>>(
+          "/api/v1/me/shop/submit",
+        );
+        shop = response.data.data;
+      } catch (error: unknown) {
+        if (!isAxiosStatus(error, 409)) throw error;
+        const latest = await getCurrentShop();
+        if (!latest || latest.status !== "PENDING") throw error;
+        shop = latest;
+      }
+    }
 
     return {
-      applicationId: shop?.id ? `#SHOP-${String(shop.id).padStart(4, "0")}` : "#REQ-SHOP",
+      applicationId: String(shop.id),
       status: "PENDING_APPROVAL",
-      shopName: shop?.name || data.store.shopName,
+      shopName: shop.name,
       ownerEmail: data.account.email,
-      submittedAt: shop?.created_at
-        ? new Date(shop.created_at).toLocaleTimeString("vi-VN", {
+      submittedAt: shop.updated_at || new Date().toISOString(),
+      estimatedReviewTime: "",
+      message: "Hồ sơ đã được gửi lên máy chủ và đang chờ xét duyệt.",
+    };
+  },
+
+  saveDraft: async (
+    data: Partial<ShopRegistrationFormData>,
+  ): Promise<{ savedAt: string }> => {
+    const formData: ShopRegistrationFormData = {
+      ...initialShopRegistrationData,
+      ...data,
+      account: { ...initialShopRegistrationData.account, ...data.account },
+      store: { ...initialShopRegistrationData.store, ...data.store },
+      kyc: { ...initialShopRegistrationData.kyc, ...data.kyc },
+      agreements: {
+        ...initialShopRegistrationData.agreements,
+        ...data.agreements,
+      },
+    };
+    const shop = await saveProfile(formData);
+    return {
+      savedAt: shop.updated_at
+        ? new Date(shop.updated_at).toLocaleTimeString("vi-VN", {
             hour: "2-digit",
             minute: "2-digit",
           })
@@ -131,27 +203,7 @@ export const shopRegisterApi = {
             hour: "2-digit",
             minute: "2-digit",
           }),
-      estimatedReviewTime: "Trong vòng 24 - 48 giờ làm việc",
-      message: response.data?.message || "Hồ sơ mở gian hàng đã được gửi thành công!",
     };
-  },
-
-  /**
-   * Lưu bản nháp hồ sơ vào LocalStorage để tiếp tục sau
-   */
-  saveDraft: async (
-    data: Partial<ShopRegistrationFormData>
-  ): Promise<{ savedAt: string }> => {
-    try {
-      localStorage.setItem("marketpulse_shop_registration_draft", JSON.stringify(data));
-    } catch {
-      // LocalStorage access fallback
-    }
-    const now = new Date();
-    const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(
-      now.getMinutes()
-    ).padStart(2, "0")}`;
-    return { savedAt: timeStr };
   },
 };
 

@@ -21,7 +21,7 @@ export const Address: React.FC = () => {
 
   const { profile } = useAppSelector((state) => state.profile);
   const { user } = useAppSelector((state) => state.auth);
-  const { isFormOpen, successMessage, error } = useAppSelector(
+  const { addresses, isFormOpen, successMessage, error } = useAppSelector(
     (state) => state.address
   );
 
@@ -119,31 +119,31 @@ export const Address: React.FC = () => {
             </p>
           </div>
 
-          {/* Quick stats badge strip */}
+          {/* Account address summary */}
           <div className="flex items-center gap-3 shrink-0 flex-wrap">
             <div className="flex items-center gap-2 bg-surface-container-low px-3 py-2 rounded-xl">
               <span className="material-symbols-outlined text-secondary text-[20px]">
-                local_shipping
+                location_on
               </span>
               <div className="flex flex-col">
                 <span className="font-label-sm text-label-sm text-outline leading-tight">
-                  Default Courier
+                  Địa chỉ đã lưu
                 </span>
                 <span className="font-label-md text-label-md text-on-surface font-semibold">
-                  GHTK Express (COD)
+                  {addresses.length} / 20
                 </span>
               </div>
             </div>
             <div className="flex items-center gap-2 bg-surface-container-low px-3 py-2 rounded-xl">
               <span className="material-symbols-outlined text-primary text-[20px]">
-                verified
+                lock
               </span>
               <div className="flex flex-col">
                 <span className="font-label-sm text-label-sm text-outline leading-tight">
-                  Security Level
+                  Quyền thao tác
                 </span>
                 <span className="font-label-md text-label-md text-primary font-semibold">
-                  Tier 3 (Protected)
+                  Chủ tài khoản
                 </span>
               </div>
             </div>
@@ -163,6 +163,22 @@ export const Address: React.FC = () => {
               onClick={() => dispatch(clearAddressMessages())}
               className="text-emerald-600 hover:text-emerald-900 cursor-pointer"
               type="button"
+            >
+              <span className="material-symbols-outlined text-[18px]">close</span>
+            </button>
+          </div>
+        )}
+        {error && addresses.length > 0 && (
+          <div
+            role="alert"
+            className="mb-6 p-4 rounded-2xl bg-error-container text-on-error-container flex items-center justify-between"
+          >
+            <span className="font-medium text-sm">{error}</span>
+            <button
+              onClick={() => dispatch(clearAddressMessages())}
+              className="hover:opacity-70 cursor-pointer"
+              type="button"
+              aria-label="Đóng thông báo lỗi"
             >
               <span className="material-symbols-outlined text-[18px]">close</span>
             </button>
@@ -214,10 +230,11 @@ export const Address: React.FC = () => {
                 type="button"
                 id="btn-add-address"
                 onClick={handleOpenAddForm}
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-on-primary hover:bg-primary-container font-label-md text-label-md font-bold transition-all shadow-md active:scale-95 cursor-pointer shrink-0"
+                disabled={addresses.length >= 20}
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-on-primary hover:bg-primary-container font-label-md text-label-md font-bold transition-all shadow-md active:scale-95 cursor-pointer shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span className="material-symbols-outlined text-[20px]">add_location_alt</span>
-                <span>+ Thêm địa chỉ mới</span>
+                <span>{addresses.length >= 20 ? "Đã đạt giới hạn 20 địa chỉ" : "+ Thêm địa chỉ mới"}</span>
               </button>
             </div>
 
@@ -228,10 +245,10 @@ export const Address: React.FC = () => {
               </div>
             )}
 
-            {/* Address List with custom delete confirmation popup */}
+            {/* Address List */}
             <AddressList
               onAddNewClick={handleOpenAddForm}
-              onDeleteClick={(addr) => setAddressToDelete(addr)}
+              onRetry={() => dispatch(fetchAddresses())}
             />
           </main>
         </div>

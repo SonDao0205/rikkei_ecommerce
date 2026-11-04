@@ -9,14 +9,14 @@ export const Step4HeroBanner: React.FC = () => {
             Giai đoạn cuối cùng
           </span>
           <span className="text-on-surface-variant font-body-sm text-body-sm">
-            • Mã hồ sơ tạm thời: #ONB-2025-VNM-9481
+            • Mã hồ sơ sẽ được cấp sau khi gửi lên máy chủ
           </span>
         </div>
         <h1 className="font-headline-xl text-headline-xl text-on-surface tracking-tight font-bold">
           Kiểm tra lại thông tin &amp; Gửi hồ sơ phê duyệt
         </h1>
         <p className="font-body-lg text-body-lg text-on-surface-variant max-w-4xl">
-          Vui lòng rà soát kỹ các dữ liệu đã khai báo trước khi gửi lên Hội đồng Thẩm định MarketPulse. Hồ sơ sẽ được xử lý trong vòng 24 giờ làm việc.
+          Kiểm tra thông tin shop và gửi hồ sơ để quản trị viên xét duyệt. Trạng thái sẽ được cập nhật theo phản hồi từ máy chủ.
         </p>
       </div>
 
@@ -31,14 +31,14 @@ export const Step4HeroBanner: React.FC = () => {
               Cam kết bảo mật &amp; Tuân thủ pháp lý sàn MarketPulse
             </p>
             <p className="font-body-sm text-body-sm text-on-surface-variant">
-              Hồ sơ của bạn đã sẵn sàng nộp. Tất cả dữ liệu định danh và thông tin thuế được bảo vệ theo Nghị định 13/2023/NĐ-CP và mã hóa đầu cuối AES-256.
+              Chỉ thông tin cơ bản của shop được gửi lên backend. Dữ liệu KYC và ngân hàng chưa được thu thập.
             </p>
           </div>
         </div>
         <div className="flex items-center gap-space-xs shrink-0 self-end sm:self-center bg-surface-container-lowest px-3 py-1.5 rounded-full shadow-xs">
           <span className="material-symbols-outlined text-secondary text-[18px]">lock</span>
           <span className="font-label-sm text-label-sm text-secondary font-bold uppercase">
-            SSL TLS 1.3 Certified
+            Chờ xác nhận từ máy chủ
           </span>
         </div>
       </div>

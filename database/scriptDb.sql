@@ -25,6 +25,30 @@ CREATE TABLE users (
   CONSTRAINT chk_users_role check (role in ('client', 'seller', 'admin'))
 );
 
+-- Legacy users.role is retained during the compatibility period. Authorization
+-- reads user_roles so one account can hold CLIENT and SELLER simultaneously.
+CREATE TABLE roles (
+  code       VARCHAR(16) NOT NULL,
+  name       VARCHAR(32) NOT NULL,
+  PRIMARY KEY (code),
+  CONSTRAINT chk_roles_code CHECK (code IN ('CLIENT','SELLER','ADMIN'))
+);
+
+INSERT INTO roles (code, name) VALUES
+  ('CLIENT','Client'),
+  ('SELLER','Seller'),
+  ('ADMIN','Administrator');
+
+CREATE TABLE user_roles (
+  user_id    BIGINT UNSIGNED NOT NULL,
+  role_code  VARCHAR(16) NOT NULL,
+  granted_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, role_code),
+  KEY idx_user_roles_role (role_code, user_id),
+  CONSTRAINT fk_user_roles_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+  CONSTRAINT fk_user_roles_role FOREIGN KEY (role_code) REFERENCES roles (code)
+);
+
 CREATE TABLE refresh_tokens (
   id         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   user_id    BIGINT UNSIGNED NOT NULL,
@@ -82,7 +106,7 @@ CREATE TABLE shops (
   UNIQUE KEY uq_shops_name (name),
   KEY idx_shops_status (status),
   CONSTRAINT fk_shops_owner    FOREIGN KEY (owner_id)    REFERENCES users (id),
-  CONSTRAINT chk_shops_status CHECK (status IN ('PENDING','ACTIVE','REJECTED','SUSPENDED'))
+  CONSTRAINT chk_shops_status CHECK (status IN ('DRAFT','PENDING','NEEDS_INFO','ACTIVE','REJECTED','SUSPENDED'))
 );
 
 CREATE TABLE shop_followers (

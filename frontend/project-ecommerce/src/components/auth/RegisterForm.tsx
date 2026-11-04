@@ -203,9 +203,19 @@ const RegisterForm = () => {
             MarketPulse
           </span>
         </Link>
-        <Link to="/login" className="text-xs font-semibold text-indigo-600 hover:text-indigo-700">
-          Sign In
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            to="/register-open-shop"
+            className="text-xs font-semibold text-brand-700 hover:text-brand-800 flex items-center gap-1"
+          >
+            <span className="material-symbols-outlined text-[16px]">storefront</span>
+            <span>Mở shop</span>
+          </Link>
+          <span className="text-slate-300">|</span>
+          <Link to="/login" className="text-xs font-semibold text-indigo-600 hover:text-indigo-700">
+            Sign In
+          </Link>
+        </div>
       </div>
 
 
@@ -482,13 +492,36 @@ const RegisterForm = () => {
       </form>
 
       {/* Footer Links */}
-      <div className="mt-7 text-center space-y-4">
+      <div className="mt-7 text-center space-y-3.5">
         <p className="text-xs sm:text-sm text-slate-600">
           Already have an account?{" "}
           <Link to="/login" className="font-semibold text-brand-700 hover:text-brand-800 hover:underline">
             Sign In
           </Link>
         </p>
+
+        <div className="pt-0.5">
+          <Link
+            to="/register-open-shop"
+            className="w-full inline-flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-indigo-50/90 via-purple-50/50 to-indigo-50/90 border border-indigo-100 hover:border-indigo-300 hover:shadow-xs transition-all group cursor-pointer"
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-brand-700/10 text-brand-700 flex items-center justify-center shrink-0 group-hover:bg-brand-700 group-hover:text-white transition-colors">
+                <span className="material-symbols-outlined text-[18px]">storefront</span>
+              </div>
+              <div className="text-left">
+                <span className="font-semibold text-slate-800 text-xs block leading-tight group-hover:text-brand-700 transition-colors">
+                  Bạn muốn bán hàng cùng MarketPulse?
+                </span>
+                <span className="text-[11px] text-slate-500">Đăng ký mở gian hàng (Seller Portal)</span>
+              </div>
+            </div>
+            <span className="material-symbols-outlined text-[18px] text-brand-700 group-hover:translate-x-0.5 transition-transform">
+              arrow_forward
+            </span>
+          </Link>
+        </div>
+
         {/* Trust Badges */}
         <div className="flex items-center justify-center space-x-2 text-[11px] text-slate-400 pt-2 border-t border-slate-100">
           <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -169,7 +169,12 @@ export const addressSlice = createSlice({
         state.error = action.payload || "Cập nhật địa chỉ thất bại";
       })
       // Delete
+      .addCase(deleteAddressThunk.pending, (state) => {
+        state.saving = true;
+        state.error = null;
+      })
       .addCase(deleteAddressThunk.fulfilled, (state, action) => {
+        state.saving = false;
         const deletedId = action.payload;
         state.addresses = state.addresses.filter((a) => a.id !== deletedId);
         if (state.addresses.length > 0 && !state.addresses.some((a) => a.is_default)) {
@@ -178,10 +183,16 @@ export const addressSlice = createSlice({
         state.successMessage = "Đã xóa địa chỉ thành công!";
       })
       .addCase(deleteAddressThunk.rejected, (state, action) => {
+        state.saving = false;
         state.error = action.payload || "Xóa địa chỉ thất bại";
       })
       // Set Default
+      .addCase(setDefaultAddressThunk.pending, (state) => {
+        state.saving = true;
+        state.error = null;
+      })
       .addCase(setDefaultAddressThunk.fulfilled, (state, action) => {
+        state.saving = false;
         const defaultAddr = action.payload;
         state.addresses = state.addresses.map((a) => ({
           ...a,
@@ -190,6 +201,7 @@ export const addressSlice = createSlice({
         state.successMessage = "Đã đặt làm địa chỉ mặc định!";
       })
       .addCase(setDefaultAddressThunk.rejected, (state, action) => {
+        state.saving = false;
         state.error = action.payload || "Thiết lập mặc định thất bại";
       });
   },

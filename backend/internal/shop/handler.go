@@ -28,8 +28,10 @@ func NewHandler(db *sql.DB, logger *log.Logger) *Handler {
 func RegisterRoutes(mux *http.ServeMux, security *auth.App, db *sql.DB, logger *log.Logger) {
 	handler := NewHandler(db, logger)
 	mux.Handle("POST /api/v1/shops", security.RequireRole("CLIENT", handler.createShop))
+	mux.Handle("POST /api/v1/me/shop", security.RequireRole("CLIENT", handler.createShopDraft))
 	mux.Handle("GET /api/v1/me/shop", security.RequireAuth(handler.myShop))
 	mux.Handle("PUT /api/v1/me/shop", security.RequireAuth(handler.updateMyShop))
+	mux.Handle("POST /api/v1/me/shop/submit", security.RequireRole("CLIENT", handler.submitShop))
 	mux.Handle("GET /api/v1/admin/shops", security.RequireRole("ADMIN", handler.listAdminShops))
 	mux.Handle("PATCH /api/v1/admin/shops/{id}/status", security.RequireRole("ADMIN", handler.updateShopStatus))
 	mux.Handle("PATCH /api/v1/admin/shops/{id}/approve", security.RequireRole("ADMIN", handler.approveShop))
@@ -68,6 +70,14 @@ type managedShop struct {
 }
 
 func (a *Handler) createShop(w http.ResponseWriter, r *http.Request) {
+	a.createShopWithStatus(w, r, "PENDING")
+}
+
+func (a *Handler) createShopDraft(w http.ResponseWriter, r *http.Request) {
+	a.createShopWithStatus(w, r, "DRAFT")
+}
+
+func (a *Handler) createShopWithStatus(w http.ResponseWriter, r *http.Request, status string) {
 	var request shopProfileRequest
 	if !decode(w, r, &request) {
 		return
@@ -83,9 +93,9 @@ func (a *Handler) createShop(w http.ResponseWriter, r *http.Request) {
 	}
 	result, err := a.db.ExecContext(r.Context(), `INSERT INTO shops
 		(owner_id,name,description,logo_url,banner_url,phone,warehouse_address,status)
-		VALUES(?,?,?,?,?,?,?,'PENDING')`,
+		VALUES(?,?,?,?,?,?,?,?)`,
 		ownerID, request.Name, nullableText(request.Description), request.LogoURL, request.BannerURL,
-		request.Phone, request.WarehouseAddress)
+		request.Phone, request.WarehouseAddress, status)
 	if err != nil {
 		if isMySQLDuplicate(err) {
 			writeError(w, http.StatusConflict, "shop_already_exists", "This account or shop name is already in use")
@@ -108,7 +118,11 @@ func (a *Handler) createShop(w http.ResponseWriter, r *http.Request) {
 		a.serverError(w, r, fmt.Errorf("created shop ID mismatch"))
 		return
 	}
-	writeJSON(w, http.StatusCreated, map[string]any{"success": true, "data": shop, "message": "Shop application submitted"})
+	message := "Shop draft created"
+	if status == "PENDING" {
+		message = "Shop application submitted"
+	}
+	writeJSON(w, http.StatusCreated, map[string]any{"success": true, "data": shop, "message": message})
 }
 
 func (a *Handler) myShop(w http.ResponseWriter, r *http.Request) {
@@ -157,16 +171,15 @@ func (a *Handler) updateMyShop(w http.ResponseWriter, r *http.Request) {
 		a.serverError(w, r, err)
 		return
 	}
-	nextStatus := status
-	if status == "REJECTED" {
-		nextStatus = "PENDING"
+	if status != "DRAFT" && status != "REJECTED" && status != "NEEDS_INFO" && status != "PENDING" && status != "ACTIVE" {
+		writeError(w, http.StatusConflict, "shop_not_editable", "This shop cannot be edited in its current state")
+		return
 	}
 	_, err = tx.ExecContext(r.Context(), `UPDATE shops
-		SET name=?,description=?,logo_url=?,banner_url=?,phone=?,warehouse_address=?,
-			status=?,reject_reason=IF(?='PENDING',NULL,reject_reason)
+		SET name=?,description=?,logo_url=?,banner_url=?,phone=?,warehouse_address=?
 		WHERE id=? AND owner_id=?`,
 		request.Name, nullableText(request.Description), request.LogoURL, request.BannerURL,
-		request.Phone, request.WarehouseAddress, nextStatus, nextStatus, shopID, ownerID)
+		request.Phone, request.WarehouseAddress, shopID, ownerID)
 	if err != nil {
 		if isMySQLDuplicate(err) {
 			writeError(w, http.StatusConflict, "shop_name_in_use", "Shop name is already in use")
@@ -185,6 +198,48 @@ func (a *Handler) updateMyShop(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"success": true, "data": shop, "message": "Shop profile updated"})
+}
+
+func (a *Handler) submitShop(w http.ResponseWriter, r *http.Request) {
+	ownerID, ok := authenticatedID(w, r)
+	if !ok {
+		return
+	}
+	result, err := a.db.ExecContext(r.Context(), `UPDATE shops
+		SET status='PENDING',reject_reason=NULL
+		WHERE owner_id=? AND status IN ('DRAFT','NEEDS_INFO','REJECTED')`, ownerID)
+	if err != nil {
+		a.serverError(w, r, err)
+		return
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		a.serverError(w, r, err)
+		return
+	}
+	if affected == 0 {
+		shop, loadErr := a.shopForOwner(r, ownerID)
+		if errors.Is(loadErr, sql.ErrNoRows) {
+			writeError(w, http.StatusNotFound, "shop_not_found", "Create a shop draft before submitting it")
+			return
+		}
+		if loadErr != nil {
+			a.serverError(w, r, loadErr)
+			return
+		}
+		if shop.Status == "PENDING" {
+			writeJSON(w, http.StatusOK, map[string]any{"success": true, "data": shop, "message": "Shop application is already under review"})
+			return
+		}
+		writeError(w, http.StatusConflict, "shop_not_submittable", "This shop cannot be submitted in its current state")
+		return
+	}
+	shop, err := a.shopForOwner(r, ownerID)
+	if err != nil {
+		a.serverError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"success": true, "data": shop, "message": "Shop application submitted"})
 }
 
 func (a *Handler) listAdminShops(w http.ResponseWriter, r *http.Request) {
@@ -216,8 +271,8 @@ func (a *Handler) listAdminShops(w http.ResponseWriter, r *http.Request) {
 	if status == "ALL" {
 		status = ""
 	}
-	if status != "" && status != "PENDING" && status != "ACTIVE" && status != "REJECTED" && status != "SUSPENDED" {
-		writeError(w, http.StatusBadRequest, "invalid_shop_status", "status must be all, PENDING, ACTIVE, REJECTED, or SUSPENDED")
+	if status != "" && status != "DRAFT" && status != "PENDING" && status != "NEEDS_INFO" && status != "ACTIVE" && status != "REJECTED" && status != "SUSPENDED" {
+		writeError(w, http.StatusBadRequest, "invalid_shop_status", "status must be all, DRAFT, PENDING, NEEDS_INFO, ACTIVE, REJECTED, or SUSPENDED")
 		return
 	}
 	for _, unsupportedFilter := range []string{"category", "commissionTier", "rating"} {
@@ -283,8 +338,42 @@ func (a *Handler) listAdminShops(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	statusCounts := map[string]int64{
+		"DRAFT": 0, "PENDING": 0, "NEEDS_INFO": 0,
+		"ACTIVE": 0, "REJECTED": 0, "SUSPENDED": 0,
+	}
+	countRows, err := a.db.QueryContext(r.Context(), `SELECT status,COUNT(*) FROM shops GROUP BY status`)
+	if err != nil {
+		a.serverError(w, r, err)
+		return
+	}
+	for countRows.Next() {
+		var currentStatus string
+		var count int64
+		if err = countRows.Scan(&currentStatus, &count); err != nil {
+			countRows.Close()
+			a.serverError(w, r, err)
+			return
+		}
+		if _, ok := statusCounts[currentStatus]; !ok {
+			countRows.Close()
+			a.serverError(w, r, fmt.Errorf("unknown shop status %q", currentStatus))
+			return
+		}
+		statusCounts[currentStatus] = count
+	}
+	if err = countRows.Err(); err != nil {
+		countRows.Close()
+		a.serverError(w, r, err)
+		return
+	}
+	if err = countRows.Close(); err != nil {
+		a.serverError(w, r, err)
+		return
+	}
 	writeJSON(w, http.StatusOK, map[string]any{"success": true, "data": map[string]any{
 		"shops": shops, "total": total, "page": page, "pageSize": limit, "limit": limit,
+		"status_counts": statusCounts,
 	}})
 }
 
@@ -366,8 +455,8 @@ func (a *Handler) applyShopStatus(w http.ResponseWriter, r *http.Request, shopID
 	status = strings.ToUpper(strings.TrimSpace(status))
 	rejectReason = strings.TrimSpace(rejectReason)
 	approvalNotes = strings.TrimSpace(approvalNotes)
-	if status != "ACTIVE" && status != "REJECTED" && status != "SUSPENDED" {
-		writeError(w, http.StatusBadRequest, "invalid_shop_status", "status must be ACTIVE, REJECTED, or SUSPENDED")
+	if status != "ACTIVE" && status != "REJECTED" && status != "SUSPENDED" && status != "NEEDS_INFO" {
+		writeError(w, http.StatusBadRequest, "invalid_shop_status", "status must be ACTIVE, NEEDS_INFO, REJECTED, or SUSPENDED")
 		return
 	}
 	if utf8.RuneCountInString(rejectReason) > 500 {
@@ -378,8 +467,8 @@ func (a *Handler) applyShopStatus(w http.ResponseWriter, r *http.Request, shopID
 		writeError(w, http.StatusBadRequest, "invalid_notes", "notes must be at most 500 characters")
 		return
 	}
-	if (status == "REJECTED" || status == "SUSPENDED") && rejectReason == "" {
-		writeError(w, http.StatusBadRequest, "invalid_reject_reason", "A reason is required when rejecting or suspending a shop")
+	if (status == "REJECTED" || status == "NEEDS_INFO" || status == "SUSPENDED") && rejectReason == "" {
+		writeError(w, http.StatusBadRequest, "invalid_reject_reason", "A reason is required when rejecting, requesting information, or suspending a shop")
 		return
 	}
 	tx, err := a.db.BeginTx(r.Context(), nil)
@@ -389,9 +478,9 @@ func (a *Handler) applyShopStatus(w http.ResponseWriter, r *http.Request, shopID
 	}
 	defer tx.Rollback()
 	var ownerID int64
-	var ownerStatus, ownerRole string
-	if err = tx.QueryRowContext(r.Context(), `SELECT s.owner_id,u.status,COALESCE(u.role,'')
-		FROM shops s JOIN users u ON u.id=s.owner_id WHERE s.id=? FOR UPDATE`, shopID).Scan(&ownerID, &ownerStatus, &ownerRole); err != nil {
+	var ownerStatus, currentShopStatus string
+	if err = tx.QueryRowContext(r.Context(), `SELECT s.owner_id,u.status,s.status
+		FROM shops s JOIN users u ON u.id=s.owner_id WHERE s.id=? FOR UPDATE`, shopID).Scan(&ownerID, &ownerStatus, &currentShopStatus); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			writeError(w, http.StatusNotFound, "shop_not_found", "Shop was not found")
 			return
@@ -399,14 +488,29 @@ func (a *Handler) applyShopStatus(w http.ResponseWriter, r *http.Request, shopID
 		a.serverError(w, r, err)
 		return
 	}
+	allowedTransition := currentShopStatus == status ||
+		status == "ACTIVE" && (currentShopStatus == "PENDING" || currentShopStatus == "SUSPENDED") ||
+		status == "REJECTED" && (currentShopStatus == "PENDING" || currentShopStatus == "NEEDS_INFO") ||
+		status == "NEEDS_INFO" && currentShopStatus == "PENDING" ||
+		status == "SUSPENDED" && currentShopStatus == "ACTIVE"
+	if !allowedTransition {
+		writeError(w, http.StatusConflict, "invalid_shop_transition", "Shop cannot transition from "+currentShopStatus+" to "+status)
+		return
+	}
 	if status == "ACTIVE" && ownerStatus != "ACTIVE" {
 		writeError(w, http.StatusConflict, "shop_owner_inactive", "An inactive account cannot be approved as a seller")
 		return
 	}
-	role := strings.ToLower(ownerRole)
-	if status == "ACTIVE" && role != "admin" && role != "client" && role != "seller" {
-		writeError(w, http.StatusConflict, "invalid_shop_owner_role", "Shop owner account cannot become a seller")
-		return
+	if status == "ACTIVE" {
+		var isClient int
+		if err = tx.QueryRowContext(r.Context(), `SELECT COUNT(*) FROM user_roles WHERE user_id=? AND role_code='CLIENT'`, ownerID).Scan(&isClient); err != nil {
+			a.serverError(w, r, err)
+			return
+		}
+		if isClient != 1 {
+			writeError(w, http.StatusConflict, "invalid_shop_owner_role", "Shop owner must have a customer account")
+			return
+		}
 	}
 	reason := any(rejectReason)
 	if status == "ACTIVE" {
@@ -420,24 +524,8 @@ func (a *Handler) applyShopStatus(w http.ResponseWriter, r *http.Request, shopID
 		a.serverError(w, r, err)
 		return
 	}
-	if status == "ACTIVE" && role != "admin" {
-		result, updateErr := tx.ExecContext(r.Context(), `UPDATE users SET role='seller'
-			WHERE id=? AND status='ACTIVE' AND LOWER(COALESCE(role,'')) IN ('client','seller')`, ownerID)
-		if updateErr != nil {
-			a.serverError(w, r, updateErr)
-			return
-		}
-		affected, affectedErr := result.RowsAffected()
-		if affectedErr != nil {
-			a.serverError(w, r, affectedErr)
-			return
-		}
-		if affected == 0 && role != "seller" {
-			writeError(w, http.StatusConflict, "invalid_shop_owner_role", "Shop owner account cannot become a seller")
-			return
-		}
-	} else if status == "REJECTED" {
-		if _, err = tx.ExecContext(r.Context(), `UPDATE users SET role='client' WHERE id=? AND role='seller'`, ownerID); err != nil {
+	if status == "ACTIVE" {
+		if _, err = tx.ExecContext(r.Context(), `INSERT IGNORE INTO user_roles(user_id,role_code) VALUES(?,'SELLER')`, ownerID); err != nil {
 			a.serverError(w, r, err)
 			return
 		}
@@ -586,8 +674,28 @@ func Migrate(ctx context.Context, db *sql.DB) error {
 		return err
 	}
 	if exists == 0 {
-		_, err := db.ExecContext(ctx, `ALTER TABLE shops ADD COLUMN approval_notes VARCHAR(500) NULL AFTER reject_reason`)
+		if _, err := db.ExecContext(ctx, `ALTER TABLE shops ADD COLUMN approval_notes VARCHAR(500) NULL AFTER reject_reason`); err != nil {
+			return err
+		}
+	}
+	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM information_schema.check_constraints
+		WHERE constraint_schema=DATABASE() AND constraint_name='chk_shops_status'
+		AND LOCATE('DRAFT',check_clause)>0 AND LOCATE('NEEDS_INFO',check_clause)>0`).Scan(&exists); err != nil {
 		return err
 	}
-	return nil
+	if exists > 0 {
+		return nil
+	}
+	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM information_schema.table_constraints
+		WHERE table_schema=DATABASE() AND table_name='shops' AND constraint_name='chk_shops_status'`).Scan(&exists); err != nil {
+		return err
+	}
+	if exists > 0 {
+		if _, err := db.ExecContext(ctx, `ALTER TABLE shops DROP CHECK chk_shops_status`); err != nil {
+			return err
+		}
+	}
+	_, err := db.ExecContext(ctx, `ALTER TABLE shops ADD CONSTRAINT chk_shops_status
+		CHECK (status IN ('DRAFT','PENDING','NEEDS_INFO','ACTIVE','REJECTED','SUSPENDED'))`)
+	return err
 }

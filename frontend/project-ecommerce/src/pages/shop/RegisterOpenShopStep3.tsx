@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../redux/store";
 import {
   setStep,
-  updateKyc,
   saveDraftShopRegistration,
 } from "../../redux/slices/shop/shopRegisterSlice";
 import {
@@ -11,8 +10,6 @@ import {
   OnboardingFooter,
   Step3Stepper,
   Step3HeroBanner,
-  Step3LegalKycCard,
-  Step3BankAccountCard,
   Step3FooterBar,
 } from "../../components/shop/register";
 
@@ -20,15 +17,19 @@ export const RegisterOpenShopStep3: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const { formData, isSavingDraft, lastSavedAt } = useAppSelector(
+  const { formData, currentStep, isSavingDraft, lastSavedAt } = useAppSelector(
     (state) => state.shopRegister
   );
 
   useEffect(() => {
+    if (currentStep < 3) {
+      navigate("/register-open-shop", { replace: true });
+      return;
+    }
     // Ensure Redux step state is set to 3 when mounting this page
     dispatch(setStep(3));
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [dispatch]);
+  }, [currentStep, dispatch, navigate]);
 
   const handleStepClick = (targetStep: number) => {
     if (targetStep === 1) {
@@ -40,14 +41,23 @@ export const RegisterOpenShopStep3: React.FC = () => {
     }
   };
 
-  const handleNextStep = () => {
-    dispatch(saveDraftShopRegistration(formData));
-    dispatch(setStep(4));
-    navigate("/register-open-shop/step4");
+  const handleNextStep = async () => {
+    try {
+      await dispatch(saveDraftShopRegistration(formData)).unwrap();
+      dispatch(setStep(4));
+      navigate("/register-open-shop/step4");
+    } catch (error: unknown) {
+      setToastMessage(error instanceof Error ? error.message : typeof error === "string" ? error : "Không thể lưu bản nháp.");
+    }
   };
 
-  const handleSaveDraft = () => {
-    dispatch(saveDraftShopRegistration(formData));
+  const handleSaveDraft = async () => {
+    try {
+      await dispatch(saveDraftShopRegistration(formData)).unwrap();
+      setToastMessage("Bản nháp đã được lưu trên máy chủ.");
+    } catch (error: unknown) {
+      setToastMessage(error instanceof Error ? error.message : typeof error === "string" ? error : "Không thể lưu bản nháp.");
+    }
   };
 
   return (
@@ -56,7 +66,7 @@ export const RegisterOpenShopStep3: React.FC = () => {
       <OnboardingHeader />
 
       {/* Main Content Canvas */}
-      <main className="w-full pt-20 bg-surface flex-1">
+      <main className="w-full pt-28 bg-surface flex-1">
         <div className="flex flex-col w-full">
           <div className="w-full max-w-[1440px] mx-auto px-gutter py-space-md sm:py-space-lg flex flex-col gap-space-lg">
             {/* Top Navigation Context & Stepper Progress (4 steps) */}
@@ -67,19 +77,14 @@ export const RegisterOpenShopStep3: React.FC = () => {
               {/* Hero / Legal Disclaimer Alert Callout */}
               <Step3HeroBanner />
 
-              {/* Khối 1: Định danh pháp lý chủ sở hữu gian hàng */}
-              <Step3LegalKycCard
-                data={formData.kyc}
-                accountHolderName={formData.account.fullName}
-                onChange={(fields) => dispatch(updateKyc(fields))}
-              />
-
-              {/* Khối 2: Tài khoản ngân hàng nhận tiền doanh thu & COD */}
-              <Step3BankAccountCard
-                data={formData.kyc}
-                accountHolderName={formData.account.fullName}
-                onChange={(fields) => dispatch(updateKyc(fields))}
-              />
+              <section className="rounded-xl border border-amber-300 bg-amber-50 p-6 text-amber-950">
+                <h2 className="font-semibold">Xác minh danh tính và thanh toán chưa được hỗ trợ</h2>
+                <p className="mt-2 text-sm">
+                  BE hiện chỉ tiếp nhận hồ sơ shop cơ bản. Không nhập hoặc tải lên CCCD, thông tin
+                  ngân hàng hay dữ liệu nhạy cảm ở bước này. Các thông tin đó sẽ chỉ được yêu cầu
+                  khi có API lưu trữ và quy trình bảo vệ phù hợp.
+                </p>
+              </section>
 
               {/* Action Footer Bar (In-flow card layout, non-sticky like Step 1 & Step 2) */}
               <Step3FooterBar

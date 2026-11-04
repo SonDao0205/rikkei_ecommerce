@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/smtp"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -65,10 +66,7 @@ func (a *App) securityHeaders(next http.Handler) http.Handler {
 }
 
 func (a *App) allow(w http.ResponseWriter, r *http.Request, limit int, window time.Duration) bool {
-	ip, _, e := net.SplitHostPort(r.RemoteAddr)
-	if e != nil {
-		ip = r.RemoteAddr
-	}
+	ip := a.clientIP(r)
 	key := r.URL.Path + ":" + ip
 	now := time.Now()
 	a.rateMu.Lock()
@@ -92,6 +90,30 @@ func (a *App) allow(w http.ResponseWriter, r *http.Request, limit int, window ti
 		return false
 	}
 	return true
+}
+
+func (a *App) clientIP(r *http.Request) string {
+	remoteIP := r.RemoteAddr
+	if host, _, err := net.SplitHostPort(remoteIP); err == nil {
+		remoteIP = host
+	}
+	remote := net.ParseIP(remoteIP)
+	if remote == nil {
+		return r.RemoteAddr
+	}
+
+	for _, cidr := range a.cfg.TrustedProxyCIDRs {
+		_, network, err := net.ParseCIDR(cidr)
+		if err != nil || !network.Contains(remote) {
+			continue
+		}
+		forwarded := net.ParseIP(strings.TrimSpace(r.Header.Get("X-Real-IP")))
+		if forwarded != nil {
+			return forwarded.String()
+		}
+		break
+	}
+	return remote.String()
 }
 
 func (a *App) sendOTP(to, otp string) error {

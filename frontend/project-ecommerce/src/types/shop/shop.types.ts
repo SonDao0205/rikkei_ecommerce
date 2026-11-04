@@ -46,13 +46,17 @@ export type ShopTier = "STANDARD" | "PREMIUM" | "MALL" | "OFFICIAL";
 
 export type AdminShopStatus =
   | "all"
+  | "draft"
   | "active"
   | "pending"
+  | "needs_info"
   | "suspended"
   | "rejected"
   | "ALL"
+  | "DRAFT"
   | "ACTIVE"
   | "PENDING"
+  | "NEEDS_INFO"
   | "SUSPENDED"
   | "REJECTED";
 
@@ -79,7 +83,7 @@ export interface AdminShopItem {
   commission_tier_label: string; // e.g. "8% Tier", "12% Mall Tier", "5% Standard"
   available_balance: number;
   settlement_cycle: string; // e.g. "Bi-weekly", "Weekly", "Escrow: 4.800.000 ₫"
-  status: "PENDING" | "ACTIVE" | "SUSPENDED" | "REJECTED";
+  status: "DRAFT" | "PENDING" | "NEEDS_INFO" | "ACTIVE" | "SUSPENDED" | "REJECTED";
   status_label: string;
   is_live: boolean;
   tax_id?: string;
@@ -101,9 +105,12 @@ export interface ShopMetricStats {
   totalGmvChange?: string;
   statusCounts?: {
     all: number;
+    draft: number;
     active: number;
     pending: number;
+    needs_info: number;
     suspended: number;
+    rejected: number;
   };
   totalActive?: number;
   activeGrowth?: string;

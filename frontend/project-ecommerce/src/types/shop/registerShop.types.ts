@@ -71,7 +71,7 @@ export interface ShopRegistrationFormData {
 
 export interface ShopRegistrationResponse {
   applicationId: string;
-  status: "PENDING_APPROVAL" | "APPROVED" | "REJECTED";
+  status: "MOCKED" | "PENDING_APPROVAL" | "APPROVED" | "REJECTED";
   shopName: string;
   ownerEmail: string;
   submittedAt: string;

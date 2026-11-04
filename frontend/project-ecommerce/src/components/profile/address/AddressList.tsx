@@ -9,15 +9,13 @@ import type { Address } from "../../../types";
 
 interface AddressListProps {
   onAddNewClick: () => void;
+  onRetry: () => void;
   onDeleteClick?: (addr: Address) => void;
 }
 
-export const AddressList: React.FC<AddressListProps> = ({
-  onAddNewClick,
-  onDeleteClick,
-}) => {
+export const AddressList: React.FC<AddressListProps> = ({ onAddNewClick, onRetry, onDeleteClick }) => {
   const dispatch = useAppDispatch();
-  const { addresses, loading } = useAppSelector((state) => state.address);
+  const { addresses, loading, saving, error } = useAppSelector((state) => state.address);
 
   const handleDelete = (addr: Address) => {
     if (onDeleteClick) {
@@ -50,6 +48,25 @@ export const AddressList: React.FC<AddressListProps> = ({
             <div className="h-4 bg-surface-container-low rounded w-1/2" />
           </div>
         ))}
+      </div>
+    );
+  }
+
+  if (addresses.length === 0 && error) {
+    return (
+      <div className="bg-surface-container-lowest rounded-2xl border border-error/30 p-8 text-center shadow-sm">
+        <h3 className="text-on-surface font-headline-md text-headline-md font-bold mb-2">
+          Không thể tải sổ địa chỉ
+        </h3>
+        <p role="alert" className="text-error font-body-md text-body-md mb-6">{error}</p>
+        <button
+          type="button"
+          onClick={onRetry}
+          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-primary text-on-primary font-bold hover:bg-primary-container transition-all"
+        >
+          <span className="material-symbols-outlined text-[20px]">refresh</span>
+          <span>Thử lại</span>
+        </button>
       </div>
     );
   }
@@ -151,6 +168,7 @@ export const AddressList: React.FC<AddressListProps> = ({
                 <button
                   type="button"
                   onClick={() => dispatch(openEditForm(addr))}
+                  disabled={saving}
                   className="flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary-container px-2.5 py-1.5 rounded-lg hover:bg-primary-fixed/30 transition-colors cursor-pointer"
                   title="Chỉnh sửa địa chỉ"
                 >
@@ -161,6 +179,7 @@ export const AddressList: React.FC<AddressListProps> = ({
                 <button
                   type="button"
                   onClick={() => handleDelete(addr)}
+                  disabled={saving}
                   className="flex items-center gap-1 text-sm font-semibold text-error hover:text-on-error-container px-2.5 py-1.5 rounded-lg hover:bg-error-container/40 transition-colors cursor-pointer"
                   title="Xóa địa chỉ"
                 >
@@ -172,7 +191,7 @@ export const AddressList: React.FC<AddressListProps> = ({
                   <button
                     type="button"
                     onClick={() => handleSetDefault(addr.id)}
-                    className="flex items-center gap-1 text-sm font-medium text-outline hover:text-on-surface px-2.5 py-1.5 rounded-lg hover:bg-surface-container transition-colors cursor-pointer"
+                    disabled={saving}
                     title="Thiết lập làm địa chỉ mặc định"
                   >
                     <span className="material-symbols-outlined text-[18px]">bookmark_border</span>

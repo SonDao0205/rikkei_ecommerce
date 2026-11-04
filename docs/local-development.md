@@ -34,7 +34,7 @@ Seed dùng các ID cố định khai báo trong file và có thể chạy lại;
 | Quản trị | `seed-admin@local.test` | admin, hoạt động |
 | Người bán A | `seed-seller-a@local.test` | seller, shop hoạt động |
 | Người mua | `seed-buyer@local.test` | client, hoạt động |
-| Người bán B | `seed-seller-b@local.test` | seller, shop chờ duyệt |
+| Người đăng ký shop B | `seed-seller-b@local.test` | client, shop chờ duyệt; chưa có role seller |
 | Người bán công nghệ | `seed-seller-tech@local.test` | seller, shop Tech An Việt hoạt động |
 | Tài khoản khóa | `seed-locked@local.test` | client, bị khóa để thử đăng nhập |
 | Chưa xác minh email | `seed-unverified@local.test` | client, `email_verified=0` |
@@ -49,7 +49,7 @@ FE storefront gọi trực tiếp BE để tải danh mục, danh sách/tìm ki�
 
 **Giới hạn tích hợp:** dashboard admin và quản lý đơn hàng hiện vẫn có dữ liệu mock phía FE vì BE chưa có API tương ứng. Trang quản lý shop cũng có một số thao tác/số liệu chưa được BE hỗ trợ. Không dùng các màn này để xác nhận dữ liệu đơn hàng/dashboard đã đồng bộ với DB; các API shop admin hiện có gồm danh sách, duyệt, từ chối và khóa shop.
 
-Collection kiểm thử Postman bao phủ tất cả các route backend hiện tại, gồm cả fixture inventory riêng `960009`, được hướng dẫn tại [`postman/README.md`](../postman/README.md). Nạp lại seed sau mỗi lần chạy collection để khôi phục fixture này trước lượt test tiếp theo.
+Postman/Newman có collection kiểm thử các luồng API chính, không kiểm thử đầy đủ mọi route/nhánh. Collection dùng fixture inventory `960009`; nạp lại seed sau khi chạy để khôi phục fixture. Collection cũng tạo user/shop test và một số dữ liệu không tự dọn, vì vậy chỉ chạy trên database local/test riêng. Xem phạm vi tác động, cách chạy và giới hạn trong [`postman/README.md`](../postman/README.md).
 
 FE hiện lấy danh mục và sản phẩm từ `GET /api/v1/categories` và `GET /api/v1/products`. Hồ sơ auth dùng `GET /api/v1/auth/me` và `PUT /api/v1/auth/profile`; đổi mật khẩu dùng `PUT /api/v1/auth/password`. Shop onboarding, duyệt shop, seller product CRUD và address book có API; seller API chỉ hoạt động khi shop ACTIVE. Trang quản trị inventory dùng `/api/v1/admin/products` và các route liên quan, yêu cầu role `ADMIN`. Giỏ hàng, checkout và các nghiệp vụ đơn hàng chưa có API để demo end-to-end.
 
