@@ -57,6 +57,12 @@ export const ShopTable: React.FC<ShopTableProps> = ({
 
   const renderStatusBadge = (shop: AdminShopItem) => {
     switch (shop.status) {
+      case "DRAFT":
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm font-semibold">
+            Bản nháp
+          </span>
+        );
       case "PENDING":
         return (
           <div className="flex flex-col gap-1.5 items-start">
@@ -83,6 +89,12 @@ export const ShopTable: React.FC<ShopTableProps> = ({
               </button>
             </div>
           </div>
+        );
+      case "NEEDS_INFO":
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 font-label-sm text-label-sm font-semibold">
+            Chờ người bán bổ sung
+          </span>
         );
       case "ACTIVE":
         return (

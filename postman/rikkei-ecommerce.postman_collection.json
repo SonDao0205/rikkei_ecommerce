@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "548fb440-44a7-4a2d-b59e-41bec88e8f20",
     "name": "Rikkei E-Commerce API",
-    "description": "Local API collection for implemented backend routes, including shop onboarding/approval, seller product/variant/inventory CRUD, and owner-scoped addresses. Run only against a disposable local/test database: requests create users/shops, soft-delete a generated product, and mutate the dedicated fixture 960009.",
+    "description": "Selected local integration smoke/regression tests for implemented backend flows; this is not exhaustive route or branch coverage. Run only against a disposable local/test database: requests create persistent users/shops, create and delete test data, and mutate/soft-delete the dedicated fixture 960009. See postman/README.md before running.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -1071,7 +1071,49 @@
             "script": { "type": "text/javascript", "exec": [
               "pm.test('Filters shop list by status and search', function () {",
               "  pm.response.to.have.status(200);",
-              "  pm.expect(pm.response.json().data.shops[0].name).to.eql(pm.collectionVariables.get('businessShopName'));",
+              "  const data = pm.response.json().data;",
+              "  pm.expect(data.shops).to.have.length(1);",
+              "  pm.expect(data.shops[0].name).to.eql(pm.collectionVariables.get('businessShopName'));",
+              "  pm.expect(data.total).to.eql(1);",
+              "  const expectedStatuses = ['DRAFT', 'PENDING', 'NEEDS_INFO', 'ACTIVE', 'REJECTED', 'SUSPENDED'];",
+              "  pm.expect(Object.keys(data.status_counts).sort()).to.eql(expectedStatuses.sort());",
+              "  expectedStatuses.forEach(function (status) {",
+              "    pm.expect(data.status_counts[status]).to.be.a('number').and.to.be.at.least(0);",
+              "  });",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Reject unknown shop status filter",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "******" }],
+            "url": "{{baseUrl}}/api/v1/admin/shops?statusTab=unknown"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Rejects an unsupported shop status', function () {",
+              "  pm.response.to.have.status(400);",
+              "  pm.expect(pm.response.json().errors[0].code).to.eql('invalid_shop_status');",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Reject invalid shop pagination",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "******" }],
+            "url": "{{baseUrl}}/api/v1/admin/shops?page=0"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Rejects invalid shop pagination', function () {",
+              "  pm.response.to.have.status(400);",
+              "  pm.expect(pm.response.json().errors[0].code).to.eql('invalid_pagination');",
               "});"
             ]}
           }]

@@ -19,6 +19,7 @@ interface AdminShopState {
   pageSize: number;
   totalShops: number;
   isLoading: boolean;
+  shopsRequestId: string | null;
   isActionLoading: boolean;
   isExporting: boolean;
   error: string | null;
@@ -28,20 +29,23 @@ interface AdminShopState {
 const initialState: AdminShopState = {
   shops: [],
   metrics: {
-    totalShops: 55,
-    activeShops: 48,
-    activeRateText: "92% active rate",
-    pendingKycCount: 5,
-    pendingActionRequired: 3,
-    suspendedCount: 2,
-    suspendedNote: "Policy violations",
-    totalGmvFormatted: "₫ 842.500.000",
-    totalGmvChange: "+14.2% MoM",
+    totalShops: 0,
+    activeShops: 0,
+    activeRateText: "Đang tải dữ liệu từ BE",
+    pendingKycCount: 0,
+    pendingActionRequired: 0,
+    suspendedCount: 0,
+    suspendedNote: "Theo trạng thái từ BE",
+    totalGmvFormatted: "Chưa có dữ liệu",
+    totalGmvChange: "BE chưa hỗ trợ API doanh thu",
     statusCounts: {
-      all: 55,
-      active: 48,
-      pending: 5,
-      suspended: 2,
+      all: 0,
+      draft: 0,
+      active: 0,
+      pending: 0,
+      needs_info: 0,
+      suspended: 0,
+      rejected: 0,
     },
   },
   selectedIds: [],
@@ -56,8 +60,9 @@ const initialState: AdminShopState = {
   },
   currentPage: 1,
   pageSize: 5,
-  totalShops: 5,
+  totalShops: 0,
   isLoading: false,
+  shopsRequestId: null,
   isActionLoading: false,
   isExporting: false,
   error: null,
@@ -65,7 +70,12 @@ const initialState: AdminShopState = {
 };
 
 export const getAdminShops = createAsyncThunk<
-  { shops: AdminShopItem[]; total: number },
+  {
+    shops: AdminShopItem[];
+    total: number;
+    statusCounts: NonNullable<ShopMetricStats["statusCounts"]>;
+    page: number;
+  },
   ShopFilterParams | void,
   { rejectValue: string }
 >("adminShop/getAdminShops", async (params, { getState, rejectWithValue }) => {
@@ -84,21 +94,17 @@ export const getAdminShops = createAsyncThunk<
       page: filter.page || state.currentPage,
       pageSize: filter.pageSize || state.pageSize,
     };
-    return await adminShopApi.fetchShops(effectiveParams);
+    const result = await adminShopApi.fetchShops(effectiveParams);
+    const requestedPage = effectiveParams.page ?? 1;
+    const pageSize = effectiveParams.pageSize ?? state.pageSize;
+    const lastPage = Math.max(1, Math.ceil(result.total / pageSize));
+    const page = Math.min(requestedPage, lastPage);
+    if (page !== requestedPage) {
+      return { ...(await adminShopApi.fetchShops({ ...effectiveParams, page })), page };
+    }
+    return { ...result, page };
   } catch (err: unknown) {
     return rejectWithValue(err instanceof Error ? err.message : "Không thể tải danh sách cửa hàng");
-  }
-});
-
-export const getShopMetrics = createAsyncThunk<
-  ShopMetricStats,
-  void,
-  { rejectValue: string }
->("adminShop/getShopMetrics", async (_, { rejectWithValue }) => {
-  try {
-    return await adminShopApi.fetchShopMetrics();
-  } catch (err: unknown) {
-    return rejectWithValue(err instanceof Error ? err.message : "Không thể tải số liệu thống kê");
   }
 });
 
@@ -109,7 +115,7 @@ export const approveShopThunk = createAsyncThunk<
 >("adminShop/approveShop", async ({ shopId, notes }, { dispatch, rejectWithValue }) => {
   try {
     const res = await adminShopApi.approveShop(shopId, notes);
-    dispatch(getShopMetrics());
+    dispatch(getAdminShops());
     return res;
   } catch (err: unknown) {
     return rejectWithValue(err instanceof Error ? err.message : "Phê duyệt cửa hàng thất bại");
@@ -123,7 +129,7 @@ export const rejectShopThunk = createAsyncThunk<
 >("adminShop/rejectShop", async ({ shopId, reason }, { dispatch, rejectWithValue }) => {
   try {
     const res = await adminShopApi.rejectShop(shopId, reason);
-    dispatch(getShopMetrics());
+    dispatch(getAdminShops());
     return res;
   } catch (err: unknown) {
     return rejectWithValue(err instanceof Error ? err.message : "Từ chối cửa hàng thất bại");
@@ -149,7 +155,7 @@ export const lockShopThunk = createAsyncThunk<
 >("adminShop/lockShop", async ({ shopId, reason }, { dispatch, rejectWithValue }) => {
   try {
     const res = await adminShopApi.lockShop(shopId, reason);
-    dispatch(getShopMetrics());
+    dispatch(getAdminShops());
     return res;
   } catch (err: unknown) {
     return rejectWithValue(err instanceof Error ? err.message : "Khóa cửa hàng thất bại");
@@ -163,7 +169,7 @@ export const unlockShopThunk = createAsyncThunk<
 >("adminShop/unlockShop", async (shopId, { dispatch, rejectWithValue }) => {
   try {
     const res = await adminShopApi.unlockShop(shopId);
-    dispatch(getShopMetrics());
+    dispatch(getAdminShops());
     return res;
   } catch (err: unknown) {
     return rejectWithValue(err instanceof Error ? err.message : "Mở khóa cửa hàng thất bại");
@@ -272,23 +278,40 @@ const adminShopSlice = createSlice({
   },
   extraReducers: (builder) => {
     // getAdminShops
-    builder.addCase(getAdminShops.pending, (state) => {
+    builder.addCase(getAdminShops.pending, (state, action) => {
       state.isLoading = true;
+      state.shopsRequestId = action.meta.requestId;
       state.error = null;
     });
     builder.addCase(getAdminShops.fulfilled, (state, action) => {
+      if (state.shopsRequestId !== action.meta.requestId) return;
       state.isLoading = false;
+      state.shopsRequestId = null;
       state.shops = action.payload.shops;
       state.totalShops = action.payload.total;
+      state.currentPage = action.payload.page;
+      const counts = action.payload.statusCounts;
+      state.metrics = {
+        ...state.metrics,
+        totalShops: counts.all,
+        activeShops: counts.active,
+        activeRateText: counts.all
+          ? `${Math.round((counts.active / counts.all) * 100)}% tổng số shop`
+          : "Chưa có shop hoạt động",
+        pendingKycCount: counts.pending,
+        pendingActionRequired: counts.needs_info,
+        suspendedCount: counts.suspended,
+        suspendedNote: "Theo trạng thái từ BE",
+        totalGmvFormatted: "Chưa có dữ liệu",
+        totalGmvChange: "BE chưa hỗ trợ API doanh thu",
+        statusCounts: counts,
+      };
     });
     builder.addCase(getAdminShops.rejected, (state, action) => {
+      if (state.shopsRequestId !== action.meta.requestId) return;
       state.isLoading = false;
+      state.shopsRequestId = null;
       state.error = action.payload || "Không thể tải danh sách cửa hàng";
-    });
-
-    // getShopMetrics
-    builder.addCase(getShopMetrics.fulfilled, (state, action) => {
-      state.metrics = action.payload;
     });
 
     // approveShopThunk

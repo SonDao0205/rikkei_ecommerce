@@ -338,8 +338,42 @@ func (a *Handler) listAdminShops(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	statusCounts := map[string]int64{
+		"DRAFT": 0, "PENDING": 0, "NEEDS_INFO": 0,
+		"ACTIVE": 0, "REJECTED": 0, "SUSPENDED": 0,
+	}
+	countRows, err := a.db.QueryContext(r.Context(), `SELECT status,COUNT(*) FROM shops GROUP BY status`)
+	if err != nil {
+		a.serverError(w, r, err)
+		return
+	}
+	for countRows.Next() {
+		var currentStatus string
+		var count int64
+		if err = countRows.Scan(&currentStatus, &count); err != nil {
+			countRows.Close()
+			a.serverError(w, r, err)
+			return
+		}
+		if _, ok := statusCounts[currentStatus]; !ok {
+			countRows.Close()
+			a.serverError(w, r, fmt.Errorf("unknown shop status %q", currentStatus))
+			return
+		}
+		statusCounts[currentStatus] = count
+	}
+	if err = countRows.Err(); err != nil {
+		countRows.Close()
+		a.serverError(w, r, err)
+		return
+	}
+	if err = countRows.Close(); err != nil {
+		a.serverError(w, r, err)
+		return
+	}
 	writeJSON(w, http.StatusOK, map[string]any{"success": true, "data": map[string]any{
 		"shops": shops, "total": total, "page": page, "pageSize": limit, "limit": limit,
+		"status_counts": statusCounts,
 	}})
 }
 

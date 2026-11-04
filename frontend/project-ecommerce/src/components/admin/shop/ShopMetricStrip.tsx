@@ -26,8 +26,8 @@ export const ShopMetricStrip: React.FC<ShopMetricStripProps> = ({ metrics }) => 
             <span className="font-body-md text-body-md text-on-surface-variant">Stores</span>
           </div>
           <div className="flex items-center gap-1 text-secondary mt-1 font-label-sm text-label-sm">
-            <span className="material-symbols-outlined text-[16px]">trending_up</span>
-            <span>{metrics.activeRateText || "+3 this month"}</span>
+            <span className="material-symbols-outlined text-[16px]">info</span>
+            <span>{metrics.activeRateText || "—"}</span>
           </div>
         </div>
       </div>
@@ -51,7 +51,8 @@ export const ShopMetricStrip: React.FC<ShopMetricStripProps> = ({ metrics }) => 
           </div>
           <div className="flex items-center gap-1 text-secondary font-label-sm text-label-sm mt-1">
             <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed font-semibold text-[11px]">
-              Needs Review ({metrics.pendingActionRequired || metrics.pendingKycCount})
+              Chờ duyệt: {metrics.pendingKycCount ?? 0} · Cần bổ sung:{" "}
+              {metrics.pendingActionRequired ?? 0}
             </span>
           </div>
         </div>
@@ -76,7 +77,7 @@ export const ShopMetricStrip: React.FC<ShopMetricStripProps> = ({ metrics }) => 
           </div>
           <div className="flex items-center gap-1 text-error font-label-sm text-label-sm mt-1">
             <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-error-container text-on-error-container font-semibold text-[11px]">
-              {metrics.suspendedNote || "Policy Violations"}
+              {metrics.suspendedNote || "Theo trạng thái từ BE"}
             </span>
           </div>
         </div>
@@ -99,8 +100,8 @@ export const ShopMetricStrip: React.FC<ShopMetricStripProps> = ({ metrics }) => 
             </span>
           </div>
           <div className="flex items-center gap-1 text-secondary mt-1 font-label-sm text-label-sm">
-            <span className="material-symbols-outlined text-[16px]">arrow_upward</span>
-            <span>{metrics.totalGmvChange || "+14.2% vs last month"}</span>
+            <span className="material-symbols-outlined text-[16px]">info</span>
+            <span>{metrics.totalGmvChange || "BE chưa hỗ trợ API doanh thu"}</span>
           </div>
         </div>
       </div>
