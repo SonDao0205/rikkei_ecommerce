@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../redux/store";
 import { registerUser, clearAuthError } from "../../redux/slices/auth/authSlice";
+import { BrandIcon } from "../common/BrandLogo";
 
 // ─── Sub-components ─────────────────────────────────────────────────────────────
 
@@ -196,9 +197,7 @@ const RegisterForm = () => {
           title="Về trang chủ MarketPulse"
         >
           <div className="w-8 h-8 rounded-lg bg-brand-700 shadow-md flex items-center justify-center p-1.5">
-            <svg className="w-full h-full text-white" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-            </svg>
+            <BrandIcon className="w-full h-full text-white" />
           </div>
           <span className="text-base font-bold tracking-tight text-slate-900 group-hover:text-brand-700 transition-colors">
             MarketPulse

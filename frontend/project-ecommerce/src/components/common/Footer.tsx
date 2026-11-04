@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { BrandIcon } from "./BrandLogo";
 
 const Footer: React.FC = () => {
   return (
@@ -10,9 +11,7 @@ const Footer: React.FC = () => {
           <div className="lg:col-span-2 flex flex-col gap-space-md">
             <div className="flex items-center gap-space-sm">
               <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <span className="material-symbols-outlined text-on-primary text-[20px]">
-                  deployed_code
-                </span>
+                <BrandIcon className="w-5 h-5 text-on-primary" />
               </div>
               <span className="font-headline-md text-headline-md text-on-surface font-bold">
                 MarketPulse

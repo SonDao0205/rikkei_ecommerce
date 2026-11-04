@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { BrandIcon } from "../../common/BrandLogo";
 
 interface NavItem {
   path: string;
@@ -53,8 +54,8 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
           {/* Shop Profile Header */}
           <div className="p-space-md border-b border-outline/20">
             <div className="flex items-center gap-space-sm mb-space-xs">
-              <div className="w-10 h-10 rounded-lg bg-primary-container text-on-primary flex items-center justify-center font-headline-md text-headline-md font-bold">
-                M
+              <div className="w-10 h-10 rounded-lg bg-primary-container text-on-primary flex items-center justify-center">
+                <BrandIcon className="w-6 h-6 text-on-primary" />
               </div>
               <div className="overflow-hidden">
                 <h1 className="font-label-lg text-label-lg text-inverse-on-surface truncate">

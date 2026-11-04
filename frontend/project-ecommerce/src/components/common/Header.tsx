@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../redux/store";
 import { openLogoutModal } from "../../redux/slices/auth/authSlice";
 import { getDefaultAvatar } from "../../utils/avatar";
+import { BrandIcon } from "./BrandLogo";
 
 interface HeaderProps {
   cartItemCount?: number;
@@ -115,9 +116,7 @@ const Header: React.FC<HeaderProps> = ({
             <div className="flex items-center gap-space-md shrink-0">
               <Link className="flex items-center gap-space-sm" to="/home">
                 <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-sm">
-                  <span className="material-symbols-outlined text-on-primary text-[24px]">
-                    deployed_code
-                  </span>
+                  <BrandIcon className="w-6 h-6 text-on-primary" />
                 </div>
                 <div className="flex flex-col">
                   <span className="font-headline-md text-headline-md tracking-tight text-on-surface font-bold leading-none">
@@ -298,9 +297,7 @@ const Header: React.FC<HeaderProps> = ({
             className="flex items-center gap-2.5"
           >
             <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-xs">
-              <span className="material-symbols-outlined text-on-primary text-[20px]">
-                deployed_code
-              </span>
+              <BrandIcon className="w-5 h-5 text-on-primary" />
             </div>
             <div className="flex flex-col">
               <span className="font-headline-md text-base tracking-tight text-on-surface font-bold leading-none">
