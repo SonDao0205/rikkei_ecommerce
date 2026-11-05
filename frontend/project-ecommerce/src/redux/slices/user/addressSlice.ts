@@ -32,7 +32,7 @@ export const fetchAddresses = createAsyncThunk<Address[], void, { rejectValue: s
     try {
       return await addressApi.fetchAddresses();
     } catch (err: unknown) {
-      return rejectWithValue(err instanceof Error ? err.message : "Failed to load addresses");
+      return rejectWithValue(err instanceof Error ? err.message : "Không thể tải danh sách địa chỉ");
     }
   }
 );
@@ -43,7 +43,7 @@ export const createAddressThunk = createAsyncThunk<Address, CreateAddressPayload
     try {
       return await addressApi.createAddress(payload);
     } catch (err: unknown) {
-      return rejectWithValue(err instanceof Error ? err.message : "Failed to create address");
+      return rejectWithValue(err instanceof Error ? err.message : "Thêm địa chỉ thất bại");
     }
   }
 );
@@ -54,7 +54,7 @@ export const updateAddressThunk = createAsyncThunk<Address, UpdateAddressPayload
     try {
       return await addressApi.updateAddress(payload);
     } catch (err: unknown) {
-      return rejectWithValue(err instanceof Error ? err.message : "Failed to update address");
+      return rejectWithValue(err instanceof Error ? err.message : "Cập nhật địa chỉ thất bại");
     }
   }
 );
@@ -65,7 +65,7 @@ export const deleteAddressThunk = createAsyncThunk<number, number, { rejectValue
     try {
       return await addressApi.deleteAddress(id);
     } catch (err: unknown) {
-      return rejectWithValue(err instanceof Error ? err.message : "Failed to delete address");
+      return rejectWithValue(err instanceof Error ? err.message : "Xóa địa chỉ thất bại");
     }
   }
 );
@@ -76,7 +76,7 @@ export const setDefaultAddressThunk = createAsyncThunk<Address, number, { reject
     try {
       return await addressApi.setDefaultAddress(id);
     } catch (err: unknown) {
-      return rejectWithValue(err instanceof Error ? err.message : "Failed to set default address");
+      return rejectWithValue(err instanceof Error ? err.message : "Thiết lập địa chỉ mặc định thất bại");
     }
   }
 );
@@ -100,6 +100,7 @@ export const addressSlice = createSlice({
     closeForm: (state) => {
       state.isFormOpen = false;
       state.editingAddress = null;
+      state.error = null;
     },
     clearAddressMessages: (state) => {
       state.error = null;
@@ -119,7 +120,7 @@ export const addressSlice = createSlice({
       })
       .addCase(fetchAddresses.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload || "Could not fetch addresses";
+        state.error = action.payload || "Không thể tải danh sách địa chỉ";
       })
       // Create
       .addCase(createAddressThunk.pending, (state) => {
@@ -130,7 +131,7 @@ export const addressSlice = createSlice({
         state.saving = false;
         const newAddr = action.payload;
         if (newAddr.is_default) {
-          state.addresses = state.addresses.map((a) => ({ ...a, is_default: 0 }));
+          state.addresses = state.addresses.map((a) => ({ ...a, is_default: false }));
         }
         state.addresses.unshift(newAddr);
         state.isFormOpen = false;
@@ -152,7 +153,7 @@ export const addressSlice = createSlice({
         if (updated.is_default) {
           state.addresses = state.addresses.map((a) => ({
             ...a,
-            is_default: a.id === updated.id ? 1 : 0,
+            is_default: a.id === updated.id,
           }));
         }
         const idx = state.addresses.findIndex((a) => a.id === updated.id);
@@ -176,8 +177,8 @@ export const addressSlice = createSlice({
         state.saving = false;
         const deletedId = action.payload;
         state.addresses = state.addresses.filter((a) => a.id !== deletedId);
-        if (state.addresses.length > 0 && !state.addresses.some((a) => Boolean(a.is_default))) {
-          state.addresses[0].is_default = 1;
+        if (state.addresses.length > 0 && !state.addresses.some((a) => a.is_default)) {
+          state.addresses[0].is_default = true;
         }
         state.successMessage = "Đã xóa địa chỉ thành công!";
       })
@@ -195,7 +196,7 @@ export const addressSlice = createSlice({
         const defaultAddr = action.payload;
         state.addresses = state.addresses.map((a) => ({
           ...a,
-          is_default: a.id === defaultAddr.id ? 1 : 0,
+          is_default: a.id === defaultAddr.id,
         }));
         state.successMessage = "Đã đặt làm địa chỉ mặc định!";
       })

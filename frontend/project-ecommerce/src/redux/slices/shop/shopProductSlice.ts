@@ -1,7 +1,6 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from "@reduxjs/toolkit";
 import {
   shopProductApi,
-  initialShopProducts,
   initialShopProductStats,
 } from "../../../api/shop/shopProductApi";
 import type {
@@ -36,8 +35,8 @@ const initialFilters: ShopProductFilterState = {
 };
 
 const initialState: ShopProductState = {
-  items: initialShopProducts,
-  total: initialShopProducts.length,
+  items: [],
+  total: 0,
   stats: initialShopProductStats,
   filters: initialFilters,
   selectedIds: [],

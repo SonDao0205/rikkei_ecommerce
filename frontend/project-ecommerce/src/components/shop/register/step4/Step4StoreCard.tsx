@@ -62,10 +62,10 @@ export const Step4StoreCard: React.FC<Step4StoreCardProps> = ({ store }) => {
         </div>
 
         {/* Store Avatar & Basic Profile info */}
-        <div className="p-space-md pt-0 relative flex flex-col md:flex-row items-start md:items-end gap-space-md -mt-10">
-          <div className="relative shrink-0">
+        <div className="p-space-md pt-2 md:pt-3 relative flex flex-col md:flex-row items-start gap-space-md">
+          <div className="relative shrink-0 -mt-10 md:-mt-12">
             <img
-              className="w-20 h-20 rounded-2xl object-cover shadow-md bg-surface-container border-2 border-surface-container-lowest"
+              className="w-20 h-20 rounded-2xl object-cover shadow-md bg-surface-container border-4 border-surface-container-lowest"
               src={store.logoUrl || defaultLogo}
               alt="Shop Logo"
             />
@@ -74,7 +74,7 @@ export const Step4StoreCard: React.FC<Step4StoreCardProps> = ({ store }) => {
             </div>
           </div>
 
-          <div className="flex flex-col gap-space-xs grow min-w-0 pt-2 md:pt-0">
+          <div className="flex flex-col gap-space-xs grow min-w-0 pt-1 md:pt-1">
             <div className="flex flex-wrap items-center gap-space-xs">
               <h3 className="font-headline-md text-headline-md text-on-surface font-bold">
                 {store.shopName || "UrbanStep Sneaker Hub"}
@@ -85,13 +85,6 @@ export const Step4StoreCard: React.FC<Step4StoreCardProps> = ({ store }) => {
               </span>
               <span className="px-space-sm py-0.5 rounded bg-surface-container text-on-surface-variant font-label-sm text-label-sm">
                 {store.category || "Giày dép & Thời trang Streetwear"}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-space-xs text-primary font-label-md text-label-md">
-              <span className="material-symbols-outlined text-[16px]">link</span>
-              <span className="font-mono">
-                marketpulse.vn/shop/{store.slug || "urbanstep-sneaker"}
               </span>
             </div>
 

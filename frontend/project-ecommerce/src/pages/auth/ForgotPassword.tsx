@@ -4,6 +4,7 @@ import ForgotPasswordStep1 from "../../components/auth/ForgotPasswordStep1";
 import ForgotPasswordStep2 from "../../components/auth/ForgotPasswordStep2";
 import ForgotPasswordStep3 from "../../components/auth/ForgotPasswordStep3";
 import { APP_CONFIG } from "../../config/appConfig";
+import { BrandIcon } from "../../components/common/BrandLogo";
 
 const ForgotPassword = () => {
   const [currentStep, setCurrentStep] = useState<number>(1);
@@ -16,9 +17,7 @@ const ForgotPassword = () => {
           <div className="flex items-center gap-6">
             <Link className="flex items-center gap-2 group" to="/login">
               <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-[0_1px_3px_0_rgba(15,23,42,0.04)]">
-                <span className="material-symbols-outlined text-on-primary text-[22px]">
-                  shopping_bag
-                </span>
+                <BrandIcon className="w-6 h-6 text-on-primary" />
               </div>
               <div className="flex flex-col">
                 <span className="font-headline-lg text-xl sm:text-2xl font-bold text-on-surface tracking-tight group-hover:text-primary transition-colors">

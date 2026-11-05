@@ -1,10 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import CustomerLayout from "../../layout/CustomerLayout";
 import ProfileSidebar from "../../components/profile/ProfileSidebar";
 import ProfileInfoForm from "../../components/profile/ProfileInfoForm";
+import MyShopStatusCard from "../../components/profile/MyShopStatusCard";
 import { useAppDispatch, useAppSelector } from "../../redux/store";
 import { fetchUserProfile } from "../../redux/slices/user/profileSlice";
+import { fetchMyShop } from "../../redux/slices/shop/myShopSlice";
+import type { UserProfileDetails, UserRole } from "../../types";
 
 export const MyProfile: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -15,18 +18,20 @@ export const MyProfile: React.FC = () => {
 
   useEffect(() => {
     dispatch(fetchUserProfile());
+    dispatch(fetchMyShop());
   }, [dispatch]);
 
   // Merge with Redux auth user if available
-  const mergedProfile = profile
-    ? {
-        ...profile,
-        full_name: user?.full_name || profile.full_name,
-        email: user?.email || profile.email,
-        phone: user?.phone || profile.phone,
-        role: user?.role || profile.role,
-      }
-    : null;
+  const mergedProfile: UserProfileDetails | null = useMemo(() => {
+    if (!profile) return null;
+    return {
+      ...profile,
+      full_name: profile.full_name || user?.full_name || "",
+      email: (profile.email ?? user?.email) ?? null,
+      phone: profile.phone || user?.phone || "",
+      role: (profile.role || user?.role || "client") as UserRole,
+    };
+  }, [profile, user]);
 
   return (
     <CustomerLayout>
@@ -91,6 +96,9 @@ export const MyProfile: React.FC = () => {
 
             {/* RIGHT MAIN CONTENT: Profile Details Form */}
             <div className="flex-1 w-full min-w-0">
+              {/* Shop Onboarding / My Shop Status Card */}
+              <MyShopStatusCard />
+
               <ProfileInfoForm profile={mergedProfile} />
             </div>
           </div>

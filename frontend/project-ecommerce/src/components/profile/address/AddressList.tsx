@@ -10,13 +10,19 @@ import type { Address } from "../../../types";
 interface AddressListProps {
   onAddNewClick: () => void;
   onRetry: () => void;
+  onDeleteClick?: (addr: Address) => void;
 }
 
-export const AddressList: React.FC<AddressListProps> = ({ onAddNewClick, onRetry }) => {
+export const AddressList: React.FC<AddressListProps> = ({ onAddNewClick, onRetry, onDeleteClick }) => {
   const dispatch = useAppDispatch();
   const { addresses, loading, saving, error } = useAppSelector((state) => state.address);
 
   const handleDelete = (addr: Address) => {
+    if (onDeleteClick) {
+      onDeleteClick(addr);
+      return;
+    }
+    // Fallback nếu không truyền handler mở popup
     const isConfirmed = window.confirm(
       `Bạn có chắc chắn muốn xóa địa chỉ của "${addr.recipient_name}" (${addr.street_detail}) không?`
     );
@@ -186,7 +192,6 @@ export const AddressList: React.FC<AddressListProps> = ({ onAddNewClick, onRetry
                     type="button"
                     onClick={() => handleSetDefault(addr.id)}
                     disabled={saving}
-                    className="flex items-center gap-1 text-sm font-medium text-outline hover:text-on-surface px-2.5 py-1.5 rounded-lg hover:bg-surface-container transition-colors cursor-pointer"
                     title="Thiết lập làm địa chỉ mặc định"
                   >
                     <span className="material-symbols-outlined text-[18px]">bookmark_border</span>

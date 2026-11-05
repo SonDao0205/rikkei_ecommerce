@@ -1,5 +1,14 @@
 import React, { useState } from "react";
 import type { ShopProductItem } from "../../../types/shop/shopProduct.types";
+import { DEFAULT_PRODUCT_IMAGE } from "../../../api/shop/shopProductApi";
+
+const PRODUCT_CATEGORIES = [
+  { id: "930002", name: "Áo và phụ kiện" },
+  { id: "930001", name: "Thời trang" },
+  { id: "930003", name: "Nhà cửa & Đời sống" },
+  { id: "930004", name: "Thực phẩm & Đồ uống" },
+  { id: "930005", name: "Điện thoại & Phụ kiện" },
+];
 
 interface ShopProductModalProps {
   isOpen: boolean;
@@ -19,55 +28,71 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
   onClose,
   onSave,
 }) => {
+  const initialCat =
+    editingProduct?.category ||
+    String(editingProduct?.categoryId || "930002");
+
   const [name, setName] = useState(editingProduct?.name || "");
-  const [sku, setSku] = useState(editingProduct?.sku || "VN-CER-88219");
-  const [category, setCategory] = useState(editingProduct?.category || "art");
-  const [categoryLabel, setCategoryLabel] = useState(
-    editingProduct?.categoryLabel || "Gốm nghệ thuật"
+  const [sku, setSku] = useState(
+    editingProduct?.sku || "VN-CER-88219"
   );
-  const [price, setPrice] = useState(editingProduct?.price || 450000);
-  const [stock, setStock] = useState(editingProduct?.stock || 25);
+  const [category, setCategory] = useState(initialCat);
+  const [categoryLabel, setCategoryLabel] = useState(
+    editingProduct?.categoryLabel ||
+      PRODUCT_CATEGORIES.find((c) => c.id === initialCat)?.name ||
+      "Áo và phụ kiện"
+  );
+  const [price, setPrice] = useState(editingProduct?.price || 150000);
+  const [stock, setStock] = useState(editingProduct?.stock ?? 20);
   const [variationTitle, setVariationTitle] = useState(
     editingProduct?.variationTitle || "Bản tiêu chuẩn"
   );
   const [variationSubtitle, setVariationSubtitle] = useState(
-    editingProduct?.variationSubtitle || "Men hỏa biến tự nhiên"
+    editingProduct?.variationSubtitle || "Tiêu chuẩn nhà máy"
   );
   const [imageUrl, setImageUrl] = useState(
-    editingProduct?.imageUrl ||
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuBJ5EfnOPri4N6dEKOhMUIP8rqxXkduxGinUXkkdk-ki54I6mmHzOcOOPjcbd23uKAZXNNym25Js8B8YU-yyV_eC1yqXNialcTX1jjc-od6Q-K_LG229JttV_xBGrwwd5P9mXNgumN-ayvaBrDkpYCQTwFMCKokyBq6ObPXsEAw9FfdCUvbh1mbeuZf3Usns3t8wXsS1_-7OpdgdGh0K2lLhrzdmeUgtGp9rPfguaSqd0BMwgmn0vrC"
+    editingProduct?.imageUrl || DEFAULT_PRODUCT_IMAGE
   );
 
   const handleCategoryChange = (val: string) => {
     setCategory(val);
-    const labels: Record<string, string> = {
-      art: "Gốm nghệ thuật",
-      tea: "Trà cụ & Ấm chén",
-      dining: "Phụ kiện bàn ăn",
-      lighting: "Đèn trang trí",
-      vases: "Lọ hoa để bàn",
-    };
-    setCategoryLabel(labels[val] || "Gốm nghệ thuật");
+    const found = PRODUCT_CATEGORIES.find((c) => c.id === val);
+    setCategoryLabel(found ? found.name : "Ngành hàng chung");
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSave({
       id: editingProduct?.id,
-      name,
-      sku,
+      name: name.trim(),
+      sku: sku.trim(),
       category,
+      categoryId: Number(category),
       categoryLabel,
       price: Number(price),
-      formattedPrice: new Intl.NumberFormat("vi-VN").format(Number(price)) + " ₫",
+      formattedPrice:
+        new Intl.NumberFormat("vi-VN").format(Number(price)) + " ₫",
       stock: Number(stock),
-      variationTitle,
-      variationSubtitle,
-      imageUrl:
-        imageUrl.trim() ||
-        "https://lh3.googleusercontent.com/aida-public/AB6AXuBJ5EfnOPri4N6dEKOhMUIP8rqxXkduxGinUXkkdk-ki54I6mmHzOcOOPjcbd23uKAZXNNym25Js8B8YU-yyV_eC1yqXNialcTX1jjc-od6Q-K_LG229JttV_xBGrwwd5P9mXNgumN-ayvaBrDkpYCQTwFMCKokyBq6ObPXsEAw9FfdCUvbh1mbeuZf3Usns3t8wXsS1_-7OpdgdGh0K2lLhrzdmeUgtGp9rPfguaSqd0BMwgmn0vrC",
-      stockStatus: Number(stock) > 10 ? "abundant" : Number(stock) > 0 ? "low" : "out",
-      stockStatusLabel: Number(stock) > 10 ? "Đủ hàng" : Number(stock) > 0 ? "Sắp hết" : "Hết hàng",
+      variationTitle: variationTitle.trim() || "Tiêu chuẩn",
+      variationSubtitle: variationSubtitle.trim(),
+      imageUrl: imageUrl.trim() || DEFAULT_PRODUCT_IMAGE,
+      stockStatus:
+        Number(stock) > 20
+          ? "abundant"
+          : Number(stock) > 5
+          ? "safe"
+          : Number(stock) > 0
+          ? "low"
+          : "out",
+      stockStatusLabel:
+        Number(stock) > 20
+          ? "Đủ hàng"
+          : Number(stock) > 5
+          ? "An toàn"
+          : Number(stock) > 0
+          ? "Sắp hết"
+          : "Hết hàng",
+      rawVariants: editingProduct?.rawVariants,
     });
   };
 
@@ -105,7 +130,7 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Ví dụ: Bình gốm mộc hoả biến Indochine..."
+              placeholder="Ví dụ: Áo thun cotton cao cấp hoặc Bình gốm phong cách Indochine..."
               className="w-full px-3.5 py-2 rounded-xl bg-surface-container-lowest border border-outline-variant/40 font-body-sm text-body-sm focus:outline-none focus:border-primary shadow-xs"
             />
           </div>
@@ -120,7 +145,7 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
                 required
                 value={sku}
                 onChange={(e) => setSku(e.target.value)}
-                placeholder="VN-CER-00123"
+                placeholder="SKU-VN-00123"
                 className="w-full px-3.5 py-2 rounded-xl bg-surface-container-lowest border border-outline-variant/40 font-mono text-body-sm focus:outline-none focus:border-primary shadow-xs uppercase font-bold text-primary"
               />
             </div>
@@ -133,11 +158,11 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
                 onChange={(e) => handleCategoryChange(e.target.value)}
                 className="w-full px-3.5 py-2 rounded-xl bg-surface-container-lowest border border-outline-variant/40 font-body-sm text-body-sm focus:outline-none focus:border-primary shadow-xs cursor-pointer"
               >
-                <option value="art">Gốm nghệ thuật &amp; Hỏa biến</option>
-                <option value="tea">Trà cụ &amp; Ấm chén Tử Sa</option>
-                <option value="dining">Phụ kiện bàn ăn Ceramic</option>
-                <option value="lighting">Đèn trang trí &amp; Tinh dầu</option>
-                <option value="vases">Lọ hoa Wabi Sabi</option>
+                {PRODUCT_CATEGORIES.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -175,25 +200,25 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block font-label-md text-label-md font-semibold text-on-surface mb-1">
-                Tiêu đề phân loại
+                Tiêu đề phân loại / biến thể
               </label>
               <input
                 type="text"
                 value={variationTitle}
                 onChange={(e) => setVariationTitle(e.target.value)}
-                placeholder="Ví dụ: 3 Kích thước (S, M, L)"
+                placeholder="Ví dụ: Bản tiêu chuẩn hoặc Size M / Đen"
                 className="w-full px-3.5 py-2 rounded-xl bg-surface-container-lowest border border-outline-variant/40 font-body-sm text-body-sm focus:outline-none focus:border-primary shadow-xs"
               />
             </div>
             <div>
               <label className="block font-label-md text-label-md font-semibold text-on-surface mb-1">
-                Mô tả phân loại phụ
+                Mô tả phân loại phụ / chi tiết
               </label>
               <input
                 type="text"
                 value={variationSubtitle}
                 onChange={(e) => setVariationSubtitle(e.target.value)}
-                placeholder="Ví dụ: 2 Màu men hỏa biến"
+                placeholder="Ví dụ: Men rêu hỏa biến hoặc 100% Cotton thoáng mát"
                 className="w-full px-3.5 py-2 rounded-xl bg-surface-container-lowest border border-outline-variant/40 font-body-sm text-body-sm focus:outline-none focus:border-primary shadow-xs"
               />
             </div>
@@ -201,13 +226,13 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
 
           <div>
             <label className="block font-label-md text-label-md font-semibold text-on-surface mb-1">
-              Đường dẫn hình ảnh (URL)
+              Đường dẫn hình ảnh (HTTPS URL)
             </label>
             <input
-              type="text"
+              type="url"
               value={imageUrl}
               onChange={(e) => setImageUrl(e.target.value)}
-              placeholder="https://..."
+              placeholder="https://images.unsplash.com/..."
               className="w-full px-3.5 py-2 rounded-xl bg-surface-container-lowest border border-outline-variant/40 font-body-sm text-body-sm focus:outline-none focus:border-primary shadow-xs font-mono text-xs"
             />
           </div>
