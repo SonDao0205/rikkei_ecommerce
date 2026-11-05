@@ -1255,6 +1255,553 @@
       ]
     },
     {
+      "name": "Admin Category Management",
+      "description": "Admin-only category CRUD and hierarchy integration checks. Creates two unique local test categories and leaves them soft-deactivated; run only against a disposable local/test database.",
+      "item": [
+        {
+          "name": "Set unique category test values",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/healthz"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Initializes unique category fixtures\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const stamp = Date.now().toString();",
+                  "  pm.collectionVariables.set('testCategorySlug', 'postman-cat-' + stamp);",
+                  "  pm.collectionVariables.set('testChildCategorySlug', 'postman-subcat-' + stamp);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reject CLIENT access to category management",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Forbidden Postman category\",\n  \"slug\": \"forbidden-postman-category\",\n  \"parent_id\": null,\n  \"image_url\": null,\n  \"sort_order\": 0,\n  \"is_active\": true\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/admin/categories"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Only ADMIN can create categories\", function () {",
+                  "  pm.response.to.have.status(403);",
+                  "  pm.expect(pm.response.json().errors[0].code).to.eql('forbidden');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List all categories for admin",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/admin/categories"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Admin receives active and inactive categories\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().data).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reject malformed category input",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\",\n  \"slug\": \"bad slug\",\n  \"parent_id\": null,\n  \"image_url\": \"http://cdn.example.test/category.png\",\n  \"sort_order\": -1,\n  \"is_active\": true\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/admin/categories"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Rejects invalid fields before writing\", function () {",
+                  "  pm.response.to.have.status(400);",
+                  "  pm.expect(pm.response.json().errors[0].code).to.eql('invalid_category_name');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create root test category",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman category\",\n  \"slug\": \"{{testCategorySlug}}\",\n  \"parent_id\": null,\n  \"image_url\": \"https://cdn.example.test/category.png\",\n  \"sort_order\": 90000,\n  \"is_active\": true\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/admin/categories"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Creates an active root category\", function () {",
+                  "  pm.response.to.have.status(201);",
+                  "  const category = pm.response.json().data;",
+                  "  pm.expect(category.is_active).to.eql(1);",
+                  "  pm.expect(category.parent_id).to.eql(null);",
+                  "  pm.collectionVariables.set('testCategoryId', String(category.id));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reject duplicate category slug",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Duplicate category\",\n  \"slug\": \"{{testCategorySlug}}\",\n  \"parent_id\": null,\n  \"image_url\": null,\n  \"sort_order\": 1,\n  \"is_active\": true\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/admin/categories"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Rejects duplicate slug with conflict\", function () {",
+                  "  pm.response.to.have.status(409);",
+                  "  pm.expect(pm.response.json().errors[0].code).to.eql('category_slug_in_use');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reject missing category parent",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Orphan category\",\n  \"slug\": \"postman-orphan-{{testCategorySlug}}\",\n  \"parent_id\": 999999999,\n  \"image_url\": null,\n  \"sort_order\": 1,\n  \"is_active\": true\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/admin/categories"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Rejects a parent category that does not exist\", function () {",
+                  "  pm.response.to.have.status(400);",
+                  "  pm.expect(pm.response.json().errors[0].code).to.eql('invalid_category_parent');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update root test category",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Postman category\",\n  \"slug\": \"updated-{{testCategorySlug}}\",\n  \"parent_id\": null,\n  \"image_url\": \"https://cdn.example.test/category-updated.png\",\n  \"sort_order\": 90001,\n  \"is_active\": true\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/admin/categories/{{testCategoryId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Updates category metadata\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().data.name).to.eql('Updated Postman category');",
+                  "  pm.expect(pm.response.json().data.slug).to.eql('updated-' + pm.collectionVariables.get('testCategorySlug'));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create child test category",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman child category\",\n  \"slug\": \"{{testChildCategorySlug}}\",\n  \"parent_id\": {{testCategoryId}},\n  \"image_url\": null,\n  \"sort_order\": 90002,\n  \"is_active\": true\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/admin/categories"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Creates child category under active parent\", function () {",
+                  "  pm.response.to.have.status(201);",
+                  "  pm.expect(pm.response.json().data.parent_id).to.eql(Number(pm.collectionVariables.get('testCategoryId')));",
+                  "  pm.collectionVariables.set('testChildCategoryId', String(pm.response.json().data.id));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reject category hierarchy cycle",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Postman category\",\n  \"slug\": \"updated-{{testCategorySlug}}\",\n  \"parent_id\": {{testChildCategoryId}},\n  \"image_url\": null,\n  \"sort_order\": 90001,\n  \"is_active\": true\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/admin/categories/{{testCategoryId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Prevents moving a parent below its own child\", function () {",
+                  "  pm.response.to.have.status(400);",
+                  "  pm.expect(pm.response.json().errors[0].code).to.eql('category_parent_cycle');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reject parent deactivation while child is active",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/admin/categories/{{testCategoryId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Requires active child categories to be moved or deactivated first\", function () {",
+                  "  pm.response.to.have.status(409);",
+                  "  pm.expect(pm.response.json().errors[0].code).to.eql('category_has_active_children');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Soft-delete child category",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/admin/categories/{{testChildCategoryId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Deactivates child without removing its record\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().data.is_active).to.eql(0);",
+                  "  pm.expect(pm.response.json().data.id).to.eql(Number(pm.collectionVariables.get('testChildCategoryId')));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Soft-delete root category",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/admin/categories/{{testCategoryId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Deactivates root and preserves its record\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().data.is_active).to.eql(0);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Verify inactive categories remain manageable",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/admin/categories"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Admin list retains soft-deleted categories\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const ids = pm.response.json().data.map(function (item) { return item.id; });",
+                  "  pm.expect(ids).to.include(Number(pm.collectionVariables.get('testCategoryId')));",
+                  "  pm.expect(ids).to.include(Number(pm.collectionVariables.get('testChildCategoryId')));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Verify inactive categories are hidden publicly",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/categories"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Public catalog excludes inactive categories\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const ids = pm.response.json().data.map(function (item) { return item.id; });",
+                  "  pm.expect(ids).not.to.include(Number(pm.collectionVariables.get('testCategoryId')));",
+                  "  pm.expect(ids).not.to.include(Number(pm.collectionVariables.get('testChildCategoryId')));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reactivate root test category",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"is_active\": true\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/admin/categories/{{testCategoryId}}/status"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Admin can reactivate a soft-deactivated category\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().data.is_active).to.eql(1);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Deactivate root category through status API",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"is_active\": false\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/admin/categories/{{testCategoryId}}/status"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status endpoint supports deactivation\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().data.is_active).to.eql(0);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "Manual Password Reset (requires OTP)",
       "description": "Optional manual flow only. First send Request password reset OTP in Authentication, read the development OTP from docker compose logs backend, set resetOtp in the selected Postman environment, then run these requests. A successful reset invalidates sessions and changes the disposable user password.",
       "item": [

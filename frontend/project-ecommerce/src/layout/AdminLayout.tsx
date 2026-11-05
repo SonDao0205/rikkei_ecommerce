@@ -31,6 +31,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const navItems = [
     { label: "Dashboard", path: "/admin/dashboard", icon: "space_dashboard" },
     { label: "Products", path: "/admin/products", icon: "inventory_2" },
+    { label: "Categories", path: "/admin/categories", icon: "category" },
     { label: "Orders", path: "/admin/orders", icon: "local_shipping" },
     { label: "Shops & Merchants", path: "/admin/shops", icon: "store" },
     { label: "Customers / Users", path: "/admin/customers", icon: "group" },
@@ -66,6 +67,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 (item.path === "/admin/dashboard" && isDashboard) ||
                 (item.path === "/admin/products" &&
                   location.pathname.startsWith("/admin/product")) ||
+                (item.path === "/admin/categories" &&
+                  location.pathname.startsWith("/admin/categories")) ||
                 (item.path === "/admin/orders" &&
                   location.pathname.startsWith("/admin/order")) ||
                 (item.path === "/admin/shops" &&
@@ -154,6 +157,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             <span className="font-semibold text-on-surface">
               {location.pathname.startsWith("/admin/product")
                 ? "Products"
+                : location.pathname.startsWith("/admin/categories")
+                ? "Categories"
                 : location.pathname.startsWith("/admin/order")
                 ? "Orders"
                 : location.pathname.startsWith("/admin/customer")
