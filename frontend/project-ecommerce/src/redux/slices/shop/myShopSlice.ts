@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from "@reduxjs/toolkit";
 import { shopApi } from "../../../api/shop/shopApi";
 import type { Shop, ShopProfilePayload } from "../../../types";
+import type { ShopTermsAcceptance } from "../../../types/shop/registerShop.types";
 
 export interface MyShopState {
   shop: Shop | null;
@@ -50,6 +51,17 @@ export const updateMyShop = createAsyncThunk<Shop, ShopProfilePayload, { rejectV
   }
 );
 
+export const resubmitMyShop = createAsyncThunk<Shop, ShopTermsAcceptance, { rejectValue: string }>(
+  "myShop/resubmitMyShop",
+  async (agreements, { rejectWithValue }) => {
+    try {
+      return await shopApi.submitMyShop(agreements);
+    } catch (err: unknown) {
+      return rejectWithValue(err instanceof Error ? err.message : "Gửi lại hồ sơ shop thất bại");
+    }
+  }
+);
+
 export const myShopSlice = createSlice({
   name: "myShop",
   initialState,
@@ -90,6 +102,20 @@ export const myShopSlice = createSlice({
       .addCase(updateMyShop.rejected, (state, action) => {
         state.updating = false;
         state.error = action.payload || "Cập nhật hồ sơ gian hàng thất bại";
+      })
+      .addCase(resubmitMyShop.pending, (state) => {
+        state.updating = true;
+        state.error = null;
+        state.successMessage = null;
+      })
+      .addCase(resubmitMyShop.fulfilled, (state, action) => {
+        state.updating = false;
+        state.shop = action.payload;
+        state.successMessage = "Hồ sơ đã được gửi lại và đang chờ admin xét duyệt.";
+      })
+      .addCase(resubmitMyShop.rejected, (state, action) => {
+        state.updating = false;
+        state.error = action.payload || "Gửi lại hồ sơ shop thất bại";
       });
   },
 });

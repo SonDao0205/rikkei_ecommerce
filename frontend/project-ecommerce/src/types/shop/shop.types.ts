@@ -17,11 +17,14 @@ export interface Shop {
   banner_url: string | null;
   phone: string | null;
   warehouse_address: string | null;
-  status: 'PENDING' | 'ACTIVE' | 'REJECTED' | 'SUSPENDED';
+  status: 'DRAFT' | 'PENDING' | 'NEEDS_INFO' | 'ACTIVE' | 'REJECTED' | 'SUSPENDED';
   reject_reason: string | null;
   follower_count: number;
   badge?: 'OFFICIAL' | 'MALL' | 'ARTISAN';
   approved_at?: string | null;
+  terms_accepted?: boolean;
+  terms_version?: string;
+  terms_accepted_at?: string | null;
   created_at?: string;
   updated_at?: string;
 }
