@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import RegisterPage from "../pages/auth/RegisterPage";
 import LoginPage from "../pages/auth/LoginPage";
+import RoleSelectionPage from "../pages/auth/RoleSelectionPage";
 import ForgotPassword from "../pages/auth/ForgotPassword";
 import HomePage from "../pages/home/HomePage";
 import ProductDetail from "../pages/product/ProductDetail";
@@ -79,36 +80,28 @@ const router = createBrowserRouter([
     ),
   },
   {
-    path: "/register-open-shop",
+    path: "/select-role",
     element: (
-      <ProtectedRoute allowedRoles={["client", "CLIENT"]}>
-        <RegisterOpenShopStep1 />
+      <ProtectedRoute>
+        <RoleSelectionPage />
       </ProtectedRoute>
     ),
+  },
+  {
+    path: "/register-open-shop",
+    element: <RegisterOpenShopStep1 />,
   },
   {
     path: "/register-shop",
-    element: (
-      <ProtectedRoute allowedRoles={["client", "CLIENT"]}>
-        <RegisterOpenShopStep1 />
-      </ProtectedRoute>
-    ),
+    element: <RegisterOpenShopStep1 />,
   },
   {
     path: "/shop/register",
-    element: (
-      <ProtectedRoute allowedRoles={["client", "CLIENT"]}>
-        <RegisterOpenShopStep1 />
-      </ProtectedRoute>
-    ),
+    element: <RegisterOpenShopStep1 />,
   },
   {
     path: "/seller/register",
-    element: (
-      <ProtectedRoute allowedRoles={["client", "CLIENT"]}>
-        <RegisterOpenShopStep1 />
-      </ProtectedRoute>
-    ),
+    element: <RegisterOpenShopStep1 />,
   },
   {
     path: "/register-open-shop/step2",

@@ -61,6 +61,7 @@ export const Step1FooterBar: React.FC<Step1FooterBarProps> = ({
           <button
             id="btn-next"
             onClick={onNextStep}
+            disabled={isSubmitting || isSavingDraft}
             className="w-full sm:w-auto px-6 py-3 rounded-lg bg-primary text-on-primary font-label-lg text-label-lg shadow-md hover:bg-primary-container transition-all flex items-center justify-center gap-2 cursor-pointer"
             type="button"
           >
