@@ -1,0 +1,269 @@
+import React, { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
+import CustomerLayout from "@/app/layout/CustomerLayout";
+import ProfileSidebar from "@/domains/customer/components/profile/ProfileSidebar";
+import AddressList from "@/domains/customer/components/profile/address/AddressList";
+import AddressForm from "@/domains/customer/components/profile/address/AddressForm";
+import DeleteAddressModal from "@/domains/customer/components/profile/address/DeleteAddressModal";
+import { useAppDispatch, useAppSelector } from "@/app/state/store";
+import { fetchUserProfile } from "@/domains/customer/state/profileSlice";
+import {
+  fetchAddresses,
+  openCreateForm,
+  clearAddressMessages,
+  deleteAddressThunk,
+} from "@/domains/customer/state/addressSlice";
+import type { Address as AddressItem } from "@/domains/customer/types/address.types";
+
+export const Address: React.FC = () => {
+  const dispatch = useAppDispatch();
+  const formRef = useRef<HTMLDivElement>(null);
+
+  const { profile } = useAppSelector((state) => state.profile);
+  const { user } = useAppSelector((state) => state.auth);
+  const { addresses, isFormOpen, successMessage, error } = useAppSelector(
+    (state) => state.address
+  );
+
+  // State cho popup xác nhận xóa địa chỉ
+  const [addressToDelete, setAddressToDelete] = useState<AddressItem | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    dispatch(fetchUserProfile());
+    dispatch(fetchAddresses());
+  }, [dispatch]);
+
+  // Scroll to form when opened
+  useEffect(() => {
+    if (isFormOpen && formRef.current) {
+      formRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [isFormOpen]);
+
+  // Auto clear notifications after 5s
+  useEffect(() => {
+    if (successMessage || error) {
+      const timer = setTimeout(() => {
+        dispatch(clearAddressMessages());
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage, error, dispatch]);
+
+  const mergedProfile = profile
+    ? {
+        ...profile,
+        full_name: user?.full_name || profile.full_name,
+        email: user?.email || profile.email,
+        phone: user?.phone || profile.phone,
+        role: user?.role || profile.role,
+      }
+    : null;
+
+  const handleOpenAddForm = () => {
+    dispatch(openCreateForm());
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!addressToDelete) return;
+    setIsDeleting(true);
+    try {
+      await dispatch(deleteAddressThunk(addressToDelete.id)).unwrap();
+      setAddressToDelete(null);
+    } catch {
+      // Error message is stored in addressSlice.error
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  return (
+    <CustomerLayout>
+      <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-8 pt-3 pb-8 sm:pt-4 sm:pb-10">
+        {/* Breadcrumb Row */}
+        <nav className="flex items-center gap-2 text-on-surface-variant font-body-sm text-body-sm mb-4 sm:mb-5">
+          <Link
+            to="/home"
+            className="hover:text-primary transition-colors flex items-center gap-1"
+          >
+            <span className="material-symbols-outlined text-[16px]">home</span>
+            <span>Home</span>
+          </Link>
+          <span className="material-symbols-outlined text-outline text-[14px]">
+            chevron_right
+          </span>
+          <Link to="/profile" className="hover:text-primary transition-colors">
+            My Account
+          </Link>
+          <span className="material-symbols-outlined text-outline text-[14px]">
+            chevron_right
+          </span>
+          <span className="text-on-surface font-semibold">Address Book</span>
+        </nav>
+
+        {/* Page Header matching address.html */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-5 mb-6 sm:mb-8 border-b border-outline-variant">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="px-2.5 py-0.5 rounded-full bg-primary-fixed text-primary font-label-sm text-label-sm uppercase tracking-wider font-bold">
+                Account Management
+              </span>
+              <span className="text-outline text-body-sm">• Vietnam Marketplace Hub</span>
+            </div>
+            <h1 className="font-headline-xl text-headline-xl text-on-surface tracking-tight">
+              Sổ Địa Chỉ (Address Book)
+            </h1>
+            <p className="font-body-md text-body-md text-on-surface-variant mt-1">
+              Quản lý các điểm giao nhận hàng hóa của bạn để trải nghiệm thanh toán 1-chạm nhanh chóng và an toàn.
+            </p>
+          </div>
+
+          {/* Account address summary */}
+          <div className="flex items-center gap-3 shrink-0 flex-wrap">
+            <div className="flex items-center gap-2 bg-surface-container-low px-3 py-2 rounded-xl">
+              <span className="material-symbols-outlined text-secondary text-[20px]">
+                location_on
+              </span>
+              <div className="flex flex-col">
+                <span className="font-label-sm text-label-sm text-outline leading-tight">
+                  Địa chỉ đã lưu
+                </span>
+                <span className="font-label-md text-label-md text-on-surface font-semibold">
+                  {addresses.length} / 20
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 bg-surface-container-low px-3 py-2 rounded-xl">
+              <span className="material-symbols-outlined text-primary text-[20px]">
+                lock
+              </span>
+              <div className="flex flex-col">
+                <span className="font-label-sm text-label-sm text-outline leading-tight">
+                  Quyền thao tác
+                </span>
+                <span className="font-label-md text-label-md text-primary font-semibold">
+                  Chủ tài khoản
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Success Alert Banner */}
+        {successMessage && (
+          <div className="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center justify-between shadow-xs animate-fadeIn">
+            <div className="flex items-center gap-2.5">
+              <span className="material-symbols-outlined text-emerald-600 text-[20px]">
+                check_circle
+              </span>
+              <span className="font-medium text-sm">{successMessage}</span>
+            </div>
+            <button
+              onClick={() => dispatch(clearAddressMessages())}
+              className="text-emerald-600 hover:text-emerald-900 cursor-pointer"
+              type="button"
+            >
+              <span className="material-symbols-outlined text-[18px]">close</span>
+            </button>
+          </div>
+        )}
+        {error && addresses.length > 0 && (
+          <div
+            role="alert"
+            className="mb-6 p-4 rounded-2xl bg-error-container text-on-error-container flex items-center justify-between"
+          >
+            <span className="font-medium text-sm">{error}</span>
+            <button
+              onClick={() => dispatch(clearAddressMessages())}
+              className="hover:opacity-70 cursor-pointer"
+              type="button"
+              aria-label="Đóng thông báo lỗi"
+            >
+              <span className="material-symbols-outlined text-[18px]">close</span>
+            </button>
+          </div>
+        )}
+
+        {/* Error Alert Banner */}
+        {error && (
+          <div className="mb-6 p-4 rounded-2xl bg-red-50 border border-red-200 text-red-800 flex items-center justify-between shadow-xs animate-fadeIn">
+            <div className="flex items-center gap-2.5">
+              <span className="material-symbols-outlined text-red-600 text-[20px]">
+                error
+              </span>
+              <span className="font-medium text-sm">{error}</span>
+            </div>
+            <button
+              onClick={() => dispatch(clearAddressMessages())}
+              className="text-red-600 hover:text-red-900 cursor-pointer"
+              type="button"
+            >
+              <span className="material-symbols-outlined text-[18px]">close</span>
+            </button>
+          </div>
+        )}
+
+        {/* Main Two-Column Structure */}
+        <div className="flex flex-col lg:flex-row items-start gap-8">
+          {/* LEFT SIDEBAR (Sticky Navigation) */}
+          <ProfileSidebar
+            profile={mergedProfile}
+            activeTab="address-book"
+          />
+
+          {/* RIGHT MAIN CONTENT */}
+          <main className="flex-1 w-full space-y-6 min-w-0">
+            {/* Top Action Bar */}
+            <div className="p-6 rounded-2xl bg-surface-container-lowest border border-outline-variant/40 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-on-surface font-headline-md text-headline-md font-bold leading-tight">
+                  Danh Sách Địa Chỉ Nhận Hàng
+                </h2>
+                <p className="text-on-surface-variant font-body-sm text-body-sm mt-0.5">
+                  Chọn địa chỉ nhận hàng mặc định hoặc bổ sung địa chỉ giao tận nơi mới.
+                </p>
+              </div>
+
+              {/* Requirement: Thêm 1 nút thêm địa chỉ, khi ấn vào nút này sẽ hiển thị thêm 1 khung form */}
+              <button
+                type="button"
+                id="btn-add-address"
+                onClick={handleOpenAddForm}
+                disabled={addresses.length >= 20}
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-on-primary hover:bg-primary-container font-label-md text-label-md font-bold transition-all shadow-md active:scale-95 cursor-pointer shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span className="material-symbols-outlined text-[20px]">add_location_alt</span>
+                <span>{addresses.length >= 20 ? "Đã đạt giới hạn 20 địa chỉ" : "+ Thêm địa chỉ mới"}</span>
+              </button>
+            </div>
+
+            {/* Reactive Address Form (Visible when isFormOpen === true) */}
+            {isFormOpen && (
+              <div ref={formRef} className="animate-fadeIn">
+                <AddressForm />
+              </div>
+            )}
+
+            {/* Address List */}
+            <AddressList
+              onAddNewClick={handleOpenAddForm}
+              onRetry={() => dispatch(fetchAddresses())}
+            />
+          </main>
+        </div>
+      </div>
+
+      {/* Popup xác nhận xóa địa chỉ */}
+      <DeleteAddressModal
+        isOpen={Boolean(addressToDelete)}
+        address={addressToDelete}
+        onClose={() => setAddressToDelete(null)}
+        onConfirm={handleConfirmDelete}
+        isDeleting={isDeleting}
+      />
+    </CustomerLayout>
+  );
+};
+
+export default Address;

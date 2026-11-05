@@ -25,6 +25,7 @@ services:
     environment:
       APP_ENV: ${APP_ENV:-development}
       HTTP_ADDR: ":8080"
+      LOG_LEVEL: ${LOG_LEVEL:-info}
       DATABASE_DSN: "${DB_USERNAME:?Cáº§n Ä‘áº·t DB_USERNAME}:${DB_PASSWORD:?Cáº§n Ä‘áº·t DB_PASSWORD}@tcp(mysql:3306)/${DB_NAME:-rikkei_ecommerce}?parseTime=true"
       JWT_SECRET: ${JWT_SECRET:?Cáº§n Ä‘áº·t JWT_SECRET}
       ACCESS_TOKEN_TTL: ${ACCESS_TOKEN_TTL:-15m}
@@ -51,6 +52,11 @@ services:
       mysql:
         condition: service_healthy
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
 
   mysql:
     image: mysql:8.4

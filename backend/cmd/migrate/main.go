@@ -7,8 +7,8 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
-	"rikkei-ecommerce/internal/auth"
-	"rikkei-ecommerce/internal/migrations"
+	"rikkei-ecommerce/internal/domain/auth"
+	"rikkei-ecommerce/internal/app/migrations"
 )
 
 func main() {

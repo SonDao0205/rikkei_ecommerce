@@ -622,9 +622,11 @@ CREATE TABLE audit_logs (
   old_value   JSON         NULL,
   new_value   JSON         NULL,
   ip_address  VARCHAR(45)  NULL,
+  request_id  VARCHAR(128) NULL,
   created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   KEY idx_audit_logs_user (user_id, created_at),
   KEY idx_audit_logs_entity (entity_type, entity_id),
-  KEY idx_audit_logs_created (created_at)
+  KEY idx_audit_logs_created (created_at),
+  KEY idx_audit_logs_request (request_id)
 );
