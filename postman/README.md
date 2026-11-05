@@ -1,6 +1,6 @@
 # Kiểm thử API với Postman/Newman
 
-Collection kiểm thử có chọn lọc các luồng BE: health, xác thực, catalog, mở shop (DRAFT, xác nhận điều khoản, xét duyệt, nộp lại và cấp SELLER), seller product, địa chỉ, cart/wishlist, follow shop và admin inventory. Bộ test kiểm tra một số input sai, phân quyền và contract `status_counts`; không bao phủ mọi route hay nhánh nghiệp vụ. Xem [Backend README](../backend/README.md#api-hiện-có) và [catalog API contract](../docs/catalog-api.md).
+Collection kiểm thử có chọn lọc các luồng BE: health, xác thực, catalog, admin quản lý danh mục, mở shop (DRAFT, xác nhận điều khoản, xét duyệt, nộp lại và cấp SELLER), seller product, địa chỉ, cart/wishlist, follow shop và admin inventory. Bộ test kiểm tra input sai, phân quyền và contract `status_counts`; không bao phủ mọi route hay nhánh nghiệp vụ. Xem [Backend README](../backend/README.md#api-hiện-có) và [catalog API contract](../docs/catalog-api.md).
 
 Folder **Cart and Wishlist** cần chạy sau folder **Authentication** trong cùng collection run vì nó dùng `clientToken` và tài khoản CLIENT mới được tạo ở folder đó. Flow kiểm tra anonymous access, cart rỗng, biến thể không tồn tại, thêm/cộng dồn/đặt số lượng, từ chối vượt stock/quantity không hợp lệ, xóa item/toàn giỏ, từ chối sản phẩm chưa duyệt trong wishlist và wishlist thêm lặp/đọc/xóa. Nó dùng sản phẩm/biến thể seed `960001`/`961001`; không dùng cart/wishlist của buyer seed vì các fixture đó đã có dữ liệu.
 
@@ -18,6 +18,10 @@ Folder **Shop, Seller Products, and Addresses** now exercises the seller applica
 6. Continue with seller APIs, then suspend and restore the shop. A final negative case verifies an ACTIVE shop cannot be rejected as if it were still under review.
 
 This collection uses a disposable local/test database and leaves the generated account/shop and some mutations behind. It is an integration smoke flow, not proof of production readiness or exhaustive coverage. The flow is not executed automatically by documentation/build checks; use the guarded local Newman helper only after inspecting its destructive effects and refreshing the dedicated local seed. The step 3 KYC/banking form is intentionally informational until secure upload and sensitive-data persistence APIs are implemented.
+
+## Admin category coverage
+
+Folder **Admin Category Management** runs after **Authentication** and uses its `adminToken` and `clientToken`. It verifies that CLIENT cannot list or create categories; admin can list categories, create a root and child, update a category, and reactivate/deactivate categories; malformed input, duplicate slug, missing parent, hierarchy cycles, and deactivating a parent with an active child are rejected. It also confirms soft-deleted entries remain in the admin list and disappear from the public category list. Each run creates uniquely named category fixtures and leaves them inactive in the local/test database; refresh the dedicated local seed when you need a clean database. Do not run this mutating collection against a shared or production database.
 
 ## Import vào Postman
 

@@ -2,7 +2,7 @@
 
 Backend REST API cho MVP Rikkei E-Commerce, viết bằng Go 1.24+, `net/http` và MySQL `database/sql`. Tài liệu này hướng dẫn DevOps chạy/vận hành BE và FE tích hợp các API **đang có**.
 
-> BE hiện cung cấp auth/RBAC, catalog công khai, quản lý shop và duyệt shop, seller CRUD sản phẩm/biến thể/tồn kho ban đầu, sổ địa chỉ, giỏ hàng, wishlist, theo dõi shop và một số API admin inventory. Voucher, checkout, thanh toán, đơn hàng và đánh giá vẫn chưa có API.
+> BE hiện cung cấp auth/RBAC, catalog công khai, admin CRUD danh mục, quản lý shop và duyệt shop, seller CRUD sản phẩm/biến thể/tồn kho ban đầu, sổ địa chỉ, giỏ hàng, wishlist, theo dõi shop và một số API admin inventory. Voucher, checkout, thanh toán, đơn hàng và đánh giá vẫn chưa có API.
 
 ## Cấu trúc mã nguồn
 
@@ -327,6 +327,22 @@ Các endpoint follow yêu cầu tài khoản đã đăng nhập có role `CLIENT
 - `DELETE /api/v1/shops/{id}/follow`: bỏ theo dõi.
 
 Gửi access token dạng Bearer. Gọi lặp là idempotent, follower count được cập nhật cùng transaction; user không thể theo dõi shop của chính mình.
+
+### Quản lý danh mục (ADMIN)
+
+Danh sách công khai `GET /api/v1/categories` chỉ trả danh mục đang hoạt động. Chỉ role `ADMIN` được dùng các API quản trị sau; chúng bao gồm cả danh mục inactive để admin có thể chỉnh sửa hoặc kích hoạt lại:
+
+| Method | Endpoint | Tác dụng |
+|---|---|---|
+| `GET` | `/api/v1/admin/categories` | Liệt kê toàn bộ danh mục (admin lọc/tìm kiếm trên danh sách) |
+| `POST` | `/api/v1/admin/categories` | Tạo danh mục |
+| `PUT` | `/api/v1/admin/categories/{id}` | Cập nhật tên, slug, ảnh, thứ tự, parent và trạng thái |
+| `PATCH` | `/api/v1/admin/categories/{id}/status` | Đổi `is_active` (`true`/`false`) |
+| `DELETE` | `/api/v1/admin/categories/{id}` | Soft-delete bằng cách chuyển inactive; không xóa lịch sử liên kết sản phẩm |
+
+Body tạo/cập nhật dùng `name` (2–120 ký tự), `slug` (chữ thường ASCII, số, dấu gạch nối; `all` dành riêng), `image_url` (HTTPS hoặc rỗng), `sort_order` (0–100000), `parent_id` (ID dương hoặc `null`) và `is_active` (boolean). Slug duy nhất; trùng slug trả `409 category_slug_in_use`. Parent phải tồn tại, không thể là chính danh mục hoặc hậu duệ; không thể kích hoạt danh mục bên dưới một ancestor inactive. Danh mục có con active không thể bị chuyển inactive cho đến khi các con được chuyển inactive trước. DELETE có thể gọi lặp an toàn. Không có hard-delete API.
+
+Trang quản trị nằm tại `/admin/categories`, yêu cầu đăng nhập ADMIN. Seller/buyer không có route quản trị; backend tiếp tục chặn truy cập kể cả khi gọi API trực tiếp.
 
 ### Mở và quản lý shop
 

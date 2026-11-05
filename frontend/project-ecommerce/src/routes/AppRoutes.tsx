@@ -13,6 +13,7 @@ import RegisterOpenShopStep4 from "../pages/shop/RegisterOpenShopStep4";
 import ShopDashboard from "../pages/shop/ShopDashboard";
 import ShopProductManagement from "../pages/shop/ShopProductManagement";
 import AdminProduct from "../pages/admin/AdminProduct";
+import AdminCategory from "../pages/admin/AdminCategory";
 import AdminDashBoard from "../pages/admin/AdminDashBoard";
 import AdminOrder from "../pages/admin/AdminOrder";
 import AdminOrderDetail from "../pages/admin/AdminOrderDetail";
@@ -404,6 +405,14 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute allowedRoles={["admin", "ADMIN"]}>
         <AdminProduct />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/admin/categories",
+    element: (
+      <ProtectedRoute allowedRoles={["admin", "ADMIN"]}>
+        <AdminCategory />
       </ProtectedRoute>
     ),
   },
