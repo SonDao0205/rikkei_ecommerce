@@ -3,8 +3,8 @@ import { Link } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../redux/store";
 import { openLogoutModal } from "../../redux/slices/auth/authSlice";
 import { getDefaultAvatar } from "../../utils/avatar";
-import { fetchCart } from "../../redux/slices/cart/cartSlice";
-import { fetchWishlist } from "../../redux/slices/wishlist/wishlistSlice";
+import { fetchCart, resetCart } from "../../redux/slices/cart/cartSlice";
+import { fetchWishlist, resetWishlist } from "../../redux/slices/wishlist/wishlistSlice";
 import { formatCurrencyVND } from "../../utils/currency";
 import { BrandIcon } from "./BrandLogo";
 
@@ -32,13 +32,32 @@ const Header: React.FC<HeaderProps> = ({
     profile?.avatar_url || user?.avatar_url || getDefaultAvatar(user?.full_name || profile?.full_name);
 
   useEffect(() => {
-    if (cartState && cartState.items.length === 0 && !cartState.isLoading) {
-      dispatch(fetchCart());
+    if (isAuthenticated) {
+      if (!cartState?.isInitialized && !cartState?.isLoading) {
+        dispatch(fetchCart());
+      }
+      if (!wishlistState?.isInitialized && !wishlistState?.isLoading) {
+        dispatch(fetchWishlist());
+      }
+    } else {
+      if ((cartState?.items && cartState.items.length > 0) || cartState?.isInitialized) {
+        dispatch(resetCart());
+      }
+      if ((wishlistState?.items && wishlistState.items.length > 0) || wishlistState?.isInitialized) {
+        dispatch(resetWishlist());
+      }
     }
-    if (wishlistState && wishlistState.items.length === 0 && !wishlistState.isLoading) {
-      dispatch(fetchWishlist());
-    }
-  }, [dispatch, cartState, wishlistState]);
+  }, [
+    dispatch,
+    isAuthenticated,
+    user?.id,
+    cartState?.isInitialized,
+    cartState?.isLoading,
+    cartState?.items?.length,
+    wishlistState?.isInitialized,
+    wishlistState?.isLoading,
+    wishlistState?.items?.length,
+  ]);
 
   // Đóng user dropdown menu khi click ra ngoài
   useEffect(() => {
@@ -201,36 +220,40 @@ const Header: React.FC<HeaderProps> = ({
               </div>
             </div>
 
-            {/* Right Action Icons */}
+            {/* Right Action Icons - Chỉ hiển thị Wishlist và Giỏ hàng khi đã đăng nhập */}
             <div className="flex items-center gap-space-md shrink-0">
-              <Link
-                className="relative p-2 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all"
-                to="/wishlist"
-                title="Danh sách yêu thích"
-              >
-                <span className="material-symbols-outlined text-[24px]">favorite</span>
-                <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-tertiary-container text-on-primary text-[10px] font-bold flex items-center justify-center">
-                  {displayWishlistCount}
-                </span>
-              </Link>
-              <Link
-                className="flex items-center gap-space-sm px-space-md py-2 rounded-xl bg-surface-container-low hover:bg-surface-container transition-all"
-                to="/cart"
-                title="Giỏ hàng"
-              >
-                <div className="relative">
-                  <span className="material-symbols-outlined text-primary text-[22px]">
-                    shopping_bag
-                  </span>
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary-container text-on-primary text-[10px] font-bold flex items-center justify-center">
-                    {displayCartCount}
-                  </span>
-                </div>
-                <div className="hidden sm:flex flex-col text-left">
-                  <span className="font-label-sm text-label-sm text-outline leading-none">Cart</span>
-                  <span className="font-label-md text-label-md text-on-surface font-bold">{displayCartTotal}</span>
-                </div>
-              </Link>
+              {isAuthenticated && (
+                <>
+                  <Link
+                    className="relative p-2 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all"
+                    to="/wishlist"
+                    title="Danh sách yêu thích"
+                  >
+                    <span className="material-symbols-outlined text-[24px]">favorite</span>
+                    <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-tertiary-container text-on-primary text-[10px] font-bold flex items-center justify-center">
+                      {displayWishlistCount}
+                    </span>
+                  </Link>
+                  <Link
+                    className="flex items-center gap-space-sm px-space-md py-2 rounded-xl bg-surface-container-low hover:bg-surface-container transition-all"
+                    to="/cart"
+                    title="Giỏ hàng"
+                  >
+                    <div className="relative">
+                      <span className="material-symbols-outlined text-primary text-[22px]">
+                        shopping_bag
+                      </span>
+                      <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary-container text-on-primary text-[10px] font-bold flex items-center justify-center">
+                        {displayCartCount}
+                      </span>
+                    </div>
+                    <div className="hidden sm:flex flex-col text-left">
+                      <span className="font-label-sm text-label-sm text-outline leading-none">Cart</span>
+                      <span className="font-label-md text-label-md text-on-surface font-bold">{displayCartTotal}</span>
+                    </div>
+                  </Link>
+                </>
+              )}
 
               {/* User Profile / Auth State */}
               {isAuthenticated && user ? (
@@ -464,55 +487,58 @@ const Header: React.FC<HeaderProps> = ({
               </div>
             )}
 
-            {/* Phần 3: Giỏ hàng (Cart) */}
-            <Link
-              to="/cart"
-              onClick={() => setIsMobileDrawerOpen(false)}
-              className="flex items-center justify-between p-3 rounded-2xl bg-[#F0F2FD] hover:bg-[#E5E9FA] border border-[#2E3192]/15 transition-all text-on-surface cursor-pointer"
-            >
-              <div className="flex items-center gap-3">
-                <div className="relative w-10 h-10 rounded-xl bg-white text-[#2E3192] flex items-center justify-center shadow-xs shrink-0">
-                  <span className="material-symbols-outlined text-[22px] text-[#2E3192]">
-                    shopping_bag
+            {/* Phần 3 & 2: Giỏ hàng (Cart) & Yêu thích (Wishlist) chỉ hiển thị khi đã đăng nhập */}
+            {isAuthenticated && (
+              <>
+                <Link
+                  to="/cart"
+                  onClick={() => setIsMobileDrawerOpen(false)}
+                  className="flex items-center justify-between p-3 rounded-2xl bg-[#F0F2FD] hover:bg-[#E5E9FA] border border-[#2E3192]/15 transition-all text-on-surface cursor-pointer"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-10 h-10 rounded-xl bg-white text-[#2E3192] flex items-center justify-center shadow-xs shrink-0">
+                      <span className="material-symbols-outlined text-[22px] text-[#2E3192]">
+                        shopping_bag
+                      </span>
+                      <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#2E3192] text-white text-[10px] font-bold flex items-center justify-center">
+                        {displayCartCount}
+                      </span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs text-outline font-medium">Giỏ hàng ({displayCartCount})</span>
+                      <span className="text-sm font-bold text-on-surface">{displayCartTotal}</span>
+                    </div>
+                  </div>
+                  <span className="material-symbols-outlined text-outline text-[18px]">
+                    chevron_right
                   </span>
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#2E3192] text-white text-[10px] font-bold flex items-center justify-center">
-                    {displayCartCount}
-                  </span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xs text-outline font-medium">Giỏ hàng ({displayCartCount})</span>
-                  <span className="text-sm font-bold text-on-surface">{displayCartTotal}</span>
-                </div>
-              </div>
-              <span className="material-symbols-outlined text-outline text-[18px]">
-                chevron_right
-              </span>
-            </Link>
+                </Link>
 
-            {/* Phần 2: Danh sách yêu thích (Wishlist) */}
-            <Link
-              to="/wishlist"
-              onClick={() => setIsMobileDrawerOpen(false)}
-              className="flex items-center justify-between p-3 rounded-2xl bg-surface-container-low hover:bg-surface-container border border-outline-variant/60 transition-all text-on-surface cursor-pointer"
-            >
-              <div className="flex items-center gap-3">
-                <div className="relative w-10 h-10 rounded-xl bg-red-50 text-[#9E0038] flex items-center justify-center shadow-xs shrink-0">
-                  <span className="material-symbols-outlined text-[22px] text-red-500">
-                    favorite
+                <Link
+                  to="/wishlist"
+                  onClick={() => setIsMobileDrawerOpen(false)}
+                  className="flex items-center justify-between p-3 rounded-2xl bg-surface-container-low hover:bg-surface-container border border-outline-variant/60 transition-all text-on-surface cursor-pointer"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-10 h-10 rounded-xl bg-red-50 text-[#9E0038] flex items-center justify-center shadow-xs shrink-0">
+                      <span className="material-symbols-outlined text-[22px] text-red-500">
+                        favorite
+                      </span>
+                      <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#9E0038] text-white text-[10px] font-bold flex items-center justify-center">
+                        {displayWishlistCount}
+                      </span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-semibold text-on-surface">Yêu thích</span>
+                      <span className="text-xs text-outline">{displayWishlistCount} sản phẩm đã lưu</span>
+                    </div>
+                  </div>
+                  <span className="material-symbols-outlined text-outline text-[18px]">
+                    chevron_right
                   </span>
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#9E0038] text-white text-[10px] font-bold flex items-center justify-center">
-                    {displayWishlistCount}
-                  </span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-sm font-semibold text-on-surface">Yêu thích</span>
-                  <span className="text-xs text-outline">{displayWishlistCount} sản phẩm đã lưu</span>
-                </div>
-              </div>
-              <span className="material-symbols-outlined text-outline text-[18px]">
-                chevron_right
-              </span>
-            </Link>
+                </Link>
+              </>
+            )}
         </div>
 
         {/* Drawer Footer */}

@@ -5,19 +5,27 @@ import type {
   CartSummary,
   PlatformVoucher,
   ShopVoucher,
+  BackendCartResponse,
 } from "../../../types/cart/cart.types";
-import { cartApi, INITIAL_PLATFORM_VOUCHER, INITIAL_SHOP_VOUCHERS } from "../../../api/cart/cartApi";
+import {
+  cartApi,
+  mapBackendCartResponse,
+  INITIAL_PLATFORM_VOUCHER,
+  INITIAL_SHOP_VOUCHERS,
+} from "../../../api/cart/cartApi";
+import type { RootState } from "../../store";
 
 const FREE_SHIPPING_THRESHOLD = 500000;
 const BASE_SHIPPING_FEE = 35000;
 
-function computeCartSummary(
+export function computeCartSummary(
   items: CartItem[],
   platformVoucher: PlatformVoucher | null,
   shopVouchers: Record<number, ShopVoucher>,
   threshold: number = FREE_SHIPPING_THRESHOLD
 ): CartSummary {
-  const selectedItems = items.filter((it) => it.selected);
+  // Only available and selected items count towards subtotal & checkout
+  const selectedItems = items.filter((it) => it.selected && it.is_available !== false);
   const selectedCount = selectedItems.reduce((acc, it) => acc + it.quantity, 0);
   const totalItems = items.reduce((acc, it) => acc + it.quantity, 0);
 
@@ -102,6 +110,8 @@ const initialState: CartState = {
   shopVouchers: INITIAL_SHOP_VOUCHERS,
   freeShippingThreshold: FREE_SHIPPING_THRESHOLD,
   isLoading: false,
+  isUpdating: false,
+  isInitialized: false,
   error: null,
   summary: {
     total_items: 0,
@@ -121,56 +131,98 @@ const initialState: CartState = {
 };
 
 // Async Thunks
-export const fetchCart = createAsyncThunk("cart/fetchCart", async () => {
-  const res = await cartApi.getCart();
-  return res;
-});
+export const fetchCart = createAsyncThunk(
+  "cart/fetchCart",
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await cartApi.getCart();
+      return res;
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Không thể tải giỏ hàng";
+      return rejectWithValue(message);
+    }
+  }
+);
+
+export const addToCart = createAsyncThunk(
+  "cart/addToCart",
+  async (
+    { variantId, quantity = 1 }: { variantId: number; quantity?: number },
+    { rejectWithValue }
+  ) => {
+    try {
+      const res = await cartApi.addItem(variantId, quantity);
+      return res;
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Thêm vào giỏ hàng thất bại";
+      return rejectWithValue(message);
+    }
+  }
+);
 
 export const updateItemQuantity = createAsyncThunk(
   "cart/updateItemQuantity",
-  async ({ itemId, quantity }: { itemId: number; quantity: number }) => {
-    const updated = await cartApi.updateQuantity(itemId, quantity);
-    return updated;
-  }
-);
-
-export const toggleItemSelection = createAsyncThunk(
-  "cart/toggleItemSelection",
-  async (itemId: number) => {
-    const updated = await cartApi.toggleSelectItem(itemId);
-    return updated;
-  }
-);
-
-export const toggleShopSelection = createAsyncThunk(
-  "cart/toggleShopSelection",
-  async ({ shopId, selected }: { shopId: number; selected: boolean }) => {
-    const updated = await cartApi.toggleSelectShop(shopId, selected);
-    return updated;
-  }
-);
-
-export const toggleAllSelection = createAsyncThunk(
-  "cart/toggleAllSelection",
-  async (selected: boolean) => {
-    const updated = await cartApi.toggleSelectAll(selected);
-    return updated;
+  async (
+    { itemId, quantity }: { itemId: number; quantity: number },
+    { rejectWithValue }
+  ) => {
+    try {
+      const res = await cartApi.updateQuantity(itemId, quantity);
+      return res;
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Cập nhật số lượng thất bại";
+      return rejectWithValue(message);
+    }
   }
 );
 
 export const removeItem = createAsyncThunk(
   "cart/removeItem",
-  async (itemId: number) => {
-    const updated = await cartApi.removeItem(itemId);
-    return updated;
+  async (itemId: number, { rejectWithValue }) => {
+    try {
+      const res = await cartApi.removeItem(itemId);
+      return res;
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Xóa sản phẩm thất bại";
+      return rejectWithValue(message);
+    }
+  }
+);
+
+export const clearCartAction = createAsyncThunk(
+  "cart/clearCart",
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await cartApi.clearCart();
+      return res;
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Xóa giỏ hàng thất bại";
+      return rejectWithValue(message);
+    }
   }
 );
 
 export const removeSelectedItemsAction = createAsyncThunk(
   "cart/removeSelectedItems",
-  async () => {
-    const updated = await cartApi.removeSelectedItems();
-    return updated;
+  async (_, { getState, rejectWithValue }) => {
+    try {
+      const state = (getState() as RootState).cart;
+      const selected = state.items.filter((it) => it.selected);
+      if (selected.length === 0) {
+        return null;
+      }
+      if (selected.length === state.items.length) {
+        return await cartApi.clearCart();
+      }
+      let latestRes: BackendCartResponse | null = null;
+      for (const item of selected) {
+        latestRes = await cartApi.removeItem(item.id);
+      }
+      return latestRes;
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Xóa các sản phẩm đã chọn thất bại";
+      return rejectWithValue(message);
+    }
   }
 );
 
@@ -207,6 +259,50 @@ export const cartSlice = createSlice({
   name: "cart",
   initialState,
   reducers: {
+    toggleItemSelection(state, action: PayloadAction<number>) {
+      const itemId = action.payload;
+      const target = state.items.find((it) => it.id === itemId);
+      if (target && target.is_available !== false) {
+        target.selected = !target.selected;
+        state.summary = computeCartSummary(
+          state.items,
+          state.platformVoucher,
+          state.shopVouchers,
+          state.freeShippingThreshold
+        );
+      }
+    },
+    toggleShopSelection(
+      state,
+      action: PayloadAction<{ shopId: number; selected: boolean }>
+    ) {
+      const { shopId, selected } = action.payload;
+      state.items.forEach((it) => {
+        if (it.shop_id === shopId && it.is_available !== false) {
+          it.selected = selected;
+        }
+      });
+      state.summary = computeCartSummary(
+        state.items,
+        state.platformVoucher,
+        state.shopVouchers,
+        state.freeShippingThreshold
+      );
+    },
+    toggleAllSelection(state, action: PayloadAction<boolean>) {
+      const selected = action.payload;
+      state.items.forEach((it) => {
+        if (it.is_available !== false) {
+          it.selected = selected;
+        }
+      });
+      state.summary = computeCartSummary(
+        state.items,
+        state.platformVoucher,
+        state.shopVouchers,
+        state.freeShippingThreshold
+      );
+    },
     removePlatformVoucher(state) {
       state.platformVoucher = null;
       state.summary = computeCartSummary(
@@ -228,51 +324,173 @@ export const cartSlice = createSlice({
     clearCartError(state) {
       state.error = null;
     },
+    resetCart(state) {
+      state.items = [];
+      state.isLoading = false;
+      state.isUpdating = false;
+      state.isInitialized = false;
+      state.error = null;
+      state.platformVoucher = null;
+      state.shopVouchers = {};
+      state.summary = {
+        total_items: 0,
+        selected_count: 0,
+        items_subtotal: 0,
+        estimated_shipping: 0,
+        shipping_discount: 0,
+        store_vouchers_discount: 0,
+        platform_voucher_discount: 0,
+        grand_total: 0,
+        total_savings: 0,
+        free_shipping_threshold: FREE_SHIPPING_THRESHOLD,
+        free_shipping_progress: 0,
+        amount_left_for_free_shipping: FREE_SHIPPING_THRESHOLD,
+        is_free_shipping_eligible: false,
+      };
+    },
   },
   extraReducers: (builder) => {
-    // fetchCart
-    builder
-      .addCase(fetchCart.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(fetchCart.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.items = action.payload.items;
-        state.shopVouchers = action.payload.shopVouchers;
-        state.platformVoucher = action.payload.platformVoucher;
+    // Tự động dọn sạch giỏ hàng khi người dùng đăng xuất hoặc hết hạn phiên
+    builder.addCase("auth/logoutUser/fulfilled", (state) => {
+      state.items = [];
+      state.isLoading = false;
+      state.isUpdating = false;
+      state.isInitialized = false;
+      state.error = null;
+      state.platformVoucher = null;
+      state.shopVouchers = {};
+      state.summary = {
+        total_items: 0,
+        selected_count: 0,
+        items_subtotal: 0,
+        estimated_shipping: 0,
+        shipping_discount: 0,
+        store_vouchers_discount: 0,
+        platform_voucher_discount: 0,
+        grand_total: 0,
+        total_savings: 0,
+        free_shipping_threshold: FREE_SHIPPING_THRESHOLD,
+        free_shipping_progress: 0,
+        amount_left_for_free_shipping: FREE_SHIPPING_THRESHOLD,
+        is_free_shipping_eligible: false,
+      };
+    });
+    builder.addCase("auth/sessionExpired", (state) => {
+      state.items = [];
+      state.isLoading = false;
+      state.isUpdating = false;
+      state.isInitialized = false;
+      state.error = null;
+      state.platformVoucher = null;
+      state.shopVouchers = {};
+      state.summary = {
+        total_items: 0,
+        selected_count: 0,
+        items_subtotal: 0,
+        estimated_shipping: 0,
+        shipping_discount: 0,
+        store_vouchers_discount: 0,
+        platform_voucher_discount: 0,
+        grand_total: 0,
+        total_savings: 0,
+        free_shipping_threshold: FREE_SHIPPING_THRESHOLD,
+        free_shipping_progress: 0,
+        amount_left_for_free_shipping: FREE_SHIPPING_THRESHOLD,
+        is_free_shipping_eligible: false,
+      };
+    });
+    // Helper to update items from backend cart response
+    const handleBackendCartSuccess = (
+      state: CartState,
+      action: PayloadAction<BackendCartResponse | null>
+    ) => {
+      state.isLoading = false;
+      state.isUpdating = false;
+      state.isInitialized = true;
+      state.error = null;
+      if (action.payload) {
+        state.items = mapBackendCartResponse(action.payload, state.items);
         state.summary = computeCartSummary(
           state.items,
           state.platformVoucher,
           state.shopVouchers,
           state.freeShippingThreshold
         );
-      })
-      .addCase(fetchCart.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.error.message || "Không thể tải giỏ hàng";
-      });
-
-    // Item updates (quantity, select, remove)
-    const handleItemsUpdated = (
-      state: CartState,
-      action: PayloadAction<CartItem[]>
-    ) => {
-      state.items = action.payload;
-      state.summary = computeCartSummary(
-        state.items,
-        state.platformVoucher,
-        state.shopVouchers,
-        state.freeShippingThreshold
-      );
+      }
     };
 
-    builder.addCase(updateItemQuantity.fulfilled, handleItemsUpdated);
-    builder.addCase(toggleItemSelection.fulfilled, handleItemsUpdated);
-    builder.addCase(toggleShopSelection.fulfilled, handleItemsUpdated);
-    builder.addCase(toggleAllSelection.fulfilled, handleItemsUpdated);
-    builder.addCase(removeItem.fulfilled, handleItemsUpdated);
-    builder.addCase(removeSelectedItemsAction.fulfilled, handleItemsUpdated);
+    // fetchCart
+    builder
+      .addCase(fetchCart.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchCart.fulfilled, handleBackendCartSuccess)
+      .addCase(fetchCart.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isInitialized = true;
+        state.error = (action.payload as string) || "Không thể tải giỏ hàng";
+      });
+
+    // addToCart
+    builder
+      .addCase(addToCart.pending, (state) => {
+        state.isUpdating = true;
+        state.error = null;
+      })
+      .addCase(addToCart.fulfilled, handleBackendCartSuccess)
+      .addCase(addToCart.rejected, (state, action) => {
+        state.isUpdating = false;
+        state.error = (action.payload as string) || "Thêm vào giỏ hàng thất bại";
+      });
+
+    // updateItemQuantity
+    builder
+      .addCase(updateItemQuantity.pending, (state) => {
+        state.isUpdating = true;
+        state.error = null;
+      })
+      .addCase(updateItemQuantity.fulfilled, handleBackendCartSuccess)
+      .addCase(updateItemQuantity.rejected, (state, action) => {
+        state.isUpdating = false;
+        state.error = (action.payload as string) || "Cập nhật số lượng thất bại";
+      });
+
+    // removeItem
+    builder
+      .addCase(removeItem.pending, (state) => {
+        state.isUpdating = true;
+        state.error = null;
+      })
+      .addCase(removeItem.fulfilled, handleBackendCartSuccess)
+      .addCase(removeItem.rejected, (state, action) => {
+        state.isUpdating = false;
+        state.error = (action.payload as string) || "Xóa sản phẩm thất bại";
+      });
+
+    // clearCartAction
+    builder
+      .addCase(clearCartAction.pending, (state) => {
+        state.isUpdating = true;
+        state.error = null;
+      })
+      .addCase(clearCartAction.fulfilled, handleBackendCartSuccess)
+      .addCase(clearCartAction.rejected, (state, action) => {
+        state.isUpdating = false;
+        state.error = (action.payload as string) || "Xóa giỏ hàng thất bại";
+      });
+
+    // removeSelectedItemsAction
+    builder
+      .addCase(removeSelectedItemsAction.pending, (state) => {
+        state.isUpdating = true;
+        state.error = null;
+      })
+      .addCase(removeSelectedItemsAction.fulfilled, handleBackendCartSuccess)
+      .addCase(removeSelectedItemsAction.rejected, (state, action) => {
+        state.isUpdating = false;
+        state.error = (action.payload as string) || "Xóa sản phẩm đã chọn thất bại";
+      });
 
     // Platform voucher
     builder
@@ -314,8 +532,14 @@ export const cartSlice = createSlice({
   },
 });
 
-export const { removePlatformVoucher, removeShopVoucher, clearCartError } =
-  cartSlice.actions;
+export const {
+  toggleItemSelection,
+  toggleShopSelection,
+  toggleAllSelection,
+  removePlatformVoucher,
+  removeShopVoucher,
+  clearCartError,
+  resetCart,
+} = cartSlice.actions;
 
 export default cartSlice.reducer;
-

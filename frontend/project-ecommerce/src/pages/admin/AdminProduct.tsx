@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import AdminLayout from "../../layout/AdminLayout";
 import ProductHeader from "../../components/admin/product/ProductHeader";
 import ProductStatsCards from "../../components/admin/product/ProductStatsCards";
@@ -44,6 +44,7 @@ const AdminProduct: React.FC = () => {
     pageSize,
   } = useAppSelector((state) => state.adminProduct);
   const { categories } = useAppSelector((state) => state.product);
+  const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
 
   useEffect(() => {
     dispatch(getInventoryStats());
@@ -61,6 +62,11 @@ const AdminProduct: React.FC = () => {
       })
     );
   }, [dispatch, searchQuery, categoryFilter, stockStatusFilter, vendorFilter, sortBy]);
+
+  const showFeedback = (msg: string) => {
+    setFeedbackMessage(msg);
+    setTimeout(() => setFeedbackMessage(null), 3500);
+  };
 
   const handleSearchChange = (val: string) => {
     dispatch(setSearchQuery(val));
@@ -94,18 +100,84 @@ const AdminProduct: React.FC = () => {
     dispatch(selectAllProducts(checked));
   };
 
-  const handleToggleStatus = (id: number) => {
-    dispatch(toggleProductStatus(id));
-  };
-
-  const handleDeleteProduct = (id: number) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa sản phẩm này không?")) {
-      dispatch(deleteProduct(id));
+  const handleToggleStatus = async (id: number) => {
+    try {
+      const res = await dispatch(toggleProductStatus(id)).unwrap();
+      showFeedback(
+        `Đã chuyển trạng thái sản phẩm #${id} sang ${
+          res.is_active ? "BẬT (ACTIVE)" : "TẮT (HIDDEN)"
+        }.`
+      );
+    } catch {
+      // Error handled in slice state.error
     }
   };
 
-  const handleApplyBulkAction = (action: "activate" | "deactivate" | "delete") => {
-    dispatch(executeBulkAction({ action, productIds: selectedIds }));
+  const handleDeleteProduct = async (id: number) => {
+    if (window.confirm("Bạn có chắc chắn muốn xóa sản phẩm này không?")) {
+      try {
+        await dispatch(deleteProduct(id)).unwrap();
+        showFeedback(`Đã xóa sản phẩm #${id} thành công.`);
+      } catch {
+        // Error handled in slice state.error
+      }
+    }
+  };
+
+  const handleApplyBulkAction = async (action: "activate" | "deactivate" | "delete") => {
+    try {
+      const res = await dispatch(executeBulkAction({ action, productIds: selectedIds })).unwrap();
+      const actionName =
+        action === "activate"
+          ? "kích hoạt"
+          : action === "deactivate"
+          ? "hủy kích hoạt"
+          : "xóa";
+      showFeedback(`Đã ${actionName} thành công ${res.count} sản phẩm.`);
+    } catch {
+      // Error handled in slice state.error
+    }
+  };
+
+  const handleExportCsv = () => {
+    if (products.length === 0) {
+      alert("Không có sản phẩm nào để xuất CSV.");
+      return;
+    }
+    const headers = [
+      "ID",
+      "Tên sản phẩm",
+      "SKU",
+      "Cửa hàng",
+      "Huy hiệu",
+      "Danh mục",
+      "Giá bán",
+      "Tồn kho",
+      "Trạng thái",
+      "Đang kích hoạt",
+    ];
+    const rows = products.map((p) => [
+      p.id,
+      `"${(p.name || "").replace(/"/g, '""')}"`,
+      `"${p.sku || ""}"`,
+      `"${(p.shop_name || "").replace(/"/g, '""')}"`,
+      `"${p.shop_badge || ""}"`,
+      `"${(p.category_name || "").replace(/"/g, '""')}"`,
+      p.price,
+      p.stock,
+      p.status,
+      p.is_active ? "BẬT" : "TẮT",
+    ]);
+    const csvContent =
+      "\uFEFF" + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `inventory_products_${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    showFeedback(`Đã xuất file CSV cho ${products.length} sản phẩm kho.`);
   };
 
   const handlePageChange = (page: number) => {
@@ -133,7 +205,29 @@ const AdminProduct: React.FC = () => {
   return (
     <AdminLayout>
       {/* Page Title & Action Header */}
-      <ProductHeader onAddNewProduct={handleAddNewProduct} />
+      <ProductHeader
+        onAddNewProduct={handleAddNewProduct}
+        onExportCsv={handleExportCsv}
+      />
+
+      {/* Success feedback banner */}
+      {feedbackMessage && (
+        <div className="mb-4 p-4 rounded-xl bg-emerald-500/10 text-emerald-800 border border-emerald-500/20 flex items-center justify-between shadow-sm animate-fade-in">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-[22px] text-emerald-600">
+              check_circle
+            </span>
+            <span className="text-sm font-semibold">{feedbackMessage}</span>
+          </div>
+          <button
+            onClick={() => setFeedbackMessage(null)}
+            className="p-1 rounded-full hover:bg-black/10 transition-colors cursor-pointer"
+            aria-label="Đóng"
+          >
+            <span className="material-symbols-outlined text-[18px]">close</span>
+          </button>
+        </div>
+      )}
 
       {/* Error notification banner */}
       {error && (

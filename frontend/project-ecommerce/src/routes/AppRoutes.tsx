@@ -1,7 +1,6 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import RegisterPage from "../pages/auth/RegisterPage";
 import LoginPage from "../pages/auth/LoginPage";
-import RoleSelectionPage from "../pages/auth/RoleSelectionPage";
 import ForgotPassword from "../pages/auth/ForgotPassword";
 import HomePage from "../pages/home/HomePage";
 import ShoppingCart from "../pages/cart/ShoppingCart";
@@ -116,11 +115,7 @@ const router = createBrowserRouter([
   },
   {
     path: "/select-role",
-    element: (
-      <ProtectedRoute>
-        <RoleSelectionPage />
-      </ProtectedRoute>
-    ),
+    element: <Navigate to="/home" replace />,
   },
   {
     path: "/register-open-shop",

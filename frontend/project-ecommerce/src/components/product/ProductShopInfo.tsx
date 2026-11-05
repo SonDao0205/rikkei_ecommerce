@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../redux/store";
 import { toggleFollowShop } from "../../redux/slices/shop/publicShopSlice";
+import WishlistToast from "../wishlist/WishlistToast";
 import type { PublicShop } from "../../types";
 
 interface ProductShopInfoProps {
@@ -11,24 +12,80 @@ interface ProductShopInfoProps {
 export const ProductShopInfo: React.FC<ProductShopInfoProps> = ({ shop }) => {
   const dispatch = useAppDispatch();
   const { followState, followLoading } = useAppSelector((state) => state.publicShop);
-  const [followToast, setFollowToast] = useState<string | null>(null);
+  const { user, isAuthenticated } = useAppSelector((state) => state.auth);
+
+  const [toast, setToast] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    actionText?: string;
+    actionLink?: string;
+    type?: "success" | "error" | "info";
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+  });
 
   if (!shop) return null;
 
   const handleFollowToggle = async () => {
+    if (!isAuthenticated || !user) {
+      setToast({
+        isOpen: true,
+        title: "Yêu cầu đăng nhập",
+        message: "Vui lòng đăng nhập với tài khoản khách hàng để theo dõi cửa hàng.",
+        actionText: "Đăng nhập ngay",
+        actionLink: "/login",
+        type: "error",
+      });
+      return;
+    }
+
+    if (!user.roles?.includes("client") && user.role !== "client") {
+      setToast({
+        isOpen: true,
+        title: "Không thể thao tác",
+        message: "Tính năng theo dõi cửa hàng chỉ dành cho tài khoản Người mua.",
+        type: "error",
+      });
+      return;
+    }
+
     try {
-      setFollowToast(null);
-      await dispatch(
+      const isCurrentlyFollowing = followState.following;
+      const result = await dispatch(
         toggleFollowShop({
           shopId: shop.id,
-          currentlyFollowing: followState.following,
+          currentlyFollowing: isCurrentlyFollowing,
         })
       ).unwrap();
+
+      setToast({
+        isOpen: true,
+        title: result.following ? "Đã theo dõi cửa hàng" : "Đã bỏ theo dõi cửa hàng",
+        message: result.following
+          ? `Bạn đã theo dõi thành công gian hàng "${shop.name}".`
+          : `Bạn đã bỏ theo dõi gian hàng "${shop.name}".`,
+        actionText: "Xem gian hàng",
+        actionLink: `/shop/${shop.id}`,
+        type: "success",
+      });
     } catch (err: unknown) {
-      setFollowToast(err instanceof Error ? err.message : "Thao tác thất bại");
-      setTimeout(() => setFollowToast(null), 3000);
+      setToast({
+        isOpen: true,
+        title: "Không thể thao tác",
+        message: err instanceof Error ? err.message : "Thao tác thất bại, vui lòng thử lại.",
+        type: "error",
+      });
     }
   };
+
+  const followerDisplay = followState.follower_count ?? shop.follower_count ?? 0;
+  const formattedFollowers =
+    followerDisplay >= 1000
+      ? `${(followerDisplay / 1000).toFixed(1)}k`
+      : `${followerDisplay}`;
 
   return (
     <div className="w-full rounded-2xl bg-surface-container-lowest p-4 shadow-sm flex items-center justify-between border border-outline-variant/30 flex-wrap gap-3">
@@ -65,7 +122,7 @@ export const ProductShopInfo: React.FC<ProductShopInfoProps> = ({ shop }) => {
               ★ 4.9 <span className="text-outline font-normal ml-0.5">(18.4k)</span>
             </span>
             <span>•</span>
-            <span>{followState.follower_count || shop.follower_count || 120} người theo dõi</span>
+            <span>{formattedFollowers} người theo dõi</span>
             <span>•</span>
             <span className="text-primary font-semibold">98% Phản hồi chat</span>
           </div>
@@ -106,11 +163,15 @@ export const ProductShopInfo: React.FC<ProductShopInfoProps> = ({ shop }) => {
         </Link>
       </div>
 
-      {followToast && (
-        <p className="w-full text-xs text-error font-medium mt-1 animate-fade-in">
-          {followToast}
-        </p>
-      )}
+      <WishlistToast
+        isOpen={toast.isOpen}
+        title={toast.title}
+        message={toast.message}
+        actionText={toast.actionText}
+        actionLink={toast.actionLink}
+        type={toast.type}
+        onClose={() => setToast((prev) => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 };

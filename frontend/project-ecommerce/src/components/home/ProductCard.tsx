@@ -1,5 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import type { ProductItem } from "../../types";
+import { useAppDispatch, useAppSelector } from "../../redux/store";
+import { addToWishlist, removeFromWishlist } from "../../redux/slices/wishlist/wishlistSlice";
+import WishlistToast from "../wishlist/WishlistToast";
 
 interface ProductCardProps {
   product: ProductItem;
@@ -16,13 +19,76 @@ const ProductCard: React.FC<ProductCardProps> = ({
   onClick,
   onShopClick,
 }) => {
-  const [isWishlisted, setIsWishlisted] = useState(false);
+  const dispatch = useAppDispatch();
+  const { items: wishlistItems } = useAppSelector((state) => state.wishlist);
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const [toastState, setToastState] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: "success" | "error";
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "success",
+  });
 
-  const handleWishlistClick = (e: React.MouseEvent) => {
+  useEffect(() => {
+    if (toastState.isOpen) {
+      const timer = setTimeout(() => {
+        setToastState((prev) => ({ ...prev, isOpen: false }));
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [toastState.isOpen]);
+
+  const isWishlisted = wishlistItems.some(
+    (it) => it.product_id === product.id || it.id === product.id
+  );
+
+  const handleWishlistClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsWishlisted(!isWishlisted);
-    onToggleWishlist?.(product);
+
+    if (!isAuthenticated) {
+      setToastState({
+        isOpen: true,
+        title: "Chưa đăng nhập",
+        message: "Vui lòng đăng nhập để lưu sản phẩm vào danh sách yêu thích.",
+        type: "error",
+      });
+      return;
+    }
+
+    try {
+      if (isWishlisted) {
+        await dispatch(removeFromWishlist(product.id)).unwrap();
+        setToastState({
+          isOpen: true,
+          title: "Đã bỏ thích sản phẩm",
+          message: `"${product.name}" đã được xóa khỏi danh sách yêu thích.`,
+          type: "success",
+        });
+      } else {
+        await dispatch(addToWishlist(product.id)).unwrap();
+        setToastState({
+          isOpen: true,
+          title: "Đã thêm vào yêu thích",
+          message: `"${product.name}" đã được lưu vào danh sách yêu thích.`,
+          type: "success",
+        });
+      }
+      onToggleWishlist?.(product);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Thao tác thất bại";
+      setToastState({
+        isOpen: true,
+        title: "Thao tác thất bại",
+        message: msg,
+        type: "error",
+      });
+    }
   };
 
   const handleQuickAddClick = (e: React.MouseEvent) => {
@@ -195,6 +261,17 @@ const ProductCard: React.FC<ProductCardProps> = ({
           )}
         </div>
       </div>
+
+      {/* Pinned Bottom-Right Toast Notification */}
+      <WishlistToast
+        isOpen={toastState.isOpen}
+        title={toastState.title}
+        message={toastState.message}
+        type={toastState.type}
+        actionText="Xem yêu thích"
+        actionLink="/wishlist"
+        onClose={() => setToastState((prev) => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 };

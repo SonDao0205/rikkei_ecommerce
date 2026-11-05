@@ -1,75 +1,12 @@
-import type { CartItem, ShopVoucher, PlatformVoucher } from "../../types/cart/cart.types";
+import axiosClient from "../axiosClient";
+import type {
+  BackendCartItem,
+  BackendCartResponse,
+  CartItem,
+  ShopVoucher,
+  PlatformVoucher,
+} from "../../types/cart/cart.types";
 
-const CART_STORAGE_KEY = "mp_user_cart_items";
-
-// Initial seed data extracted accurately from shopping_cart.html
-export const INITIAL_CART_ITEMS: CartItem[] = [
-  {
-    id: 101,
-    shop_id: 1,
-    shop_name: "UrbanStep Official",
-    shop_badge: "Official Mall",
-    shop_avatar_text: "US",
-    shop_location: "Fast Saigon Dispatch",
-    product_id: 1,
-    name: "Retro Runner V2 Sneaker – Off White / Forest Green",
-    image_url:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDOgr6jzX5MRBqlbBc3j6tLq8YIc8X9pmghE3T7-XMm0-X3wiRoIi0-eAOp__w8W-AAHQGAcgqEDyUt2452ZNVKXtQjNPpSGhckLCqcBvurqatDrokrNExV2VRdozSF7QR_ftmYuF_6I8zsuw2z4ObiwWvPw66Wl0qTS1lgs7_nazmvVyCSWT1fSNV-D-RPbeBLVibMDW9MdjJFtgw9zAOWfKZ_T5UQt611dzsbckGcfw8NSQO3maiM",
-    alt_text:
-      "Close-up studio photograph of premium vintage-inspired running sneaker, forest green and off-white suede textures, modern gum sole.",
-    variant_label: "Color: Forest Green • Size: EU 40",
-    stock_status: "In Stock - Fast Saigon Dispatch",
-    original_price: 1750000,
-    price: 1250000,
-    quantity: 1,
-    max_stock: 15,
-    selected: true,
-  },
-  {
-    id: 102,
-    shop_id: 1,
-    shop_name: "UrbanStep Official",
-    shop_badge: "Official Mall",
-    shop_avatar_text: "US",
-    shop_location: "Fast Saigon Dispatch",
-    product_id: 2,
-    name: "Cushioned Bamboo Athletic Socks (3-Pack)",
-    image_url:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDa7QGM4G-BiNUcdmcdFsOiaUFvvNcyJ5nD_b7C4b4LO2XxO0cEKJAp1Hq5xOKrQ7h0XwGeMCU5slvl0seeqwbgZFHCwPxZqbyXHwHwTqWcv8ELC2kH_9AgLL6dFWtg4He5qIG13GasmnqOEl9M9xKllMnyXKLOEpfRxeG0LYa0mW5PoQbMsSBNZTUboZozwd6Jo8kLo5HPesvvuQ6YInV7K9znl00m_O3JftKElIoJ6oatIu_Sp8Gv",
-    alt_text:
-      "Minimalist pack of three rolled organic bamboo athletic ankle socks in neutral white and heather grey tones.",
-    variant_label: "Color: White/Grey Mix • One Size",
-    stock_status: "Ready to Ship",
-    original_price: 1500000, // or 150.000 (unit: 150.000 ₫ original, 120.000 ₫ price)
-    price: 120000,
-    quantity: 2,
-    max_stock: 50,
-    selected: true,
-  },
-  {
-    id: 201,
-    shop_id: 2,
-    shop_name: "Crafted Saigon",
-    shop_badge: "Artisan Partner",
-    shop_avatar_text: "CS",
-    shop_location: "Workshop in District 3, HCMC",
-    product_id: 3,
-    name: "Minimalist Vegetable Tanned Leather Cardholder",
-    image_url:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuD14nOFIXfy8YisZNTXT0Itp4w-hckTzyNYKTkcCBYT6_dwAGfIPo2wbFqOvLe36II0PVwP0f4pXeSj8EUk9vgTcRQYTh-F-J4AUc8xJHVEi0lB3wT9ed85GqedTWAsWlbcWFsH-0lmxA_p-oZcjkqLrAtGcrSU0AiH-RsI-ZTExGCmV-Y3ZocRsQXyHMn7Uo62jv6xxNaT5LhtIWDkuAdnjQPeOC0AKCUi-biyAn0ztTwCPfYr7cXJ",
-    alt_text:
-      "Artisanal hand-stitched vegetable tanned leather slim cardholder in warm tan saddle brown.",
-    variant_label: "Color: Tan Saddle • Stitch: Waxed Cream",
-    stock_status: "Handmade • Ships in 24h",
-    original_price: 400000,
-    price: 240000,
-    quantity: 1,
-    max_stock: 8,
-    selected: true,
-  },
-];
-
-// Initial vouchers
 export const INITIAL_SHOP_VOUCHERS: Record<number, ShopVoucher> = {
   1: {
     shop_id: 1,
@@ -89,95 +26,145 @@ export const INITIAL_PLATFORM_VOUCHER: PlatformVoucher = {
   description: "Code 'RETRO50' auto-deducted",
 };
 
-// Helper methods to read/write storage safely
-function getStoredItems(): CartItem[] {
-  try {
-    const raw = localStorage.getItem(CART_STORAGE_KEY);
-    if (!raw) {
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(INITIAL_CART_ITEMS));
-      return INITIAL_CART_ITEMS;
-    }
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : INITIAL_CART_ITEMS;
-  } catch {
-    return INITIAL_CART_ITEMS;
+/**
+ * Maps a single backend cart item to UI CartItem model
+ */
+export function mapBackendCartItemToCartItem(
+  backendItem: BackendCartItem,
+  isSelected: boolean = true
+): CartItem {
+  const initials = backendItem.shop_name
+    ? backendItem.shop_name
+        .split(" ")
+        .filter(Boolean)
+        .map((s) => s[0])
+        .slice(0, 2)
+        .join("")
+        .toUpperCase()
+    : "SHOP";
+
+  let stockStatus = "Còn hàng";
+  if (!backendItem.is_available) {
+    stockStatus = backendItem.available_stock <= 0 ? "Hết hàng" : "Tạm ngưng bán";
+  } else if (backendItem.available_stock <= 5) {
+    stockStatus = `Chỉ còn ${backendItem.available_stock} sản phẩm`;
   }
+
+  return {
+    id: backendItem.id,
+    shop_id: backendItem.shop_id,
+    shop_name: backendItem.shop_name,
+    shop_badge: "Chính hãng",
+    shop_avatar_text: initials,
+    shop_location: "Toàn quốc",
+    product_id: backendItem.product_id,
+    product_slug: backendItem.product_slug,
+    variant_id: backendItem.variant_id,
+    variant_sku: backendItem.variant_sku,
+    name: backendItem.product_name,
+    image_url:
+      backendItem.product_thumbnail_url ||
+      "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300",
+    alt_text: backendItem.product_name,
+    variant_label: backendItem.variant_name || backendItem.variant_sku || "Mặc định",
+    stock_status: stockStatus,
+    original_price: backendItem.unit_price,
+    price: backendItem.unit_price,
+    quantity: backendItem.quantity,
+    max_stock: Math.max(backendItem.available_stock, backendItem.quantity),
+    selected: backendItem.is_available ? isSelected : false,
+    is_available: backendItem.is_available,
+    available_stock: backendItem.available_stock,
+    line_total: backendItem.line_total,
+  };
 }
 
-function saveStoredItems(items: CartItem[]): void {
-  try {
-    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
-  } catch {
-    // ignore storage error
+/**
+ * Maps a BackendCartResponse into CartItem[], preserving previous selection state if present
+ */
+export function mapBackendCartResponse(
+  backendData: BackendCartResponse,
+  previousItems: CartItem[] = []
+): CartItem[] {
+  const previousMap = new Map<number, boolean>();
+  for (const prev of previousItems) {
+    previousMap.set(prev.id, prev.selected);
   }
+
+  return (backendData.items || []).map((item) => {
+    const wasSelected = previousMap.has(item.id)
+      ? previousMap.get(item.id)!
+      : true; // Default selected for newly added items
+    return mapBackendCartItemToCartItem(item, wasSelected);
+  });
 }
 
 export const cartApi = {
-  async getCart(): Promise<{
-    items: CartItem[];
-    shopVouchers: Record<number, ShopVoucher>;
-    platformVoucher: PlatformVoucher | null;
-  }> {
-    // Simulate brief network latency for smooth UI feel
-    await new Promise((resolve) => setTimeout(resolve, 80));
-    const items = getStoredItems();
-    return {
-      items,
-      shopVouchers: INITIAL_SHOP_VOUCHERS,
-      platformVoucher: INITIAL_PLATFORM_VOUCHER,
-    };
-  },
-
-  async updateQuantity(itemId: number, quantity: number): Promise<CartItem[]> {
-    const items = getStoredItems().map((item) =>
-      item.id === itemId
-        ? { ...item, quantity: Math.max(1, Math.min(item.max_stock, quantity)) }
-        : item
+  /**
+   * GET /api/v1/cart
+   * Retrieves user's active cart
+   */
+  async getCart(): Promise<BackendCartResponse> {
+    const response = await axiosClient.get<{ success: boolean; data: BackendCartResponse }>(
+      "/api/v1/cart"
     );
-    saveStoredItems(items);
-    return items;
+    return response.data.data;
   },
 
-  async toggleSelectItem(itemId: number): Promise<CartItem[]> {
-    const items = getStoredItems().map((item) =>
-      item.id === itemId ? { ...item, selected: !item.selected } : item
+  /**
+   * POST /api/v1/cart/items
+   * Adds an item with variantId and quantity to cart
+   */
+  async addItem(variantId: number, quantity: number = 1): Promise<BackendCartResponse> {
+    const response = await axiosClient.post<{ success: boolean; data: BackendCartResponse }>(
+      "/api/v1/cart/items",
+      {
+        variant_id: variantId,
+        quantity,
+      }
     );
-    saveStoredItems(items);
-    return items;
+    return response.data.data;
   },
 
-  async toggleSelectShop(shopId: number, selected: boolean): Promise<CartItem[]> {
-    const items = getStoredItems().map((item) =>
-      item.shop_id === shopId ? { ...item, selected } : item
+  /**
+   * PUT /api/v1/cart/items/{id}
+   * Updates an item's absolute quantity
+   */
+  async updateQuantity(itemId: number, quantity: number): Promise<BackendCartResponse> {
+    const response = await axiosClient.put<{ success: boolean; data: BackendCartResponse }>(
+      `/api/v1/cart/items/${itemId}`,
+      {
+        quantity,
+      }
     );
-    saveStoredItems(items);
-    return items;
+    return response.data.data;
   },
 
-  async toggleSelectAll(selected: boolean): Promise<CartItem[]> {
-    const items = getStoredItems().map((item) => ({ ...item, selected }));
-    saveStoredItems(items);
-    return items;
+  /**
+   * DELETE /api/v1/cart/items/{id}
+   * Removes a single item from user's cart
+   */
+  async removeItem(itemId: number): Promise<BackendCartResponse> {
+    const response = await axiosClient.delete<{ success: boolean; data: BackendCartResponse }>(
+      `/api/v1/cart/items/${itemId}`
+    );
+    return response.data.data;
   },
 
-  async removeItem(itemId: number): Promise<CartItem[]> {
-    const items = getStoredItems().filter((item) => item.id !== itemId);
-    saveStoredItems(items);
-    return items;
+  /**
+   * DELETE /api/v1/cart/items
+   * Clears all items in user's cart
+   */
+  async clearCart(): Promise<BackendCartResponse> {
+    const response = await axiosClient.delete<{ success: boolean; data: BackendCartResponse }>(
+      "/api/v1/cart/items"
+    );
+    return response.data.data;
   },
 
-  async removeSelectedItems(): Promise<CartItem[]> {
-    const items = getStoredItems().filter((item) => !item.selected);
-    saveStoredItems(items);
-    return items;
-  },
-
-  async clearCart(): Promise<CartItem[]> {
-    const items: CartItem[] = [];
-    saveStoredItems(items);
-    return items;
-  },
-
+  /**
+   * Client-side Voucher helper methods
+   */
   async applyShopVoucher(
     shopId: number,
     code: string

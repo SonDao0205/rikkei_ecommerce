@@ -144,6 +144,13 @@ export const publicShopSlice = createSlice({
       .addCase(toggleFollowShop.rejected, (state, action) => {
         state.followLoading = false;
         state.error = action.payload as string;
+      })
+      // Clear follow state on logout or session expiration
+      .addCase("auth/logoutUser/fulfilled", (state) => {
+        state.followState.following = false;
+      })
+      .addCase("auth/sessionExpired", (state) => {
+        state.followState.following = false;
       });
   },
 });

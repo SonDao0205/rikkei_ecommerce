@@ -1,6 +1,9 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
 import type { ProductItem, ProductVariant } from "../../types/product";
+import { useAppDispatch, useAppSelector } from "../../redux/store";
+import { addToCart } from "../../redux/slices/cart/cartSlice";
+import { addToWishlist, removeFromWishlist } from "../../redux/slices/wishlist/wishlistSlice";
+import WishlistToast from "../wishlist/WishlistToast";
 
 interface ProductOrderSectionProps {
   product: ProductItem;
@@ -15,9 +18,79 @@ export const ProductOrderSection: React.FC<ProductOrderSectionProps> = ({
   selectedVariant,
   onSelectVariant,
 }) => {
+  const dispatch = useAppDispatch();
+  const { items: wishlistItems } = useAppSelector((state) => state.wishlist);
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
   const [quantity, setQuantity] = useState<number>(1);
-  const [isWishlisted, setIsWishlisted] = useState<boolean>(false);
-  const [cartToastMessage, setCartToastMessage] = useState<string | null>(null);
+  const [toastState, setToastState] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: "success" | "error" | "info";
+    actionText?: string;
+    actionLink?: string;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "success",
+    actionText: "Xem giỏ",
+    actionLink: "/cart",
+  });
+
+  useEffect(() => {
+    if (toastState.isOpen) {
+      const timer = setTimeout(() => {
+        setToastState((prev) => ({ ...prev, isOpen: false }));
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [toastState.isOpen]);
+
+  const isWishlisted = wishlistItems.some((it) => it.product_id === product.id);
+
+  const handleToggleWishlist = async () => {
+    if (!isAuthenticated) {
+      setToastState({
+        isOpen: true,
+        title: "Chưa đăng nhập",
+        message: "Vui lòng đăng nhập để lưu sản phẩm vào danh sách yêu thích.",
+        type: "error",
+      });
+      return;
+    }
+    try {
+      if (isWishlisted) {
+        await dispatch(removeFromWishlist(product.id)).unwrap();
+        setToastState({
+          isOpen: true,
+          title: "Đã bỏ thích sản phẩm",
+          message: `"${product.name}" đã được xóa khỏi danh sách yêu thích.`,
+          type: "success",
+          actionText: "Xem yêu thích",
+          actionLink: "/wishlist",
+        });
+      } else {
+        await dispatch(addToWishlist(product.id)).unwrap();
+        setToastState({
+          isOpen: true,
+          title: "Đã thêm vào yêu thích",
+          message: `"${product.name}" đã được lưu vào danh sách yêu thích.`,
+          type: "success",
+          actionText: "Xem yêu thích",
+          actionLink: "/wishlist",
+        });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Thao tác thất bại";
+      setToastState({
+        isOpen: true,
+        title: "Thao tác thất bại",
+        message: msg,
+        type: "error",
+      });
+    }
+  };
 
   const currentPrice = selectedVariant?.price ?? product.price ?? 0;
   const currentStock = selectedVariant?.stock ?? product.stock ?? 50;
@@ -39,11 +112,36 @@ export const ProductOrderSection: React.FC<ProductOrderSectionProps> = ({
     }
   };
 
-  const handleAddToCart = () => {
-    setCartToastMessage(`Đã thêm ${quantity}x "${product.name}" vào giỏ hàng!`);
-    setTimeout(() => {
-      setCartToastMessage(null);
-    }, 3500);
+  const handleAddToCart = async () => {
+    const variantId = selectedVariant?.id || (variants.length > 0 ? variants[0].id : null);
+    if (!variantId) {
+      setToastState({
+        isOpen: true,
+        title: "Chưa chọn biến thể",
+        message: "Vui lòng chọn size/màu sắc của sản phẩm trước khi thêm vào giỏ hàng.",
+        type: "error",
+      });
+      return;
+    }
+    try {
+      await dispatch(addToCart({ variantId, quantity })).unwrap();
+      setToastState({
+        isOpen: true,
+        title: "Đã thêm vào giỏ hàng",
+        message: `"${product.name}" (SL: ${quantity}) đã được thêm vào giỏ hàng.`,
+        type: "success",
+        actionText: "Xem giỏ",
+        actionLink: "/cart",
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : typeof err === "string" ? err : "Không thể thêm vào giỏ hàng";
+      setToastState({
+        isOpen: true,
+        title: "Không thể thêm vào giỏ",
+        message: msg,
+        type: "error",
+      });
+    }
   };
 
   const handleBuyNow = () => {
@@ -69,9 +167,9 @@ export const ProductOrderSection: React.FC<ProductOrderSectionProps> = ({
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setIsWishlisted(!isWishlisted)}
+              onClick={handleToggleWishlist}
               className="w-9 h-9 rounded-full bg-surface-container-lowest hover:bg-surface-container text-on-surface-variant hover:text-tertiary-container flex items-center justify-center transition-all shadow-xs cursor-pointer"
-              title="Thêm vào danh sách yêu thích"
+              title={isWishlisted ? "Bỏ thích sản phẩm" : "Thêm vào danh sách yêu thích"}
             >
               <span
                 className={`material-symbols-outlined text-[20px] ${
@@ -294,21 +392,16 @@ export const ProductOrderSection: React.FC<ProductOrderSectionProps> = ({
         </button>
       </div>
 
-      {/* Added to Cart Feedback Toast */}
-      {cartToastMessage && (
-        <div className="p-3.5 rounded-xl bg-inverse-surface text-inverse-on-surface flex items-center justify-between shadow-lg transition-all animate-bounce">
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-green-400">check_circle</span>
-            <span className="font-body-sm font-semibold text-xs md:text-sm">{cartToastMessage}</span>
-          </div>
-          <Link
-            to="/cart"
-            className="text-secondary-fixed text-label-sm font-bold uppercase underline text-xs"
-          >
-            Xem giỏ hàng
-          </Link>
-        </div>
-      )}
+      {/* Pinned Bottom-Right Toast Notification */}
+      <WishlistToast
+        isOpen={toastState.isOpen}
+        title={toastState.title}
+        message={toastState.message}
+        type={toastState.type}
+        actionText={toastState.actionText || "Xem yêu thích"}
+        actionLink={toastState.actionLink || "/wishlist"}
+        onClose={() => setToastState((prev) => ({ ...prev, isOpen: false }))}
+      />
 
       {/* Extra Marketplace Protection & Perks Strip */}
       <div className="rounded-xl bg-surface-container-low p-4 grid grid-cols-3 gap-2 text-center border border-outline-variant/20">

@@ -2,14 +2,11 @@ import React from "react";
 import { Link } from "react-router-dom";
 
 export interface WishlistBreadcrumbProps {
-  isEmptyViewActive: boolean;
-  onToggleEmptyView: () => void;
+  isEmptyViewActive?: boolean;
+  onToggleEmptyView?: () => void;
 }
 
-export const WishlistBreadcrumb: React.FC<WishlistBreadcrumbProps> = ({
-  isEmptyViewActive,
-  onToggleEmptyView,
-}) => {
+export const WishlistBreadcrumb: React.FC<WishlistBreadcrumbProps> = () => {
   return (
     <div className="w-full bg-surface-container-lowest shadow-sm border-b border-outline-variant/40">
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-3">
@@ -35,19 +32,12 @@ export const WishlistBreadcrumb: React.FC<WishlistBreadcrumbProps> = ({
           </span>
         </nav>
 
-        {/* Sync Status & Bulk Actions Quick Trigger */}
+        {/* Sync Status */}
         <div className="flex items-center gap-3">
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container-low text-secondary text-xs font-semibold">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>Đồng bộ thời gian thực (Cập nhật 2 phút trước)</span>
+            <span>Đồng bộ thời gian thực với tài khoản</span>
           </span>
-          <button
-            type="button"
-            onClick={onToggleEmptyView}
-            className="px-3 py-1 rounded-lg bg-surface-container text-xs text-on-surface font-semibold hover:bg-surface-container-high transition-colors cursor-pointer"
-          >
-            {isEmptyViewActive ? "Xem giao diện có sản phẩm" : "Xem giao diện demo khi rỗng"}
-          </button>
         </div>
       </div>
     </div>

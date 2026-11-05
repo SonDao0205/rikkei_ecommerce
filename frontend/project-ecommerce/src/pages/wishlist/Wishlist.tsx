@@ -21,7 +21,8 @@ import {
   setWishlistSort,
   setWishlistSearchQuery,
 } from "../../redux/slices/wishlist/wishlistSlice";
-import { updateItemQuantity } from "../../redux/slices/cart/cartSlice";
+import { addToCart } from "../../redux/slices/cart/cartSlice";
+import axiosClient from "../../api/axiosClient";
 import type {
   WishlistItem,
   WishlistRecommendation,
@@ -32,6 +33,7 @@ import type {
 export const Wishlist: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
   const { items, recommendations, filter, sortBy, searchQuery } =
     useAppSelector((state) => state.wishlist);
 
@@ -43,20 +45,25 @@ export const Wishlist: React.FC = () => {
     }
   };
 
-  const [isDemoEmptyActive, setIsDemoEmptyActive] = useState(false);
   const [toastState, setToastState] = useState<{
     isOpen: boolean;
     title: string;
     message: string;
+    actionText?: string;
+    actionLink?: string;
   }>({
     isOpen: false,
     title: "",
     message: "",
+    actionText: "Xem yêu thích",
+    actionLink: "/wishlist",
   });
 
   useEffect(() => {
-    dispatch(fetchWishlist());
-  }, [dispatch]);
+    if (isAuthenticated) {
+      dispatch(fetchWishlist());
+    }
+  }, [dispatch, isAuthenticated]);
 
   // Toast timer auto-close
   useEffect(() => {
@@ -68,11 +75,18 @@ export const Wishlist: React.FC = () => {
     }
   }, [toastState.isOpen]);
 
-  const showToast = (title: string, message: string) => {
+  const showToast = (
+    title: string,
+    message: string,
+    actionText: string = "Xem yêu thích",
+    actionLink: string = "/wishlist"
+  ) => {
     setToastState({
       isOpen: true,
       title,
       message,
+      actionText,
+      actionLink,
     });
   };
 
@@ -129,45 +143,101 @@ export const Wishlist: React.FC = () => {
   }, [items, filter, searchQuery, sortBy]);
 
   // Handlers
-  const handleRemoveItem = (id: number) => {
-    const item = items.find((it) => it.id === id);
-    dispatch(removeFromWishlist(id));
-    if (item) {
-      showToast("Đã bỏ thích sản phẩm", `"${item.name}" đã được xóa khỏi danh sách.`);
+  const handleRemoveItem = async (id: number) => {
+    const item = items.find((it) => it.id === id || it.product_id === id);
+    const productId = item?.product_id || id;
+    try {
+      await dispatch(removeFromWishlist(productId)).unwrap();
+      showToast("Đã bỏ thích sản phẩm", `"${item?.name || "Sản phẩm"}" đã được xóa khỏi danh sách.`);
+    } catch {
+      showToast("Lỗi", "Không thể xóa sản phẩm khỏi danh sách yêu thích.");
     }
   };
 
-  const handleAddToCart = (item: WishlistItem) => {
-    // Add 1 quantity to cart
-    dispatch(updateItemQuantity({ itemId: item.product_id, quantity: 1 }));
-    showToast(
-      "Thêm vào giỏ hàng thành công!",
-      `"${item.name}" đã được chuyển vào giỏ.`
-    );
+  const handleAddToCart = async (item: WishlistItem) => {
+    try {
+      const res = await axiosClient.get<{
+        success: boolean;
+        data: { variants?: { id: number; status: string; stock: number }[] };
+      }>(`/api/v1/products/${item.product_id}`);
+      const variants = res.data.data?.variants || [];
+      const defaultVariant =
+        variants.find((v) => v.status === "ACTIVE" && v.stock > 0) || variants[0];
+      if (defaultVariant) {
+        await dispatch(
+          addToCart({ variantId: defaultVariant.id, quantity: 1 })
+        ).unwrap();
+        showToast(
+          "Đã thêm vào giỏ hàng",
+          `"${item.name}" đã được thêm vào giỏ.`,
+          "Xem giỏ",
+          "/cart"
+        );
+      } else {
+        navigate(`/product/${item.product_id}`);
+        showToast(
+          "Đang mở trang sản phẩm",
+          `Vui lòng chọn size/màu sắc của "${item.name}".`
+        );
+      }
+    } catch {
+      navigate(`/product/${item.product_id}`);
+      showToast(
+        "Đang mở trang sản phẩm",
+        `Vui lòng chọn size/màu sắc của "${item.name}".`
+      );
+    }
   };
 
-  const handleAddAllInStockToCart = () => {
+  const handleAddAllInStockToCart = async () => {
     const inStockItems = items.filter((it) => it.status === "in-stock");
     if (inStockItems.length === 0) return;
 
-    inStockItems.forEach((it) => {
-      dispatch(updateItemQuantity({ itemId: it.product_id, quantity: 1 }));
-    });
+    let addedCount = 0;
+    for (const item of inStockItems) {
+      try {
+        const res = await axiosClient.get<{
+          success: boolean;
+          data: { variants?: { id: number; status: string; stock: number }[] };
+        }>(`/api/v1/products/${item.product_id}`);
+        const variants = res.data.data?.variants || [];
+        const defaultVariant =
+          variants.find((v) => v.status === "ACTIVE" && v.stock > 0) || variants[0];
+        if (defaultVariant) {
+          await dispatch(
+            addToCart({ variantId: defaultVariant.id, quantity: 1 })
+          ).unwrap();
+          addedCount++;
+        }
+      } catch {
+        // continue to next item
+      }
+    }
 
-    showToast(
-      "Đã thêm vào giỏ hàng!",
-      `Toàn bộ ${inStockItems.length} sản phẩm còn hàng đã được chuyển vào giỏ.`
-    );
+    if (addedCount > 0) {
+      showToast(
+        "Đã thêm vào giỏ hàng",
+        `Đã chuyển ${addedCount} sản phẩm còn hàng vào giỏ.`,
+        "Xem giỏ",
+        "/cart"
+      );
+    } else {
+      navigate(`/product/${inStockItems[0].product_id}`);
+    }
   };
 
-  const handleClearAll = () => {
+  const handleClearAll = async () => {
     if (
       window.confirm(
         "Bạn có chắc chắn muốn xóa toàn bộ sản phẩm khỏi danh sách yêu thích?"
       )
     ) {
-      dispatch(clearWishlist());
-      showToast("Đã xóa tất cả", "Danh sách yêu thích của bạn hiện đang trống.");
+      try {
+        await dispatch(clearWishlist()).unwrap();
+        showToast("Đã xóa tất cả", "Danh sách yêu thích của bạn hiện đang trống.");
+      } catch {
+        showToast("Lỗi", "Không thể làm sạch danh sách yêu thích.");
+      }
     }
   };
 
@@ -177,26 +247,16 @@ export const Wishlist: React.FC = () => {
     );
   };
 
-  const handleAddToWishlistFromReco = (reco: WishlistRecommendation) => {
-    dispatch(
-      addToWishlist({
-        product_id: reco.product_id,
-        name: reco.name,
-        shop_name: reco.shop_name,
-        is_verified_shop: true,
-        image_url: reco.image_url,
-        price: reco.price,
-        original_price: reco.price,
-        variant_label: "Mặc định",
-        is_sale: Boolean(reco.is_discounted),
-        status: "in-stock",
-        stock_count: 10,
-      })
-    );
-    showToast(
-      "Đã thêm vào yêu thích!",
-      `"${reco.name}" đã được lưu vào danh sách yêu thích.`
-    );
+  const handleAddToWishlistFromReco = async (reco: WishlistRecommendation) => {
+    try {
+      await dispatch(addToWishlist(reco.product_id)).unwrap();
+      showToast(
+        "Đã thêm vào yêu thích!",
+        `"${reco.name}" đã được lưu vào danh sách yêu thích.`
+      );
+    } catch {
+      showToast("Lỗi", "Không thể thêm vào danh sách yêu thích.");
+    }
   };
 
   const handleFilterChange = (newFilter: WishlistFilterType) => {
@@ -212,7 +272,7 @@ export const Wishlist: React.FC = () => {
   };
 
   const isActuallyEmpty = items.length === 0;
-  const showEmptyState = isActuallyEmpty || isDemoEmptyActive;
+  const showEmptyState = isActuallyEmpty;
 
   return (
     <CustomerLayout wishlistCount={items.length}>
@@ -221,14 +281,13 @@ export const Wishlist: React.FC = () => {
         isOpen={toastState.isOpen}
         title={toastState.title}
         message={toastState.message}
+        actionText={toastState.actionText || "Xem yêu thích"}
+        actionLink={toastState.actionLink || "/wishlist"}
         onClose={() => setToastState((prev) => ({ ...prev, isOpen: false }))}
       />
 
       {/* Breadcrumbs & Page Meta */}
-      <WishlistBreadcrumb
-        isEmptyViewActive={isDemoEmptyActive}
-        onToggleEmptyView={() => setIsDemoEmptyActive((v) => !v)}
-      />
+      <WishlistBreadcrumb />
 
       {/* Main View Container */}
       <div className="max-w-[1440px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 flex flex-col gap-8">
@@ -256,11 +315,25 @@ export const Wishlist: React.FC = () => {
         </div>
 
         {/* Wishlist Grid or Empty State */}
-        {showEmptyState ? (
-          <WishlistEmptyState
-            isDemoView={isDemoEmptyActive}
-            onExitDemoView={() => setIsDemoEmptyActive(false)}
-          />
+        {!isAuthenticated ? (
+          <div className="py-16 text-center max-w-md mx-auto flex flex-col items-center">
+            <div className="w-20 h-20 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-4">
+              <span className="material-symbols-outlined text-[40px]">lock</span>
+            </div>
+            <h2 className="text-xl font-bold text-on-surface mb-2">Đăng nhập để xem danh sách yêu thích</h2>
+            <p className="text-sm text-outline mb-6">
+              Vui lòng đăng nhập tài khoản để xem các sản phẩm bạn đã lưu và nhận thông báo khi có ưu đãi.
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate("/login?redirect=/wishlist")}
+              className="px-6 py-3 rounded-xl bg-primary text-on-primary font-bold shadow-md hover:bg-primary-container transition-all cursor-pointer"
+            >
+              Đăng nhập ngay
+            </button>
+          </div>
+        ) : showEmptyState ? (
+          <WishlistEmptyState />
         ) : displayedItems.length === 0 ? (
           <div className="py-12 text-center bg-surface-container-lowest rounded-xl border border-outline-variant/50">
             <p className="text-sm text-on-surface-variant font-semibold">

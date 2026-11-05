@@ -168,21 +168,78 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
         </div>
 
         {/* Active Filters Display */}
-        <div className="flex items-center gap-2">
-          <span className="font-body-sm text-body-sm text-on-surface-variant">Showing active filters:</span>
-          <span className="px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm flex items-center gap-1">
-            All Warehouses
-            <span className="material-symbols-outlined text-[14px] cursor-pointer hover:text-error">
-              close
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-body-sm text-body-sm text-on-surface-variant">Bộ lọc đang bật:</span>
+          {!hasActiveFilters && (
+            <span className="px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm">
+              Tất cả kho hàng
             </span>
-          </span>
+          )}
+          {searchQuery && (
+            <span className="px-2.5 py-1 rounded-full bg-primary-container text-on-primary font-label-sm text-label-sm flex items-center gap-1">
+              <span>Tìm: &ldquo;{searchQuery}&rdquo;</span>
+              <button
+                type="button"
+                onClick={() => onSearchChange("")}
+                className="hover:opacity-80 cursor-pointer"
+                aria-label="Xóa từ khóa"
+              >
+                <span className="material-symbols-outlined text-[14px]">close</span>
+              </button>
+            </span>
+          )}
+          {categoryFilter && (
+            <span className="px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm flex items-center gap-1">
+              <span>{categoryFilter}</span>
+              <button
+                type="button"
+                onClick={() => onCategoryChange("")}
+                className="hover:text-error cursor-pointer"
+                aria-label="Xóa danh mục"
+              >
+                <span className="material-symbols-outlined text-[14px]">close</span>
+              </button>
+            </span>
+          )}
+          {stockStatusFilter && (
+            <span className="px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm flex items-center gap-1">
+              <span>
+                {stockStatusFilter === "in_stock"
+                  ? "Còn hàng (>5)"
+                  : stockStatusFilter === "low_stock"
+                  ? "Sắp hết hàng (≤5)"
+                  : "Hết hàng (0)"}
+              </span>
+              <button
+                type="button"
+                onClick={() => onStockStatusChange("")}
+                className="hover:text-error cursor-pointer"
+                aria-label="Xóa trạng thái tồn kho"
+              >
+                <span className="material-symbols-outlined text-[14px]">close</span>
+              </button>
+            </span>
+          )}
+          {vendorFilter && (
+            <span className="px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm flex items-center gap-1">
+              <span>Shop: {vendorFilter}</span>
+              <button
+                type="button"
+                onClick={() => onVendorChange("")}
+                className="hover:text-error cursor-pointer"
+                aria-label="Xóa gian hàng"
+              >
+                <span className="material-symbols-outlined text-[14px]">close</span>
+              </button>
+            </span>
+          )}
           {hasActiveFilters && (
             <button
               type="button"
               onClick={onClearFilters}
               className="text-primary hover:underline font-label-sm text-label-sm ml-2 cursor-pointer font-semibold"
             >
-              Clear all
+              Xóa tất cả
             </button>
           )}
         </div>

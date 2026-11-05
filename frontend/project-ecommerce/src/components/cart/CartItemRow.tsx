@@ -18,30 +18,55 @@ export const CartItemRow: React.FC<CartItemRowProps> = ({
   onSaveForLater,
 }) => {
   const lineTotal = item.price * item.quantity;
+  const isAvailable = item.is_available !== false;
   const isMinQuantity = item.quantity <= 1;
   const isMaxQuantity = item.quantity >= item.max_stock;
 
   return (
-    <div className="group relative p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-surface-container-lowest hover:bg-surface-container-low/40 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 ease-out will-change-transform rounded-xl">
+    <div
+      className={`group relative p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-xl transition-all duration-300 ease-out will-change-transform ${
+        isAvailable
+          ? "bg-surface-container-lowest hover:bg-surface-container-low/40 hover:shadow-md hover:-translate-y-0.5"
+          : "bg-surface-container-low/50 opacity-75 border border-dashed border-outline-variant/60"
+      }`}
+    >
       {/* Left: Checkbox + Product Details */}
       <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0 w-full sm:w-auto">
         <input
           type="checkbox"
-          checked={item.selected}
-          onChange={() => onToggleSelect(item.id)}
-          className="w-5 h-5 mt-2.5 rounded text-primary-container accent-primary-container cursor-pointer shrink-0"
+          checked={item.selected && isAvailable}
+          disabled={!isAvailable}
+          onChange={() => isAvailable && onToggleSelect(item.id)}
+          className={`w-5 h-5 mt-2.5 rounded text-primary-container accent-primary-container shrink-0 ${
+            isAvailable ? "cursor-pointer" : "cursor-not-allowed opacity-40"
+          }`}
         />
 
         <div className="w-20 h-20 rounded-xl overflow-hidden bg-surface-container-low shrink-0 relative border border-outline-variant/40">
           <img
             src={item.image_url}
             alt={item.alt_text || item.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+            className={`w-full h-full object-cover transition-transform duration-500 ease-out ${
+              isAvailable ? "group-hover:scale-105" : "grayscale opacity-70"
+            }`}
           />
+          {!isAvailable && (
+            <div className="absolute inset-0 bg-black/40 flex items-center justify-center p-1">
+              <span className="text-[10px] font-bold text-white text-center leading-tight bg-error/90 px-1.5 py-0.5 rounded">
+                Hết hàng
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col gap-1 min-w-0 flex-1">
-          <h3 className="font-label-lg text-sm sm:text-base text-on-surface font-bold line-clamp-2 group-hover:text-primary transition-colors duration-200">
+          <h3
+            className={`font-label-lg text-sm sm:text-base font-bold line-clamp-2 transition-colors duration-200 ${
+              isAvailable
+                ? "text-on-surface group-hover:text-primary"
+                : "text-on-surface/60 line-through"
+            }`}
+          >
             {item.name}
           </h3>
 
@@ -49,9 +74,19 @@ export const CartItemRow: React.FC<CartItemRowProps> = ({
             <span>{item.variant_label}</span>
           </div>
 
-          <div className="flex items-center gap-1 text-secondary text-xs font-medium">
+          <div
+            className={`flex items-center gap-1 text-xs font-medium ${
+              !isAvailable
+                ? "text-error"
+                : item.stock_status.includes("Chỉ còn")
+                ? "text-amber-600 dark:text-amber-400"
+                : "text-secondary"
+            }`}
+          >
             <span className="material-symbols-outlined text-[14px]">
-              {item.stock_status.includes("Handmade")
+              {!isAvailable
+                ? "error"
+                : item.stock_status.includes("Handmade")
                 ? "handyman"
                 : item.stock_status.includes("Ready")
                 ? "check_circle"
@@ -71,7 +106,11 @@ export const CartItemRow: React.FC<CartItemRowProps> = ({
               {formatCurrencyVND(item.original_price)}
             </span>
           )}
-          <span className="text-xs sm:text-sm text-on-surface font-bold">
+          <span
+            className={`text-xs sm:text-sm font-bold ${
+              isAvailable ? "text-on-surface" : "text-outline line-through"
+            }`}
+          >
             {formatCurrencyVND(item.price)}
           </span>
         </div>
@@ -80,11 +119,11 @@ export const CartItemRow: React.FC<CartItemRowProps> = ({
         <div className="flex items-center bg-surface-container-low rounded-lg p-0.5 border border-outline-variant/40">
           <button
             type="button"
-            disabled={isMinQuantity}
+            disabled={!isAvailable || isMinQuantity}
             onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
             aria-label="Decrease quantity"
             className={`w-7 h-7 flex items-center justify-center rounded transition-colors ${
-              isMinQuantity
+              !isAvailable || isMinQuantity
                 ? "text-outline cursor-not-allowed opacity-50"
                 : "text-on-surface hover:text-primary hover:bg-surface-container cursor-pointer"
             }`}
@@ -96,11 +135,11 @@ export const CartItemRow: React.FC<CartItemRowProps> = ({
           </span>
           <button
             type="button"
-            disabled={isMaxQuantity}
+            disabled={!isAvailable || isMaxQuantity}
             onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
             aria-label="Increase quantity"
             className={`w-7 h-7 flex items-center justify-center rounded transition-colors ${
-              isMaxQuantity
+              !isAvailable || isMaxQuantity
                 ? "text-outline cursor-not-allowed opacity-50"
                 : "text-on-surface hover:text-primary hover:bg-surface-container cursor-pointer"
             }`}
@@ -111,7 +150,11 @@ export const CartItemRow: React.FC<CartItemRowProps> = ({
 
         {/* Subtotal & Action buttons */}
         <div className="flex items-center gap-2 pt-1">
-          <span className="text-base sm:text-lg text-primary font-bold">
+          <span
+            className={`text-base sm:text-lg font-bold ${
+              isAvailable ? "text-primary" : "text-outline"
+            }`}
+          >
             {formatCurrencyVND(lineTotal)}
           </span>
           <button
@@ -122,14 +165,16 @@ export const CartItemRow: React.FC<CartItemRowProps> = ({
           >
             <span className="material-symbols-outlined text-[18px]">delete</span>
           </button>
-          <button
-            type="button"
-            onClick={() => onSaveForLater && onSaveForLater(item)}
-            title="Lưu vào yêu thích"
-            className="p-1 text-outline hover:text-tertiary-container transition-colors cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-[18px]">favorite</span>
-          </button>
+          {onSaveForLater && (
+            <button
+              type="button"
+              onClick={() => onSaveForLater(item)}
+              title="Lưu vào yêu thích"
+              className="p-1 text-outline hover:text-tertiary-container transition-colors cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[18px]">favorite</span>
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -137,4 +182,3 @@ export const CartItemRow: React.FC<CartItemRowProps> = ({
 };
 
 export default CartItemRow;
-

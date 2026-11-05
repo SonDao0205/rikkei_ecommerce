@@ -22,6 +22,7 @@ import {
   applyPlatformVoucherAction,
   removePlatformVoucher,
   removeShopVoucher,
+  clearCartError,
 } from "../../redux/slices/cart/cartSlice";
 import type { CartItem, CartShopGroup as ICartShopGroup } from "../../types/cart/cart.types";
 import { formatCurrencyVND } from "../../utils/currency";
@@ -29,7 +30,8 @@ import { formatCurrencyVND } from "../../utils/currency";
 export const ShoppingCart: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { items, shopVouchers, platformVoucher, summary } =
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const { items, shopVouchers, platformVoucher, summary, error } =
     useAppSelector((state) => state.cart);
 
   const handleGoBack = () => {
@@ -45,12 +47,13 @@ export const ShoppingCart: React.FC = () => {
     message: string;
   } | null>(null);
 
-  const [showEmptyPreview, setShowEmptyPreview] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
 
   useEffect(() => {
-    dispatch(fetchCart());
-  }, [dispatch]);
+    if (isAuthenticated) {
+      dispatch(fetchCart());
+    }
+  }, [dispatch, isAuthenticated]);
 
   // Flash notification timer
   useEffect(() => {
@@ -59,6 +62,17 @@ export const ShoppingCart: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, [notification]);
+
+  // Sync Redux errors to toast notification
+  useEffect(() => {
+    if (error) {
+      setNotification({
+        type: "error",
+        message: error,
+      });
+      dispatch(clearCartError());
+    }
+  }, [error, dispatch]);
 
   // Group items by shop
   const groupedShops: ICartShopGroup[] = useMemo(() => {
@@ -249,7 +263,24 @@ export const ShoppingCart: React.FC = () => {
             onGoBack={handleGoBack}
           />
 
-          {items.length === 0 ? (
+          {!isAuthenticated ? (
+            <div className="py-16 text-center max-w-md mx-auto flex flex-col items-center">
+              <div className="w-20 h-20 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-4">
+                <span className="material-symbols-outlined text-[40px]">lock</span>
+              </div>
+              <h2 className="text-xl font-bold text-on-surface mb-2">Đăng nhập để xem giỏ hàng</h2>
+              <p className="text-sm text-outline mb-6">
+                Vui lòng đăng nhập tài khoản để xem các sản phẩm trong giỏ hàng và tiếp tục thanh toán.
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate("/login?redirect=/cart")}
+                className="px-6 py-3 rounded-xl bg-primary text-on-primary font-bold shadow-md hover:bg-primary-container transition-all cursor-pointer"
+              >
+                Đăng nhập ngay
+              </button>
+            </div>
+          ) : items.length === 0 ? (
             /* Empty state when cart has 0 items */
             <CartEmptyState />
           ) : (
@@ -299,40 +330,6 @@ export const ShoppingCart: React.FC = () => {
                   isCheckingOut={isCheckingOut}
                 />
               </div>
-            </div>
-          )}
-
-          {/* Toggleable Empty State Interactive Preview Section from HTML */}
-          {items.length > 0 && (
-            <div className="mt-10 bg-surface-container-lowest rounded-2xl p-5 shadow-sm border border-outline-variant/60">
-              <div
-                onClick={() => setShowEmptyPreview((v) => !v)}
-                className="flex items-center justify-between pb-3 cursor-pointer select-none"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-secondary text-[22px]">
-                    preview
-                  </span>
-                  <span className="font-headline-md text-base sm:text-lg text-on-surface font-bold">
-                    Xem trước: Trạng thái giỏ hàng trống (Empty State Preview)
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  className="text-xs sm:text-sm text-secondary font-bold flex items-center gap-1 cursor-pointer"
-                >
-                  <span>{showEmptyPreview ? "Thu gọn" : "Mở rộng xem trước"}</span>
-                  <span className="material-symbols-outlined text-[18px]">
-                    {showEmptyPreview ? "expand_less" : "expand_more"}
-                  </span>
-                </button>
-              </div>
-
-              {showEmptyPreview && (
-                <div className="pt-4 border-t border-surface-container">
-                  <CartEmptyState isCollapsiblePreview />
-                </div>
-              )}
             </div>
           )}
         </div>

@@ -30,6 +30,7 @@ export const ProductDetail: React.FC = () => {
   const { selectedProductDetail, detailLoading, detailError } = useAppSelector(
     (state) => state.product
   );
+  const { user, isAuthenticated } = useAppSelector((state) => state.auth);
 
   const [prevId, setPrevId] = useState(id);
   const [selectedVariantOverride, setSelectedVariantOverride] = useState<ProductVariant | null>(null);
@@ -65,9 +66,11 @@ export const ProductDetail: React.FC = () => {
           follower_count: followerCount,
         })
       );
-      dispatch(getShopFollowState(shopId));
+      if (isAuthenticated && (user?.roles?.includes("client") || user?.role === "client")) {
+        dispatch(getShopFollowState(shopId));
+      }
     }
-  }, [dispatch, shopId, followerCount]);
+  }, [dispatch, shopId, followerCount, isAuthenticated, user]);
 
   const product = selectedProductDetail?.product;
   const images = selectedProductDetail?.images || [];

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../redux/store";
 import { toggleFollowShop } from "../../redux/slices/shop/publicShopSlice";
+import WishlistToast from "../wishlist/WishlistToast";
 import type { PublicShop } from "../../types";
 
 interface ShopBannerCardProps {
@@ -29,22 +30,70 @@ export const ShopBannerCard: React.FC<ShopBannerCardProps> = ({
   const { followState, followLoading } = useAppSelector(
     (state) => state.publicShop
   );
-  const [followFeedback, setFollowFeedback] = useState<string | null>(null);
+  const { user, isAuthenticated } = useAppSelector((state) => state.auth);
+
+  const [toast, setToast] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    actionText?: string;
+    actionLink?: string;
+    type?: "success" | "error" | "info";
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+  });
 
   const handleFollowToggle = async () => {
+    if (!isAuthenticated || !user) {
+      setToast({
+        isOpen: true,
+        title: "Yêu cầu đăng nhập",
+        message: "Vui lòng đăng nhập với tài khoản khách hàng để theo dõi gian hàng.",
+        actionText: "Đăng nhập ngay",
+        actionLink: "/login",
+        type: "error",
+      });
+      return;
+    }
+
+    if (!user.roles?.includes("client") && user.role !== "client") {
+      setToast({
+        isOpen: true,
+        title: "Không thể thao tác",
+        message: "Tính năng theo dõi gian hàng chỉ dành cho tài khoản Người mua.",
+        type: "error",
+      });
+      return;
+    }
+
     try {
-      setFollowFeedback(null);
-      await dispatch(
+      const isCurrentlyFollowing = followState.following;
+      const result = await dispatch(
         toggleFollowShop({
           shopId: shop.id,
-          currentlyFollowing: followState.following,
+          currentlyFollowing: isCurrentlyFollowing,
         })
       ).unwrap();
+
+      setToast({
+        isOpen: true,
+        title: result.following ? "Đã theo dõi cửa hàng" : "Đã bỏ theo dõi cửa hàng",
+        message: result.following
+          ? `Bạn đã theo dõi thành công gian hàng "${shop.name}".`
+          : `Bạn đã bỏ theo dõi gian hàng "${shop.name}".`,
+        actionText: "Xem gian hàng",
+        actionLink: `/shop/${shop.id}`,
+        type: "success",
+      });
     } catch (err: unknown) {
-      setFollowFeedback(
-        err instanceof Error ? err.message : "Thao tác thất bại, vui lòng đăng nhập"
-      );
-      setTimeout(() => setFollowFeedback(null), 3500);
+      setToast({
+        isOpen: true,
+        title: "Không thể thao tác",
+        message: err instanceof Error ? err.message : "Thao tác thất bại, vui lòng thử lại.",
+        type: "error",
+      });
     }
   };
 
@@ -53,12 +102,7 @@ export const ShopBannerCard: React.FC<ShopBannerCardProps> = ({
   };
 
   const bannerBg = shop.banner_url || DEFAULT_BANNER;
-  const followerDisplay =
-    followState.follower_count > 0
-      ? followState.follower_count
-      : shop.follower_count > 0
-      ? shop.follower_count
-      : 1480;
+  const followerDisplay = followState.follower_count ?? shop.follower_count ?? 0;
 
   const formattedFollowers =
     followerDisplay >= 1000
@@ -297,11 +341,15 @@ export const ShopBannerCard: React.FC<ShopBannerCardProps> = ({
           </div>
         </div>
 
-        {followFeedback && (
-          <div className="mx-6 mt-2 px-4 py-2 rounded-xl bg-error-container text-on-error-container text-xs font-semibold animate-fade-in">
-            {followFeedback}
-          </div>
-        )}
+        <WishlistToast
+          isOpen={toast.isOpen}
+          title={toast.title}
+          message={toast.message}
+          actionText={toast.actionText}
+          actionLink={toast.actionLink}
+          type={toast.type}
+          onClose={() => setToast((prev) => ({ ...prev, isOpen: false }))}
+        />
       </div>
     </div>
   );
