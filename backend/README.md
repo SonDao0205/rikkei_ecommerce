@@ -6,21 +6,28 @@ Backend REST API cho MVP Rikkei E-Commerce, viết bằng Go 1.24+, `net/http` v
 
 ## Cấu trúc mã nguồn
 
-Code được chia theo domain; từng package quản lý routes/handlers của domain đó. `internal/server` lắp các domain vào HTTP mux, `internal/httpx` chứa helper HTTP dùng chung, còn `internal/migrations` điều phối migration. `internal/auth` chỉ phụ trách đăng nhập, hồ sơ/phiên, token, khôi phục mật khẩu, middleware và bảo mật; các luồng này được tách thành file theo trách nhiệm. Shop, seller product, địa chỉ và catalog thuộc các package riêng.
+Code được chia thành ba vùng: `internal/domain` chứa nghiệp vụ, `internal/platform` chứa hạ tầng dùng chung, và `internal/app` lắp ứng dụng. Mỗi domain là một Go package và chia file theo layout/trách nhiệm như routes, handler, migration, model và test; các file cùng package vẫn dùng chung kiểu nội bộ để tránh export API chỉ phục vụ phân lớp. `internal/app/server` là composition root đăng ký routes/middleware; `internal/app/migrations` điều phối migration. Các helper HTTP, audit log và observability thuộc platform dùng chung. Domain auth riêng biệt với shop, seller product, địa chỉ, cart, wishlist và catalog.
 
 ```text
 internal/
-  address/     # Sổ địa chỉ và migration riêng
-  auth/        # Xác thực, phiên, JWT/OTP, RBAC và security middleware
-  cart/        # Giỏ hàng theo user và biến thể, kiểm tra trạng thái/tồn kho
-  catalog/     # Catalog, theo dõi shop và admin inventory
-  httpx/       # Decode/response/validation HTTP dùng chung
-  migrations/  # Điều phối migration theo domain
-  seller/      # Seller product và variants
-  server/      # Composition root đăng ký routes/middleware
-  shop/        # Quản lý shop và duyệt shop
-  wishlist/    # Sản phẩm yêu thích theo user
+  app/
+    migrations/ # Điều phối migration theo domain
+    server/     # Composition root đăng ký routes/middleware
+  domain/
+    address/    # Sổ địa chỉ
+    auth/       # Xác thực, phiên, JWT/OTP, RBAC và bảo mật
+    cart/       # Giỏ hàng và biến thể
+    catalog/    # Catalog công khai, danh mục và admin inventory
+    seller/     # Seller product và variants
+    shop/       # Mở shop và xét duyệt
+    wishlist/   # Sản phẩm yêu thích
+  platform/
+    auditlog/       # Business audit trail
+    httpx/          # Decode/response/validation HTTP
+    observability/  # Structured log, request ID, recovery
 ```
+
+Trong domain, routes/handlers và logic riêng domain nằm cạnh nhau theo package boundary của Go; chỉ đưa helper sang platform khi có nhiều domain dùng chung. Không tạo abstraction repository/service chỉ để đủ tên thư mục: tách lớp khi nghiệp vụ hoặc query có ranh giới ổn định và cần được kiểm thử/đổi độc lập.
 
 Contract đầy đủ của catalog và inventory nằm tại [`docs/catalog-api.md`](../docs/catalog-api.md). Hướng dẫn Compose/seed local nằm tại [`docs/local-development.md`](../docs/local-development.md).
 
@@ -79,6 +86,7 @@ Không chạy hai backend cùng bind một host port. API gốc mặc định `h
 |---|---|---|
 | `APP_ENV` | Chế độ chạy | `development`; production đặt `production` |
 | `HTTP_ADDR` | Địa chỉ listen | `:8080` |
+| `LOG_LEVEL` | Mức operational log | `info`; nhận `debug`, `info`, `warn`, `error` |
 | `DATABASE_DSN` | Kết nối MySQL | Bắt buộc; schema phải tồn tại |
 | `JWT_SECRET` | Ký JWT và HMAC OTP | Bắt buộc, tối thiểu 32 ký tự; production dùng secret ngẫu nhiên mạnh |
 | `ACCESS_TOKEN_TTL` | Tuổi thọ access token | `15m`; 1 phút–1 giờ |
@@ -96,7 +104,7 @@ Không commit `.env`, DSN/password DB, SMTP credentials hoặc JWT secret. Dùng
 
 ### Migration và production
 
-`AUTO_MIGRATE=true` chạy migration của các domain khi API khởi động. Migration security nằm tại `internal/auth/migrations/001_security.sql`; migration address/shop bổ sung các cột/constraint cần thiết, và auth migration dọn refresh token/OTP hết hạn. Migration **không tạo database và không thay thế schema commerce** trong `database/scriptDb.sql`.
+`AUTO_MIGRATE=true` chạy migration của các domain khi API khởi động. Migration security nằm tại `internal/domain/auth/migrations/001_security.sql`; migration address/shop bổ sung các cột/constraint cần thiết, và auth migration dọn refresh token/OTP hết hạn. Migration **không tạo database và không thay thế schema commerce** trong `database/scriptDb.sql`.
 
 Production nên triển khai migration riêng bằng tài khoản có DDL, sau khi xác nhận schema và backup:
 
@@ -110,15 +118,33 @@ Chạy API production với `AUTO_MIGRATE=false`, HTTPS, `COOKIE_SECURE=true`, J
 
 `GET /healthz` trả `200` khi API truy vấn được DB và `503` khi DB chưa sẵn sàng; đây là health check cơ bản, không thay thế monitoring/backup.
 
+### Logging và audit trail
+
+Backend dùng structured logging qua `log/slog`: `development` ghi text, `production` ghi JSON; log đi ra stdout để Docker/runtime thu thập và quản lý retention. Xem log local bằng `docker compose logs -f --since=10m backend`. Mỗi HTTP request nhận `X-Request-ID` do backend tạo và trả lại trong response; access log chứa request ID, method, path (không gồm query string), status, thời lượng và user ID nếu đã xác thực. Dùng `X-Request-ID` để ghép response với log. Body, Authorization, cookie, query string và dữ liệu nhạy cảm không được ghi trong access log. Panic được ghi cùng stack trace và trả lỗi 500 chung, không lộ chi tiết nội bộ cho client.
+
+`audit_logs` là business audit trail bền vững, khác với operational log. Hiện các thao tác tạo/nộp hồ sơ shop, admin đổi trạng thái shop, admin quản lý trạng thái danh mục, seller tạo/cập nhật/xóa sản phẩm và admin moderation sản phẩm được ghi cùng transaction với thay đổi nghiệp vụ; nếu ghi audit lỗi, transaction rollback. Event lưu actor, action, entity, trạng thái cũ/mới và request ID, không lưu token hay body nguyên bản. Có thể truy vấn gần đây bằng SQL:
+
+```sql
+SELECT created_at, user_id, action, entity_type, entity_id, request_id, old_value, new_value
+FROM audit_logs
+ORDER BY id DESC
+LIMIT 100;
+```
+
+Migration thêm cột request ID cho database hiện hữu; chạy `go run ./cmd/migrate` theo quy trình production trước khi phát hành code mới. Chưa có màn hình/API admin tra cứu audit trail; hiện việc truy vấn dành cho vận hành database có quyền phù hợp.
+
 ### Build và kiểm thử BE
 
 Từ thư mục `backend`:
 
 ```powershell
+gofmt -l .
 go test ./...
 go vet ./...
-go build ./...
+go build ./cmd/api
 ```
+
+`gofmt -l .` phải không in ra file nào; format file vừa sửa bằng `gofmt -w <file.go>`. Đây cũng là lệnh format gate đầu tiên của backend CI, nên lỗi tại bước này khiến unit tests/vet/build trên GitHub chưa được chạy.
 
 Smoke test tích hợp cần API đang chạy và database **local/test** đã được seed:
 
@@ -245,7 +271,7 @@ Giữ access token trong memory và gắn vào protected requests:
 Authorization: Bearer <access_token>
 ```
 
-Không lưu access/refresh token trong `localStorage` hoặc `sessionStorage`. FE hiện có thể dùng `src/api/axiosClient.ts`, vốn giữ access token trong memory và tự deduplicate refresh request song song.
+Không lưu access/refresh token trong `localStorage` hoặc `sessionStorage`. FE dùng `src/shared/api/axiosClient.ts`, vốn giữ access token trong memory và tự deduplicate refresh request song song.
 
 ### Refresh, logout và khôi phục phiên
 
@@ -457,22 +483,18 @@ Body JSON bị giới hạn kích thước, field lạ, JSON sai/nhiều JSON va
 ## 4. Cấu trúc BE
 
 ```text
-cmd/api/                         Entry point HTTP và graceful shutdown
-cmd/migrate/                     Chạy migration thủ công
-internal/address/                Sổ địa chỉ và migration của domain
-internal/auth/                   Auth/session, JWT, OTP, RBAC và security middleware
-internal/auth/migrations/        Migration bảo mật được embed
-internal/cart/                   Giỏ hàng theo user, biến thể và tồn kho
-internal/catalog/                Catalog, product/shop detail, follow, admin inventory
-internal/httpx/                  JSON, response và validation dùng chung
-internal/migrations/             Điều phối migration các domain
-internal/seller/                 Seller products/variants
-internal/server/                 Composition root đăng ký routes/middleware
-internal/shop/                   Onboarding và quản trị shop
-internal/wishlist/               Sản phẩm yêu thích theo user
-scripts/smoke-api.ps1             Smoke test API local
+cmd/                         Entry points api và migrate
+internal/
+  app/                        Composition root và migration orchestration
+  domain/                     auth, address, catalog, shop, seller, cart, wishlist
+    auth/                     routes, session/security/profile handlers, tokens, migrations
+    catalog/                  public catalog, filters, admin category/inventory handlers
+    shop/                     routes, onboarding/admin handlers, repository, validation, migrations
+    seller/                   routes, product handlers, model, repository, validation
+  platform/                   auditlog, httpx, observability dùng chung
+scripts/                      Smoke test API local
 ```
 
-Mỗi domain tự đăng ký routes; `internal/server` lắp các domain vào HTTP mux, còn `internal/migrations` chạy migration theo thứ tự. `internal/auth` không sở hữu routes shop/seller/address. So với mẫu `proj-mau`, đây đã là cải thiện về ranh giới domain; tuy nhiên một số handler vẫn gộp xử lý HTTP, nghiệp vụ và SQL trong cùng file (đặc biệt auth/seller/shop). Khi domain tiếp tục mở rộng, nên tách các phần này thành handler/service/repository theo từng domain thay vì thêm logic vào handler lớn.
+Mỗi domain tự đăng ký routes; `internal/app/server` lắp các domain vào HTTP mux, còn `internal/app/migrations` chạy migration theo thứ tự. `internal/domain/auth` không sở hữu routes shop/seller/address. Seller và shop được tách handler, model, repository, validation, route và transport helper thành file trong cùng package. Các domain nhỏ tiếp tục dùng ít file hơn để tránh tạo lớp/thư mục rỗng chỉ vì quy ước.
 
 Catalog dùng MySQL parameterized queries, allowlist sort, giới hạn phân trang và validate query/body tại BE. Gửi thay đổi có kiểm thử liên quan và chạy `go test ./...`, `go vet ./...`, `go build ./...` trước khi merge.
