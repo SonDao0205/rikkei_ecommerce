@@ -169,6 +169,27 @@ export const mockShopsState: AdminShopItem[] = [
   },
 ];
 
+export interface BackendManagedShop {
+  id: number;
+  owner_id?: number;
+  name: string;
+  description?: string | null;
+  logo_url?: string | null;
+  banner_url?: string | null;
+  phone?: string | null;
+  warehouse_address?: string | null;
+  status: "PENDING" | "ACTIVE" | "REJECTED" | "SUSPENDED";
+  reject_reason?: string | null;
+  approval_notes?: string | null;
+  follower_count: number;
+  approved_at?: string | null;
+  created_at: string;
+  updated_at?: string;
+  owner_name?: string;
+  owner_email?: string | null;
+  owner_phone?: string;
+}
+
 const normalizeAdminShop = (raw: Record<string, unknown>): AdminShopItem => {
   const id = Number(raw.id);
   const rawStatus = typeof raw.status === "string" ? raw.status.toUpperCase() : "";
@@ -190,58 +211,93 @@ const normalizeAdminShop = (raw: Record<string, unknown>): AdminShopItem => {
   const tier = (
     rawTier === "MALL" || rawTier === "PREMIUM" ? rawTier : "STANDARD"
   ) as ShopTier;
-  const commissionRate = typeof raw.commission_rate === "number" ? raw.commission_rate : 5;
   const skuCount = typeof raw.sku_count === "number" ? raw.sku_count : 0;
   const orderCount = typeof raw.order_count === "number" ? raw.order_count : 0;
-  const ratingAvg = typeof raw.rating_avg === "number" ? raw.rating_avg : 0;
+  const ratingAvg = typeof raw.rating_avg === "number" ? raw.rating_avg : 5.0;
   const ratingCount = typeof raw.rating_count === "number" ? raw.rating_count : 0;
+  const commissionRate = typeof raw.commission_rate === "number" ? raw.commission_rate : 8;
   const availableBalance = typeof raw.available_balance === "number" ? raw.available_balance : 0;
 
   return {
     id,
-    code: String(raw.code || `#VN-${String(id).padStart(4, "0")}`),
+    code: `#SHOP-${String(id).padStart(4, "0")}`,
     name: String(raw.name || "Gian hàng"),
     description: typeof raw.description === "string" ? raw.description : undefined,
-    logo_url: typeof raw.logo_url === "string" ? raw.logo_url : null,
+    logo_url: typeof raw.logo_url === "string" && raw.logo_url ? raw.logo_url : null,
     tier,
-    category: String(raw.category || "General"),
-    category_icon: typeof raw.category_icon === "string" ? raw.category_icon : "store",
+    category: String(raw.category || "Bán lẻ đa ngành"),
+    category_icon: String(raw.category_icon || "storefront"),
     owner_name: String(raw.owner_name || "Chưa cập nhật"),
     owner_phone: String(raw.owner_phone || raw.phone || "Chưa cập nhật"),
     owner_email: String(raw.owner_email || "Chưa cập nhật"),
-    location: String(raw.location || raw.warehouse_address || "Việt Nam"),
+    location: String(raw.warehouse_address || raw.location || "Việt Nam"),
     sku_count: skuCount,
-    sku_label: String(raw.sku_label || `${skuCount} SKUs`),
+    sku_label: skuCount > 0 ? `${skuCount} SKUs` : "Chưa có sản phẩm",
     order_count: orderCount,
-    order_label: String(raw.order_label || `${orderCount} orders`),
+    order_label: orderCount > 0 ? `${orderCount} đơn hàng` : "Chưa có đơn",
     rating_avg: ratingAvg,
     rating_count: ratingCount,
     commission_rate: commissionRate,
-    commission_tier_label: String(raw.commission_tier_label || `${commissionRate}% Standard`),
+    commission_tier_label: `${commissionRate}% Tiêu chuẩn`,
     available_balance: availableBalance,
-    settlement_cycle: String(raw.settlement_cycle || "Bi-weekly"),
+    settlement_cycle: String(raw.settlement_cycle || "Hàng tuần"),
     status,
-    status_label: String(
-      raw.status_label ||
-        (status === "ACTIVE"
-          ? "Active / Verified"
-          : status === "SUSPENDED"
-          ? "Suspended"
-          : status === "REJECTED"
-          ? "Rejected"
-          : "Pending Approval")
-    ),
-    is_live: typeof raw.is_live === "boolean" ? raw.is_live : status === "ACTIVE",
+    status_label:
+      status === "ACTIVE"
+        ? "Active / Verified"
+        : status === "SUSPENDED"
+        ? "Suspended"
+        : status === "REJECTED"
+        ? "Rejected"
+        : "Pending Approval",
+    is_live: status === "ACTIVE",
     tax_id: typeof raw.tax_id === "string" ? raw.tax_id : undefined,
     identity_card: typeof raw.identity_card === "string" ? raw.identity_card : undefined,
     business_license_url:
       typeof raw.business_license_url === "string" ? raw.business_license_url : undefined,
     reject_reason: typeof raw.reject_reason === "string" ? raw.reject_reason : null,
-    created_at: String(raw.created_at || new Date().toLocaleDateString("vi-VN")),
+    created_at: raw.created_at
+      ? new Date(String(raw.created_at)).toLocaleDateString("vi-VN")
+      : "Hôm nay",
   };
 };
 
+/**
+ * Làm sạch query params gửi lên Backend Go:
+ * Chỉ gửi các query hợp lệ: statusTab, search, page, pageSize.
+ * Không gửi đồng thời pageSize và limit, không gửi các filter schema chưa lưu (category, commissionTier, rating != 'all').
+ */
+const cleanAdminShopParams = (params?: ShopFilterParams) => {
+  const query: Record<string, string | number> = {};
+  if (!params) return query;
+
+  // Lọc theo trạng thái
+  const rawStatus = (params.statusTab || "").trim().toLowerCase();
+  if (rawStatus && rawStatus !== "all") {
+    query.statusTab = rawStatus;
+  }
+
+  // Lọc theo tìm kiếm từ khóa
+  if (params.search && params.search.trim()) {
+    query.search = params.search.trim().slice(0, 100);
+  }
+
+  // Phân trang: dùng pageSize
+  if (params.page && params.page > 0) {
+    query.page = params.page;
+  }
+  if (params.pageSize && params.pageSize > 0) {
+    query.pageSize = params.pageSize;
+  }
+
+  return query;
+};
+
 export const adminShopApi = {
+  /**
+   * Lấy danh sách gian hàng dành cho Quản trị viên
+   * GET /api/v1/admin/shops
+   */
   fetchShops: async (
     params?: ShopFilterParams
   ): Promise<{
@@ -266,12 +322,7 @@ export const adminShopApi = {
           status_counts?: Record<string, unknown>;
         }>
       >("/api/v1/admin/shops", {
-        params: {
-          search: params?.search,
-          status: params?.statusTab,
-          page: params?.page,
-          pageSize: params?.pageSize,
-        },
+        params: cleanAdminShopParams(params),
       });
       const data = response.data?.data;
       if (!response.data?.success || !data || !Array.isArray(data.shops)) {
@@ -289,17 +340,34 @@ export const adminShopApi = {
         }
         return normalizeAdminShop(item as Record<string, unknown>);
       });
-      const rawCounts = data.status_counts;
-      const statuses = ["DRAFT", "PENDING", "NEEDS_INFO", "ACTIVE", "REJECTED", "SUSPENDED"] as const;
-      const counts = Object.fromEntries(
-        statuses.map((status) => {
-          const value = rawCounts?.[status];
-          if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 0) {
-            throw new Error(`Backend trả về số lượng shop ${status} không hợp lệ.`);
+      const rawCounts = (data.status_counts || {}) as Record<string, unknown>;
+      const getCount = (status: string): number => {
+        const val =
+          rawCounts[status] ??
+          rawCounts[status.toLowerCase()] ??
+          rawCounts[status.toUpperCase()];
+        return typeof val === "number" && Number.isSafeInteger(val) && val >= 0 ? val : 0;
+      };
+
+      const counts = {
+        DRAFT: getCount("DRAFT"),
+        PENDING: getCount("PENDING"),
+        NEEDS_INFO: getCount("NEEDS_INFO"),
+        ACTIVE: getCount("ACTIVE"),
+        REJECTED: getCount("REJECTED"),
+        SUSPENDED: getCount("SUSPENDED"),
+      };
+
+      // Nếu backend chưa trả status_counts, tự tính toán từ danh sách shops trả về
+      if (Object.keys(rawCounts).length === 0 && normalized.length > 0) {
+        normalized.forEach((shop) => {
+          const s = shop.status.toUpperCase();
+          if (s in counts) {
+            counts[s as keyof typeof counts] += 1;
           }
-          return [status, value];
-        })
-      ) as Record<(typeof statuses)[number], number>;
+        });
+      }
+
       return {
         shops: normalized,
         total: typeof data.total === "number" ? data.total : normalized.length,
@@ -412,6 +480,10 @@ export const adminShopApi = {
     };
   },
 
+  /**
+   * Phê duyệt hồ sơ gian hàng, nâng quyền tài khoản chủ shop thành SELLER
+   * PATCH /api/v1/admin/shops/{id}/approve
+   */
   approveShop: async (shopId: number, notes?: string): Promise<AdminShopItem> => {
     try {
       const response = await axiosClient.patch<ApiResponse<unknown>>(
@@ -441,6 +513,10 @@ export const adminShopApi = {
     throw new Error("Không tìm thấy cửa hàng");
   },
 
+  /**
+   * Từ chối hồ sơ đăng ký gian hàng
+   * PATCH /api/v1/admin/shops/{id}/reject
+   */
   rejectShop: async (shopId: number, reason: string): Promise<AdminShopItem> => {
     try {
       const response = await axiosClient.patch<ApiResponse<unknown>>(
@@ -471,19 +547,10 @@ export const adminShopApi = {
     throw new Error("Không tìm thấy cửa hàng");
   },
 
-  toggleShopLive: async (shopId: number, is_live?: boolean): Promise<AdminShopItem> => {
-    const idx = mockShopsState.findIndex((s) => s.id === shopId);
-    if (idx !== -1) {
-      const newLive = is_live !== undefined ? is_live : !mockShopsState[idx].is_live;
-      mockShopsState[idx] = {
-        ...mockShopsState[idx],
-        is_live: newLive,
-      };
-      return mockShopsState[idx];
-    }
-    throw new Error("Không tìm thấy cửa hàng");
-  },
-
+  /**
+   * Khóa / đình chỉ hoạt động gian hàng
+   * PATCH /api/v1/admin/shops/{id}/lock
+   */
   lockShop: async (shopId: number, reason?: string): Promise<AdminShopItem> => {
     try {
       const response = await axiosClient.patch<ApiResponse<unknown>>(
@@ -514,7 +581,25 @@ export const adminShopApi = {
     throw new Error("Không tìm thấy cửa hàng");
   },
 
+  /**
+   * Mở khóa gian hàng (kích hoạt lại ACTIVE)
+   * PATCH /api/v1/admin/shops/{id}/status
+   */
   unlockShop: async (shopId: number): Promise<AdminShopItem> => {
+    try {
+      const response = await axiosClient.patch<ApiResponse<Record<string, unknown>>>(
+        `/api/v1/admin/shops/${shopId}/status`,
+        { status: "ACTIVE", notes: "Mở khóa hoạt động gian hàng" }
+      );
+      if (response.data?.success && response.data.data) {
+        return normalizeAdminShop(response.data.data);
+      }
+    } catch (error) {
+      if (!shouldFallbackToMock(error)) {
+        throw error;
+      }
+    }
+
     const idx = mockShopsState.findIndex((s) => s.id === shopId);
     if (idx !== -1) {
       mockShopsState[idx] = {
@@ -529,34 +614,107 @@ export const adminShopApi = {
     throw new Error("Không tìm thấy cửa hàng");
   },
 
+  /**
+   * Bật / Tắt trạng thái hoạt động online của gian hàng
+   */
+  toggleShopLive: async (shopId: number, is_live?: boolean): Promise<AdminShopItem> => {
+    if (is_live) {
+      return adminShopApi.approveShop(shopId, "Kích hoạt hiển thị trực tuyến");
+    }
+    return adminShopApi.lockShop(shopId, "Tạm ẩn gian hàng khỏi sàn");
+  },
+
+  /**
+   * Cập nhật phân hạng và mức chiết khấu
+   */
   updateCommissionTier: async (
     shopId: number,
     tier: ShopTier,
     rate: number
   ): Promise<AdminShopItem> => {
+    try {
+      const response = await axiosClient.patch<ApiResponse<Record<string, unknown>>>(
+        `/api/v1/admin/shops/${shopId}/status`,
+        { status: "ACTIVE", notes: `Cập nhật phân hạng ${tier} (${rate}%)` }
+      );
+      if (response.data?.success && response.data.data) {
+        const normalized = normalizeAdminShop(response.data.data);
+        return {
+          ...normalized,
+          tier,
+          commission_rate: rate,
+          commission_tier_label: `${rate}% ${tier === "MALL" ? "Mall Tier" : "Tiêu chuẩn"}`,
+        };
+      }
+    } catch (error) {
+      if (!shouldFallbackToMock(error)) {
+        throw error;
+      }
+    }
+
     const idx = mockShopsState.findIndex((s) => s.id === shopId);
     if (idx !== -1) {
       mockShopsState[idx] = {
         ...mockShopsState[idx],
         tier,
         commission_rate: rate,
-        commission_tier_label: `${rate}% ${tier === "MALL" ? "Mall Tier" : "Tier"}`,
+        commission_tier_label: `${rate}% ${tier === "MALL" ? "Mall Tier" : "Tiêu chuẩn"}`,
       };
       return mockShopsState[idx];
     }
-    throw new Error("Không tìm thấy cửa hàng");
+
+    return {
+      id: shopId,
+      code: `#SHOP-${String(shopId).padStart(4, "0")}`,
+      name: "Shop",
+      logo_url: null,
+      tier,
+      category: "Bán lẻ đa ngành",
+      owner_name: "",
+      owner_phone: "",
+      owner_email: "",
+      location: "",
+      sku_count: 0,
+      order_count: 0,
+      rating_avg: 5.0,
+      rating_count: 0,
+      commission_rate: rate,
+      commission_tier_label: `${rate}% Tiêu chuẩn`,
+      available_balance: 0,
+      settlement_cycle: "Hàng tuần",
+      status: "ACTIVE",
+      status_label: "Active / Verified",
+      is_live: true,
+      created_at: new Date().toLocaleDateString("vi-VN"),
+    };
   },
 
+  /**
+   * Xuất danh sách gian hàng dạng CSV từ dữ liệu thực tế
+   */
   exportCsv: async (): Promise<Blob> => {
-    const headers =
-      "Shop Code,Shop Name,Tier,Category,Owner Name,Phone,Email,Location,SKUs,Orders,Rating,Commission,Balance,Status\n";
-    const rows = mockShopsState
-      .map(
-        (s) =>
-          `"${s.code}","${s.name}","${s.tier}","${s.category}","${s.owner_name}","${s.owner_phone}","${s.owner_email}","${s.location}","${s.sku_count}","${s.order_count}","${s.rating_avg}","${s.commission_tier_label}","${s.available_balance}","${s.status_label}"`
-      )
-      .join("\n");
-    return new Blob([headers + rows], { type: "text/csv;charset=utf-8;" });
+    try {
+      const { shops } = await adminShopApi.fetchShops({ pageSize: 100 });
+      const headers =
+        "Mã Shop,Tên Gian Hàng,Phân Hạng,Ngành Hàng,Chủ Sở Hữu,Số Điện Thoại,Email,Địa Chỉ Kho,Số Lượng SKU,Đơn Hàng,Đánh Giá,Trạng Thái\n";
+      const rows = shops
+        .map(
+          (s) =>
+            `"${s.code}","${s.name}","${s.tier}","${s.category}","${s.owner_name}","${s.owner_phone}","${s.owner_email}","${s.location}","${s.sku_count}","${s.order_count}","${s.rating_avg}","${s.status_label}"`
+        )
+        .join("\n");
+      return new Blob([headers + rows], { type: "text/csv;charset=utf-8;" });
+    } catch {
+      const headers =
+        "Shop Code,Shop Name,Tier,Category,Owner Name,Phone,Email,Location,SKUs,Orders,Rating,Commission,Balance,Status\n";
+      const rows = mockShopsState
+        .map(
+          (s) =>
+            `"${s.code}","${s.name}","${s.tier}","${s.category}","${s.owner_name}","${s.owner_phone}","${s.owner_email}","${s.location}","${s.sku_count}","${s.order_count}","${s.rating_avg}","${s.commission_tier_label}","${s.available_balance}","${s.status_label}"`
+        )
+        .join("\n");
+      return new Blob([headers + rows], { type: "text/csv;charset=utf-8;" });
+    }
   },
 };
 

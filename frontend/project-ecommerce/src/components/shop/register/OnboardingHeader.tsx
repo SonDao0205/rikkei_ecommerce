@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { BrandIcon } from "../../common/BrandLogo";
 
 export const OnboardingHeader: React.FC = () => {
   return (
@@ -8,7 +9,7 @@ export const OnboardingHeader: React.FC = () => {
         <div className="flex items-center gap-space-md">
           <Link to="/" className="flex items-center gap-space-xs group">
             <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center text-on-primary transition-transform group-hover:scale-105">
-              <span className="material-symbols-outlined text-[22px]">insights</span>
+              <BrandIcon className="w-5 h-5 text-on-primary" />
             </div>
             <span className="font-headline-lg text-headline-lg font-bold tracking-tight text-primary">
               MarketPulse

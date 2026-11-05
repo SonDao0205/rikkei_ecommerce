@@ -36,6 +36,7 @@ import {
 
 export const ShopProductManagement: React.FC = () => {
   const dispatch = useAppDispatch();
+  const [toastMessage, setToastMessage] = React.useState<{ text: string; isError?: boolean } | null>(null);
   const {
     items,
     stats,
@@ -114,24 +115,42 @@ export const ShopProductManagement: React.FC = () => {
   );
 
   const handleDeleteProduct = useCallback(
-    (id: string) => {
+    async (id: string) => {
       if (window.confirm("Bạn có chắc chắn muốn xoá sản phẩm này khỏi kho?")) {
-        dispatch(removeShopProduct(id));
+        const res = await dispatch(removeShopProduct(id));
+        if (removeShopProduct.fulfilled.match(res)) {
+          dispatch(fetchShopProductList());
+        }
       }
     },
     [dispatch]
   );
 
-  const handleBulkDelete = useCallback(() => {
+  const handleBulkDelete = useCallback(async () => {
     if (selectedIds.length === 0) return;
     if (window.confirm(`Bạn có chắc chắn muốn xoá ${selectedIds.length} sản phẩm đã chọn?`)) {
-      selectedIds.forEach((id) => dispatch(removeShopProduct(id)));
+      for (const id of selectedIds) {
+        await dispatch(removeShopProduct(id));
+      }
+      dispatch(fetchShopProductList());
     }
   }, [dispatch, selectedIds]);
 
   const handleSaveProduct = useCallback(
-    (product: Partial<ShopProductItem>) => {
-      dispatch(saveShopProductItem(product));
+    async (product: Partial<ShopProductItem>) => {
+      const res = await dispatch(saveShopProductItem(product));
+      if (saveShopProductItem.fulfilled.match(res)) {
+        setToastMessage({
+          text: product.id ? "Cập nhật sản phẩm thành công!" : "Tạo sản phẩm mới và gửi duyệt thành công!",
+          isError: false,
+        });
+        setTimeout(() => setToastMessage(null), 4000);
+        dispatch(fetchShopProductList());
+      } else {
+        const errorMsg = (res.payload as string) || "Lỗi lưu sản phẩm";
+        setToastMessage({ text: errorMsg, isError: true });
+        setTimeout(() => setToastMessage(null), 6000);
+      }
     },
     [dispatch]
   );
@@ -267,6 +286,35 @@ export const ShopProductManagement: React.FC = () => {
         onClose={() => dispatch(closeModal())}
         onSave={handleSaveProduct}
       />
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div
+          className={`fixed bottom-8 right-8 z-50 flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-2xl transition-all animate-in fade-in slide-in-from-bottom-4 duration-200 ${
+            toastMessage.isError
+              ? "bg-error-container text-on-error-container border border-error/30"
+              : "bg-inverse-surface text-inverse-on-surface"
+          }`}
+        >
+          <span
+            className={`material-symbols-outlined text-[20px] ${
+              toastMessage.isError ? "text-error" : "text-primary-fixed"
+            }`}
+          >
+            {toastMessage.isError ? "error" : "check_circle"}
+          </span>
+          <span className="font-body-md text-body-md font-medium">
+            {toastMessage.text}
+          </span>
+          <button
+            type="button"
+            onClick={() => setToastMessage(null)}
+            className="ml-2 hover:opacity-75 cursor-pointer text-inherit"
+          >
+            <span className="material-symbols-outlined text-[18px]">close</span>
+          </button>
+        </div>
+      )}
     </ShopLayout>
   );
 };

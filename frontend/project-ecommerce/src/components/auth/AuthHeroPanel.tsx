@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { BrandIcon } from "../common/BrandLogo";
 interface FeatureItem {
   icon: React.ReactNode;
   title: string;
@@ -73,9 +74,7 @@ const AuthHeroPanel = () => {
       <header className="relative z-10 flex items-center justify-between">
         <Link to="/" className="flex items-center space-x-3.5 group cursor-pointer transition-transform hover:scale-[1.02]" title="Về trang chủ MarketPulse">
           <div className="w-10 h-10 rounded-xl bg-white shadow-md flex items-center justify-center p-2">
-            <svg className="w-6 h-6 text-brand-700" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-            </svg>
+            <BrandIcon className="w-6 h-6 text-brand-700" />
           </div>
           <span className="text-xl font-bold tracking-tight text-white">MarketPulse</span>
         </Link>

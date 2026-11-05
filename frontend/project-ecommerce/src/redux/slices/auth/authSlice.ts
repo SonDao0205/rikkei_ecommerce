@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from "@reduxjs/toolkit";
 import { authApi } from "../../../api/auth/authApi";
 import { setInMemoryAccessToken } from "../../../api/axiosClient";
+import { updateUserProfile } from "../user/profileSlice";
 import type {
   UserProfile,
   UserRole,
@@ -455,6 +456,23 @@ export const authSlice = createSlice({
         state.resetPasswordLoading = false;
         state.resetPasswordError =
           (action.payload as string) || "Đặt lại mật khẩu thất bại.";
+      })
+
+      // Synchronize updated user profile (Full Name & Phone)
+      .addCase(updateUserProfile.fulfilled, (state, action) => {
+        if (state.user) {
+          if (action.payload.full_name) {
+            state.user.full_name = action.payload.full_name;
+          }
+          if (action.payload.phone) {
+            state.user.phone = action.payload.phone;
+          }
+          try {
+            localStorage.setItem(CACHED_USER_KEY, JSON.stringify(state.user));
+          } catch {
+            void 0;
+          }
+        }
       });
   },
 });

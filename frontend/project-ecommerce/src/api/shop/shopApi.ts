@@ -1,9 +1,11 @@
 import axiosClient from "../axiosClient";
 import type {
+  Shop,
   PublicShop,
   ShopFollowState,
   CatalogQueryParams,
   ProductListResponse,
+  ShopProfilePayload,
 } from "../../types";
 import {
   cleanCatalogQueryParams,
@@ -18,6 +20,47 @@ interface ApiResponse<T> {
 }
 
 export const shopApi = {
+  /**
+   * Tạo gian hàng mới (CLIENT)
+   * POST /api/v1/shops
+   * Trạng thái khởi tạo: PENDING
+   */
+  createShop: async (payload: ShopProfilePayload): Promise<Shop> => {
+    const response = await axiosClient.post<ApiResponse<Shop>>("/api/v1/shops", payload);
+    return response.data.data;
+  },
+
+  /**
+   * Lấy thông tin gian hàng của tài khoản hiện tại
+   * GET /api/v1/me/shop (Yêu cầu đăng nhập)
+   * Trả về null nếu người dùng chưa mở gian hàng (404 shop_not_found)
+   */
+  fetchMyShop: async (): Promise<Shop | null> => {
+    try {
+      const response = await axiosClient.get<ApiResponse<Shop>>("/api/v1/me/shop");
+      return response.data?.data || null;
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { status?: number; data?: { code?: string } } };
+      if (
+        axiosErr.response?.status === 404 ||
+        axiosErr.response?.data?.code === "shop_not_found"
+      ) {
+        return null;
+      }
+      throw err;
+    }
+  },
+
+  /**
+   * Cập nhật thông tin gian hàng của tài khoản hiện tại
+   * PUT /api/v1/me/shop (Yêu cầu đăng nhập)
+   * Nếu shop đang REJECTED, sau khi sửa sẽ chuyển lại về PENDING
+   */
+  updateMyShop: async (payload: ShopProfilePayload): Promise<Shop> => {
+    const response = await axiosClient.put<ApiResponse<Shop>>("/api/v1/me/shop", payload);
+    return response.data.data;
+  },
+
   /**
    * Lấy hồ sơ công khai của cửa hàng đang hoạt động
    * GET /api/v1/shops/{id} (Không yêu cầu đăng nhập)

@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useAppDispatch, useAppSelector } from "../../redux/store";
 import {
   updateUserProfile,
   removeUserAvatar,
   setLocalAvatarPreview,
+  clearProfileStatus,
 } from "../../redux/slices/user/profileSlice";
 import { getDefaultAvatar } from "../../utils/avatar";
 import type { UserProfileDetails } from "../../types";
@@ -19,35 +20,46 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
   );
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [localError, setLocalError] = useState<string | null>(null);
 
-  const [fullName, setFullName] = useState("");
-  const defaultAvatar = getDefaultAvatar(profile?.full_name || fullName);
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [birthDay, setBirthDay] = useState("15");
-  const [birthMonth, setBirthMonth] = useState("Tháng 08");
-  const [birthYear, setBirthYear] = useState("1995");
-  const [gender, setGender] = useState<"male" | "female" | "other">("male");
+  const [fullName, setFullName] = useState(profile?.full_name || "");
+  const defaultAvatar = useMemo(() => getDefaultAvatar(profile?.full_name), [profile?.full_name]);
+  const [username, setUsername] = useState(profile?.username || "nguyenvana_vn");
+  const [email, setEmail] = useState(profile?.email || "");
+  const [phone, setPhone] = useState(profile?.phone || "");
+  const [birthDay, setBirthDay] = useState(profile?.date_of_birth?.day || "15");
+  const [birthMonth, setBirthMonth] = useState(profile?.date_of_birth?.month || "Tháng 08");
+  const [birthYear, setBirthYear] = useState(profile?.date_of_birth?.year || "1995");
+  const [gender, setGender] = useState<"male" | "female" | "other">(profile?.gender || "male");
 
+  // Đồng bộ props -> state theo chuẩn React (trước paint, không gây chớp nháy và không vi phạm rules-of-hooks)
+  const [prevProfile, setPrevProfile] = useState(profile);
+  if (profile && profile !== prevProfile) {
+    setPrevProfile(profile);
+    setFullName(profile.full_name || "");
+    setUsername(profile.username || "nguyenvana_vn");
+    setEmail(profile.email || "");
+    setPhone(profile.phone || "");
+    if (profile.date_of_birth) {
+      setBirthDay(profile.date_of_birth.day || "15");
+      setBirthMonth(profile.date_of_birth.month || "Tháng 08");
+      setBirthYear(profile.date_of_birth.year || "1995");
+    }
+    if (profile.gender) {
+      setGender(profile.gender);
+    }
+  }
+
+  // Tự động ẩn thông báo sau 5 giây theo yêu cầu
   useEffect(() => {
-    if (!profile) return;
-    const timer = setTimeout(() => {
-      setFullName(profile.full_name || "");
-      setUsername(profile.username || "nguyenvana_vn");
-      setEmail(profile.email || "");
-      setPhone(profile.phone || "");
-      if (profile.date_of_birth) {
-        setBirthDay(profile.date_of_birth.day || "15");
-        setBirthMonth(profile.date_of_birth.month || "Tháng 08");
-        setBirthYear(profile.date_of_birth.year || "1995");
-      }
-      if (profile.gender) {
-        setGender(profile.gender);
-      }
-    }, 0);
-    return () => clearTimeout(timer);
-  }, [profile]);
+    if (successMessage || error || localError) {
+      const timer = setTimeout(() => {
+        dispatch(clearProfileStatus());
+        setLocalError(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage, error, localError, dispatch]);
 
   // Generate selectable options for DoB
   const days = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, "0"));
@@ -76,13 +88,34 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setLocalError(null);
+
+    const originalUsername = (profile?.username || "").trim();
+    const originalEmail = (profile?.email || "").trim().toLowerCase();
+    const currentUsername = username.trim();
+    const currentEmail = email.trim().toLowerCase();
+
+    // Yêu cầu: Chức năng cập nhật chỉ áp dụng cho Full Name và Phone Number.
+    // Nếu cập nhật Username hoặc Email Address thì hiển thị: "Bạn chỉ được cập nhật Full Name và Phone Number"
+    const isUsernameChanged = currentUsername !== originalUsername;
+    const isEmailChanged = currentEmail !== originalEmail;
+
+    if (isUsernameChanged || isEmailChanged) {
+      dispatch(clearProfileStatus());
+      setLocalError("Bạn chỉ được cập nhật Full Name và Phone Number");
+      // Khôi phục lại giá trị Username và Email gốc
+      setUsername(profile?.username || "nguyenvana_vn");
+      setEmail(profile?.email || "");
+      return;
+    }
+
     if (!fullName.trim()) return;
 
     dispatch(
       updateUserProfile({
         full_name: fullName.trim(),
-        username: username.trim(),
-        email: email.trim(),
+        username: originalUsername,
+        email: profile?.email || "",
         phone: phone.trim(),
         date_of_birth: {
           day: birthDay,
@@ -132,20 +165,48 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
       </div>
 
       {/* Status Banners */}
-      {successMessage && (
-        <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center gap-2">
-          <span className="material-symbols-outlined text-emerald-600 text-[18px]">
-            check_circle
-          </span>
-          <span>{successMessage}</span>
+      {successMessage && !localError && (
+        <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center justify-between gap-2 shadow-xs animate-fadeIn">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-emerald-600 text-[18px]">
+              check_circle
+            </span>
+            <span className="font-medium">{successMessage}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              dispatch(clearProfileStatus());
+              setLocalError(null);
+            }}
+            className="text-emerald-600 hover:text-emerald-900 p-1 rounded-lg hover:bg-emerald-100 transition-colors cursor-pointer"
+            aria-label="Đóng thông báo"
+            title="Đóng thông báo"
+          >
+            <span className="material-symbols-outlined text-[16px]">close</span>
+          </button>
         </div>
       )}
-      {error && (
-        <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-800 flex items-center gap-2">
-          <span className="material-symbols-outlined text-red-600 text-[18px]">
-            error
-          </span>
-          <span>{error}</span>
+      {(localError || error) && (
+        <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-800 flex items-center justify-between gap-2 shadow-xs animate-fadeIn">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-red-600 text-[18px]">
+              error
+            </span>
+            <span className="font-medium">{localError || error}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              dispatch(clearProfileStatus());
+              setLocalError(null);
+            }}
+            className="text-red-500 hover:text-red-800 p-1 rounded-lg hover:bg-red-100 transition-colors cursor-pointer"
+            aria-label="Đóng thông báo lỗi"
+            title="Đóng thông báo lỗi"
+          >
+            <span className="material-symbols-outlined text-[16px]">close</span>
+          </button>
         </div>
       )}
 
@@ -202,7 +263,7 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Full Name */}
           <div className="flex flex-col gap-1.5">
-            <label className="font-label-md text-label-md text-on-surface font-semibold flex items-center justify-between">
+            <label className="font-label-md text-label-md text-on-surface font-semibold h-5 flex items-center justify-between">
               <span>
                 Full Name (Họ và Tên) <span className="text-error">*</span>
               </span>
@@ -227,7 +288,7 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
 
           {/* Username */}
           <div className="flex flex-col gap-1.5">
-            <label className="font-label-md text-label-md text-on-surface font-semibold flex items-center justify-between">
+            <label className="font-label-md text-label-md text-on-surface font-semibold h-5 flex items-center justify-between">
               <span>
                 Display Name / Username <span className="text-error">*</span>
               </span>
@@ -252,17 +313,17 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
 
           {/* Email Address */}
           <div className="flex flex-col gap-1.5">
-            <label className="font-label-md text-label-md text-on-surface font-semibold flex items-center justify-between">
+            <label className="font-label-md text-label-md text-on-surface font-semibold h-5 flex items-center justify-between">
               <span className="flex items-center gap-1.5">
                 <span>Email Address <span className="text-error">*</span></span>
               </span>
               {profile?.email_verified ? (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                  <span className="material-symbols-outlined text-[12px]">verified</span>
+                <span className="h-5 inline-flex items-center gap-1 px-2 rounded-full text-[10px] leading-none font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <span className="material-symbols-outlined !text-[11px] leading-none" style={{ fontSize: "11px" }}>verified</span>
                   Verified
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                <span className="h-5 inline-flex items-center px-2 rounded-full text-[10px] leading-none font-semibold bg-amber-50 text-amber-700 border border-amber-200">
                   Unverified
                 </span>
               )}
@@ -284,12 +345,12 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
 
           {/* Phone Number */}
           <div className="flex flex-col gap-1.5">
-            <label className="font-label-md text-label-md text-on-surface font-semibold flex items-center justify-between">
+            <label className="font-label-md text-label-md text-on-surface font-semibold h-5 flex items-center justify-between">
               <span className="flex items-center gap-1.5">
                 <span>Phone Number <span className="text-error">*</span></span>
               </span>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                <span className="material-symbols-outlined text-[12px]">verified</span>
+              <span className="h-5 inline-flex items-center gap-1 px-2 rounded-full text-[10px] leading-none font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <span className="material-symbols-outlined !text-[11px] leading-none" style={{ fontSize: "11px" }}>verified</span>
                 Verified
               </span>
             </label>
