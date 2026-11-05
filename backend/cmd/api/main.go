@@ -13,10 +13,10 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
-	"rikkei-ecommerce/internal/domain/auth"
 	"rikkei-ecommerce/internal/app/migrations"
-	"rikkei-ecommerce/internal/platform/observability"
 	"rikkei-ecommerce/internal/app/server"
+	"rikkei-ecommerce/internal/domain/auth"
+	"rikkei-ecommerce/internal/platform/observability"
 )
 
 func main() {

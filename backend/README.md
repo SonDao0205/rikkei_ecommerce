@@ -138,10 +138,13 @@ Migration thêm cột request ID cho database hiện hữu; chạy `go run ./cmd
 Từ thư mục `backend`:
 
 ```powershell
+gofmt -l .
 go test ./...
 go vet ./...
-go build ./...
+go build ./cmd/api
 ```
+
+`gofmt -l .` phải không in ra file nào; format file vừa sửa bằng `gofmt -w <file.go>`. Đây cũng là lệnh format gate đầu tiên của backend CI, nên lỗi tại bước này khiến unit tests/vet/build trên GitHub chưa được chạy.
 
 Smoke test tích hợp cần API đang chạy và database **local/test** đã được seed:
 

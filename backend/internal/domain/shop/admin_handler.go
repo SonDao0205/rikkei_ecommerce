@@ -253,12 +253,7 @@ func (a *Handler) applyShopStatus(w http.ResponseWriter, r *http.Request, shopID
 		a.serverError(w, r, err)
 		return
 	}
-	allowedTransition := currentShopStatus == status ||
-		status == "ACTIVE" && (currentShopStatus == "PENDING" || currentShopStatus == "SUSPENDED") ||
-		status == "REJECTED" && (currentShopStatus == "PENDING" || currentShopStatus == "NEEDS_INFO") ||
-		status == "NEEDS_INFO" && currentShopStatus == "PENDING" ||
-		status == "SUSPENDED" && currentShopStatus == "ACTIVE"
-	if !allowedTransition {
+	if !allowedShopTransition(currentShopStatus, status) {
 		writeError(w, http.StatusConflict, "invalid_shop_transition", "Shop cannot transition from "+currentShopStatus+" to "+status)
 		return
 	}
@@ -312,4 +307,12 @@ func (a *Handler) applyShopStatus(w http.ResponseWriter, r *http.Request, shopID
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"success": true, "data": shop})
+}
+
+func allowedShopTransition(current, target string) bool {
+	return current == target ||
+		target == "ACTIVE" && (current == "PENDING" || current == "SUSPENDED") ||
+		target == "REJECTED" && (current == "PENDING" || current == "NEEDS_INFO") ||
+		target == "NEEDS_INFO" && current == "PENDING" ||
+		target == "SUSPENDED" && current == "ACTIVE"
 }

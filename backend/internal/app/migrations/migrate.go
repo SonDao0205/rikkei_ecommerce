@@ -6,10 +6,10 @@ import (
 	"fmt"
 
 	"rikkei-ecommerce/internal/domain/address"
-	"rikkei-ecommerce/internal/platform/auditlog"
 	"rikkei-ecommerce/internal/domain/auth"
 	"rikkei-ecommerce/internal/domain/catalog"
 	"rikkei-ecommerce/internal/domain/shop"
+	"rikkei-ecommerce/internal/platform/auditlog"
 )
 
 func Run(ctx context.Context, db *sql.DB) error {

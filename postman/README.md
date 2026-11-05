@@ -21,7 +21,7 @@ This collection uses a disposable local/test database and leaves the generated a
 
 ## Admin category coverage
 
-Folder **Admin Category Management** runs after **Authentication** and uses its `adminToken` and `clientToken`. It verifies that CLIENT cannot list or create categories; admin can list categories, create a root and child, update a category, and reactivate/deactivate categories; malformed input, duplicate slug, missing parent, hierarchy cycles, and deactivating a parent with an active child are rejected. It also confirms soft-deleted entries remain in the admin list and disappear from the public category list. Each run creates uniquely named category fixtures and leaves them inactive in the local/test database; refresh the dedicated local seed when you need a clean database. Do not run this mutating collection against a shared or production database.
+Folder **Admin Category Management** runs after **Authentication** and **Admin Inventory**: it uses `clientToken` created by Authentication and `adminToken` established by the admin inventory flow. It verifies that CLIENT cannot list or create categories; admin can list categories, create a root and child, update a category, and reactivate/deactivate categories; malformed input, duplicate slug, missing parent, hierarchy cycles, and deactivating a parent with an active child are rejected. It also confirms soft-deleted entries remain in the admin list and disappear from the public category list. Each run creates uniquely named category fixtures and leaves them inactive in the local/test database; refresh the dedicated local seed when you need a clean database. Do not run this mutating collection against a shared or production database.
 
 ## Import vào Postman
 

@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"rikkei-ecommerce/internal/domain/auth"
 	"rikkei-ecommerce/internal/app/server"
+	"rikkei-ecommerce/internal/domain/auth"
 )
 
 func TestBusinessRoutesRequireAuthentication(t *testing.T) {
