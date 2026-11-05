@@ -31,6 +31,8 @@ npm run build
 
 - Dùng `src/shared/api/axiosClient.ts` cho request. Access token chỉ giữ trong memory; refresh token do backend cấp qua HttpOnly cookie và Axios gửi bằng `withCredentials`.
 - API path bắt đầu bằng `/api/v1`. Với local Vite, dùng backend host trong `.env.local`; với Compose dùng same-origin.
+- Cart and wishlist are connected to the authenticated backend APIs: `/cart`, `/wishlist`, `/api/v1/cart/*`, and `/api/v1/wishlist/*`. The customer layout loads counts after session restoration; all changes are persisted by the backend and are scoped to the signed-in CLIENT account.
+- The backend does not yet provide voucher validation, checkout, payment, or order creation. The cart shows an estimated selected-item subtotal only; it does not present that amount as a payable total or claim that an order was submitted.
 - Backend trả `{ "success": true, "data": ... }` hoặc lỗi có HTTP status và `errors[].code`. Không dựa vào mock fallback để xác nhận BE đã tích hợp: một số API client cũ trả dữ liệu mock sau khi request thất bại.
 - API admin shop `GET /api/v1/admin/shops` trả sáu trạng thái và `data.status_counts` trên toàn bộ shop; `data.total` chỉ đếm kết quả khớp filter/tìm kiếm. Dùng `status_counts` cho tab/thống kê, không suy ra số liệu toàn hệ thống từ trang hiện tại.
 - Một tài khoản có thể có nhiều role. User response có `role` tương thích, `roles` dạng mảng và `shop_status` nếu có shop; FE dùng các trường này để điều khiển giao diện, quyền cuối cùng do BE xác nhận. Seller Center chỉ hiện khi shop `ACTIVE`, còn storefront và tài khoản mua hàng vẫn dùng được với role `CLIENT`.

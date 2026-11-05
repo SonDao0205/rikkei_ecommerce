@@ -108,20 +108,38 @@ const AdminProduct: React.FC = () => {
     dispatch(executeBulkAction({ action, productIds: selectedIds }));
   };
 
+  const handleExportCsv = () => {
+    if (products.length === 0) return;
+    const columns: Array<[string, (product: AdminProductItem) => string | number]> = [
+      ["ID", (product) => product.id],
+      ["Product", (product) => product.name],
+      ["SKU", (product) => product.sku],
+      ["Shop", (product) => product.shop_name],
+      ["Category", (product) => product.category_name],
+      ["Price", (product) => product.price],
+      ["Stock", (product) => product.stock],
+      ["Status", (product) => product.status],
+      ["Active", (product) => product.is_active ? "Yes" : "No"],
+    ];
+    const escapeCell = (value: string | number) => {
+      const text = String(value ?? "");
+      const safe = /^[=+@\-\t\r]/.test(text) ? `'${text}` : text;
+      return `"${safe.replace(/"/g, '""')}"`;
+    };
+    const csv = [
+      columns.map(([label]) => escapeCell(label)).join(","),
+      ...products.map((product) => columns.map(([, value]) => escapeCell(value(product))).join(",")),
+    ].join("\r\n");
+    const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `products-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+  };
+
   const handlePageChange = (page: number) => {
     dispatch(setCurrentPage(page));
-  };
-
-  const handleEditProduct = (product: AdminProductItem) => {
-    alert(`Chỉnh sửa sản phẩm: ${product.name} (${product.sku})`);
-  };
-
-  const handleDuplicateProduct = (product: AdminProductItem) => {
-    alert(`Nhân bản SKU cho: ${product.name}`);
-  };
-
-  const handleAddNewProduct = () => {
-    alert("Mở giao diện tạo sản phẩm mới.");
   };
 
   // Client-side pagination slicing
@@ -133,7 +151,7 @@ const AdminProduct: React.FC = () => {
   return (
     <AdminLayout>
       {/* Page Title & Action Header */}
-      <ProductHeader onAddNewProduct={handleAddNewProduct} />
+      <ProductHeader onExportCsv={handleExportCsv} />
 
       {/* Error notification banner */}
       {error && (
@@ -191,8 +209,6 @@ const AdminProduct: React.FC = () => {
           onSelectAll={handleSelectAll}
           onToggleStatus={handleToggleStatus}
           onDeleteProduct={handleDeleteProduct}
-          onEditProduct={handleEditProduct}
-          onDuplicateProduct={handleDuplicateProduct}
         />
 
         {/* Table Footer & Standard Pagination */}

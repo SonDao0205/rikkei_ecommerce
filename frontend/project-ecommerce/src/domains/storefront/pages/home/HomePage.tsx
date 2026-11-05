@@ -14,10 +14,15 @@ import {
   setSortBy,
 } from "@/domains/storefront/state/productSlice";
 import type { ProductItem } from "@/shared/types";
+import { addCartItem } from "@/domains/customer/state/cartSlice";
+import { productApi } from "@/domains/storefront/api/productApi";
 
 const HomePage: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const { isAuthenticated, user } = useAppSelector((state) => state.auth);
+  const roles = user?.roles?.map((role) => role.toLowerCase()) ?? (user?.role ? [user.role] : []);
+  const canUseCustomerFeatures = roles.includes("client");
   const {
     categories,
     flashSaleProducts,
@@ -69,6 +74,21 @@ const HomePage: React.FC = () => {
     navigate(`/shop/${shopId}`);
   };
 
+  const handleQuickAdd = async (product: ProductItem) => {
+    if (!isAuthenticated) {
+      navigate("/login", { state: { from: { pathname: `/product/${product.id}` } } });
+      return;
+    }
+    if (!canUseCustomerFeatures) throw new Error("Giỏ hàng chỉ dành cho tài khoản người mua.");
+    const detail = await productApi.fetchProductDetail(product.id);
+    const availableVariants = detail.variants.filter((variant) => variant.stock > 0);
+    if (availableVariants.length !== 1) {
+      navigate(`/product/${product.id}`);
+      return;
+    }
+    await dispatch(addCartItem({ variantId: availableVariants[0].id, quantity: 1 })).unwrap();
+  };
+
   return (
     <CustomerLayout>
       {/* Top Notification Flash Strip */}
@@ -84,6 +104,7 @@ const HomePage: React.FC = () => {
       {/* SECTION 2: Featured products from the backend */}
       <FlashSaleSection
         products={flashSaleProducts}
+        onQuickAdd={handleQuickAdd}
         onSelectProduct={handleSelectProduct}
         onSelectShop={handleSelectShop}
       />
@@ -94,6 +115,7 @@ const HomePage: React.FC = () => {
         totalProducts={totalCatalogProducts}
         sortBy={sortBy}
         onSortChange={handleSortChange}
+        onAddToCart={handleQuickAdd}
         onLoadMore={handleLoadMore}
         onSelectProduct={handleSelectProduct}
         onSelectShop={handleSelectShop}

@@ -23,6 +23,8 @@ import ChangePassword from "@/domains/customer/pages/ChangePassword";
 import Address from "@/domains/customer/pages/Address";
 import MyOrder from "@/domains/customer/pages/MyOrder";
 import MyOrderDetail from "@/domains/customer/pages/MyOrderDetail";
+import ShoppingCart from "@/domains/customer/pages/ShoppingCart";
+import Wishlist from "@/domains/customer/pages/Wishlist";
 import ProtectedRoute from "@/app/routes/ProtectedRoute";
 import GuestRoute from "@/app/routes/GuestRoute";
 import StorefrontRoute from "@/app/routes/StorefrontRoute";
@@ -46,6 +48,38 @@ const router = createBrowserRouter([
       <StorefrontRoute>
         <HomePage />
       </StorefrontRoute>
+    ),
+  },
+  {
+    path: "/cart",
+    element: (
+      <ProtectedRoute allowedRoles={["client"]}>
+        <ShoppingCart />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/shopping-cart",
+    element: (
+      <ProtectedRoute allowedRoles={["client"]}>
+        <ShoppingCart />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/wishlist",
+    element: (
+      <ProtectedRoute allowedRoles={["client"]}>
+        <Wishlist />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/my-wishlist",
+    element: (
+      <ProtectedRoute allowedRoles={["client"]}>
+        <Wishlist />
+      </ProtectedRoute>
     ),
   },
   {

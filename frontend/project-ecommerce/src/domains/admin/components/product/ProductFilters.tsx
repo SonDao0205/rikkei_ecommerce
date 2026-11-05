@@ -168,23 +168,15 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
         </div>
 
         {/* Active Filters Display */}
-        <div className="flex items-center gap-2">
-          <span className="font-body-sm text-body-sm text-on-surface-variant">Showing active filters:</span>
-          <span className="px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm flex items-center gap-1">
-            All Warehouses
-            <span className="material-symbols-outlined text-[14px] cursor-pointer hover:text-error">
-              close
-            </span>
-          </span>
-          {hasActiveFilters && (
-            <button
-              type="button"
-              onClick={onClearFilters}
-              className="text-primary hover:underline font-label-sm text-label-sm ml-2 cursor-pointer font-semibold"
-            >
-              Clear all
-            </button>
-          )}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-body-sm text-body-sm text-on-surface-variant">?ang l?c:</span>
+          {!hasActiveFilters && <span className="rounded-full bg-surface-container-high px-2.5 py-1 text-sm">T?t c? s?n ph?m</span>}
+          {searchQuery && <button type="button" onClick={() => onSearchChange("")} className="rounded-full bg-primary-container px-2.5 py-1 text-sm text-on-primary">T?m: {searchQuery} ?</button>}
+          {categoryFilter && <button type="button" onClick={() => onCategoryChange("")} className="rounded-full bg-surface-container-high px-2.5 py-1 text-sm">{categoryFilter} ?</button>}
+          {stockStatusFilter && <button type="button" onClick={() => onStockStatusChange("")} className="rounded-full bg-surface-container-high px-2.5 py-1 text-sm">{stockStatusFilter.replaceAll("_", " ")} ?</button>}
+          {vendorFilter && <button type="button" onClick={() => onVendorChange("")} className="rounded-full bg-surface-container-high px-2.5 py-1 text-sm">Shop: {vendorFilter} ?</button>}
+          {sortBy !== "newest" && <button type="button" onClick={() => onSortChange("newest")} className="rounded-full bg-surface-container-high px-2.5 py-1 text-sm">Sort: {sortBy.replaceAll("_", " ")} ?</button>}
+          {hasActiveFilters && <button type="button" onClick={onClearFilters} className="ml-2 text-sm font-semibold text-primary hover:underline">X?a b? l?c</button>}
         </div>
       </div>
     </div>

@@ -1,9 +1,12 @@
 import React, { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useAppDispatch, useAppSelector } from "@/app/state/store";
+import { toggleWishlistItem } from "@/domains/customer/state/wishlistSlice";
 import type { ProductItem } from "@/shared/types";
 
 interface ProductCardProps {
   product: ProductItem;
-  onQuickAdd?: (product: ProductItem) => void;
+  onQuickAdd?: (product: ProductItem) => void | Promise<void>;
   onToggleWishlist?: (product: ProductItem) => void;
   onClick?: (product: ProductItem) => void;
   onShopClick?: (shopId: number) => void;
@@ -16,19 +19,52 @@ const ProductCard: React.FC<ProductCardProps> = ({
   onClick,
   onShopClick,
 }) => {
-  const [isWishlisted, setIsWishlisted] = useState(false);
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { isAuthenticated, user } = useAppSelector((state) => state.auth);
+  const roles = user?.roles?.map((role) => role.toLowerCase()) ?? (user?.role ? [user.role] : []);
+  const canUseCustomerFeatures = roles.includes("client");
+  const isWishlisted = useAppSelector((state) => state.wishlist.items.some((item) => item.product_id === product.id));
+  const isWishlistPending = useAppSelector((state) => state.wishlist.mutatingIds.includes(product.id));
+  const cartUpdating = useAppSelector((state) => state.cart.updating);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const handleWishlistClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsWishlisted(!isWishlisted);
-    onToggleWishlist?.(product);
+    if (!isAuthenticated) {
+      navigate("/login", { state: { from: location } });
+      return;
+    }
+    if (!canUseCustomerFeatures) {
+      setActionError("Danh sách yêu thích chỉ dành cho tài khoản người mua.");
+      return;
+    }
+    setActionError(null);
+    if (onToggleWishlist) {
+      onToggleWishlist(product);
+      return;
+    }
+    void dispatch(toggleWishlistItem(product.id)).unwrap().catch((error: unknown) => {
+      setActionError(error instanceof Error ? error.message : "Không thể cập nhật danh sách yêu thích.");
+    });
   };
 
   const handleQuickAddClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    onQuickAdd?.(product);
+    if (!isAuthenticated) {
+      navigate("/login", { state: { from: location } });
+      return;
+    }
+    if (!canUseCustomerFeatures) {
+      setActionError("Giỏ hàng chỉ dành cho tài khoản người mua.");
+      return;
+    }
+    void Promise.resolve(onQuickAdd?.(product)).catch((error: unknown) => {
+      setActionError(error instanceof Error ? error.message : "Không thể thêm sản phẩm vào giỏ hàng.");
+    });
   };
 
   const formatPrice = (price: number) => {
@@ -73,6 +109,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
         {/* Wishlist Toggle */}
         <button
           onClick={handleWishlistClick}
+          disabled={isWishlistPending}
           aria-label="Add to wishlist"
           className={`absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-surface-container-lowest/90 backdrop-blur-sm flex items-center justify-center shadow-sm transition-colors cursor-pointer ${
             isWishlisted ? "text-tertiary-container" : "text-on-surface-variant hover:text-tertiary-container"
@@ -88,11 +125,13 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
         {/* Cart action appears only when a real cart handler is wired. */}
         {onQuickAdd && <div className="absolute inset-x-2 bottom-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          <button onClick={handleQuickAddClick} className="w-full py-2.5 rounded-lg bg-primary text-on-primary font-label-md text-label-md flex items-center justify-center gap-1.5 shadow-md hover:bg-primary-container transition-colors cursor-pointer">
+          <button onClick={handleQuickAddClick} disabled={cartUpdating} className="w-full py-2.5 rounded-lg bg-primary text-on-primary font-label-md text-label-md flex items-center justify-center gap-1.5 shadow-md hover:bg-primary-container transition-colors cursor-pointer disabled:opacity-60">
             <span className="material-symbols-outlined text-[18px]">add_shopping_cart</span><span>Thêm vào giỏ</span>
           </button>
         </div>}
       </div>
+
+      {actionError && <p role="status" className="px-3 pb-3 text-xs text-error">{actionError}</p>}
 
       {/* Details Box */}
       <div className="p-space-md flex flex-col flex-1 justify-between gap-space-sm">

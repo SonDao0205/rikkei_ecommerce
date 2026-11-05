@@ -14,6 +14,8 @@ import shopDashboardReducer from "@/domains/shop/state/shopDashboardSlice";
 import shopProductReducer from "@/domains/shop/state/shopProductSlice";
 import userOrderReducer from "@/domains/customer/state/orderSlice";
 import myShopReducer from "@/domains/shop/state/myShopSlice";
+import cartReducer from "@/domains/customer/state/cartSlice";
+import wishlistReducer from "@/domains/customer/state/wishlistSlice";
 
 export const store = configureStore({
   reducer: {
@@ -31,6 +33,8 @@ export const store = configureStore({
     shopProduct: shopProductReducer,
     userOrder: userOrderReducer,
     myShop: myShopReducer,
+    cart: cartReducer,
+    wishlist: wishlistReducer,
   },
 });
 

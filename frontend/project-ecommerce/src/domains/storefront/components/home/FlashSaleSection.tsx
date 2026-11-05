@@ -5,7 +5,7 @@ import type { ProductItem } from "@/shared/types";
 
 interface FlashSaleSectionProps {
   products: ProductItem[];
-  onQuickAdd?: (product: ProductItem) => void;
+  onQuickAdd?: (product: ProductItem) => void | Promise<void>;
   onSelectProduct?: (product: ProductItem) => void;
   onSelectShop?: (shopId: number) => void;
 }

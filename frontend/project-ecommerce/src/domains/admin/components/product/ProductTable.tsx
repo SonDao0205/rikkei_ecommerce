@@ -189,22 +189,22 @@ const ProductTable: React.FC<ProductTableProps> = ({
                   {/* Catalog Actions */}
                   <td className="py-4 px-4 text-right pr-6">
                     <div className="flex items-center justify-end gap-1">
-                      <button
+                      {onEditProduct && <button
                         type="button"
                         onClick={() => onEditProduct?.(product)}
                         className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-lg transition-colors cursor-pointer"
                         title="Edit Catalog Entry"
                       >
                         <span className="material-symbols-outlined text-[18px]">edit</span>
-                      </button>
-                      <button
+                      </button>}
+                      {onDuplicateProduct && <button
                         type="button"
                         onClick={() => onDuplicateProduct?.(product)}
                         className="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-surface-container rounded-lg transition-colors cursor-pointer"
                         title="Duplicate SKU"
                       >
                         <span className="material-symbols-outlined text-[18px]">content_copy</span>
-                      </button>
+                      </button>}
                       <button
                         type="button"
                         onClick={() => onDeleteProduct(product.id)}
