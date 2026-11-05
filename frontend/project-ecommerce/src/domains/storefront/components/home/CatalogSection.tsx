@@ -7,7 +7,7 @@ interface CatalogSectionProps {
   totalProducts: number;
   sortBy: string;
   onSortChange: (sort: string) => void;
-  onAddToCart?: (product: ProductItem) => void;
+  onAddToCart?: (product: ProductItem) => void | Promise<void>;
   onLoadMore?: () => void;
   onSelectProduct?: (product: ProductItem) => void;
   onSelectShop?: (shopId: number) => void;

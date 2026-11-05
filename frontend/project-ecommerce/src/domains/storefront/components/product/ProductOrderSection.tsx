@@ -1,6 +1,9 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import type { ProductItem, ProductVariant } from "@/domains/storefront/types";
+import { useAppDispatch, useAppSelector } from "@/app/state/store";
+import { addCartItem } from "@/domains/customer/state/cartSlice";
+import { toggleWishlistItem } from "@/domains/customer/state/wishlistSlice";
 
 interface ProductOrderSectionProps {
   product: ProductItem;
@@ -15,12 +18,23 @@ export const ProductOrderSection: React.FC<ProductOrderSectionProps> = ({
   selectedVariant,
   onSelectVariant,
 }) => {
-  const [quantity, setQuantity] = useState<number>(1);
-  const [isWishlisted, setIsWishlisted] = useState<boolean>(false);
+  const [requestedQuantity, setRequestedQuantity] = useState<number>(1);
   const [cartToastMessage, setCartToastMessage] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [isAdding, setIsAdding] = useState(false);
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { isAuthenticated, user } = useAppSelector((state) => state.auth);
+  const roles = user?.roles?.map((role) => role.toLowerCase()) ?? (user?.role ? [user.role] : []);
+  const canUseCustomerFeatures = roles.includes("client");
+  const isWishlisted = useAppSelector((state) => state.wishlist.items.some((item) => item.product_id === product.id));
+  const isWishlistPending = useAppSelector((state) => state.wishlist.mutatingIds.includes(product.id));
+  const isCartUpdating = useAppSelector((state) => state.cart.updating);
 
   const currentPrice = selectedVariant?.price ?? product.price ?? 0;
-  const currentStock = selectedVariant?.stock ?? product.stock ?? 50;
+  const currentStock = selectedVariant?.stock ?? product.stock ?? 0;
+  const quantity = Math.max(1, Math.min(requestedQuantity, currentStock || 1));
   const currentSku = selectedVariant?.sku || `MP-PRD-${product.id}`;
 
   const formatPrice = (amount: number) => {
@@ -29,31 +43,65 @@ export const ProductOrderSection: React.FC<ProductOrderSectionProps> = ({
 
   const handleQtyMinus = () => {
     if (quantity > 1) {
-      setQuantity((prev) => prev - 1);
+      setRequestedQuantity((prev) => prev - 1);
     }
   };
 
   const handleQtyPlus = () => {
     if (quantity < currentStock) {
-      setQuantity((prev) => prev + 1);
+      setRequestedQuantity((prev) => prev + 1);
     }
   };
 
-  const handleAddToCart = () => {
-    setCartToastMessage(`Đã thêm ${quantity}x "${product.name}" vào giỏ hàng!`);
-    setTimeout(() => {
-      setCartToastMessage(null);
-    }, 3500);
+  const handleAddToCart = async () => {
+    if (!isAuthenticated) {
+      navigate("/login", { state: { from: location } });
+      return;
+    }
+    if (!canUseCustomerFeatures) {
+      setActionError("Giỏ hàng chỉ dành cho tài khoản người mua.");
+      return;
+    }
+    if (!selectedVariant || currentStock < 1) {
+      setActionError("Vui lòng chọn phiên bản còn hàng trước khi thêm vào giỏ.");
+      return;
+    }
+    setActionError(null);
+    setIsAdding(true);
+    try {
+      await dispatch(addCartItem({ variantId: selectedVariant.id, quantity })).unwrap();
+      setCartToastMessage(`Đã thêm ${quantity} sản phẩm vào giỏ hàng.`);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "Không thể thêm sản phẩm vào giỏ.");
+    } finally {
+      setIsAdding(false);
+    }
   };
 
-  const handleBuyNow = () => {
-    alert(`Tiến hành đặt hàng nhanh COD cho: ${product.name} (Số lượng: ${quantity})`);
+  const handleToggleWishlist = async () => {
+    if (!isAuthenticated) {
+      navigate("/login", { state: { from: location } });
+      return;
+    }
+    if (!canUseCustomerFeatures) {
+      setActionError("Danh sách yêu thích chỉ dành cho tài khoản người mua.");
+      return;
+    }
+    setActionError(null);
+    try {
+      await dispatch(toggleWishlistItem(product.id)).unwrap();
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "Không thể cập nhật danh sách yêu thích.");
+    }
   };
-
   const handleShare = () => {
     if (navigator.clipboard) {
-      navigator.clipboard.writeText(window.location.href);
-      alert("Đã sao chép liên kết sản phẩm vào bộ nhớ tạm!");
+      void navigator.clipboard.writeText(window.location.href).then(
+        () => setCartToastMessage("Đã sao chép liên kết sản phẩm."),
+        () => setActionError("Không thể sao chép liên kết sản phẩm."),
+      );
+    } else {
+      setActionError("Trình duyệt không hỗ trợ sao chép liên kết.");
     }
   };
 
@@ -69,7 +117,8 @@ export const ProductOrderSection: React.FC<ProductOrderSectionProps> = ({
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setIsWishlisted(!isWishlisted)}
+              onClick={() => void handleToggleWishlist()}
+              disabled={isWishlistPending}
               className="w-9 h-9 rounded-full bg-surface-container-lowest hover:bg-surface-container text-on-surface-variant hover:text-tertiary-container flex items-center justify-center transition-all shadow-xs cursor-pointer"
               title="Thêm vào danh sách yêu thích"
             >
@@ -153,20 +202,6 @@ export const ProductOrderSection: React.FC<ProductOrderSectionProps> = ({
           )}
         </div>
 
-        {/* Promo Incentive Bar */}
-        <div className="mt-1 p-3 rounded-xl bg-surface-container flex items-center justify-between text-body-sm font-body-sm">
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[20px] text-tertiary-container">
-              confirmation_number
-            </span>
-            <span className="text-on-surface text-xs md:text-sm">
-              Mã voucher sàn: <strong className="text-tertiary-container font-semibold">-50.000 ₫</strong> trừ trực tiếp khi thanh toán
-            </span>
-          </div>
-          <span className="text-xs font-bold text-primary uppercase cursor-pointer hover:underline shrink-0">
-            Đã lưu mã
-          </span>
-        </div>
       </div>
 
       {/* Variant Selector */}
@@ -274,25 +309,18 @@ export const ProductOrderSection: React.FC<ProductOrderSectionProps> = ({
         {/* Cart Secondary CTA */}
         <button
           type="button"
-          onClick={handleAddToCart}
-          disabled={currentStock <= 0}
+          onClick={() => void handleAddToCart()}
+          disabled={currentStock <= 0 || !selectedVariant || isAdding || isCartUpdating}
           className="flex-1 py-4 px-6 rounded-xl bg-surface-container-lowest hover:bg-surface-container text-primary font-label-lg font-bold transition-all flex items-center justify-center gap-2 shadow-sm transform active:scale-[0.98] border border-primary/20 cursor-pointer disabled:opacity-50"
         >
           <span className="material-symbols-outlined text-[20px]">add_shopping_cart</span>
           <span>Thêm Vào Giỏ Hàng</span>
         </button>
 
-        {/* Buy Now Instant Checkout Primary CTA */}
-        <button
-          type="button"
-          onClick={handleBuyNow}
-          disabled={currentStock <= 0}
-          className="flex-[1.4] py-4 px-6 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-label-lg font-bold transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg transform active:scale-[0.98] cursor-pointer disabled:opacity-50"
-        >
-          <span className="material-symbols-outlined text-[20px]">shopping_bag</span>
-          <span>Mua Ngay (Giao Hàng COD)</span>
-        </button>
+        <Link to="/cart" className="flex-1 py-4 px-6 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-label-lg font-bold transition-all flex items-center justify-center gap-2 shadow-md">View cart</Link>
       </div>
+
+      {actionError && <p role="alert" className="rounded-xl bg-error-container p-3 text-sm text-error">{actionError}</p>}
 
       {/* Added to Cart Feedback Toast */}
       {cartToastMessage && (
@@ -310,34 +338,6 @@ export const ProductOrderSection: React.FC<ProductOrderSectionProps> = ({
         </div>
       )}
 
-      {/* Extra Marketplace Protection & Perks Strip */}
-      <div className="rounded-xl bg-surface-container-low p-4 grid grid-cols-3 gap-2 text-center border border-outline-variant/20">
-        <div className="flex flex-col items-center gap-1">
-          <span className="material-symbols-outlined text-primary text-[20px]">security</span>
-          <span className="text-[11px] font-label-sm font-bold text-on-surface">
-            Bảo Hiểm Escrow
-          </span>
-          <span className="text-[10px] text-on-surface-variant">Giữ tiền an toàn tới khi duyệt</span>
-        </div>
-
-        <div className="flex flex-col items-center gap-1">
-          <span className="material-symbols-outlined text-secondary text-[20px]">payments</span>
-          <span className="text-[11px] font-label-sm font-bold text-on-surface">
-            Đồng Kiểm Khi Nhận
-          </span>
-          <span className="text-[10px] text-on-surface-variant">Xem hàng trước khi thanh toán</span>
-        </div>
-
-        <div className="flex flex-col items-center gap-1">
-          <span className="material-symbols-outlined text-tertiary-container text-[20px]">
-            local_shipping
-          </span>
-          <span className="text-[11px] font-label-sm font-bold text-on-surface">
-            Freeship Đơn &gt; 500k
-          </span>
-          <span className="text-[10px] text-on-surface-variant">Tự động áp dụng toàn quốc</span>
-        </div>
-      </div>
     </div>
   );
 };

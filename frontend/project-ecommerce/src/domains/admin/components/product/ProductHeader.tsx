@@ -38,22 +38,12 @@ const ProductHeader: React.FC<ProductHeaderProps> = ({
           <span className="material-symbols-outlined text-[20px]">download</span>
           <span>Export CSV</span>
         </button>
-        <button
-          onClick={onBulkImport}
-          type="button"
-          className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-surface-container-lowest text-on-surface hover:bg-surface-container transition-colors shadow-sm font-label-lg text-label-lg cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-[20px]">upload_file</span>
-          <span>Bulk Import</span>
-        </button>
-        <button
-          onClick={onAddNewProduct}
-          type="button"
-          className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary-container text-on-primary hover:bg-primary transition-all shadow-md font-label-lg text-label-lg active:scale-95 cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-[20px]">add</span>
-          <span>Add New Product</span>
-        </button>
+        {onBulkImport && <button onClick={onBulkImport} type="button" className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-surface-container-lowest text-on-surface hover:bg-surface-container transition-colors shadow-sm font-label-lg text-label-lg cursor-pointer">
+          <span className="material-symbols-outlined text-[20px]">upload_file</span><span>Bulk Import</span>
+        </button>}
+        {onAddNewProduct && <button onClick={onAddNewProduct} type="button" className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary-container text-on-primary hover:bg-primary transition-all shadow-md font-label-lg text-label-lg active:scale-95 cursor-pointer">
+          <span className="material-symbols-outlined text-[20px]">add</span><span>Add New Product</span>
+        </button>}
       </div>
     </div>
   );

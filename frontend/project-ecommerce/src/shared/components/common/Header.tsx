@@ -4,21 +4,15 @@ import { useAppDispatch, useAppSelector } from "@/app/state/store";
 import { openLogoutModal } from "@/domains/auth/state/authSlice";
 import { getDefaultAvatar } from "@/shared/utils/avatar";
 import { BrandIcon } from "@/shared/components/common/BrandLogo";
+import { fetchCart, resetCart } from "@/domains/customer/state/cartSlice";
+import { fetchWishlist, resetWishlist } from "@/domains/customer/state/wishlistSlice";
 
-interface HeaderProps {
-  cartItemCount?: number;
-  cartTotal?: string;
-  wishlistCount?: number;
-}
-
-const Header: React.FC<HeaderProps> = ({
-  cartItemCount = 0,
-  cartTotal = "₫0",
-  wishlistCount = 0,
-}) => {
+const Header: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { user, isAuthenticated } = useAppSelector((state) => state.auth);
+  const { user, isAuthenticated, isInitialized } = useAppSelector((state) => state.auth);
   const { profile } = useAppSelector((state) => state.profile);
+  const cartState = useAppSelector((state) => state.cart);
+  const wishlistState = useAppSelector((state) => state.wishlist);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 
@@ -28,6 +22,22 @@ const Header: React.FC<HeaderProps> = ({
     (user?.roles?.includes("seller") ?? user?.role === "seller") &&
     user?.shop_status === "ACTIVE";
   const sellerEntryPath = hasSellerRole ? "/shop/dashboard" : "/register-open-shop";
+  const roles = user?.roles?.map((value) => value.toLowerCase()) ?? (user?.role ? [user.role] : []);
+  const canUseCustomerFeatures = roles.includes("client");
+
+  useEffect(() => {
+    if (isInitialized && isAuthenticated && canUseCustomerFeatures) {
+      void dispatch(fetchCart());
+      void dispatch(fetchWishlist());
+    } else {
+      dispatch(resetCart());
+      dispatch(resetWishlist());
+    }
+  }, [dispatch, isInitialized, isAuthenticated, canUseCustomerFeatures, user?.id]);
+
+  const cartItemCount = cartState.item_count;
+  const cartTotal = `${Math.round(cartState.subtotal).toLocaleString("vi-VN")} ₫`;
+  const wishlistCount = wishlistState.total;
 
   // Khóa cuộn trang khi mở sidebar trên màn hình điện thoại
   useEffect(() => {
@@ -170,7 +180,9 @@ const Header: React.FC<HeaderProps> = ({
               </Link>
               <Link
                 className="relative p-2 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all"
-                to="#"
+                to={isAuthenticated ? (canUseCustomerFeatures ? "/wishlist" : "#") : "/login"}
+                aria-disabled={isAuthenticated && !canUseCustomerFeatures}
+                onClick={(event) => { if (isAuthenticated && !canUseCustomerFeatures) event.preventDefault(); }}
                 title="Danh sách yêu thích"
               >
                 <span className="material-symbols-outlined text-[24px]">favorite</span>
@@ -180,7 +192,9 @@ const Header: React.FC<HeaderProps> = ({
               </Link>
               <Link
                 className="flex items-center gap-space-sm px-space-md py-2 rounded-xl bg-surface-container-low hover:bg-surface-container transition-all"
-                to="#"
+                to={isAuthenticated ? (canUseCustomerFeatures ? "/cart" : "#") : "/login"}
+                aria-disabled={isAuthenticated && !canUseCustomerFeatures}
+                onClick={(event) => { if (isAuthenticated && !canUseCustomerFeatures) event.preventDefault(); }}
                 title="Giỏ hàng"
               >
                 <div className="relative">
@@ -402,8 +416,9 @@ const Header: React.FC<HeaderProps> = ({
 
             {/* Phần 3: Giỏ hàng (Cart) */}
             <Link
-              to="#"
-              onClick={() => setIsMobileDrawerOpen(false)}
+              to={isAuthenticated ? (canUseCustomerFeatures ? "/cart" : "#") : "/login"}
+              aria-disabled={isAuthenticated && !canUseCustomerFeatures}
+              onClick={(event) => { setIsMobileDrawerOpen(false); if (isAuthenticated && !canUseCustomerFeatures) event.preventDefault(); }}
               className="flex items-center justify-between p-3 rounded-2xl bg-[#F0F2FD] hover:bg-[#E5E9FA] border border-[#2E3192]/15 transition-all text-on-surface cursor-pointer"
             >
               <div className="flex items-center gap-3">
@@ -427,8 +442,9 @@ const Header: React.FC<HeaderProps> = ({
 
             {/* Phần 2: Danh sách yêu thích (Wishlist) */}
             <Link
-              to="#"
-              onClick={() => setIsMobileDrawerOpen(false)}
+              to={isAuthenticated ? (canUseCustomerFeatures ? "/wishlist" : "#") : "/login"}
+              aria-disabled={isAuthenticated && !canUseCustomerFeatures}
+              onClick={(event) => { setIsMobileDrawerOpen(false); if (isAuthenticated && !canUseCustomerFeatures) event.preventDefault(); }}
               className="flex items-center justify-between p-3 rounded-2xl bg-surface-container-low hover:bg-surface-container border border-outline-variant/60 transition-all text-on-surface cursor-pointer"
             >
               <div className="flex items-center gap-3">
