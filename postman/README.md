@@ -1,10 +1,23 @@
 # Kiểm thử API với Postman/Newman
 
-Collection kiểm thử các luồng BE chính: health, auth/profile/password/refresh, catalog/search/filter, shop onboarding và duyệt shop, seller product/variant, address book, cart/wishlist, shop follow, admin users và inventory. Collection có kiểm tra input sai, phân quyền và contract `status_counts` của danh sách admin shop. Đây là bộ integration smoke/regression test được chọn lọc, **không kiểm thử đầy đủ mọi route hoặc mọi nhánh nghiệp vụ**; xem danh sách API trong [Backend README](../backend/README.md#api-hiện-có) và [catalog API contract](../docs/catalog-api.md).
+Collection kiểm thử có chọn lọc các luồng BE: health, xác thực, catalog, mở shop (DRAFT, xác nhận điều khoản, xét duyệt, nộp lại và cấp SELLER), seller product, địa chỉ, cart/wishlist, follow shop và admin inventory. Bộ test kiểm tra một số input sai, phân quyền và contract `status_counts`; không bao phủ mọi route hay nhánh nghiệp vụ. Xem [Backend README](../backend/README.md#api-hiện-có) và [catalog API contract](../docs/catalog-api.md).
 
 Folder **Cart and Wishlist** cần chạy sau folder **Authentication** trong cùng collection run vì nó dùng `clientToken` và tài khoản CLIENT mới được tạo ở folder đó. Flow kiểm tra anonymous access, cart rỗng, biến thể không tồn tại, thêm/cộng dồn/đặt số lượng, từ chối vượt stock/quantity không hợp lệ, xóa item/toàn giỏ, từ chối sản phẩm chưa duyệt trong wishlist và wishlist thêm lặp/đọc/xóa. Nó dùng sản phẩm/biến thể seed `960001`/`961001`; không dùng cart/wishlist của buyer seed vì các fixture đó đã có dữ liệu.
 
 Các API admin dashboard, admin orders và một số API admin shop trong FE chưa có ở BE; chúng không nằm trong collection và không được xem là đã tích hợp chỉ vì FE có mock fallback. Danh sách route cụ thể xem trong [Backend README](../backend/README.md#những-route-fe-đang-gọi-nhưng-be-chưa-triển-khai).
+
+## Shop onboarding coverage
+
+Folder **Shop, Seller Products, and Addresses** now exercises the seller application lifecycle in order:
+
+1. Register a disposable account and verify it starts with CLIENT role.
+2. Create and read a DRAFT; verify submission without agreements is rejected.
+3. Accept the current seller terms and submit to PENDING; repeat submission to verify idempotency.
+4. Admin requests information (NEEDS_INFO); the owner reads the state, updates the profile and resubmits.
+5. Admin rejects the application; the owner resubmits; admin approves and adds SELLER while preserving CLIENT.
+6. Continue with seller APIs, then suspend and restore the shop. A final negative case verifies an ACTIVE shop cannot be rejected as if it were still under review.
+
+This collection uses a disposable local/test database and leaves the generated account/shop and some mutations behind. It is an integration smoke flow, not proof of production readiness or exhaustive coverage. The flow is not executed automatically by documentation/build checks; use the guarded local Newman helper only after inspecting its destructive effects and refreshing the dedicated local seed. The step 3 KYC/banking form is intentionally informational until secure upload and sensitive-data persistence APIs are implemented.
 
 ## Import vào Postman
 

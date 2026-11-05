@@ -330,6 +330,7 @@ Gửi access token dạng Bearer. Gọi lặp là idempotent, follower count đ�
 
 ### Mở và quản lý shop
 
+Điểm vào `/register-open-shop` không yêu cầu đăng nhập: khách mới có thể tạo tài khoản (API đăng ký chỉ cấp `CLIENT`) rồi tiếp tục khai báo shop. Người đã có `CLIENT` đăng nhập để tiếp tục hồ sơ; ràng buộc duy nhất theo chủ tài khoản ngăn tạo shop thứ hai. FE tải `GET /api/v1/me/shop` trước khi hiện form và yêu cầu thử lại nếu không lấy được trạng thái.
 - Một tài khoản có thể giữ đồng thời `CLIENT` và `SELLER`. API đăng ký public chỉ tạo `CLIENT`; không nhận role từ body. `GET /api/v1/auth/me`, login và refresh trả trường `roles` dạng mảng, `shop_status` nếu có shop, đồng thời giữ `role` dạng chuỗi để tương thích client cũ.
 - `POST /api/v1/me/shop` (và alias `POST /api/v1/shops`) tạo bản nháp `DRAFT`; body gồm `name`, `description`, `logo_url`, `banner_url`, `phone`, `warehouse_address`. Tên dài 2–150 ký tự, URL nếu có phải là HTTPS. Mỗi tài khoản và tên shop chỉ được dùng một lần.
 - `PUT /api/v1/me/shop` chỉ cập nhật shop thuộc user hiện tại và không tự gửi duyệt. Bản nháp, hồ sơ bị từ chối/yêu cầu bổ sung và hồ sơ đang xét duyệt có thể chỉnh sửa; `POST /api/v1/me/shop/submit` chuyển `DRAFT`, `NEEDS_INFO` hoặc `REJECTED` về `PENDING`. Body nộp gồm `agreements` với `version: "seller-onboarding-v1"` và ba cờ `service_policy`, `authenticity`, `anti_counterfeit` đều phải là `true`. Backend lưu phiên bản, thời điểm, IP và User-Agent để audit; nộp lại khi hồ sơ `PENDING` là idempotent.
