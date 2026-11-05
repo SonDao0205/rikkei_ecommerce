@@ -12,7 +12,7 @@ interface GuestRouteProps {
  * - Nếu đang tải / kiểm tra phiên: Hiển thị trạng thái chờ xác thực để tránh giật giao diện.
  */
 export const GuestRoute: React.FC<GuestRouteProps> = ({ children }) => {
-  const { isAuthenticated, role, isInitialized } = useAppSelector(
+  const { isAuthenticated, role, user, isInitialized } = useAppSelector(
     (state) => state.auth
   );
 
@@ -32,6 +32,7 @@ export const GuestRoute: React.FC<GuestRouteProps> = ({ children }) => {
 
   // Nếu đã đăng nhập thành công, không cho phép vào lại trang login/register
   if (isAuthenticated) {
+    if ((user?.roles?.length ?? 0) > 1) return <Navigate to="/select-role" replace />;
     const userRole = (role || "").toLowerCase().trim();
     if (userRole === "admin") {
       return <Navigate to="/admin/dashboard" replace />;

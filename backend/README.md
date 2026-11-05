@@ -2,7 +2,7 @@
 
 Backend REST API cho MVP Rikkei E-Commerce, viết bằng Go 1.24+, `net/http` và MySQL `database/sql`. Tài liệu này hướng dẫn DevOps chạy/vận hành BE và FE tích hợp các API **đang có**.
 
-> BE hiện cung cấp auth/RBAC, catalog công khai, quản lý shop và duyệt shop, seller CRUD sản phẩm/biến thể/tồn kho ban đầu, sổ địa chỉ, theo dõi shop và một số API admin inventory. Giỏ hàng, voucher, checkout, thanh toán, đơn hàng và đánh giá vẫn chưa có API.
+> BE hiện cung cấp auth/RBAC, catalog công khai, quản lý shop và duyệt shop, seller CRUD sản phẩm/biến thể/tồn kho ban đầu, sổ địa chỉ, giỏ hàng, wishlist, theo dõi shop và một số API admin inventory. Voucher, checkout, thanh toán, đơn hàng và đánh giá vẫn chưa có API.
 
 ## Cấu trúc mã nguồn
 
@@ -12,12 +12,14 @@ Code được chia theo domain; từng package quản lý routes/handlers của 
 internal/
   address/     # Sổ địa chỉ và migration riêng
   auth/        # Xác thực, phiên, JWT/OTP, RBAC và security middleware
+  cart/        # Giỏ hàng theo user và biến thể, kiểm tra trạng thái/tồn kho
   catalog/     # Catalog, theo dõi shop và admin inventory
   httpx/       # Decode/response/validation HTTP dùng chung
   migrations/  # Điều phối migration theo domain
   seller/      # Seller product và variants
   server/      # Composition root đăng ký routes/middleware
   shop/        # Quản lý shop và duyệt shop
+  wishlist/    # Sản phẩm yêu thích theo user
 ```
 
 Contract đầy đủ của catalog và inventory nằm tại [`docs/catalog-api.md`](../docs/catalog-api.md). Hướng dẫn Compose/seed local nằm tại [`docs/local-development.md`](../docs/local-development.md).
@@ -184,6 +186,14 @@ Postman collection importable kiểm thử các luồng API chính (không kiể
 | `PUT` | `/api/v1/addresses/{id}` | Access token | Sửa địa chỉ thuộc tài khoản |
 | `DELETE` | `/api/v1/addresses/{id}` | Access token | Xóa địa chỉ thuộc tài khoản |
 | `PATCH` | `/api/v1/addresses/{id}/default` | Access token | Đặt địa chỉ mặc định |
+| `GET` | `/api/v1/cart` | CLIENT | Đọc giỏ hàng của tài khoản hiện tại |
+| `POST` | `/api/v1/cart/items` | CLIENT | Thêm biến thể; nếu đã có thì cộng số lượng |
+| `PUT` | `/api/v1/cart/items/{id}` | CLIENT | Đặt số lượng tuyệt đối cho item |
+| `DELETE` | `/api/v1/cart/items/{id}` | CLIENT | Xóa item thuộc giỏ của tài khoản hiện tại |
+| `DELETE` | `/api/v1/cart/items` | CLIENT | Xóa toàn bộ item trong giỏ hiện tại |
+| `GET` | `/api/v1/wishlist` | CLIENT | Danh sách sản phẩm yêu thích của tài khoản hiện tại |
+| `POST` | `/api/v1/wishlist/products/{id}` | CLIENT | Thêm sản phẩm công khai vào wishlist (idempotent) |
+| `DELETE` | `/api/v1/wishlist/products/{id}` | CLIENT | Bỏ sản phẩm khỏi wishlist |
 | `POST` | `/api/v1/shops/{id}/follow` | CLIENT | Theo dõi shop |
 | `DELETE` | `/api/v1/shops/{id}/follow` | CLIENT | Bỏ theo dõi shop |
 | `GET` | `/api/v1/admin/products` | ADMIN | Danh sách/tìm kiếm/lọc/sort inventory |
@@ -202,7 +212,7 @@ FE hiện có API client cho dashboard/admin shop/order nhưng BE chưa có các
 | Admin shops | `GET /api/v1/admin/shops/metrics`, `PATCH /api/v1/admin/shops/{id}/toggle-live`, `PATCH /api/v1/admin/shops/{id}/unlock`, `PATCH /api/v1/admin/shops/{id}/commission`, `GET /api/v1/admin/shops/export` |
 | Admin orders | `GET /api/v1/admin/orders`, `GET /api/v1/admin/orders/counts`, `GET /api/v1/admin/orders/{id}`, `PATCH /api/v1/admin/orders/{id}/confirm`, `PATCH /api/v1/admin/orders/{id}/cancel`, `PATCH /api/v1/admin/orders/{id}/courier`, `POST /api/v1/admin/orders/bulk-confirm`, `GET /api/v1/admin/orders/export` |
 
-BE có các route quản trị shop riêng được liệt kê ở bảng API phía trên (`approve`, `reject`, `lock`, `status`); chúng không thay thế ngữ nghĩa toggle-live, unlock, commission hoặc metrics của FE. Cart/checkout/payment/order cũng chưa nằm trong phạm vi BE hiện tại.
+BE có các route quản trị shop riêng được liệt kê ở bảng API phía trên (`approve`, `reject`, `lock`, `status`); chúng không thay thế ngữ nghĩa toggle-live, unlock, commission hoặc metrics của FE. Cart và wishlist đã có API; checkout/payment/order chưa nằm trong phạm vi BE hiện tại.
 
 API path/query phải theo đúng tên và giới hạn dưới đây. Contract catalog/admin inventory và ví dụ response đầy đủ: [`docs/catalog-api.md`](../docs/catalog-api.md).
 
@@ -381,6 +391,17 @@ Danh sách hỗ trợ `page`, `limit` (tối đa 100) và `status`. Response lis
 
 `GET /api/v1/addresses` trả mảng địa chỉ của user hiện tại. Create/update nhận `recipient_name`, `phone`, `province`, `district`, `ward`, `street_detail`, `address_type` (`HOME`, `OFFICE`, `OTHER`) và `is_default` (`true`/`false` hoặc `1`/`0` để tương thích FE). `address_type` mặc định `HOME`; tối đa 20 địa chỉ mỗi tài khoản. Tạo/cập nhật/xóa/đổi mặc định khóa hàng user và thực hiện trong transaction để tránh hai địa chỉ mặc định đồng thời. Nếu xóa/bỏ mặc định hiện tại, địa chỉ còn lại đầu tiên được chọn; nếu không còn địa chỉ thì không có default.
 
+### Giỏ hàng và wishlist
+
+Cart và wishlist yêu cầu đăng nhập với role `CLIENT`; seller vẫn giữ `CLIENT` nên cũng dùng được. Mọi truy vấn ghi đều giới hạn theo user lấy từ access token, không nhận `user_id` từ request.
+
+- `GET /api/v1/cart` trả `items`, `line_count`, `item_count`, `available_item_count` và `subtotal`. Cart rỗng trả mảng `items` rỗng và các số đếm/tổng bằng 0.
+- `POST /api/v1/cart/items` nhận `{ "variant_id": 961001, "quantity": 2 }`. Thêm mới trả `201`; thêm lại cùng biến thể cộng dồn và trả `200`. Biến thể phải active, sản phẩm chưa xóa và đang active, shop/category cũng active. Số lượng phải dương và tổng không được vượt tồn kho; lỗi tồn kho trả `409 insufficient_stock`.
+- `PUT /api/v1/cart/items/{id}` nhận `{ "quantity": 2 }` và thay số lượng tuyệt đối (không cộng dồn). Biến thể không được đổi qua endpoint này; nếu sản phẩm không còn mua được hoặc số lượng vượt tồn kho, BE trả lỗi thay vì ghi dữ liệu sai. `DELETE /api/v1/cart/items/{id}` xóa đúng item thuộc cart của user; `DELETE /api/v1/cart/items` xóa cả giỏ. Cart được khóa theo user trong transaction để tuần tự hóa thao tác ghi cùng một cart.
+- GET cart vẫn trả các item đã hết hàng/ngừng bán để người dùng nhận biết và tự xóa; mỗi item có `is_available` và `available_stock`. Chỉ item khả dụng được cộng vào subtotal. Số tiền dòng được nhân ở `DECIMAL(30,2)` để bao phủ mức giá schema và số lượng tồn kho kiểu `INT`.
+- `GET /api/v1/wishlist` trả `items` và `total`, cùng trạng thái khả dụng/tồn kho hiện tại. Có thể lưu sản phẩm hết hàng; chỉ sản phẩm public (cùng shop/category active, chưa soft-delete) mới được thêm. `POST` lặp là idempotent; `DELETE` lặp vẫn thành công. Wishlist không khóa biến thể vì được lưu theo sản phẩm.
+- Đây là API nền tảng, chưa có trang cart/wishlist hoặc checkout; FE không nên hiển thị thao tác giả thành công. Collection Postman có folder **Cart and Wishlist** với flow tích hợp; chạy trên local/test sau khi nạp fixtures seed.
+
 ### Admin inventory
 
 Các route `/api/v1/admin/*` yêu cầu role `ADMIN`; thiếu/hết hạn phiên trả `401`, role không đủ trả `403`.
@@ -411,7 +432,7 @@ Body JSON bị giới hạn kích thước, field lạ, JSON sai/nhiều JSON va
 - Protected API kiểm tra user status, tất cả role đang gán và trạng thái phiên trong DB; access JWT dùng HS256. Refresh token chỉ lưu dạng hash, xoay vòng và phát hiện replay.
 - Rate limiter hiện nằm trong memory của một process; khi scale nhiều replica cần chuyển giới hạn sang gateway hoặc shared store.
 - OTP delivery qua SMTP STARTTLS cần được kiểm thử trên môi trường tích hợp; không ghi OTP hoặc secret ra log ngoài development.
-- Chưa có OAuth Google/Facebook, MFA, xác minh email/phone, quản lý thiết bị/session UI, cart/checkout/order/payment.
+- Chưa có OAuth Google/Facebook, MFA, xác minh email/phone, quản lý thiết bị/session UI, checkout/order/payment.
 - Role `SELLER` được cấp khi admin duyệt shop; `ADMIN` chỉ cấp qua quy trình quản trị tin cậy. Migration `002_multi_role.sql` tạo `roles`/`user_roles` và backfill các role hiện có, luôn bổ sung `CLIENT` mà không xóa role legacy.
 - Migration không xóa cột `users.role` trong giai đoạn tương thích; authorization sử dụng `user_roles`. Cột legacy được giữ để các client cũ không bị gãy.
 - Security migration không thay thế full commerce schema; migration domain bổ sung role assignments, trạng thái shop `DRAFT`/`NEEDS_INFO`, `addresses.address_type` và `shops.approval_notes`. Kiểm tra schema/backup trước migration tại database đã có dữ liệu.
@@ -424,12 +445,14 @@ cmd/migrate/                     Chạy migration thủ công
 internal/address/                Sổ địa chỉ và migration của domain
 internal/auth/                   Auth/session, JWT, OTP, RBAC và security middleware
 internal/auth/migrations/        Migration bảo mật được embed
+internal/cart/                   Giỏ hàng theo user, biến thể và tồn kho
 internal/catalog/                Catalog, product/shop detail, follow, admin inventory
 internal/httpx/                  JSON, response và validation dùng chung
 internal/migrations/             Điều phối migration các domain
 internal/seller/                 Seller products/variants
 internal/server/                 Composition root đăng ký routes/middleware
 internal/shop/                   Onboarding và quản trị shop
+internal/wishlist/               Sản phẩm yêu thích theo user
 scripts/smoke-api.ps1             Smoke test API local
 ```
 

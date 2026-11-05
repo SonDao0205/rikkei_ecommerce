@@ -136,9 +136,9 @@
               "  const products = pm.response.json().data.products;",
               "  const ids = products.map(function (product) { return product.id; });",
               "  pm.expect(ids.length).to.be.at.least(3);",
-              "  pm.expect([960004, 960007]).to.include(ids[0]);",
-              "  pm.expect([960004, 960007]).to.include(ids[1]);",
-              "  pm.expect(ids[2]).to.eql(960005);",
+              "  pm.expect(ids[0]).to.eql(960004);",
+              "  pm.expect(ids.slice(0, 3)).to.include(960005);",
+              "  pm.expect(ids.slice(0, 3)).to.include(960007);",
               "});"
             ]}
           }]
@@ -518,6 +518,372 @@
       ]
     },
     {
+      "name": "Cart and Wishlist",
+      "description": "Integration coverage for cart stock checks and owner-scoped wishlist operations. Uses the disposable CLIENT created by the Authentication folder and active seed fixtures. Local/test only.",
+      "item": [
+        {
+          "name": "Reject anonymous cart access",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/cart"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Cart requires authentication', function () {",
+              "  pm.response.to.have.status(401);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Reject anonymous wishlist access",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/wishlist"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Wishlist requires authentication', function () {",
+              "  pm.response.to.have.status(401);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Read empty cart",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "url": "{{baseUrl}}/api/v1/cart"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Returns an initialized empty cart', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const data = pm.response.json().data;",
+              "  pm.expect(data.items).to.be.an('array').that.is.empty;",
+              "  pm.expect(data.item_count).to.eql(0);",
+              "  pm.expect(data.subtotal).to.eql(0);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Reject unknown variant",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{clientToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"variant_id\": 9223372036854775807,\n  \"quantity\": 1\n}" },
+            "url": "{{baseUrl}}/api/v1/cart/items"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Does not create a cart line for an unknown variant', function () {",
+              "  pm.response.to.have.status(404);",
+              "  pm.expect(pm.response.json().errors[0].code).to.eql('variant_not_found');",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Add variant to cart",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{clientToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"variant_id\": 961001,\n  \"quantity\": 2\n}" },
+            "url": "{{baseUrl}}/api/v1/cart/items"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Adds a purchasable variant and exposes current stock', function () {",
+              "  pm.response.to.have.status(201);",
+              "  const data = pm.response.json().data;",
+              "  const item = data.items.find(function (entry) { return entry.variant_id === 961001; });",
+              "  pm.expect(item).to.exist;",
+              "  pm.expect(item.quantity).to.eql(2);",
+              "  pm.expect(item.is_available).to.eql(true);",
+              "  pm.collectionVariables.set('cartItemId', String(item.id));",
+              "  pm.collectionVariables.set('cartAvailableStock', String(item.available_stock));",
+              "  pm.collectionVariables.set('cartTooManyQuantity', String(item.available_stock + 1));",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Add same variant merges quantity",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{clientToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"variant_id\": 961001,\n  \"quantity\": 1\n}" },
+            "url": "{{baseUrl}}/api/v1/cart/items"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Merges an existing variant without creating a duplicate line', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const data = pm.response.json().data;",
+              "  pm.expect(data.items.filter(function (item) { return item.variant_id === 961001; })).to.have.length(1);",
+              "  pm.expect(data.items.find(function (item) { return item.variant_id === 961001; }).quantity).to.eql(3);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Update cart quantity",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{clientToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"quantity\": 2\n}" },
+            "url": "{{baseUrl}}/api/v1/cart/items/{{cartItemId}}"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Replaces cart quantity after rechecking stock', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data.items[0].quantity).to.eql(2);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Reject quantity above stock",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{clientToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"variant_id\": 961001,\n  \"quantity\": {{cartTooManyQuantity}}\n}" },
+            "url": "{{baseUrl}}/api/v1/cart/items"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Rejects an add that would exceed current inventory', function () {",
+              "  pm.response.to.have.status(409);",
+              "  pm.expect(pm.response.json().errors[0].code).to.eql('insufficient_stock');",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Reject invalid cart quantity",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{clientToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"variant_id\": 961001,\n  \"quantity\": 0\n}" },
+            "url": "{{baseUrl}}/api/v1/cart/items"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Rejects zero quantity', function () {",
+              "  pm.response.to.have.status(400);",
+              "  pm.expect(pm.response.json().errors[0].code).to.eql('invalid_quantity');",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Remove cart item",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "url": "{{baseUrl}}/api/v1/cart/items/{{cartItemId}}"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Removes only the caller cart item', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data.items).to.be.an('array').that.is.empty;",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Clear cart",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{clientToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"variant_id\": 961001,\n  \"quantity\": 1\n}" },
+            "url": "{{baseUrl}}/api/v1/cart/items"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Adds a cart line before clear test', function () {",
+              "  pm.response.to.have.status(201);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Delete all cart items",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "url": "{{baseUrl}}/api/v1/cart/items"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Clears only the caller cart', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data.items).to.be.an('array').that.is.empty;",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Reject non-public product in wishlist",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "url": "{{baseUrl}}/api/v1/wishlist/products/960003"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Does not add an unapproved product to wishlist', function () {",
+              "  pm.response.to.have.status(404);",
+              "  pm.expect(pm.response.json().errors[0].code).to.eql('product_not_found');",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Read empty wishlist",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "url": "{{baseUrl}}/api/v1/wishlist"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Returns the caller wishlist', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data.items).to.be.an('array');",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Add product to wishlist",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "url": "{{baseUrl}}/api/v1/wishlist/products/960001"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Adds a currently public product to wishlist', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data.is_favorite).to.eql(true);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Add same product to wishlist again",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "url": "{{baseUrl}}/api/v1/wishlist/products/960001"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Wishlist add is idempotent', function () {",
+              "  pm.response.to.have.status(200);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "List wishlist products",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "url": "{{baseUrl}}/api/v1/wishlist"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Lists the product once with current availability', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const data = pm.response.json().data;",
+              "  pm.expect(data.total).to.eql(1);",
+              "  pm.expect(data.items[0].product_id).to.eql(960001);",
+              "  pm.expect(data.items[0].is_available).to.eql(true);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Remove product from wishlist",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "url": "{{baseUrl}}/api/v1/wishlist/products/960001"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Removes only the caller wishlist entry', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data.product_id).to.eql(960001);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Verify wishlist is empty after removal",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "url": "{{baseUrl}}/api/v1/wishlist"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Wishlist is empty after delete', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().data.total).to.eql(0);",
+              "});"
+            ]}
+          }]
+        }
+      ]
+    },
+    {
       "name": "Client Shop Follow",
       "item": [
         {
@@ -738,7 +1104,7 @@
           "request": {
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
-            "url": "{{baseUrl}}/api/v1/admin/products?search=Postman&category=Điện%20thoại%20và%20phụ%20kiện&vendor=Tech%20World&stock_status=in_stock&sort_by=stock_desc"
+            "url": "{{baseUrl}}/api/v1/admin/products?search=B%E1%BB%99%20s%E1%BA%A1c%20USB-C%2030W&category=Đi%E1%BB%87n%20tho%E1%BA%A1i%20v%C3%A0%20%C4%91i%E1%BB%87n%20t%E1%BB%AD&vendor=Tech%20An%20Vi%E1%BB%87t&stock_status=in_stock&sort_by=stock_desc"
           },
           "event": [{
             "listen": "test",
@@ -1088,7 +1454,7 @@
           "name": "Reject unknown shop status filter",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "******" }],
+            "header": [{ "key": "Authorization", "value": "Bearer {{businessAdminToken}}" }],
             "url": "{{baseUrl}}/api/v1/admin/shops?statusTab=unknown"
           },
           "event": [{
@@ -1105,7 +1471,7 @@
           "name": "Reject invalid shop pagination",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "******" }],
+            "header": [{ "key": "Authorization", "value": "Bearer {{businessAdminToken}}" }],
             "url": "{{baseUrl}}/api/v1/admin/shops?page=0"
           },
           "event": [{

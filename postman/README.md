@@ -1,6 +1,8 @@
 # Kiểm thử API với Postman/Newman
 
-Collection kiểm thử các luồng BE chính: health, auth/profile/password/refresh, catalog/search/filter, shop onboarding và duyệt shop, seller product/variant, address book, shop follow, admin users và inventory. Collection có kiểm tra input sai, phân quyền và contract `status_counts` của danh sách admin shop. Đây là bộ integration smoke/regression test được chọn lọc, **không kiểm thử đầy đủ mọi route hoặc mọi nhánh nghiệp vụ**; xem danh sách API trong [Backend README](../backend/README.md#api-hiện-có) và [catalog API contract](../docs/catalog-api.md).
+Collection kiểm thử các luồng BE chính: health, auth/profile/password/refresh, catalog/search/filter, shop onboarding và duyệt shop, seller product/variant, address book, cart/wishlist, shop follow, admin users và inventory. Collection có kiểm tra input sai, phân quyền và contract `status_counts` của danh sách admin shop. Đây là bộ integration smoke/regression test được chọn lọc, **không kiểm thử đầy đủ mọi route hoặc mọi nhánh nghiệp vụ**; xem danh sách API trong [Backend README](../backend/README.md#api-hiện-có) và [catalog API contract](../docs/catalog-api.md).
+
+Folder **Cart and Wishlist** cần chạy sau folder **Authentication** trong cùng collection run vì nó dùng `clientToken` và tài khoản CLIENT mới được tạo ở folder đó. Flow kiểm tra anonymous access, cart rỗng, biến thể không tồn tại, thêm/cộng dồn/đặt số lượng, từ chối vượt stock/quantity không hợp lệ, xóa item/toàn giỏ, từ chối sản phẩm chưa duyệt trong wishlist và wishlist thêm lặp/đọc/xóa. Nó dùng sản phẩm/biến thể seed `960001`/`961001`; không dùng cart/wishlist của buyer seed vì các fixture đó đã có dữ liệu.
 
 Các API admin dashboard, admin orders và một số API admin shop trong FE chưa có ở BE; chúng không nằm trong collection và không được xem là đã tích hợp chỉ vì FE có mock fallback. Danh sách route cụ thể xem trong [Backend README](../backend/README.md#những-route-fe-đang-gọi-nhưng-be-chưa-triển-khai).
 
@@ -20,9 +22,10 @@ Chọn environment **Rikkei E-Commerce - Local**. `baseUrl` mặc định là `h
 - Đăng ký tài khoản client thử nghiệm; đổi mật khẩu rồi đăng xuất. Tài khoản không tự bị xóa.
 - Tạo shop thử nghiệm, duyệt/khóa/khôi phục/từ chối shop; shop và tài khoản vẫn còn sau khi chạy.
 - Tạo sản phẩm seller thử nghiệm rồi soft-delete; tạo địa chỉ rồi xóa địa chỉ đó.
+- Thêm/xóa item trong cart và thêm/xóa wishlist trên tài khoản CLIENT thử nghiệm.
 - Thay đổi trạng thái và cuối cùng soft-delete sản phẩm fixture admin `960009`.
 
-Collection không tự dọn user/shop test đã tạo. Seed chỉ khôi phục các fixture có ID cố định, gồm `960009`; seed không xóa tài khoản và shop phát sinh từ các lần chạy. Tránh chạy lặp không cần thiết nếu muốn database local gọn.
+Collection không tự dọn user/shop test đã tạo. Seed chỉ khôi phục các fixture có ID cố định, gồm `960001` và `960009`; seed không xóa tài khoản và shop phát sinh từ các lần chạy. Tránh chạy lặp không cần thiết nếu muốn database local gọn.
 
 Từ root repository, khởi động Docker và nạp lại fixture seed trước khi chạy:
 
