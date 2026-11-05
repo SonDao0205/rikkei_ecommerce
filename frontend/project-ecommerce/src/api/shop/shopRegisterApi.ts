@@ -2,6 +2,7 @@ import axiosClient from "../axiosClient";
 import type {
   ShopRegistrationFormData,
   ShopRegistrationResponse,
+  ShopTermsAcceptance,
 } from "../../types";
 
 export const initialShopRegistrationData: ShopRegistrationFormData = {
@@ -151,12 +152,14 @@ export const shopRegisterApi = {
 
   submitRegistration: async (
     data: ShopRegistrationFormData,
+    agreements: ShopTermsAcceptance,
   ): Promise<ShopRegistrationResponse> => {
     let shop = await saveProfile(data);
     if (shop.status !== "PENDING") {
       try {
         const response = await axiosClient.post<ApiResponse<BackendShop>>(
           "/api/v1/me/shop/submit",
+          { agreements },
         );
         shop = response.data.data;
       } catch (error: unknown) {

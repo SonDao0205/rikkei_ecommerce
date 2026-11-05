@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React from "react";
 import type { ShopStoreData } from "../../../../types";
 
 interface Step2StoreBrandingProps {
@@ -19,30 +19,8 @@ export const Step2StoreBranding: React.FC<Step2StoreBrandingProps> = ({
   data,
   onChange,
 }) => {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const bannerInputRef = useRef<HTMLInputElement>(null);
-
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const previewUrl = URL.createObjectURL(file);
-      onChange({ logoUrl: previewUrl });
-    }
-  };
-
   const handleRemoveLogo = () => {
     onChange({ logoUrl: "" });
-  };
-
-  const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const previewUrl = URL.createObjectURL(file);
-      onChange({
-        bannerUrl: previewUrl,
-        bannerName: file.name,
-      });
-    }
   };
 
   const handleRemoveBanner = () => {
@@ -154,37 +132,16 @@ export const Step2StoreBranding: React.FC<Step2StoreBrandingProps> = ({
                     alt="Logo Gian hàng"
                     src={data.logoUrl}
                   />
-                  <div
-                    onClick={() => fileInputRef.current?.click()}
-                    className="absolute inset-0 bg-primary/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-on-primary text-[24px]">
-                      edit
-                    </span>
-                  </div>
                 </>
               ) : (
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-primary transition-colors text-on-primary"
-                >
+                <div className="w-full h-full flex flex-col items-center justify-center text-on-primary">
                   <span className="material-symbols-outlined text-[32px]">storefront</span>
                   <span className="text-[10px] uppercase font-bold tracking-wider mt-1">
-                    Upload
+                    Logo gian hàng
                   </span>
                 </div>
               )}
             </div>
-            <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-secondary text-on-secondary flex items-center justify-center shadow-sm">
-              <span className="material-symbols-outlined text-[14px]">photo_camera</span>
-            </span>
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleLogoUpload}
-              accept="image/*"
-              className="hidden"
-            />
           </div>
 
           <div className="flex flex-col gap-1.5 flex-1">
@@ -195,17 +152,10 @@ export const Step2StoreBranding: React.FC<Step2StoreBrandingProps> = ({
               <span className="text-error font-bold">*</span>
             </div>
             <p className="font-body-sm text-body-sm text-on-surface-variant">
-              Định dạng chuẩn: JPG, PNG hoặc SVG. Kích thước đề xuất 500x500px (tỷ lệ 1:1), dung lượng tệp tối đa 5MB. Logo rõ nét nâng cao 40% tỷ lệ tin tưởng mua sắm.
+              Nhập URL HTTPS công khai của ảnh logo (khuyến nghị ảnh vuông). Đường dẫn được lưu cùng hồ sơ shop.
             </p>
-            <div className="flex items-center gap-3 mt-1">
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="px-4 py-2 rounded-lg bg-surface-container-lowest text-primary font-label-md text-label-md shadow-sm hover:bg-surface-container transition-all flex items-center gap-1.5 cursor-pointer border border-outline-variant/30"
-                type="button"
-              >
-                <span className="material-symbols-outlined text-[18px]">cloud_upload</span>
-                <span>Tải ảnh logo lên</span>
-              </button>
+            <div className="flex flex-col gap-3 mt-1">
+              <input type="url" value={data.logoUrl || ""} onChange={(e) => onChange({ logoUrl: e.target.value })} placeholder="https://... (URL ảnh công khai)" className="w-full rounded-lg border border-outline-variant/40 bg-surface-container-lowest px-3 py-2 text-sm" />
               {data.logoUrl && (
                 <button
                   onClick={handleRemoveLogo}
@@ -220,7 +170,7 @@ export const Step2StoreBranding: React.FC<Step2StoreBrandingProps> = ({
           </div>
         </div>
 
-        {/* Ảnh bìa gian hàng (Shop Banner / Cover Upload) - Nằm bên dưới phần tải ảnh logo */}
+        {/* Ảnh bìa gian hàng (Shop Banner / Cover) */}
         <div className="md:col-span-12 flex flex-col md:flex-row items-start md:items-center gap-space-md bg-surface-container-low p-space-md rounded-xl">
           <div className="relative group w-full sm:w-80 md:w-88 h-28 sm:h-32 rounded-2xl bg-surface-container text-on-surface flex flex-col items-center justify-center shadow-md overflow-hidden relative border border-outline-variant/30 shrink-0">
             {data.bannerUrl ? (
@@ -230,37 +180,15 @@ export const Step2StoreBranding: React.FC<Step2StoreBrandingProps> = ({
                   alt="Ảnh bìa Gian hàng"
                   src={data.bannerUrl}
                 />
-                <div
-                  onClick={() => bannerInputRef.current?.click()}
-                  className="absolute inset-0 bg-primary/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
-                  title="Thay đổi ảnh bìa"
-                >
-                  <span className="material-symbols-outlined text-white text-[24px]">
-                    edit
-                  </span>
-                </div>
               </>
             ) : (
-              <div
-                onClick={() => bannerInputRef.current?.click()}
-                className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-primary/10 transition-colors text-primary"
-              >
+              <div className="w-full h-full flex flex-col items-center justify-center text-primary">
                 <span className="material-symbols-outlined text-[32px]">panorama</span>
                 <span className="text-[10px] uppercase font-bold tracking-wider mt-1">
-                  Upload Banner
+                  Banner gian hàng
                 </span>
               </div>
             )}
-            <span className="absolute bottom-2 right-2 w-6 h-6 rounded-full bg-secondary text-on-secondary flex items-center justify-center shadow-sm pointer-events-none">
-              <span className="material-symbols-outlined text-[14px]">add_photo_alternate</span>
-            </span>
-            <input
-              type="file"
-              ref={bannerInputRef}
-              onChange={handleBannerUpload}
-              accept="image/*"
-              className="hidden"
-            />
           </div>
 
           <div className="flex flex-col gap-1.5 flex-1">
@@ -278,17 +206,10 @@ export const Step2StoreBranding: React.FC<Step2StoreBrandingProps> = ({
               )}
             </div>
             <p className="font-body-sm text-body-sm text-on-surface-variant">
-              Định dạng chuẩn: JPG, PNG hoặc WEBP. Kích thước đề xuất 1200x400px hoặc 1920x600px (tỷ lệ 3:1 hoặc 16:9), dung lượng tệp tối đa 5MB. Ảnh bìa ấn tượng giúp nâng cao độ chuyên nghiệp và nhận diện thương hiệu.
+              Nhập URL HTTPS công khai của ảnh bìa. Ảnh bìa là tùy chọn.
             </p>
-            <div className="flex items-center gap-3 mt-1">
-              <button
-                onClick={() => bannerInputRef.current?.click()}
-                className="px-4 py-2 rounded-lg bg-surface-container-lowest text-primary font-label-md text-label-md shadow-sm hover:bg-surface-container transition-all flex items-center gap-1.5 cursor-pointer border border-outline-variant/30"
-                type="button"
-              >
-                <span className="material-symbols-outlined text-[18px]">cloud_upload</span>
-                <span>Tải ảnh bìa lên</span>
-              </button>
+            <div className="flex flex-col gap-3 mt-1">
+              <input type="url" value={data.bannerUrl || ""} onChange={(e) => onChange({ bannerUrl: e.target.value })} placeholder="https://... (URL ảnh công khai, tùy chọn)" className="w-full rounded-lg border border-outline-variant/40 bg-surface-container-lowest px-3 py-2 text-sm" />
               {data.bannerUrl && (
                 <button
                   onClick={handleRemoveBanner}

@@ -6,6 +6,7 @@ import type {
   CatalogQueryParams,
   ProductListResponse,
   ShopProfilePayload,
+  ShopTermsAcceptance,
 } from "../../types";
 import {
   cleanCatalogQueryParams,
@@ -58,6 +59,11 @@ export const shopApi = {
    */
   updateMyShop: async (payload: ShopProfilePayload): Promise<Shop> => {
     const response = await axiosClient.put<ApiResponse<Shop>>("/api/v1/me/shop", payload);
+    return response.data.data;
+  },
+
+  submitMyShop: async (agreements: ShopTermsAcceptance): Promise<Shop> => {
+    const response = await axiosClient.post<ApiResponse<Shop>>("/api/v1/me/shop/submit", { agreements });
     return response.data.data;
   },
 

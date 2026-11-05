@@ -134,10 +134,12 @@ const LoginForm = () => {
       )?.from?.pathname;
       if (requestedPath?.startsWith("/") && !requestedPath.startsWith("//")) {
         navigate(requestedPath, { replace: true });
+      } else if ((resultAction.payload.user.roles?.length ?? 0) > 1) {
+        navigate("/select-role", { replace: true });
       } else if (resultAction.payload.user.roles?.includes("admin")) {
-        navigate("/admin/dashboard");
+        navigate("/admin/dashboard", { replace: true });
       } else {
-        navigate("/home");
+        navigate(resultAction.payload.user.roles?.includes("seller") ? "/shop/dashboard" : "/home", { replace: true });
       }
     } else if (loginUser.rejected.match(resultAction)) {
       const errorMsg = "Tài khoản hoặc mật khẩu không chính xác.";

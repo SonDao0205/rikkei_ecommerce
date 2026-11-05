@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../redux/store";
-import { updateMyShop, clearMyShopMessages } from "../../redux/slices/shop/myShopSlice";
+import { fetchMyShop, updateMyShop, resubmitMyShop, clearMyShopMessages } from "../../redux/slices/shop/myShopSlice";
 import type { ShopProfilePayload } from "../../types";
+import { SELLER_TERMS_VERSION, type ShopTermsAcceptance } from "../../types/shop/registerShop.types";
+import { refreshAccessToken } from "../../redux/slices/auth/authSlice";
 
 export const MyShopStatusCard: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { shop, loading, updating, successMessage } = useAppSelector(
+  const { shop, loading, updating, error, successMessage } = useAppSelector(
     (state) => state.myShop
   );
 
@@ -17,7 +19,27 @@ export const MyShopStatusCard: React.FC = () => {
   const [formDescription, setFormDescription] = useState("");
   const [formLogoUrl, setFormLogoUrl] = useState("");
   const [formBannerUrl, setFormBannerUrl] = useState("");
+  const [termsAcceptance, setTermsAcceptance] = useState({
+    servicePolicy: false,
+    authenticity: false,
+    antiCounterfeit: false,
+  });
   const [formError, setFormError] = useState<string | null>(null);
+  const [refreshingStatus, setRefreshingStatus] = useState(false);
+  const [refreshError, setRefreshError] = useState<string | null>(null);
+
+  const handleRefreshStatus = async () => {
+    setRefreshingStatus(true);
+    setRefreshError(null);
+    try {
+      await dispatch(refreshAccessToken()).unwrap();
+      await dispatch(fetchMyShop()).unwrap();
+    } catch {
+      setRefreshError("Không thể cập nhật trạng thái. Vui lòng thử lại sau.");
+    } finally {
+      setRefreshingStatus(false);
+    }
+  };
 
   const handleOpenEdit = () => {
     if (!shop) return;
@@ -27,6 +49,12 @@ export const MyShopStatusCard: React.FC = () => {
     setFormDescription(shop.description || "");
     setFormLogoUrl(shop.logo_url || "");
     setFormBannerUrl(shop.banner_url || "");
+    const previouslyAccepted = Boolean(shop.terms_accepted);
+    setTermsAcceptance({
+      servicePolicy: previouslyAccepted,
+      authenticity: previouslyAccepted,
+      antiCounterfeit: previouslyAccepted,
+    });
     setFormError(null);
     dispatch(clearMyShopMessages());
     setIsModalOpen(true);
@@ -54,6 +82,11 @@ export const MyShopStatusCard: React.FC = () => {
       setFormError("Địa chỉ kho hàng phải từ 5 đến 500 ký tự");
       return;
     }
+    const isResubmission = shop?.status === "REJECTED" || shop?.status === "NEEDS_INFO";
+    if (isResubmission && !Object.values(termsAcceptance).every(Boolean)) {
+      setFormError("Xác nhận cả ba điều khoản trước khi gửi lại hồ sơ.");
+      return;
+    }
 
     const sanitizeUrl = (url: string) => {
       const trimmed = url.trim();
@@ -71,6 +104,15 @@ export const MyShopStatusCard: React.FC = () => {
 
     try {
       await dispatch(updateMyShop(payload)).unwrap();
+      if (isResubmission) {
+        const agreements: ShopTermsAcceptance = {
+          version: SELLER_TERMS_VERSION,
+          service_policy: termsAcceptance.servicePolicy,
+          authenticity: termsAcceptance.authenticity,
+          anti_counterfeit: termsAcceptance.antiCounterfeit,
+        };
+        await dispatch(resubmitMyShop(agreements)).unwrap();
+      }
       setIsModalOpen(false);
     } catch (err: unknown) {
       setFormError(typeof err === "string" ? err : "Cập nhật hồ sơ thất bại");
@@ -80,6 +122,15 @@ export const MyShopStatusCard: React.FC = () => {
   if (loading) {
     return (
       <div className="mb-6 p-4 rounded-2xl bg-surface-container-low border border-outline-variant/30 animate-pulse h-20" />
+    );
+  }
+
+  if (!shop && error) {
+    return (
+      <div role="alert" className="mb-6 rounded-xl border border-error/30 bg-error-container/30 p-4 text-sm">
+        <p>Không thể tải trạng thái shop. Hồ sơ của bạn chưa được xác nhận là chưa có shop.</p>
+        <button type="button" onClick={() => dispatch(fetchMyShop())} className="mt-3 rounded-lg border px-3 py-2 font-semibold">Thử tải lại</button>
+      </div>
     );
   }
 
@@ -100,6 +151,12 @@ export const MyShopStatusCard: React.FC = () => {
           </button>
         </div>
       )}
+      <div className="mb-3 flex justify-end">
+        <button type="button" disabled={refreshingStatus} onClick={() => void handleRefreshStatus()} className="text-sm font-semibold text-primary underline disabled:opacity-50">
+          {refreshingStatus ? "Đang cập nhật..." : "Làm mới trạng thái shop"}
+        </button>
+      </div>
+      {refreshError && <p role="alert" className="mb-3 text-right text-sm text-error">{refreshError}</p>}
       {/* 1. User Chưa có shop */}
       {!shop && (
         <div className="mb-6 p-4 sm:p-5 rounded-2xl bg-primary-fixed/20 border border-primary/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -155,7 +212,7 @@ export const MyShopStatusCard: React.FC = () => {
       )}
 
       {/* 3. Shop bị từ chối (REJECTED) */}
-      {shop && shop.status === "REJECTED" && (
+      {shop && (shop.status === "REJECTED" || shop.status === "NEEDS_INFO") && (
         <div className="mb-6 p-4 sm:p-5 rounded-2xl bg-error-container/40 border border-error/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-start sm:items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-error/20 text-error flex items-center justify-center shrink-0">
@@ -165,11 +222,11 @@ export const MyShopStatusCard: React.FC = () => {
               <div className="flex flex-wrap items-center gap-2 mb-0.5">
                 <h4 className="font-bold text-on-surface text-base">{shop.name}</h4>
                 <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-error text-on-error">
-                  Hồ sơ bị từ chối
+                  {shop.status === "REJECTED" ? "Hồ sơ bị từ chối" : "Cần bổ sung thông tin"}
                 </span>
               </div>
               <p className="text-sm text-error font-medium">
-                Lý do: {shop.reject_reason || "Thông tin hồ sơ chưa đáp ứng tiêu chuẩn của sàn."}
+                {shop.status === "REJECTED" ? "Lý do từ chối" : "Yêu cầu cập nhật"}: {shop.reject_reason || "Vui lòng bổ sung thông tin hồ sơ theo yêu cầu."}
               </p>
             </div>
           </div>
@@ -259,7 +316,7 @@ export const MyShopStatusCard: React.FC = () => {
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary text-[24px]">store</span>
                 <h3 className="font-headline-md text-headline-md font-bold text-on-surface">
-                  {shop?.status === "REJECTED" ? "Sửa & Nộp lại hồ sơ gian hàng" : "Cập nhật hồ sơ gian hàng"}
+                  {shop?.status === "REJECTED" || shop?.status === "NEEDS_INFO" ? "Sửa & Nộp lại hồ sơ gian hàng" : "Cập nhật hồ sơ gian hàng"}
                 </h3>
               </div>
               <button
@@ -360,6 +417,22 @@ export const MyShopStatusCard: React.FC = () => {
                 </div>
               </div>
 
+              {(shop?.status === "REJECTED" || shop?.status === "NEEDS_INFO") && (
+                <fieldset className="space-y-3 rounded-xl border border-outline-variant/40 p-4">
+                  <legend className="px-1 text-sm font-semibold">Xác nhận điều khoản để gửi lại hồ sơ</legend>
+                  {([
+                    ["servicePolicy", "Tôi đồng ý quy chế hoạt động và chính sách của sàn."],
+                    ["authenticity", "Tôi xác nhận thông tin hồ sơ là chính xác."],
+                    ["antiCounterfeit", "Tôi cam kết không kinh doanh hàng giả hoặc hàng cấm."],
+                  ] as const).map(([key, label]) => (
+                    <label key={key} className="flex items-start gap-2 text-sm">
+                      <input type="checkbox" checked={termsAcceptance[key]} onChange={(event) => setTermsAcceptance((current) => ({ ...current, [key]: event.target.checked }))} />
+                      <span>{label}</span>
+                    </label>
+                  ))}
+                </fieldset>
+              )}
+
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-surface-container">
                 <button
                   type="button"
@@ -374,7 +447,7 @@ export const MyShopStatusCard: React.FC = () => {
                   className="px-5 py-2 rounded-xl bg-primary text-on-primary text-sm font-bold hover:opacity-90 transition-all shadow-xs disabled:opacity-50 cursor-pointer flex items-center gap-2"
                 >
                   {updating && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
-                  <span>{shop?.status === "REJECTED" ? "Nộp lại xét duyệt" : "Lưu thay đổi"}</span>
+                  <span>{shop?.status === "REJECTED" || shop?.status === "NEEDS_INFO" ? "Nộp lại xét duyệt" : "Lưu thay đổi"}</span>
                 </button>
               </div>
             </form>

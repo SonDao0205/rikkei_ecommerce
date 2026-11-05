@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import RegisterPage from "../pages/auth/RegisterPage";
 import LoginPage from "../pages/auth/LoginPage";
+import RoleSelectionPage from "../pages/auth/RoleSelectionPage";
 import ForgotPassword from "../pages/auth/ForgotPassword";
 import HomePage from "../pages/home/HomePage";
 import ShoppingCart from "../pages/cart/ShoppingCart";
@@ -14,6 +15,7 @@ import RegisterOpenShopStep4 from "../pages/shop/RegisterOpenShopStep4";
 import ShopDashboard from "../pages/shop/ShopDashboard";
 import ShopProductManagement from "../pages/shop/ShopProductManagement";
 import AdminProduct from "../pages/admin/AdminProduct";
+import AdminCategory from "../pages/admin/AdminCategory";
 import AdminDashBoard from "../pages/admin/AdminDashBoard";
 import AdminOrder from "../pages/admin/AdminOrder";
 import AdminOrderDetail from "../pages/admin/AdminOrderDetail";
@@ -113,36 +115,28 @@ const router = createBrowserRouter([
     ),
   },
   {
-    path: "/register-open-shop",
+    path: "/select-role",
     element: (
-      <ProtectedRoute allowedRoles={["client", "CLIENT"]}>
-        <RegisterOpenShopStep1 />
+      <ProtectedRoute>
+        <RoleSelectionPage />
       </ProtectedRoute>
     ),
+  },
+  {
+    path: "/register-open-shop",
+    element: <RegisterOpenShopStep1 />,
   },
   {
     path: "/register-shop",
-    element: (
-      <ProtectedRoute allowedRoles={["client", "CLIENT"]}>
-        <RegisterOpenShopStep1 />
-      </ProtectedRoute>
-    ),
+    element: <RegisterOpenShopStep1 />,
   },
   {
     path: "/shop/register",
-    element: (
-      <ProtectedRoute allowedRoles={["client", "CLIENT"]}>
-        <RegisterOpenShopStep1 />
-      </ProtectedRoute>
-    ),
+    element: <RegisterOpenShopStep1 />,
   },
   {
     path: "/seller/register",
-    element: (
-      <ProtectedRoute allowedRoles={["client", "CLIENT"]}>
-        <RegisterOpenShopStep1 />
-      </ProtectedRoute>
-    ),
+    element: <RegisterOpenShopStep1 />,
   },
   {
     path: "/register-open-shop/step2",
@@ -445,6 +439,14 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute allowedRoles={["admin", "ADMIN"]}>
         <AdminProduct />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/admin/categories",
+    element: (
+      <ProtectedRoute allowedRoles={["admin", "ADMIN"]}>
+        <AdminCategory />
       </ProtectedRoute>
     ),
   },

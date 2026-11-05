@@ -12,6 +12,11 @@ func RegisterRoutes(mux *http.ServeMux, db *sql.DB, requireAdmin, requireClient 
 	h := handler{db: db, userID: userID}
 	mux.HandleFunc("GET /api/v1/categories", h.categories)
 	mux.HandleFunc("GET /api/v1/categories/{id}/attributes", h.categoryAttributes)
+	mux.Handle("GET /api/v1/admin/categories", requireAdmin(h.adminCategories))
+	mux.Handle("POST /api/v1/admin/categories", requireAdmin(h.createCategory))
+	mux.Handle("PUT /api/v1/admin/categories/{id}", requireAdmin(h.updateCategory))
+	mux.Handle("PATCH /api/v1/admin/categories/{id}/status", requireAdmin(h.updateCategoryStatus))
+	mux.Handle("DELETE /api/v1/admin/categories/{id}", requireAdmin(h.deactivateCategory))
 	mux.Handle("PUT /api/v1/admin/categories/{id}/attributes", requireAdmin(h.replaceCategoryAttributes))
 	mux.HandleFunc("GET /api/v1/products", h.products)
 	mux.HandleFunc("GET /api/v1/products/{id}", h.productDetail)
