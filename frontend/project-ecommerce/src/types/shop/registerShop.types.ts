@@ -62,6 +62,15 @@ export interface ShopAgreementData {
   agreeEkycConsent: boolean;
 }
 
+export interface ShopTermsAcceptance {
+  version: string;
+  service_policy: boolean;
+  authenticity: boolean;
+  anti_counterfeit: boolean;
+}
+
+export const SELLER_TERMS_VERSION = "seller-onboarding-v1";
+
 export interface ShopRegistrationFormData {
   account: SellerAccountData;
   store: ShopStoreData;

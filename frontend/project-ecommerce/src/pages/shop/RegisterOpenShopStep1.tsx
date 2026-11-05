@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../redux/store";
 import { refreshAccessToken, registerUser } from "../../redux/slices/auth/authSlice";
@@ -7,7 +7,6 @@ import {
   updateAccount,
   updateStore,
   setSuccessModalOpen,
-  submitShopRegistration,
 } from "../../redux/slices/shop/shopRegisterSlice";
 import {
   OnboardingHeader,
@@ -31,10 +30,29 @@ export const RegisterOpenShopStep1: React.FC = () => {
     isSuccessModalOpen,
     registrationResult,
   } = useAppSelector((state) => state.shopRegister);
-  const { user, loading: registering, error: registrationError } = useAppSelector((state) => state.auth);
+  const { user, loading: registering, error: registrationError, isInitialized } = useAppSelector((state) => state.auth);
   const [notice, setNotice] = useState<string | null>(null);
   const [existingShop, setExistingShop] = useState<BackendShop | null>(null);
+  const [shopLoading, setShopLoading] = useState(Boolean(user && isInitialized));
+  const [shopLoadError, setShopLoadError] = useState<string | null>(null);
   const [refreshingStatus, setRefreshingStatus] = useState(false);
+
+  const applyShopToForm = useCallback((shop: BackendShop | null) => {
+    setExistingShop(shop);
+    if (!shop) return;
+    const address = (shop.warehouse_address || "").split(",").map((part) => part.trim());
+    dispatch(updateStore({
+      shopName: shop.name,
+      bio: shop.description || "",
+      logoUrl: shop.logo_url || "",
+      bannerUrl: shop.banner_url || "",
+      warehousePhone: shop.phone || "",
+      addressDetail: address.length > 3 ? address.slice(0, -3).join(", ") : address[0] || "",
+      ward: address.length > 3 ? address[address.length - 3] : "",
+      district: address.length > 2 ? address[address.length - 2] : "",
+      province: address.length > 1 ? address[address.length - 1] : "",
+    }));
+  }, [dispatch]);
 
   useEffect(() => {
     dispatch(setStep(1));
@@ -47,33 +65,34 @@ export const RegisterOpenShopStep1: React.FC = () => {
         confirmPassword: "",
       }));
     }
-    if (!user) return;
+    if (!isInitialized) return;
+    if (!user) {
+      void Promise.resolve().then(() => {
+        setExistingShop(null);
+        setShopLoading(false);
+        setShopLoadError(null);
+      });
+      return;
+    }
     let active = true;
+    void Promise.resolve().then(() => {
+      if (!active) return;
+      setShopLoading(true);
+      setShopLoadError(null);
+    });
     void shopRegisterApi.getMyShop().then((shop) => {
-      if (!active || !shop) return;
-      setExistingShop(shop);
-      const address = (shop.warehouse_address || "").split(",").map((part) => part.trim());
-      dispatch(updateStore({
-        shopName: shop.name,
-        bio: shop.description || "",
-        logoUrl: shop.logo_url || "",
-        bannerUrl: shop.banner_url || "",
-        warehousePhone: shop.phone || "",
-        addressDetail: address.length > 3 ? address.slice(0, -3).join(", ") : address[0] || "",
-        ward: address.length > 3 ? address[address.length - 3] : "",
-        district: address.length > 2 ? address[address.length - 2] : "",
-        province: address.length > 1 ? address[address.length - 1] : "",
-      }));
+      if (!active) return;
+      applyShopToForm(shop);
     }).catch((error: unknown) => {
       if (active) {
-        setNotice(error instanceof Error ? error.message : "Không thể tải hồ sơ shop hiện tại.");
+        setShopLoadError(error instanceof Error ? error.message : "Không thể tải hồ sơ shop hiện tại.");
       }
-    });
+    }).finally(() => { if (active) setShopLoading(false); });
     window.scrollTo({ top: 0, behavior: "smooth" });
     return () => {
       active = false;
     };
-  }, [dispatch, user]);
+  }, [applyShopToForm, dispatch, user, isInitialized]);
 
   const handleStepClick = (step: number) => {
     if (step === 1) {
@@ -106,9 +125,7 @@ export const RegisterOpenShopStep1: React.FC = () => {
     navigate("/register-open-shop/step2");
   };
 
-  const handleSubmit = () => {
-    dispatch(submitShopRegistration(formData));
-  };
+  const handleSubmit = () => { void handleNext(); };
 
   const handleSaveDraft = () => {
     setNotice(user
@@ -126,7 +143,7 @@ export const RegisterOpenShopStep1: React.FC = () => {
     try {
       await dispatch(refreshAccessToken()).unwrap();
       const latestShop = await shopRegisterApi.getMyShop();
-      if (latestShop) setExistingShop(latestShop);
+      applyShopToForm(latestShop);
       setNotice("Đã cập nhật trạng thái hồ sơ và quyền tài khoản.");
     } catch {
       setNotice("Không thể cập nhật trạng thái lúc này. Vui lòng thử lại sau.");
@@ -134,6 +151,22 @@ export const RegisterOpenShopStep1: React.FC = () => {
       setRefreshingStatus(false);
     }
   };
+
+  const reloadShop = async () => {
+    setShopLoading(true);
+    setShopLoadError(null);
+    try {
+      applyShopToForm(await shopRegisterApi.getMyShop());
+    } catch (error: unknown) {
+      setShopLoadError(error instanceof Error ? error.message : "Không thể tải hồ sơ shop hiện tại.");
+    } finally {
+      setShopLoading(false);
+    }
+  };
+
+  if (!isInitialized) {
+    return <div className="min-h-screen grid place-items-center text-on-surface-variant">Đang khôi phục phiên đăng nhập...</div>;
+  }
 
   return (
     <div className="bg-surface font-body-md text-body-md text-on-surface antialiased min-h-screen flex flex-col">
@@ -144,6 +177,8 @@ export const RegisterOpenShopStep1: React.FC = () => {
       <main className="w-full pt-28 bg-surface flex-1">
         <div className="flex flex-col w-full">
           <div className="w-full max-w-[1440px] mx-auto px-gutter py-space-md sm:py-space-lg flex flex-col gap-space-lg">
+            {shopLoading && user && <p role="status" className="rounded-xl bg-surface-container-low p-4">Đang tải trạng thái gian hàng...</p>}
+            {shopLoadError && <div role="alert" className="rounded-xl border border-error/30 bg-error-container/30 p-4 text-sm"><p>Không thể tải hồ sơ shop. Để tránh tạo trùng shop, vui lòng tải lại trước khi tiếp tục.</p><button type="button" onClick={reloadShop} className="mt-2 rounded-lg border px-3 py-2 font-semibold">Thử tải lại</button></div>}
             {existingShop && (
               <section className={`rounded-xl border p-5 ${existingShop.status === "ACTIVE" ? "border-green-300 bg-green-50" : "border-amber-300 bg-amber-50"}`}>
                 <h2 className="font-semibold text-on-surface">
@@ -177,7 +212,7 @@ export const RegisterOpenShopStep1: React.FC = () => {
               </section>
             )}
 
-            {(!existingShop || ["DRAFT", "NEEDS_INFO", "REJECTED"].includes(existingShop.status)) && (
+            {!shopLoading && !shopLoadError && (!existingShop || ["DRAFT", "NEEDS_INFO", "REJECTED"].includes(existingShop.status)) && (
               <>
                 {/* Context subheader & 4-step stepper */}
                 <Step1Stepper onStepClick={handleStepClick} />

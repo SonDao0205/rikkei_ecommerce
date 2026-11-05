@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -15,6 +16,8 @@ import (
 	"rikkei-ecommerce/internal/auth"
 	"rikkei-ecommerce/internal/httpx"
 )
+
+const sellerTermsVersion = "seller-onboarding-v1"
 
 type Handler struct {
 	db     *sql.DB
@@ -27,10 +30,11 @@ func NewHandler(db *sql.DB, logger *log.Logger) *Handler {
 
 func RegisterRoutes(mux *http.ServeMux, security *auth.App, db *sql.DB, logger *log.Logger) {
 	handler := NewHandler(db, logger)
-	mux.Handle("POST /api/v1/shops", security.RequireRole("CLIENT", handler.createShop))
+	// Kept as a compatibility alias; all new applications start as drafts.
+	mux.Handle("POST /api/v1/shops", security.RequireRole("CLIENT", handler.createShopDraft))
 	mux.Handle("POST /api/v1/me/shop", security.RequireRole("CLIENT", handler.createShopDraft))
-	mux.Handle("GET /api/v1/me/shop", security.RequireAuth(handler.myShop))
-	mux.Handle("PUT /api/v1/me/shop", security.RequireAuth(handler.updateMyShop))
+	mux.Handle("GET /api/v1/me/shop", security.RequireRole("CLIENT", handler.myShop))
+	mux.Handle("PUT /api/v1/me/shop", security.RequireRole("CLIENT", handler.updateMyShop))
 	mux.Handle("POST /api/v1/me/shop/submit", security.RequireRole("CLIENT", handler.submitShop))
 	mux.Handle("GET /api/v1/admin/shops", security.RequireRole("ADMIN", handler.listAdminShops))
 	mux.Handle("PATCH /api/v1/admin/shops/{id}/status", security.RequireRole("ADMIN", handler.updateShopStatus))
@@ -67,17 +71,12 @@ type managedShop struct {
 	OwnerName        string  `json:"owner_name,omitempty"`
 	OwnerEmail       *string `json:"owner_email,omitempty"`
 	OwnerPhone       string  `json:"owner_phone,omitempty"`
-}
-
-func (a *Handler) createShop(w http.ResponseWriter, r *http.Request) {
-	a.createShopWithStatus(w, r, "PENDING")
+	TermsAccepted    bool    `json:"terms_accepted"`
+	TermsVersion     string  `json:"terms_version,omitempty"`
+	TermsAcceptedAt  *string `json:"terms_accepted_at,omitempty"`
 }
 
 func (a *Handler) createShopDraft(w http.ResponseWriter, r *http.Request) {
-	a.createShopWithStatus(w, r, "DRAFT")
-}
-
-func (a *Handler) createShopWithStatus(w http.ResponseWriter, r *http.Request, status string) {
 	var request shopProfileRequest
 	if !decode(w, r, &request) {
 		return
@@ -93,9 +92,9 @@ func (a *Handler) createShopWithStatus(w http.ResponseWriter, r *http.Request, s
 	}
 	result, err := a.db.ExecContext(r.Context(), `INSERT INTO shops
 		(owner_id,name,description,logo_url,banner_url,phone,warehouse_address,status)
-		VALUES(?,?,?,?,?,?,?,?)`,
+		VALUES(?,?,?,?,?,?,?,'DRAFT')`,
 		ownerID, request.Name, nullableText(request.Description), request.LogoURL, request.BannerURL,
-		request.Phone, request.WarehouseAddress, status)
+		request.Phone, request.WarehouseAddress)
 	if err != nil {
 		if isMySQLDuplicate(err) {
 			writeError(w, http.StatusConflict, "shop_already_exists", "This account or shop name is already in use")
@@ -118,11 +117,7 @@ func (a *Handler) createShopWithStatus(w http.ResponseWriter, r *http.Request, s
 		a.serverError(w, r, fmt.Errorf("created shop ID mismatch"))
 		return
 	}
-	message := "Shop draft created"
-	if status == "PENDING" {
-		message = "Shop application submitted"
-	}
-	writeJSON(w, http.StatusCreated, map[string]any{"success": true, "data": shop, "message": message})
+	writeJSON(w, http.StatusCreated, map[string]any{"success": true, "data": shop, "message": "Shop draft created"})
 }
 
 func (a *Handler) myShop(w http.ResponseWriter, r *http.Request) {
@@ -201,37 +196,83 @@ func (a *Handler) updateMyShop(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *Handler) submitShop(w http.ResponseWriter, r *http.Request) {
+	var request shopSubmitRequest
+	if !decode(w, r, &request) {
+		return
+	}
 	ownerID, ok := authenticatedID(w, r)
 	if !ok {
 		return
 	}
-	result, err := a.db.ExecContext(r.Context(), `UPDATE shops
-		SET status='PENDING',reject_reason=NULL
-		WHERE owner_id=? AND status IN ('DRAFT','NEEDS_INFO','REJECTED')`, ownerID)
+	tx, err := a.db.BeginTx(r.Context(), nil)
 	if err != nil {
 		a.serverError(w, r, err)
 		return
 	}
-	affected, err := result.RowsAffected()
-	if err != nil {
-		a.serverError(w, r, err)
-		return
-	}
-	if affected == 0 {
-		shop, loadErr := a.shopForOwner(r, ownerID)
-		if errors.Is(loadErr, sql.ErrNoRows) {
+	defer tx.Rollback()
+	var shopID int64
+	var status, ownerStatus string
+	if err = tx.QueryRowContext(r.Context(), `SELECT s.id,s.status,u.status FROM shops s
+		JOIN users u ON u.id=s.owner_id WHERE s.owner_id=? FOR UPDATE`, ownerID).Scan(&shopID, &status, &ownerStatus); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
 			writeError(w, http.StatusNotFound, "shop_not_found", "Create a shop draft before submitting it")
 			return
 		}
+		a.serverError(w, r, err)
+		return
+	}
+	if ownerStatus != "ACTIVE" {
+		writeError(w, http.StatusForbidden, "shop_owner_inactive", "An inactive account cannot submit a shop application")
+		return
+	}
+	if status == "PENDING" {
+		_ = tx.Rollback()
+		shop, loadErr := a.shopForOwner(r, ownerID)
 		if loadErr != nil {
 			a.serverError(w, r, loadErr)
 			return
 		}
-		if shop.Status == "PENDING" {
-			writeJSON(w, http.StatusOK, map[string]any{"success": true, "data": shop, "message": "Shop application is already under review"})
+		writeJSON(w, http.StatusOK, map[string]any{"success": true, "data": shop, "message": "Shop application is already under review"})
+		return
+	}
+	if status != "DRAFT" && status != "NEEDS_INFO" && status != "REJECTED" {
+		writeError(w, http.StatusConflict, "shop_not_submittable", "This shop cannot be submitted in its current state")
+		return
+	}
+	accepted, err := latestTermsAccepted(r.Context(), tx, shopID)
+	if err != nil {
+		a.serverError(w, r, err)
+		return
+	}
+	if request.Agreements != nil {
+		if !request.Agreements.allAccepted() {
+			writeError(w, http.StatusBadRequest, "shop_terms_required", "All seller terms must be accepted before submitting")
 			return
 		}
-		writeError(w, http.StatusConflict, "shop_not_submittable", "This shop cannot be submitted in its current state")
+		if request.Agreements.Version != sellerTermsVersion {
+			writeError(w, http.StatusBadRequest, "shop_terms_version_invalid", "The accepted seller terms version is not supported")
+			return
+		}
+		_, err = tx.ExecContext(r.Context(), `INSERT INTO shop_application_acceptances
+			(shop_id,owner_id,terms_version,service_policy_accepted,authenticity_accepted,anti_counterfeit_accepted,ip_address,user_agent)
+			VALUES(?,?,?,?,?,?,?,?)`, shopID, ownerID, sellerTermsVersion, true, true, true,
+			requestClientIP(r), truncate(r.UserAgent(), 512))
+		if err != nil {
+			a.serverError(w, r, err)
+			return
+		}
+		accepted = true
+	}
+	if !accepted {
+		writeError(w, http.StatusBadRequest, "shop_terms_required", "Accept the current seller terms before submitting this application")
+		return
+	}
+	if _, err = tx.ExecContext(r.Context(), `UPDATE shops SET status='PENDING',reject_reason=NULL WHERE id=?`, shopID); err != nil {
+		a.serverError(w, r, err)
+		return
+	}
+	if err = tx.Commit(); err != nil {
+		a.serverError(w, r, err)
 		return
 	}
 	shop, err := a.shopForOwner(r, ownerID)
@@ -547,7 +588,67 @@ func (a *Handler) shopForOwner(r *http.Request, ownerID int64) (managedShop, err
 		s.warehouse_address,s.status,s.reject_reason,s.approval_notes,s.follower_count,s.approved_at,s.created_at,s.updated_at,
 		u.full_name,u.email,u.phone
 		FROM shops s JOIN users u ON u.id=s.owner_id WHERE s.owner_id=?`, ownerID)
-	return scanManagedShop(row)
+	shop, err := scanManagedShop(row)
+	if err != nil {
+		return managedShop{}, err
+	}
+	var acceptedAt sql.NullTime
+	var servicePolicy, authenticity, antiCounterfeit bool
+	err = a.db.QueryRowContext(r.Context(), `SELECT terms_version,accepted_at,service_policy_accepted,authenticity_accepted,anti_counterfeit_accepted FROM shop_application_acceptances
+		WHERE shop_id=? ORDER BY id DESC LIMIT 1`, shop.ID).Scan(&shop.TermsVersion, &acceptedAt, &servicePolicy, &authenticity, &antiCounterfeit)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return managedShop{}, err
+	}
+	if acceptedAt.Valid {
+		value := acceptedAt.Time.UTC().Format("2006-01-02T15:04:05Z")
+		shop.TermsAcceptedAt = &value
+		shop.TermsAccepted = shop.TermsVersion == sellerTermsVersion && servicePolicy && authenticity && antiCounterfeit
+	}
+	return shop, nil
+}
+
+type shopSubmitRequest struct {
+	Agreements *sellerTermsAcceptance `json:"agreements"`
+}
+
+type sellerTermsAcceptance struct {
+	Version         string `json:"version"`
+	ServicePolicy   bool   `json:"service_policy"`
+	Authenticity    bool   `json:"authenticity"`
+	AntiCounterfeit bool   `json:"anti_counterfeit"`
+}
+
+func (a sellerTermsAcceptance) allAccepted() bool {
+	return a.ServicePolicy && a.Authenticity && a.AntiCounterfeit
+}
+
+func latestTermsAccepted(ctx context.Context, queryer interface {
+	QueryRowContext(context.Context, string, ...any) *sql.Row
+}, shopID int64) (bool, error) {
+	var version string
+	var servicePolicy, authenticity, antiCounterfeit bool
+	err := queryer.QueryRowContext(ctx, `SELECT terms_version,service_policy_accepted,authenticity_accepted,anti_counterfeit_accepted FROM shop_application_acceptances
+		WHERE shop_id=? ORDER BY id DESC LIMIT 1`, shopID).Scan(&version, &servicePolicy, &authenticity, &antiCounterfeit)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, nil
+	}
+	return version == sellerTermsVersion && servicePolicy && authenticity && antiCounterfeit, err
+}
+
+func requestClientIP(r *http.Request) string {
+	host, _, err := net.SplitHostPort(strings.TrimSpace(r.RemoteAddr))
+	if err == nil {
+		return truncate(host, 45)
+	}
+	return truncate(strings.TrimSpace(r.RemoteAddr), 45)
+}
+
+func truncate(value string, max int) string {
+	runes := []rune(value)
+	if len(runes) <= max {
+		return value
+	}
+	return string(runes[:max])
 }
 
 type scanner interface {
@@ -677,6 +778,25 @@ func Migrate(ctx context.Context, db *sql.DB) error {
 		if _, err := db.ExecContext(ctx, `ALTER TABLE shops ADD COLUMN approval_notes VARCHAR(500) NULL AFTER reject_reason`); err != nil {
 			return err
 		}
+	}
+	if _, err := db.ExecContext(ctx, `CREATE TABLE IF NOT EXISTS shop_application_acceptances (
+		id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+		shop_id BIGINT UNSIGNED NOT NULL,
+		owner_id BIGINT UNSIGNED NOT NULL,
+		terms_version VARCHAR(40) NOT NULL,
+		service_policy_accepted TINYINT(1) NOT NULL,
+		authenticity_accepted TINYINT(1) NOT NULL,
+		anti_counterfeit_accepted TINYINT(1) NOT NULL,
+		ip_address VARCHAR(45) NOT NULL DEFAULT '',
+		user_agent VARCHAR(512) NOT NULL DEFAULT '',
+		accepted_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+		PRIMARY KEY (id),
+		KEY idx_shop_acceptance_latest (shop_id,id),
+		KEY idx_shop_acceptance_owner (owner_id,id),
+		CONSTRAINT fk_shop_acceptance_shop FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE,
+		CONSTRAINT fk_shop_acceptance_owner FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`); err != nil {
+		return err
 	}
 	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM information_schema.check_constraints
 		WHERE constraint_schema=DATABASE() AND constraint_name='chk_shops_status'

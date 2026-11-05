@@ -7,6 +7,7 @@ import type {
   ShopAgreementData,
   ShopRegistrationFormData,
   ShopRegistrationResponse,
+  ShopTermsAcceptance,
 } from "../../../types";
 import { shopRegisterApi, initialShopRegistrationData } from "../../../api/shop/shopRegisterApi";
 
@@ -23,11 +24,11 @@ const initialState: ShopRegisterState = {
 
 export const submitShopRegistration = createAsyncThunk<
   ShopRegistrationResponse,
-  ShopRegistrationFormData,
+  { formData: ShopRegistrationFormData; agreements: ShopTermsAcceptance },
   { rejectValue: string }
->("shopRegister/submitRegistration", async (formData, { rejectWithValue }) => {
+>("shopRegister/submitRegistration", async ({ formData, agreements }, { rejectWithValue }) => {
   try {
-    const res = await shopRegisterApi.submitRegistration(formData);
+    const res = await shopRegisterApi.submitRegistration(formData, agreements);
     return res;
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Đăng ký mở shop thất bại";

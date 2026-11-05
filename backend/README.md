@@ -166,10 +166,10 @@ Postman collection importable kiểm thử các luồng API chính (không kiể
 | `GET` | `/api/v1/shops/{id}` | Không | Hồ sơ shop đang hoạt động |
 | `GET` | `/api/v1/shops/{id}/products` | Không | Sản phẩm công khai của shop |
 | `GET` | `/api/v1/shops/{id}/follow` | CLIENT | Trạng thái follow của user hiện tại |
-| `POST` | `/api/v1/shops` | CLIENT | Tương thích API cũ; tạo hồ sơ shop `PENDING` |
+| `POST` | `/api/v1/shops` | CLIENT | Alias tương thích; tạo hồ sơ shop `DRAFT` |
 | `POST` | `/api/v1/me/shop` | CLIENT | Tạo bản nháp shop `DRAFT` |
-| `GET` | `/api/v1/me/shop` | Access token | Xem shop của tài khoản hiện tại |
-| `PUT` | `/api/v1/me/shop` | Access token | Sửa hồ sơ shop của chủ shop; không tự gửi duyệt |
+| `GET` | `/api/v1/me/shop` | CLIENT | Xem shop của tài khoản hiện tại |
+| `PUT` | `/api/v1/me/shop` | CLIENT | Sửa hồ sơ shop của chủ shop; không tự gửi duyệt |
 | `POST` | `/api/v1/me/shop/submit` | CLIENT | Gửi bản nháp/yêu cầu bổ sung để xét duyệt |
 | `GET` | `/api/v1/admin/shops` | ADMIN | Lọc/danh sách shop |
 | `PATCH` | `/api/v1/admin/shops/{id}/status` | ADMIN | Duyệt/từ chối/khóa shop |
@@ -331,8 +331,8 @@ Gửi access token dạng Bearer. Gọi lặp là idempotent, follower count đ�
 ### Mở và quản lý shop
 
 - Một tài khoản có thể giữ đồng thời `CLIENT` và `SELLER`. API đăng ký public chỉ tạo `CLIENT`; không nhận role từ body. `GET /api/v1/auth/me`, login và refresh trả trường `roles` dạng mảng, `shop_status` nếu có shop, đồng thời giữ `role` dạng chuỗi để tương thích client cũ.
-- `POST /api/v1/me/shop` tạo bản nháp `DRAFT`; body gồm `name`, `description`, `logo_url`, `banner_url`, `phone`, `warehouse_address`. Tên dài 2–150 ký tự, URL nếu có phải là HTTPS. Mỗi tài khoản và tên shop chỉ được dùng một lần.
-- `PUT /api/v1/me/shop` chỉ cập nhật shop thuộc user hiện tại và không tự gửi duyệt. Bản nháp, hồ sơ bị từ chối/yêu cầu bổ sung và hồ sơ đang xét duyệt có thể chỉnh sửa; `POST /api/v1/me/shop/submit` chuyển `DRAFT`, `NEEDS_INFO` hoặc `REJECTED` về `PENDING`. Gửi lại hồ sơ `PENDING` là idempotent.
+- `POST /api/v1/me/shop` (và alias `POST /api/v1/shops`) tạo bản nháp `DRAFT`; body gồm `name`, `description`, `logo_url`, `banner_url`, `phone`, `warehouse_address`. Tên dài 2–150 ký tự, URL nếu có phải là HTTPS. Mỗi tài khoản và tên shop chỉ được dùng một lần.
+- `PUT /api/v1/me/shop` chỉ cập nhật shop thuộc user hiện tại và không tự gửi duyệt. Bản nháp, hồ sơ bị từ chối/yêu cầu bổ sung và hồ sơ đang xét duyệt có thể chỉnh sửa; `POST /api/v1/me/shop/submit` chuyển `DRAFT`, `NEEDS_INFO` hoặc `REJECTED` về `PENDING`. Body nộp gồm `agreements` với `version: "seller-onboarding-v1"` và ba cờ `service_policy`, `authenticity`, `anti_counterfeit` đều phải là `true`. Backend lưu phiên bản, thời điểm, IP và User-Agent để audit; nộp lại khi hồ sơ `PENDING` là idempotent.
 - Luồng admin: `PENDING → ACTIVE`, `PENDING → NEEDS_INFO/REJECTED`, `ACTIVE → SUSPENDED`; shop `SUSPENDED` có thể được khôi phục sang `ACTIVE`. Mỗi thao tác kiểm tra chuyển trạng thái và tài khoản chủ shop; duyệt shop cùng cấp `SELLER` trong một transaction. Từ chối/đình chỉ không xóa `CLIENT`.
 - `GET /api/v1/admin/shops` hỗ trợ `statusTab` (`all`, `draft`, `pending`, `needs_info`, `active`, `rejected`, `suspended`), `search`, `page`, `pageSize`; alias `status`/`limit` cũng được hỗ trợ. Các filter `category`, `commissionTier`, `rating` chỉ chấp nhận `all` vì schema hiện tại chưa lưu dữ liệu tương ứng.
 - Response có `data.shops`, `data.total`, `data.page`, `data.pageSize`, `data.limit` và `data.status_counts`. `total` là số shop khớp bộ lọc/tìm kiếm hiện tại; `status_counts` luôn đếm toàn bộ shop theo các trạng thái `DRAFT`, `PENDING`, `NEEDS_INFO`, `ACTIVE`, `REJECTED`, `SUSPENDED`, không phụ thuộc tab hay tìm kiếm. FE nên dùng `status_counts` cho tab/thống kê và xử lý đủ sáu trạng thái để shop ở trạng thái nháp hoặc cần bổ sung không làm hỏng toàn bộ danh sách.

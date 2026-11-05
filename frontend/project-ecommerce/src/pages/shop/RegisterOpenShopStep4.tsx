@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../redux/store";
+import { SELLER_TERMS_VERSION } from "../../types/shop/registerShop.types";
 import {
   setStep,
   submitShopRegistration,
@@ -87,7 +88,15 @@ export const RegisterOpenShopStep4: React.FC = () => {
     }
 
     try {
-      await dispatch(submitShopRegistration(formData)).unwrap();
+      await dispatch(submitShopRegistration({
+        formData,
+        agreements: {
+          version: SELLER_TERMS_VERSION,
+          service_policy: terms.platformRules,
+          authenticity: terms.authVerified,
+          anti_counterfeit: terms.antiCounterfeit,
+        },
+      })).unwrap();
     } catch (error: unknown) {
       setToastMessage(error instanceof Error ? error.message : typeof error === "string" ? error : "Không thể gửi hồ sơ. Vui lòng thử lại.");
     }
