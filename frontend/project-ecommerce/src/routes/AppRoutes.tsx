@@ -3,6 +3,8 @@ import RegisterPage from "../pages/auth/RegisterPage";
 import LoginPage from "../pages/auth/LoginPage";
 import ForgotPassword from "../pages/auth/ForgotPassword";
 import HomePage from "../pages/home/HomePage";
+import ShoppingCart from "../pages/cart/ShoppingCart";
+import Wishlist from "../pages/wishlist/Wishlist";
 import ProductDetail from "../pages/product/ProductDetail";
 import InforShop from "../pages/shop/InforShop";
 import RegisterOpenShopStep1 from "../pages/shop/RegisterOpenShopStep1";
@@ -43,6 +45,38 @@ const router = createBrowserRouter([
     element: (
       <StorefrontRoute>
         <HomePage />
+      </StorefrontRoute>
+    ),
+  },
+  {
+    path: "/cart",
+    element: (
+      <StorefrontRoute>
+        <ShoppingCart />
+      </StorefrontRoute>
+    ),
+  },
+  {
+    path: "/shopping-cart",
+    element: (
+      <StorefrontRoute>
+        <ShoppingCart />
+      </StorefrontRoute>
+    ),
+  },
+  {
+    path: "/wishlist",
+    element: (
+      <StorefrontRoute>
+        <Wishlist />
+      </StorefrontRoute>
+    ),
+  },
+  {
+    path: "/my-wishlist",
+    element: (
+      <StorefrontRoute>
+        <Wishlist />
       </StorefrontRoute>
     ),
   },

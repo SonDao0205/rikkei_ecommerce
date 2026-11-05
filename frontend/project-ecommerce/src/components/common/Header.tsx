@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../redux/store";
 import { openLogoutModal } from "../../redux/slices/auth/authSlice";
 import { getDefaultAvatar } from "../../utils/avatar";
+import { fetchCart } from "../../redux/slices/cart/cartSlice";
+import { fetchWishlist } from "../../redux/slices/wishlist/wishlistSlice";
+import { formatCurrencyVND } from "../../utils/currency";
 import { BrandIcon } from "./BrandLogo";
 
 interface HeaderProps {
@@ -19,15 +22,53 @@ const Header: React.FC<HeaderProps> = ({
   const dispatch = useAppDispatch();
   const { user, isAuthenticated } = useAppSelector((state) => state.auth);
   const { profile } = useAppSelector((state) => state.profile);
+  const cartState = useAppSelector((state) => state.cart);
+  const wishlistState = useAppSelector((state) => state.wishlist);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   const userAvatar =
     profile?.avatar_url || user?.avatar_url || getDefaultAvatar(user?.full_name || profile?.full_name);
-  const hasSellerRole =
-    (user?.roles?.includes("seller") ?? user?.role === "seller") &&
-    user?.shop_status === "ACTIVE";
-  const sellerEntryPath = hasSellerRole ? "/shop/dashboard" : "/register-open-shop";
+
+  useEffect(() => {
+    if (cartState && cartState.items.length === 0 && !cartState.isLoading) {
+      dispatch(fetchCart());
+    }
+    if (wishlistState && wishlistState.items.length === 0 && !wishlistState.isLoading) {
+      dispatch(fetchWishlist());
+    }
+  }, [dispatch, cartState, wishlistState]);
+
+  // Đóng user dropdown menu khi click ra ngoài
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(event.target as Node)
+      ) {
+        setShowUserMenu(false);
+      }
+    };
+
+    if (showUserMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showUserMenu]);
+
+  const displayCartCount =
+    cartItemCount > 0 ? cartItemCount : cartState?.summary?.total_items || 0;
+  const displayCartTotal =
+    cartTotal !== "₫0"
+      ? cartTotal
+      : cartState?.summary?.grand_total
+      ? formatCurrencyVND(cartState.summary.grand_total)
+      : "₫0";
+  const displayWishlistCount =
+    wishlistCount > 0 ? wishlistCount : wishlistState?.items?.length || 0;
 
   // Khóa cuộn trang khi mở sidebar trên màn hình điện thoại
   useEffect(() => {
@@ -41,11 +82,12 @@ const Header: React.FC<HeaderProps> = ({
     };
   }, [isMobileDrawerOpen]);
 
-  // Đóng sidebar khi nhấn phím Escape
+  // Đóng sidebar và user menu khi nhấn phím Escape
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setIsMobileDrawerOpen(false);
+        setShowUserMenu(false);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -162,25 +204,18 @@ const Header: React.FC<HeaderProps> = ({
             {/* Right Action Icons */}
             <div className="flex items-center gap-space-md shrink-0">
               <Link
-                className="hidden lg:inline-flex items-center gap-1 px-space-md py-2 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all"
-                to={sellerEntryPath}
-                title="Kênh người bán"
-              >
-                <span className="material-symbols-outlined text-[18px]">storefront</span>
-              </Link>
-              <Link
                 className="relative p-2 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all"
-                to="#"
+                to="/wishlist"
                 title="Danh sách yêu thích"
               >
                 <span className="material-symbols-outlined text-[24px]">favorite</span>
                 <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-tertiary-container text-on-primary text-[10px] font-bold flex items-center justify-center">
-                  {wishlistCount}
+                  {displayWishlistCount}
                 </span>
               </Link>
               <Link
                 className="flex items-center gap-space-sm px-space-md py-2 rounded-xl bg-surface-container-low hover:bg-surface-container transition-all"
-                to="#"
+                to="/cart"
                 title="Giỏ hàng"
               >
                 <div className="relative">
@@ -188,18 +223,18 @@ const Header: React.FC<HeaderProps> = ({
                     shopping_bag
                   </span>
                   <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary-container text-on-primary text-[10px] font-bold flex items-center justify-center">
-                    {cartItemCount}
+                    {displayCartCount}
                   </span>
                 </div>
                 <div className="hidden sm:flex flex-col text-left">
                   <span className="font-label-sm text-label-sm text-outline leading-none">Cart</span>
-                  <span className="font-label-md text-label-md text-on-surface font-bold">{cartTotal}</span>
+                  <span className="font-label-md text-label-md text-on-surface font-bold">{displayCartTotal}</span>
                 </div>
               </Link>
 
               {/* User Profile / Auth State */}
               {isAuthenticated && user ? (
-                <div className="relative pl-2">
+                <div ref={userMenuRef} className="relative pl-2">
                   <button
                     type="button"
                     onClick={() => setShowUserMenu((v) => !v)}
@@ -220,46 +255,61 @@ const Header: React.FC<HeaderProps> = ({
                         {user.full_name}
                       </span>
                     </div>
-                    <span className="material-symbols-outlined text-outline text-[16px]">
-                      {showUserMenu ? "expand_less" : "expand_more"}
+                    <span
+                      className={`material-symbols-outlined text-outline text-[16px] transition-transform duration-300 ${
+                        showUserMenu ? "rotate-180" : ""
+                      }`}
+                    >
+                      expand_more
                     </span>
                   </button>
 
                   {/* Dropdown Menu */}
-                  {showUserMenu && (
-                    <div className="absolute right-0 mt-2 w-56 rounded-xl bg-surface-container-lowest border border-outline-variant shadow-lg py-2 z-50">
-                      <div className="px-3.5 py-2.5 border-b border-surface-container text-xs flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 ring-1 ring-outline-variant bg-surface-container flex items-center justify-center">
-                          <img
-                            src={userAvatar}
-                            alt={user.full_name || "User Avatar"}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="font-bold text-on-surface truncate">{user.full_name}</p>
-                          <p className="text-outline truncate">{user.email || user.phone}</p>
-                        </div>
+                  <div
+                    className={`absolute right-0 mt-2 w-56 rounded-xl bg-surface-container-lowest border border-outline-variant shadow-xl py-2 z-50 origin-top-right transition-all duration-300 ease-out ${
+                      showUserMenu
+                        ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
+                        : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
+                    }`}
+                  >
+                    <div className="px-3.5 py-2.5 border-b border-surface-container text-xs flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 ring-1 ring-outline-variant bg-surface-container flex items-center justify-center">
+                        <img
+                          src={userAvatar}
+                          alt={user.full_name || "User Avatar"}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
-                      <Link
-                        to="/profile"
-                        onClick={() => setShowUserMenu(false)}
-                        className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-on-surface hover:bg-surface-container hover:text-primary transition-colors"
-                      >
-                        <span className="material-symbols-outlined text-[16px]">person</span>
-                        <span>Hồ sơ của tôi</span>
-                      </Link>
-
-                      <button
-                        type="button"
-                        onClick={handleOpenLogout}
-                        className="w-full flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-error hover:bg-error-container/40 transition-colors text-left cursor-pointer"
-                      >
-                        <span className="material-symbols-outlined text-[16px]">logout</span>
-                        <span>Sign Out</span>
-                      </button>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-on-surface truncate">{user.full_name}</p>
+                        <p className="text-outline truncate">{user.email || user.phone}</p>
+                      </div>
                     </div>
-                  )}
+                    <Link
+                      to="/profile"
+                      onClick={() => setShowUserMenu(false)}
+                      className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-on-surface hover:bg-surface-container hover:text-primary transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">person</span>
+                      <span>Hồ sơ của tôi</span>
+                    </Link>
+
+                    <div
+                      className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-on-surface hover:bg-surface-container hover:text-primary transition-colors cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">storefront</span>
+                      <span>Gian hàng của tôi</span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleOpenLogout}
+                      className="w-full flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-error hover:bg-error-container/40 transition-colors text-left cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">logout</span>
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="flex items-center gap-2 pl-2">
@@ -369,6 +419,20 @@ const Header: React.FC<HeaderProps> = ({
                     </span>
                   </Link>
 
+                  <div
+                    className="flex items-center justify-between px-2 py-2 rounded-xl text-xs font-semibold text-on-surface hover:bg-surface-container transition-colors cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[18px] text-primary">
+                        storefront
+                      </span>
+                      <span>Gian hàng của tôi</span>
+                    </span>
+                    <span className="material-symbols-outlined text-outline text-[16px]">
+                      chevron_right
+                    </span>
+                  </div>
+
                   <button
                     type="button"
                     onClick={handleOpenLogout}
@@ -402,7 +466,7 @@ const Header: React.FC<HeaderProps> = ({
 
             {/* Phần 3: Giỏ hàng (Cart) */}
             <Link
-              to="#"
+              to="/cart"
               onClick={() => setIsMobileDrawerOpen(false)}
               className="flex items-center justify-between p-3 rounded-2xl bg-[#F0F2FD] hover:bg-[#E5E9FA] border border-[#2E3192]/15 transition-all text-on-surface cursor-pointer"
             >
@@ -412,12 +476,12 @@ const Header: React.FC<HeaderProps> = ({
                     shopping_bag
                   </span>
                   <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#2E3192] text-white text-[10px] font-bold flex items-center justify-center">
-                    {cartItemCount}
+                    {displayCartCount}
                   </span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-xs text-outline font-medium">Giỏ hàng ({cartItemCount})</span>
-                  <span className="text-sm font-bold text-on-surface">{cartTotal}</span>
+                  <span className="text-xs text-outline font-medium">Giỏ hàng ({displayCartCount})</span>
+                  <span className="text-sm font-bold text-on-surface">{displayCartTotal}</span>
                 </div>
               </div>
               <span className="material-symbols-outlined text-outline text-[18px]">
@@ -427,7 +491,7 @@ const Header: React.FC<HeaderProps> = ({
 
             {/* Phần 2: Danh sách yêu thích (Wishlist) */}
             <Link
-              to="#"
+              to="/wishlist"
               onClick={() => setIsMobileDrawerOpen(false)}
               className="flex items-center justify-between p-3 rounded-2xl bg-surface-container-low hover:bg-surface-container border border-outline-variant/60 transition-all text-on-surface cursor-pointer"
             >
@@ -437,36 +501,12 @@ const Header: React.FC<HeaderProps> = ({
                     favorite
                   </span>
                   <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#9E0038] text-white text-[10px] font-bold flex items-center justify-center">
-                    {wishlistCount}
+                    {displayWishlistCount}
                   </span>
                 </div>
                 <div className="flex flex-col">
                   <span className="text-sm font-semibold text-on-surface">Yêu thích</span>
-                  <span className="text-xs text-outline">{wishlistCount} sản phẩm đã lưu</span>
-                </div>
-              </div>
-              <span className="material-symbols-outlined text-outline text-[18px]">
-                chevron_right
-              </span>
-            </Link>
-
-            {/* Phần 1: Kênh người bán (Storefront) */}
-            <Link
-              to={sellerEntryPath}
-              onClick={() => setIsMobileDrawerOpen(false)}
-              className="flex items-center justify-between p-3 rounded-2xl bg-surface-container-low hover:bg-surface-container border border-outline-variant/60 transition-all text-on-surface cursor-pointer"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#EEF2FF] text-[#2E3192] flex items-center justify-center shadow-xs shrink-0">
-                  <span className="material-symbols-outlined text-[22px]">storefront</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-sm font-semibold text-on-surface">
-                    {hasSellerRole ? "Seller Center" : "Kênh Người Bán"}
-                  </span>
-                  <span className="text-xs text-outline">
-                    {hasSellerRole ? "Quản lý shop và sản phẩm" : "Đăng ký mở cửa hàng"}
-                  </span>
+                  <span className="text-xs text-outline">{displayWishlistCount} sản phẩm đã lưu</span>
                 </div>
               </div>
               <span className="material-symbols-outlined text-outline text-[18px]">

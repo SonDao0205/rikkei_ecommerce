@@ -30,3 +30,9 @@ export { default as RegisterOpenShopStep1 } from "./shop/RegisterOpenShopStep1";
 export { default as RegisterOpenShopStep2 } from "./shop/RegisterOpenShopStep2";
 export { default as RegisterOpenShopStep3 } from "./shop/RegisterOpenShopStep3";
 export { default as RegisterOpenShopStep4 } from "./shop/RegisterOpenShopStep4";
+
+// Cart page
+export { default as ShoppingCart } from "./cart/ShoppingCart";
+
+// Wishlist page
+export { default as Wishlist } from "./wishlist/Wishlist";
