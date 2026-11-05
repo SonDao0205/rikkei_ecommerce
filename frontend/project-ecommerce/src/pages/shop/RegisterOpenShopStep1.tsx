@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../redux/store";
+import { refreshAccessToken, registerUser } from "../../redux/slices/auth/authSlice";
 import {
   setStep,
   updateAccount,
@@ -30,9 +31,10 @@ export const RegisterOpenShopStep1: React.FC = () => {
     isSuccessModalOpen,
     registrationResult,
   } = useAppSelector((state) => state.shopRegister);
-  const { user } = useAppSelector((state) => state.auth);
+  const { user, loading: registering, error: registrationError } = useAppSelector((state) => state.auth);
   const [notice, setNotice] = useState<string | null>(null);
   const [existingShop, setExistingShop] = useState<BackendShop | null>(null);
+  const [refreshingStatus, setRefreshingStatus] = useState(false);
 
   useEffect(() => {
     dispatch(setStep(1));
@@ -45,6 +47,7 @@ export const RegisterOpenShopStep1: React.FC = () => {
         confirmPassword: "",
       }));
     }
+    if (!user) return;
     let active = true;
     void shopRegisterApi.getMyShop().then((shop) => {
       if (!active || !shop) return;
@@ -78,7 +81,26 @@ export const RegisterOpenShopStep1: React.FC = () => {
     }
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
+    if (!user) {
+      const { fullName, email, phone, password, confirmPassword } = formData.account;
+      if (!fullName.trim() || !email.trim() || !phone.trim() || !password) {
+        setNotice("Vui lòng điền đầy đủ họ tên, email, số điện thoại và mật khẩu để tạo tài khoản.");
+        return;
+      }
+      if (password !== confirmPassword) {
+        setNotice("Mật khẩu xác nhận chưa khớp.");
+        return;
+      }
+      const result = await dispatch(registerUser({
+        fullName: fullName.trim(), email: email.trim(), phone: phone.trim(), password, role: "client",
+      }));
+      if (!registerUser.fulfilled.match(result)) {
+        setNotice(typeof result.payload === "string" ? result.payload : "Không thể tạo tài khoản. Vui lòng kiểm tra thông tin và thử lại.");
+        return;
+      }
+      dispatch(updateAccount({ password: "", confirmPassword: "", agreeTerms: true }));
+    }
     // Navigate to Step 2 page
     dispatch(setStep(2));
     navigate("/register-open-shop/step2");
@@ -89,11 +111,28 @@ export const RegisterOpenShopStep1: React.FC = () => {
   };
 
   const handleSaveDraft = () => {
-    setNotice("Nhập tên shop và địa chỉ kho ở bước 2 để bắt đầu lưu bản nháp lên máy chủ.");
+    setNotice(user
+      ? "Nhập tên shop và địa chỉ kho ở bước 2 để bắt đầu lưu bản nháp lên máy chủ."
+      : "Tạo tài khoản miễn phí trước, sau đó bạn có thể lưu hồ sơ nháp và tiếp tục hoàn thiện sau.");
   };
 
   const handleCloseModal = () => {
     dispatch(setSuccessModalOpen(false));
+    navigate("/register-open-shop");
+  };
+
+  const handleRefreshStatus = async () => {
+    setRefreshingStatus(true);
+    try {
+      await dispatch(refreshAccessToken()).unwrap();
+      const latestShop = await shopRegisterApi.getMyShop();
+      if (latestShop) setExistingShop(latestShop);
+      setNotice("Đã cập nhật trạng thái hồ sơ và quyền tài khoản.");
+    } catch {
+      setNotice("Không thể cập nhật trạng thái lúc này. Vui lòng thử lại sau.");
+    } finally {
+      setRefreshingStatus(false);
+    }
   };
 
   return (
@@ -130,6 +169,11 @@ export const RegisterOpenShopStep1: React.FC = () => {
                     Vào Seller Center
                   </button>
                 )}
+                {existingShop.status !== "ACTIVE" && (
+                  <button type="button" disabled={refreshingStatus} onClick={handleRefreshStatus} className="mt-3 rounded-lg border border-amber-700 px-4 py-2 text-amber-950 disabled:opacity-60">
+                    {refreshingStatus ? "Đang cập nhật..." : "Cập nhật trạng thái hồ sơ"}
+                  </button>
+                )}
               </section>
             )}
 
@@ -145,20 +189,29 @@ export const RegisterOpenShopStep1: React.FC = () => {
                   <p className="inline-flex rounded-full bg-primary-fixed px-3 py-1 text-label-sm font-semibold text-on-primary-fixed">
                     Một tài khoản cho cả mua sắm và bán hàng
                   </p>
-                  <h2 className="text-2xl font-bold text-on-surface">Dùng tài khoản hiện tại để mở shop</h2>
+                  <h2 className="text-2xl font-bold text-on-surface">{user ? "Dùng tài khoản hiện tại để mở shop" : "Tạo tài khoản để bắt đầu bán hàng"}</h2>
                   <p className="text-on-surface-variant">
-                    Bạn không cần tạo tài khoản hoặc mật khẩu người bán mới. Sau khi shop được duyệt,
-                    tài khoản này sẽ được bổ sung quyền SELLER và vẫn giữ nguyên quyền mua hàng.
+                    {user ? "Bạn không cần tạo tài khoản người bán riêng. Sau khi shop được duyệt, tài khoản này được bổ sung quyền SELLER và vẫn giữ quyền mua hàng." : "Tạo một tài khoản duy nhất để mua sắm và đăng ký bán hàng. Quyền SELLER chỉ được cấp sau khi admin duyệt hồ sơ."}
                   </p>
                   <dl className="grid gap-3 rounded-xl bg-surface-container-low p-4 sm:grid-cols-2">
-                    <div><dt className="text-sm text-on-surface-variant">Chủ tài khoản</dt><dd className="font-semibold">{user?.full_name}</dd></div>
-                    <div><dt className="text-sm text-on-surface-variant">Email</dt><dd className="font-semibold">{user?.email || "Chưa có email"}</dd></div>
-                    <div><dt className="text-sm text-on-surface-variant">Số điện thoại</dt><dd className="font-semibold">{user?.phone}</dd></div>
-                    <div><dt className="text-sm text-on-surface-variant">Vai trò hiện tại</dt><dd className="font-semibold">{user?.roles?.join(", ") || user?.role}</dd></div>
+                    {user ? <>
+                      <div><dt className="text-sm text-on-surface-variant">Chủ tài khoản</dt><dd className="font-semibold">{user.full_name}</dd></div>
+                      <div><dt className="text-sm text-on-surface-variant">Email</dt><dd className="font-semibold">{user.email || "Chưa có email"}</dd></div>
+                      <div><dt className="text-sm text-on-surface-variant">Số điện thoại</dt><dd className="font-semibold">{user.phone}</dd></div>
+                      <div><dt className="text-sm text-on-surface-variant">Vai trò hiện tại</dt><dd className="font-semibold">{user.roles?.join(", ") || user.role}</dd></div>
+                    </> : <div className="grid gap-4 sm:grid-cols-2">
+                      <label className="text-sm font-medium">Họ và tên<input required autoComplete="name" value={formData.account.fullName} onChange={(e) => dispatch(updateAccount({ fullName: e.target.value }))} className="mt-1 w-full rounded-lg border p-3" /></label>
+                      <label className="text-sm font-medium">Email<input required type="email" autoComplete="email" value={formData.account.email} onChange={(e) => dispatch(updateAccount({ email: e.target.value }))} className="mt-1 w-full rounded-lg border p-3" /></label>
+                      <label className="text-sm font-medium">Số điện thoại<input required type="tel" autoComplete="tel" value={formData.account.phone} onChange={(e) => dispatch(updateAccount({ phone: e.target.value }))} className="mt-1 w-full rounded-lg border p-3" /></label>
+                      <label className="text-sm font-medium">Mật khẩu<input required type="password" autoComplete="new-password" minLength={10} value={formData.account.password} onChange={(e) => dispatch(updateAccount({ password: e.target.value }))} className="mt-1 w-full rounded-lg border p-3" /><span className="text-xs text-slate-500">Ít nhất 10 ký tự, gồm chữ cái và chữ số.</span></label>
+                      <label className="text-sm font-medium sm:col-span-2">Xác nhận mật khẩu<input required type="password" autoComplete="new-password" value={formData.account.confirmPassword} onChange={(e) => dispatch(updateAccount({ confirmPassword: e.target.value }))} className="mt-1 w-full rounded-lg border p-3" /></label>
+                      <p className="text-sm text-slate-600 sm:col-span-2">Tài khoản mới được tạo với quyền người mua. Quyền người bán chỉ được cấp khi shop được admin duyệt.</p>
+                      <p className="text-sm sm:col-span-2">Đã có tài khoản? <Link className="font-semibold text-indigo-700 underline" to="/login" state={{ from: { pathname: "/register-open-shop" } }}>Đăng nhập để tiếp tục</Link></p>
+                    </div>}
                   </dl>
                 </div>
               </div>
-              {notice && <p role="status" className="rounded-lg bg-blue-50 p-3 text-sm text-blue-900">{notice}</p>}
+              {(notice || registrationError) && <p role="alert" className="rounded-lg bg-blue-50 p-3 text-sm text-blue-900">{notice || registrationError}</p>}
 
               {/* Action Footer Bar */}
               <Step1FooterBar
@@ -167,8 +220,8 @@ export const RegisterOpenShopStep1: React.FC = () => {
                 onNextStep={handleNext}
                 onSubmit={handleSubmit}
                 onSaveDraft={handleSaveDraft}
-                isSubmitting={isSubmitting}
                 isSavingDraft={isSavingDraft}
+                isSubmitting={registering || isSubmitting}
                 lastSavedAt={lastSavedAt}
               />
                 </div>
