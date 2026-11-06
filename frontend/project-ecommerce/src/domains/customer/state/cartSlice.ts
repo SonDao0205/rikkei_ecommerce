@@ -8,6 +8,7 @@ import type {
 } from "@/domains/customer/types/cart.types";
 import {
   cartApi,
+  apiErrorMessage,
   mapBackendCartResponse,
   INITIAL_PLATFORM_VOUCHER,
   INITIAL_SHOP_VOUCHERS,
@@ -38,8 +39,9 @@ export function computeCartSummary(
   );
 
   const estimatedShipping = selectedCount > 0 ? BASE_SHIPPING_FEE : 0;
-  const isFreeShipping = itemsSubtotal >= threshold && selectedCount > 0;
-  const shippingDiscount = isFreeShipping ? estimatedShipping : 0;
+  // Free shipping rules are not backed by server-side voucher/shipping policy yet.
+  const isFreeShipping = false;
+  const shippingDiscount = 0;
 
   // Shop vouchers discount calculation
   let storeVouchersDiscount = 0;
@@ -55,6 +57,7 @@ export function computeCartSummary(
       }
     }
   }
+  storeVouchersDiscount = Math.min(storeVouchersDiscount, itemsSubtotal);
 
   // Platform voucher discount calculation
   let platformVoucherDiscount = 0;
@@ -63,7 +66,10 @@ export function computeCartSummary(
     platformVoucher.is_applied &&
     itemsSubtotal >= platformVoucher.min_order_amount
   ) {
-    platformVoucherDiscount = platformVoucher.discount_amount;
+    platformVoucherDiscount = Math.min(
+      platformVoucher.discount_amount,
+      Math.max(0, itemsSubtotal - storeVouchersDiscount)
+    );
   }
 
   const grandTotal = Math.max(
@@ -158,8 +164,7 @@ const initialState: CartState = {
   mutationRequestId: null,
 };
 
-const errorMessage = (error: unknown, fallback: string) =>
-  error instanceof Error ? error.message : fallback;
+const errorMessage = apiErrorMessage;
 
 export const fetchCart = createAsyncThunk<
   CartResponse,
@@ -277,9 +282,12 @@ export const applyPlatformVoucherAction = createAsyncThunk<
   PlatformVoucher,
   string,
   { rejectValue: string }
->("cart/applyPlatformVoucher", async (code: string, { rejectWithValue }) => {
+>("cart/applyPlatformVoucher", async (code: string, { rejectWithValue, getState }) => {
   try {
-    return await cartApi.applyPlatformVoucher(code);
+    const state = getState() as { cart: CartState };
+    const ids = state.cart.items.filter((item) => item.selected && item.is_available).map((item) => item.id);
+    const result = await cartApi.validateVoucher(code, "PLATFORM", ids);
+    return { code: result.code, discount_amount: result.discount_amount, min_order_amount: result.min_order_amount, is_applied: result.is_applied, description: result.title };
   } catch (err: unknown) {
     return rejectWithValue(errorMessage(err, "Mã voucher không hợp lệ"));
   }
@@ -291,9 +299,12 @@ export const applyShopVoucherAction = createAsyncThunk<
   { rejectValue: string }
 >(
   "cart/applyShopVoucher",
-  async ({ shopId, code }: { shopId: number; code: string }, { rejectWithValue }) => {
+  async ({ shopId, code }: { shopId: number; code: string }, { rejectWithValue, getState }) => {
     try {
-      const voucher = await cartApi.applyShopVoucher(shopId, code);
+      const state = getState() as { cart: CartState };
+      const ids = state.cart.items.filter((item) => item.selected && item.is_available).map((item) => item.id);
+      const result = await cartApi.validateVoucher(code, "SHOP", ids, shopId);
+      const voucher: ShopVoucher = { shop_id: shopId, code: result.code, discount_amount: result.discount_amount, min_order_amount: result.min_order_amount, is_applied: result.is_applied, label: result.title };
       return { shopId, voucher };
     } catch (err: unknown) {
       return rejectWithValue(errorMessage(err, "Mã shop voucher không hợp lệ"));
