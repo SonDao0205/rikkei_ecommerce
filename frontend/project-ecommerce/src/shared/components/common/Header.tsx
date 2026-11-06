@@ -58,11 +58,11 @@ const Header: React.FC<HeaderProps> = ({
     cartState?.isInitialized,
     cartState?.isLoading,
     cartState?.loading,
-    cartState?.items?.length,
+    cartState?.items,
     wishlistState?.isInitialized,
     wishlistState?.isLoading,
     wishlistState?.loading,
-    wishlistState?.items?.length,
+    wishlistState?.items,
   ]);
 
   // Đóng user dropdown menu khi click ra ngoài

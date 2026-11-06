@@ -38,8 +38,8 @@ export interface CartResponse {
   subtotal: number;
 }
 
-export interface BackendCartItem extends CartItem {}
-export interface BackendCartResponse extends CartResponse {}
+export type BackendCartItem = CartItem;
+export type BackendCartResponse = CartResponse;
 
 export interface ShopVoucher {
   shop_id: number;

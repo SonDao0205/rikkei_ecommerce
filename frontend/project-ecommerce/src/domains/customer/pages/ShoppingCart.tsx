@@ -49,6 +49,22 @@ export const ShoppingCart: React.FC = () => {
 
   const [isCheckingOut, setIsCheckingOut] = useState(false);
 
+  const activeNotification =
+    notification ||
+    (error
+      ? {
+          type: "error" as const,
+          message: error,
+        }
+      : null);
+
+  const handleDismissNotification = () => {
+    setNotification(null);
+    if (error) {
+      dispatch(clearCartError());
+    }
+  };
+
   useEffect(() => {
     if (isAuthenticated) {
       dispatch(fetchCart());
@@ -63,14 +79,13 @@ export const ShoppingCart: React.FC = () => {
     }
   }, [notification]);
 
-  // Sync Redux errors to toast notification
+  // Auto-clear Redux cart error after timer
   useEffect(() => {
     if (error) {
-      setNotification({
-        type: "error",
-        message: error,
-      });
-      dispatch(clearCartError());
+      const timer = setTimeout(() => {
+        dispatch(clearCartError());
+      }, 4000);
+      return () => clearTimeout(timer);
     }
   }, [error, dispatch]);
 
@@ -225,29 +240,29 @@ export const ShoppingCart: React.FC = () => {
 
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 mt-6">
           {/* Notification Toast Alert */}
-          {notification && (
+          {activeNotification && (
             <div
               className={`mb-4 p-4 rounded-xl flex items-center justify-between shadow-sm transition-all ${
-                notification.type === "success"
+                activeNotification.type === "success"
                   ? "bg-green-50 text-green-800 border border-green-200"
-                  : notification.type === "error"
+                  : activeNotification.type === "error"
                   ? "bg-red-50 text-red-800 border border-red-200"
                   : "bg-blue-50 text-blue-800 border border-blue-200"
               }`}
             >
               <div className="flex items-center gap-2 text-sm font-semibold">
                 <span className="material-symbols-outlined text-[20px]">
-                  {notification.type === "success"
+                  {activeNotification.type === "success"
                     ? "check_circle"
-                    : notification.type === "error"
+                    : activeNotification.type === "error"
                     ? "error"
                     : "info"}
                 </span>
-                <span>{notification.message}</span>
+                <span>{activeNotification.message}</span>
               </div>
               <button
                 type="button"
-                onClick={() => setNotification(null)}
+                onClick={handleDismissNotification}
                 className="text-outline hover:text-on-surface"
               >
                 <span className="material-symbols-outlined text-[18px]">close</span>
