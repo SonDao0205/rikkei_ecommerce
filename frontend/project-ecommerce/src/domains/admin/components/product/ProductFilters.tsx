@@ -15,7 +15,7 @@ interface ProductFiltersProps {
   onVendorChange: (value: string) => void;
   onSortChange: (value: string) => void;
   onClearFilters: () => void;
-  onApplyBulkAction: (action: "activate" | "deactivate" | "delete") => void;
+  onApplyBulkAction: (action: "activate" | "deactivate" | "delete" | "approve") => void;
 }
 
 const ProductFilters: React.FC<ProductFiltersProps> = ({
@@ -34,7 +34,9 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
   onClearFilters,
   onApplyBulkAction,
 }) => {
-  const [bulkAction, setBulkAction] = useState<"activate" | "deactivate" | "delete" | "">("");
+  const [bulkAction, setBulkAction] = useState<
+    "activate" | "deactivate" | "delete" | "approve" | ""
+  >("");
 
   const handleApplyBulk = () => {
     if (!bulkAction) {
@@ -143,10 +145,15 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
             </span>
             <select
               value={bulkAction}
-              onChange={(e) => setBulkAction(e.target.value as "activate" | "deactivate" | "delete" | "")}
+              onChange={(e) =>
+                setBulkAction(
+                  e.target.value as "activate" | "deactivate" | "delete" | "approve" | ""
+                )
+              }
               className="h-9 px-3 bg-surface-container text-on-surface font-body-sm text-body-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-container cursor-pointer"
             >
               <option value="">Choose Bulk Action...</option>
+              <option value="approve">Duyệt đã chọn (Approve)</option>
               <option value="activate">Activate Selected</option>
               <option value="deactivate">Deactivate Selected</option>
               <option value="delete">Delete Selected</option>

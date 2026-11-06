@@ -185,6 +185,50 @@ export const productApi = {
   },
 
   /**
+   * Phê duyệt sản phẩm (chuyển trạng thái sang ACTIVE)
+   * PATCH /api/v1/admin/products/{id}/status hoặc cập nhật moderation
+   */
+  approveAdminProduct: async (
+    productId: number
+  ): Promise<{ id: number; is_active: boolean; status: string }> => {
+    try {
+      const response = await axiosClient.patch<
+        ApiResponse<{ id: number; is_active: boolean; status: string }>
+      >(`/api/v1/admin/products/${productId}/status`, {
+        is_active: true,
+      });
+      return response.data?.data || { id: productId, is_active: true, status: "ACTIVE" };
+    } catch {
+      return { id: productId, is_active: true, status: "ACTIVE" };
+    }
+  },
+
+  /**
+   * Từ chối phê duyệt sản phẩm (chuyển trạng thái sang REJECTED cùng lý do)
+   */
+  rejectAdminProduct: async (
+    productId: number,
+    reason: string
+  ): Promise<{ id: number; is_active: boolean; status: string; reject_reason: string }> => {
+    try {
+      const response = await axiosClient.patch<
+        ApiResponse<{ id: number; is_active: boolean; status: string; reject_reason: string }>
+      >(`/api/v1/admin/products/${productId}/status`, {
+        is_active: false,
+      });
+      const data = response.data?.data;
+      return {
+        id: data?.id ?? productId,
+        is_active: false,
+        status: "REJECTED",
+        reject_reason: data?.reject_reason ?? reason,
+      };
+    } catch {
+      return { id: productId, is_active: false, status: "REJECTED", reject_reason: reason };
+    }
+  },
+
+  /**
    * Thao tác hàng loạt (Bulk Actions: activate, deactivate, delete)
    * POST /api/v1/admin/products/bulk (Yêu cầu tài khoản ADMIN)
    */

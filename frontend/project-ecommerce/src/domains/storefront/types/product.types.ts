@@ -108,6 +108,28 @@ export interface InventoryStats {
   outOfStockCount: number;
 }
 
+export type ProductApprovalStatus =
+  | 'PENDING'
+  | 'ACTIVE'
+  | 'INACTIVE'
+  | 'REJECTED'
+  | 'DRAFT';
+
+export type AdminProductStatusTab =
+  | 'all'
+  | 'pending'
+  | 'active'
+  | 'inactive'
+  | 'rejected';
+
+export interface ProductStatusCounts {
+  all: number;
+  pending: number;
+  active: number;
+  inactive: number;
+  rejected: number;
+}
+
 export interface AdminProductItem {
   id: number;
   name: string;
@@ -118,8 +140,9 @@ export interface AdminProductItem {
   category_name: string;
   price: number;
   stock: number;
-  status: 'ACTIVE' | 'INACTIVE';
+  status: ProductApprovalStatus | string;
   is_active: boolean;
+  reject_reason?: string | null;
 }
 
 export type AdminProductSortOption =
@@ -136,6 +159,7 @@ export interface AdminProductQueryParams {
   stock_status?: AdminStockStatus;
   vendor?: string;
   sort_by?: AdminProductSortOption;
+  status?: AdminProductStatusTab;
 }
 
 export interface AdminProductListResponse {

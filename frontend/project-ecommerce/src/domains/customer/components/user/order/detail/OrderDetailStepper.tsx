@@ -1,11 +1,90 @@
 import React, { useState } from "react";
-import type { UserOrder } from "@/shared/types";
+import type { UserOrder, UserOrderTimelineLog } from "@/shared/types";
 
 export interface OrderDetailStepperProps {
   order: UserOrder;
   onCopySuccess?: (msg: string) => void;
   onShowToast?: (msg: string) => void;
 }
+
+// Standardized milestone timeline generator matching stepper stages
+const getStandardTimeline = (order: UserOrder): UserOrderTimelineLog[] => {
+  if (order.status === "completed") {
+    return [
+      {
+        id: "std-log-5",
+        time: "28/10 14:30",
+        title: "Giao hàng thành công",
+        subtitle: "Người nhận đã ký nhận kiện hàng",
+        isLatest: true,
+      },
+      {
+        id: "std-log-4",
+        time: "27/10 08:15",
+        title: "Đang vận chuyển",
+        subtitle: "Bưu tá phụ trách: Trần Minh Quân",
+      },
+      {
+        id: "std-log-3",
+        time: "26/10 18:30",
+        title: "Đơn hàng đã được lấy",
+      },
+      {
+        id: "std-log-2",
+        time: "26/10 14:45",
+        title: "Chờ người vận chuyển lấy đơn hàng",
+      },
+      {
+        id: "std-log-1",
+        time: "26/10 14:20",
+        title: "Đơn hàng đã được xác nhận",
+      },
+    ];
+  }
+
+  if (order.status === "cancelled") {
+    return [
+      {
+        id: "std-log-cancel",
+        time: order.cancelledAt || "15/10 12:40",
+        title: "Đơn hàng đã được hủy",
+        subtitle: `Lý do: ${order.cancelReason || "Đổi ý không muốn mua nữa"}`,
+        isLatest: true,
+      },
+      {
+        id: "std-log-confirm",
+        time: "26/10 14:20",
+        title: "Đơn hàng đã được xác nhận",
+      },
+    ];
+  }
+
+  // All other orders (shipping, pending, packing, etc.) follow the standard timeline
+  return [
+    {
+      id: "std-log-4",
+      time: "27/10 08:15",
+      title: "Đang vận chuyển",
+      subtitle: "Bưu tá phụ trách: Trần Minh Quân - Dự kiến giao hôm nay",
+      isLatest: true,
+    },
+    {
+      id: "std-log-3",
+      time: "26/10 18:30",
+      title: "Đơn hàng đã được lấy",
+    },
+    {
+      id: "std-log-2",
+      time: "26/10 14:45",
+      title: "Chờ người vận chuyển lấy đơn hàng",
+    },
+    {
+      id: "std-log-1",
+      time: "26/10 14:20",
+      title: "Đơn hàng đã được xác nhận",
+    },
+  ];
+};
 
 export const OrderDetailStepper: React.FC<OrderDetailStepperProps> = ({
   order,
@@ -47,7 +126,22 @@ export const OrderDetailStepper: React.FC<OrderDetailStepperProps> = ({
   const trackingCode = order.trackingCode || "GHN88391204VN";
   const courierName = order.courierName || "Giao Hàng Nhanh (GHN Express)";
   const estimatedDate = order.estimatedDeliveryDate || "28/10/2026";
-  const timelineLogs = order.timeline || [];
+
+  const isOldVerboseLog = (logs?: UserOrderTimelineLog[]) => {
+    if (!logs || logs.length === 0) return true;
+    return logs.some(
+      (l) =>
+        l.title.includes("kho") ||
+        l.title.includes("Xe") ||
+        l.title.includes("Shipper") ||
+        l.title.includes("MarketPulse")
+    );
+  };
+
+  const timelineLogs =
+    !order.timeline || isOldVerboseLog(order.timeline)
+      ? getStandardTimeline(order)
+      : order.timeline;
 
   return (
     <section className="bg-surface-container-lowest rounded-2xl p-6 md:p-8 shadow-sm border border-outline-variant/40 flex flex-col gap-8">
@@ -233,7 +327,7 @@ export const OrderDetailStepper: React.FC<OrderDetailStepperProps> = ({
               Giao thành công
             </span>
             <span className="font-body-sm text-body-sm text-outline mt-0.5">
-              Dự kiến {estimatedDate}
+              {order.status === "completed" ? "28/10 14:30" : `Dự kiến ${estimatedDate}`}
             </span>
           </div>
         </div>

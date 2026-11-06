@@ -192,7 +192,10 @@ export const InforShop: React.FC = () => {
         )}
 
         {/* SECTION 2: Exclusive Shop Vouchers */}
-        <ShopVoucherStrip shopName={currentShop?.name} />
+        <ShopVoucherStrip
+          shopId={currentShop?.id}
+          shopName={currentShop?.name}
+        />
 
         {/* SECTION 3: Catalog View Tabs, In-Shop Search, & Sort Toolbar */}
         <ShopCatalogToolbar
