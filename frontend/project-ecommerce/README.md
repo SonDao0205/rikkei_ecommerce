@@ -31,8 +31,10 @@ npm run build
 
 - Dùng `src/shared/api/axiosClient.ts` cho request. Access token chỉ giữ trong memory; refresh token do backend cấp qua HttpOnly cookie và Axios gửi bằng `withCredentials`.
 - API path bắt đầu bằng `/api/v1`. Với local Vite, dùng backend host trong `.env.local`; với Compose dùng same-origin.
-- Cart and wishlist are connected to the authenticated backend APIs: `/cart`, `/wishlist`, `/api/v1/cart/*`, and `/api/v1/wishlist/*`. The customer layout loads counts after session restoration; all changes are persisted by the backend and are scoped to the signed-in CLIENT account.
-- The backend does not yet provide voucher validation, checkout, payment, or order creation. The cart shows an estimated selected-item subtotal only; it does not present that amount as a payable total or claim that an order was submitted.
+- Cart and wishlist are connected to authenticated backend APIs: `/api/v1/cart/*` and `/api/v1/wishlist/*`. Cart and voucher endpoints require the CLIENT role; state is scoped to the signed-in account. Voucher discounts are no longer hard-coded in the FE.
+- Voucher and checkout quote APIs are connected to the backend: `POST /api/v1/vouchers/validate`, `GET /api/v1/checkout/options`, and `POST /api/v1/checkout/quote`. The cart sends selected cart item IDs and voucher codes; the server rechecks ownership, active product/variant/shop/category state, stock, voucher scope/period/usage/minimum and active shipping/payment methods before calculating totals.
+- In the cart, the checkout dialog loads saved addresses plus active shipping/payment methods. Calculate shipping and view quote refreshes a server-side quote using current DB prices and stock. The test-only `MOCK_CARD` payment method is filtered out because it has no gateway. Shipping `base_fee` is charged once per multi-shop quote; shop vouchers apply only to their shop, then the platform voucher applies, capped so discounts never exceed merchandise subtotal. The cart total before this step is only an estimate.
+- Quotes do not place orders, reserve stock, or consume vouchers. Do not add a payment-success screen or clear the cart until a transactional order-creation/payment flow is implemented. A customer without a saved address should use `/profile/address` and retry.
 - Backend trả `{ "success": true, "data": ... }` hoặc lỗi có HTTP status và `errors[].code`. Không dựa vào mock fallback để xác nhận BE đã tích hợp: một số API client cũ trả dữ liệu mock sau khi request thất bại.
 - API admin shop `GET /api/v1/admin/shops` trả sáu trạng thái và `data.status_counts` trên toàn bộ shop; `data.total` chỉ đếm kết quả khớp filter/tìm kiếm. Dùng `status_counts` cho tab/thống kê, không suy ra số liệu toàn hệ thống từ trang hiện tại.
 - Một tài khoản có thể có nhiều role. User response có `role` tương thích, `roles` dạng mảng và `shop_status` nếu có shop; FE dùng các trường này để điều khiển giao diện, quyền cuối cùng do BE xác nhận. Seller Center chỉ hiện khi shop `ACTIVE`, còn storefront và tài khoản mua hàng vẫn dùng được với role `CLIENT`.
@@ -57,3 +59,9 @@ src/
 ```
 
 Thêm hoặc sửa nghiệp vụ trong domain tương ứng; chỉ đặt mã ở `shared` khi thực sự được nhiều domain dùng. `app` chỉ ghép ứng dụng (routes/layout/store), không chứa logic nghiệp vụ. Alias `@/` trỏ tới `src/` để import giữa domain không phụ thuộc vào độ sâu thư mục. HTML prototype cũ được giữ tại `docs/ui-prototypes`, ngoài nguồn build của ứng dụng.
+
+### Checkout QA and remaining work
+
+Verify with a CLIENT account that has a saved address and selected cart items. Exercise no-voucher quote, valid platform and shop voucher, invalid/expired/used voucher, a shop voucher for a shop absent from selected items, stale stock/product status, inactive payment/shipping method, and an address/cart item owned by another account. Errors should be displayed to the user; the cart and voucher usage must remain unchanged because quote/validation are read-only.
+
+The quote is not order submission. Do not show a payment-success state, clear cart items, or promise stock reservation. The next FE integration depends on the backend order-creation and payment APIs, which must revalidate and transact the quote data.

@@ -15,7 +15,7 @@ Nền tảng thương mại điện tử gồm REST API Go, React/TypeScript fro
 ```text
 backend/internal/
   app/       composition root, server và migration orchestration
-  domain/    auth, address, cart, catalog, seller, shop, wishlist
+  domain/    auth, address, cart, catalog, checkout, seller, shop, wishlist
   platform/  auditlog, HTTP helpers và observability dùng chung
 
 frontend/project-ecommerce/src/
@@ -79,4 +79,4 @@ Backend CI chạy gofmt check, unit tests, vet và build. Frontend CI chạy lin
 
 ## Trạng thái phạm vi sản phẩm
 
-Backend đã có auth/RBAC, catalog và quản trị danh mục, onboarding/duyệt shop, seller product CRUD, địa chỉ, cart, wishlist và một số API admin inventory. Checkout, payment, order lifecycle và review chưa có backend API hoàn chỉnh. Một số trang admin FE còn mock fallback; không coi dữ liệu hiển thị từ mock là dữ liệu đã lưu. Chi tiết route đã có/chưa có nằm trong [Backend README](backend/README.md).
+Backend currently supports auth/RBAC, catalog/categories, shop onboarding, seller products, addresses, cart, wishlist, voucher validation, and checkout quote APIs (shipping/payment options and total calculation). Order creation, stock reservation, payment gateway integration, and reviews are not implemented. Some admin FE screens still use mock fallbacks; see [Backend README](backend/README.md#voucher-validation-and-checkout-quote) for API contracts and limitations.

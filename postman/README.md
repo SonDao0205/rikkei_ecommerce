@@ -76,3 +76,8 @@ npx --yes newman run .\postman\rikkei-ecommerce.postman_collection.json `
 Newman không phải dependency runtime của BE/FE. Lệnh `npx --yes` có thể tải Newman nếu máy chưa có; helper Newman chỉ nên chạy trên database local/test dùng riêng.
 
 Auth có rate limit đăng nhập 10 request/phút/IP. Nếu vừa chạy nhiều bộ test local và nhận `429`, chờ hết `Retry-After` rồi chạy lại collection; không tắt rate limit để làm test pass.
+
+
+## Checkout quote checks
+
+The collection includes a **Checkout and Voucher** folder for authenticated active shipping/payment options and invalid-request checks. The folder runs after Authentication and checks active option listing plus invalid inputs. A successful quote is not included because the disposable authentication user does not have a guaranteed owned address and cart fixture. Use `POST /api/v1/vouchers/validate` with `code`, `scope`, `cart_item_ids`, and `shop_id` for shop vouchers; use `POST /api/v1/checkout/quote` with address/method IDs and selected cart IDs for server totals. Quotes do not create orders or consume voucher uses.

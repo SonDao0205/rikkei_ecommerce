@@ -1,4 +1,5 @@
 import axiosClient from "@/shared/api/axiosClient";
+import axios from "axios";
 import type {
   CartItem,
   CartResponse,
@@ -13,24 +14,8 @@ interface ApiResponse<T> {
   data: T;
 }
 
-export const INITIAL_SHOP_VOUCHERS: Record<number, ShopVoucher> = {
-  1: {
-    shop_id: 1,
-    code: "URBANSTEP50",
-    discount_amount: 50000,
-    min_order_amount: 500000,
-    is_applied: true,
-    label: "URBANSTEP50 applied",
-  },
-};
-
-export const INITIAL_PLATFORM_VOUCHER: PlatformVoucher = {
-  code: "RETRO50",
-  discount_amount: 50000,
-  min_order_amount: 300000,
-  is_applied: true,
-  description: "Code 'RETRO50' auto-deducted",
-};
+export const INITIAL_SHOP_VOUCHERS: Record<number, ShopVoucher> = {};
+export const INITIAL_PLATFORM_VOUCHER: PlatformVoucher | null = null;
 
 /**
  * Maps a single backend cart item to UI CartItem model
@@ -135,59 +120,100 @@ export const cartApi = {
     return response.data.data;
   },
 
-  async applyShopVoucher(
-    shopId: number,
-    code: string
-  ): Promise<ShopVoucher | null> {
-    const normalized = code.trim().toUpperCase();
-    if (!normalized) return null;
-
-    if (normalized.includes("50") || normalized === "URBANSTEP50" || normalized === "CS50") {
-      return {
-        shop_id: shopId,
-        code: normalized,
-        discount_amount: 50000,
-        min_order_amount: 200000,
-        is_applied: true,
-        label: `${normalized} applied`,
-      };
-    }
-    if (normalized.includes("10") || normalized === "DISCOUNT10") {
-      return {
-        shop_id: shopId,
-        code: normalized,
-        discount_amount: 20000,
-        min_order_amount: 100000,
-        is_applied: true,
-        label: `${normalized} applied (-20.000 ₫)`,
-      };
-    }
-    throw new Error(`Mã giảm giá "${code}" không hợp lệ hoặc đã hết hạn.`);
+  async validateVoucher(
+    code: string,
+    scope: "PLATFORM" | "SHOP",
+    cartItemIds: number[],
+    shopId?: number
+  ) {
+    const response = await axiosClient.post<ApiResponse<VoucherValidation>>(
+      "/api/v1/vouchers/validate",
+      { code, scope, shop_id: shopId, cart_item_ids: cartItemIds }
+    );
+    return response.data.data;
   },
 
-  async applyPlatformVoucher(code: string): Promise<PlatformVoucher> {
-    const normalized = code.trim().toUpperCase();
-    if (!normalized) {
-      throw new Error("Vui lòng nhập mã giảm giá sàn.");
-    }
-    if (normalized === "RETRO50" || normalized.includes("50")) {
-      return {
-        code: normalized,
-        discount_amount: 50000,
-        min_order_amount: 300000,
-        is_applied: true,
-        description: `Code '${normalized}' auto-deducted`,
-      };
-    }
-    if (normalized === "MP100" || normalized.includes("100")) {
-      return {
-        code: normalized,
-        discount_amount: 100000,
-        min_order_amount: 1000000,
-        is_applied: true,
-        description: `Mã '${normalized}' giảm 100.000 ₫ cho đơn từ 1.000.000 ₫`,
-      };
-    }
-    throw new Error(`Mã ưu đãi sàn "${code}" không tồn tại hoặc đã hết lượt dùng.`);
+  async getCheckoutOptions() {
+    const response = await axiosClient.get<
+      ApiResponse<{
+        shipping_methods: CheckoutMethod[];
+        payment_methods: CheckoutMethod[];
+      }>
+    >("/api/v1/checkout/options");
+    return response.data.data;
+  },
+
+  async getAddresses() {
+    const response = await axiosClient.get<ApiResponse<CheckoutAddress[]>>("/api/v1/addresses");
+    return response.data.data;
+  },
+
+  async quoteCheckout(request: CheckoutQuoteRequest) {
+    const response = await axiosClient.post<ApiResponse<CheckoutQuote>>("/api/v1/checkout/quote", request);
+    return response.data.data;
   },
 };
+
+export interface CheckoutMethod {
+  id: number;
+  code: string;
+  name: string;
+  base_fee?: number;
+  estimated_days?: string | null;
+}
+
+export interface CheckoutAddress {
+  id: number;
+  recipient_name: string;
+  phone: string;
+  province: string;
+  district: string;
+  ward: string;
+  street_detail: string;
+  is_default: boolean;
+}
+
+export interface CheckoutQuoteRequest {
+  address_id: number;
+  shipping_method_id: number;
+  payment_method_id: number;
+  cart_item_ids: number[];
+  platform_voucher?: string;
+  shop_vouchers?: Record<string, string>;
+}
+
+export interface CheckoutQuote {
+  subtotal: number;
+  shipping_fee: number;
+  shop_discount: number;
+  platform_discount: number;
+  total: number;
+  shipping_method: CheckoutMethod;
+  payment_method: CheckoutMethod;
+  address: { recipient_name: string; phone: string; formatted: string };
+  items: Array<{
+    cart_item_id: number;
+    product_name: string;
+    quantity: number;
+    line_total: number;
+  }>;
+}
+
+export interface VoucherValidation {
+  id: number;
+  code: string;
+  title: string;
+  scope: "PLATFORM" | "SHOP";
+  shop_id: number | null;
+  discount_amount: number;
+  min_order_amount: number;
+  is_applied: boolean;
+}
+
+export function apiErrorMessage(error: unknown, fallback: string): string {
+  if (axios.isAxiosError(error)) {
+    const data = error.response?.data as { message?: string; errors?: Array<{ message?: string }> } | undefined;
+    return data?.errors?.[0]?.message || data?.message || fallback;
+  }
+  return error instanceof Error ? error.message : fallback;
+}
