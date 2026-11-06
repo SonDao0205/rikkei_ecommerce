@@ -1,17 +1,22 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import AdminLayout from "@/app/layout/AdminLayout";
 import ProductHeader from "@/domains/admin/components/product/ProductHeader";
 import ProductStatsCards from "@/domains/admin/components/product/ProductStatsCards";
+import ProductStatusTabs from "@/domains/admin/components/product/ProductStatusTabs";
 import ProductFilters from "@/domains/admin/components/product/ProductFilters";
 import ProductTable from "@/domains/admin/components/product/ProductTable";
 import ProductPagination from "@/domains/admin/components/product/ProductPagination";
+import ProductRejectModal from "@/domains/admin/components/product/ProductRejectModal";
 import { useAppDispatch, useAppSelector } from "@/app/state/store";
 import {
   getInventoryStats,
   getAdminProducts,
   toggleProductStatus,
+  approveProduct,
+  rejectProduct,
   deleteProduct,
   executeBulkAction,
+  setStatusTab,
   setSearchQuery,
   setCategoryFilter,
   setStockStatusFilter,
@@ -24,16 +29,22 @@ import {
   clearAdminProductError,
 } from "@/domains/admin/state/adminProductSlice";
 import { getCategories } from "@/domains/storefront/state/productSlice";
-import type { AdminProductItem, AdminProductSortOption, AdminStockStatus } from "@/domains/admin/types";
+import type {
+  AdminProductItem,
+  AdminProductSortOption,
+  AdminStockStatus,
+  AdminProductStatusTab,
+} from "@/domains/admin/types";
 
 const AdminProduct: React.FC = () => {
   const dispatch = useAppDispatch();
   const {
     products,
     stats,
-    totalProducts,
     loading,
     error,
+    statusTab,
+    statusCounts,
     searchQuery,
     categoryFilter,
     stockStatusFilter,
@@ -45,6 +56,7 @@ const AdminProduct: React.FC = () => {
   } = useAppSelector((state) => state.adminProduct);
   const { categories } = useAppSelector((state) => state.product);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+  const [rejectingProduct, setRejectingProduct] = useState<AdminProductItem | null>(null);
 
   useEffect(() => {
     dispatch(getInventoryStats());
@@ -66,6 +78,10 @@ const AdminProduct: React.FC = () => {
   const showFeedback = (msg: string) => {
     setFeedbackMessage(msg);
     setTimeout(() => setFeedbackMessage(null), 3500);
+  };
+
+  const handleTabChange = (tab: AdminProductStatusTab) => {
+    dispatch(setStatusTab(tab));
   };
 
   const handleSearchChange = (val: string) => {
@@ -113,6 +129,28 @@ const AdminProduct: React.FC = () => {
     }
   };
 
+  const handleApproveProduct = async (id: number) => {
+    try {
+      await dispatch(approveProduct(id)).unwrap();
+      showFeedback(`Đã phê duyệt sản phẩm #${id} thành công.`);
+    } catch {
+      // Error handled in slice state.error
+    }
+  };
+
+  const handleOpenRejectModal = (product: AdminProductItem) => {
+    setRejectingProduct(product);
+  };
+
+  const handleConfirmReject = async (id: number, reason: string) => {
+    try {
+      await dispatch(rejectProduct({ productId: id, reason })).unwrap();
+      showFeedback(`Đã từ chối duyệt sản phẩm #${id}.`);
+    } catch {
+      // Error handled in slice state.error
+    }
+  };
+
   const handleDeleteProduct = async (id: number) => {
     if (window.confirm("Bạn có chắc chắn muốn xóa sản phẩm này không?")) {
       try {
@@ -124,14 +162,20 @@ const AdminProduct: React.FC = () => {
     }
   };
 
-  const handleApplyBulkAction = async (action: "activate" | "deactivate" | "delete") => {
+  const handleApplyBulkAction = async (
+    action: "activate" | "deactivate" | "delete" | "approve"
+  ) => {
     try {
-      const res = await dispatch(executeBulkAction({ action, productIds: selectedIds })).unwrap();
+      const res = await dispatch(
+        executeBulkAction({ action, productIds: selectedIds })
+      ).unwrap();
       const actionName =
         action === "activate"
           ? "kích hoạt"
           : action === "deactivate"
           ? "hủy kích hoạt"
+          : action === "approve"
+          ? "phê duyệt"
           : "xóa";
       showFeedback(`Đã ${actionName} thành công ${res.count} sản phẩm.`);
     } catch {
@@ -177,8 +221,28 @@ const AdminProduct: React.FC = () => {
     dispatch(setCurrentPage(page));
   };
 
+  // Filter products by active status tab
+  const filteredByTab = useMemo(() => {
+    if (statusTab === "all") return products;
+    if (statusTab === "pending") return products.filter((p) => p.status === "PENDING");
+    if (statusTab === "active")
+      return products.filter(
+        (p) =>
+          p.status === "ACTIVE" ||
+          (p.is_active && p.status !== "PENDING" && p.status !== "REJECTED")
+      );
+    if (statusTab === "inactive")
+      return products.filter(
+        (p) =>
+          p.status === "INACTIVE" ||
+          (!p.is_active && p.status !== "PENDING" && p.status !== "REJECTED")
+      );
+    if (statusTab === "rejected") return products.filter((p) => p.status === "REJECTED");
+    return products;
+  }, [products, statusTab]);
+
   // Client-side pagination slicing
-  const paginatedProducts = products.slice(
+  const paginatedProducts = filteredByTab.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
@@ -230,6 +294,13 @@ const AdminProduct: React.FC = () => {
       {/* Telemetry / Inventory Health Mini-Strip */}
       <ProductStatsCards stats={stats} />
 
+      {/* Product Status Tabs Filter (Tất cả / Chờ duyệt / Đang hoạt động / Đang tắt / Bị từ chối) */}
+      <ProductStatusTabs
+        currentTab={statusTab}
+        counts={statusCounts}
+        onTabChange={handleTabChange}
+      />
+
       {/* Filter & Command Center */}
       <ProductFilters
         searchQuery={searchQuery}
@@ -266,16 +337,26 @@ const AdminProduct: React.FC = () => {
           onSelectAll={handleSelectAll}
           onToggleStatus={handleToggleStatus}
           onDeleteProduct={handleDeleteProduct}
+          onApproveProduct={handleApproveProduct}
+          onOpenRejectModal={handleOpenRejectModal}
         />
 
         {/* Table Footer & Standard Pagination */}
         <ProductPagination
           currentPage={currentPage}
           pageSize={pageSize}
-          totalItems={totalProducts || products.length}
+          totalItems={filteredByTab.length}
           onPageChange={handlePageChange}
         />
       </div>
+
+      {/* Reject Reason Confirmation Modal */}
+      <ProductRejectModal
+        isOpen={Boolean(rejectingProduct)}
+        product={rejectingProduct}
+        onClose={() => setRejectingProduct(null)}
+        onConfirmReject={handleConfirmReject}
+      />
     </AdminLayout>
   );
 };

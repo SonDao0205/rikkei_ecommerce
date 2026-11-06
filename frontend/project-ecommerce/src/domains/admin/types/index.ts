@@ -6,6 +6,9 @@ export type {
   AdminProductQueryParams,
   AdminProductListResponse,
   AdminBulkProductActionPayload,
+  ProductApprovalStatus,
+  AdminProductStatusTab,
+  ProductStatusCounts,
 } from '@/domains/storefront/types/product.types';
 export type {
   AdminShopStatus,

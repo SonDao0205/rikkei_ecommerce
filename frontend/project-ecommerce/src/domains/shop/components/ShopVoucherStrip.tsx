@@ -1,58 +1,68 @@
-import React, { useState } from "react";
-
-interface VoucherItem {
-  id: string;
-  type: "money" | "percent" | "shipping";
-  amountText: string;
-  minOrderText: string;
-  expiryText: string;
-  claimedByDefault?: boolean;
-}
-
-const INITIAL_VOUCHERS: VoucherItem[] = [
-  {
-    id: "voucher-1",
-    type: "money",
-    amountText: "GIẢM 30.000 ₫",
-    minOrderText: "Đơn tối thiểu 300.000 ₫",
-    expiryText: "HSD: 31/12/2026",
-    claimedByDefault: false,
-  },
-  {
-    id: "voucher-2",
-    type: "percent",
-    amountText: "GIẢM 10% Tối đa 50k",
-    minOrderText: "Đơn tối thiểu 500.000 ₫",
-    expiryText: "HSD: 31/12/2026",
-    claimedByDefault: false,
-  },
-  {
-    id: "voucher-3",
-    type: "shipping",
-    amountText: "FREESHIP EXTRA 25k",
-    minOrderText: "Đơn tối thiểu 200.000 ₫",
-    expiryText: "HSD: 15/01/2027",
-    claimedByDefault: true,
-  },
-];
+import React, { useState, useEffect } from "react";
+import type { ShopVoucherItem } from "@/domains/shop/types/shopVoucher.types";
+import { shopVoucherApi, getMockShopVouchers } from "@/domains/shop/api/shopVoucherApi";
+import ShopVouchersModal from "./ShopVouchersModal";
 
 interface ShopVoucherStripProps {
+  shopId?: number;
   shopName?: string;
 }
 
 export const ShopVoucherStrip: React.FC<ShopVoucherStripProps> = ({
-  shopName = "Shop",
+  shopId,
+  shopName = "Gian hàng",
 }) => {
+  const [vouchers, setVouchers] = useState<ShopVoucherItem[]>(() =>
+    getMockShopVouchers(shopId, shopName)
+  );
+  const [loading, setLoading] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [claimedMap, setClaimedMap] = useState<Record<string, boolean>>({
     "voucher-3": true,
   });
+
+  // Tải danh sách voucher thông qua Mock API của shop
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadVouchers = async () => {
+      try {
+        const data = await shopVoucherApi.getShopVouchers(shopId, shopName);
+        if (!isMounted) return;
+        setVouchers(data);
+        setClaimedMap((prev) => {
+          const next = { ...prev };
+          data.forEach((v) => {
+            if (v.claimedByDefault && next[v.id] === undefined) {
+              next[v.id] = true;
+            }
+          });
+          return next;
+        });
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void loadVouchers();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [shopId, shopName]);
 
   const handleClaim = (id: string) => {
     setClaimedMap((prev) => ({
       ...prev,
       [id]: true,
     }));
+    void shopVoucherApi.claimShopVoucher(id);
   };
+
+  // 3 mã nổi bật hiển thị ở dải banner trang shop
+  const featuredVouchers = vouchers.slice(0, 3);
 
   return (
     <div className="w-full max-w-[1440px] mx-auto px-4 md:px-margin-lg flex flex-col gap-4 pt-4">
@@ -74,21 +84,25 @@ export const ShopVoucherStrip: React.FC<ShopVoucherStripProps> = ({
           </div>
         </div>
 
+        {/* Nút mở popup tất cả ưu đãi (đã xóa thông báo alert) */}
         <button
           type="button"
-          onClick={() => alert("Hiện tất cả mã ưu đãi của shop đã được hiển thị bên dưới.")}
-          className="flex items-center gap-1 font-label-md text-label-md text-primary hover:text-primary-container cursor-pointer transition-colors self-start sm:self-auto"
+          onClick={() => setIsModalOpen(true)}
+          className="flex items-center gap-1 font-label-md text-label-md text-primary hover:text-primary-container cursor-pointer transition-colors self-start sm:self-auto group"
         >
           <span>Xem tất cả ưu đãi</span>
-          <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+          <span className="material-symbols-outlined text-[16px] group-hover:translate-x-0.5 transition-transform">
+            chevron_right
+          </span>
         </button>
       </div>
 
-      {/* Voucher Cards Grid */}
+      {/* Voucher Cards Grid (Hiển thị 3 mã hàng đầu) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {INITIAL_VOUCHERS.map((voucher) => {
+        {featuredVouchers.map((voucher) => {
           const isClaimed = !!claimedMap[voucher.id];
           const isShipping = voucher.type === "shipping";
+          const isPercent = voucher.type === "percent";
 
           return (
             <div
@@ -104,13 +118,15 @@ export const ShopVoucherStrip: React.FC<ShopVoucherStripProps> = ({
                   className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
                     isShipping
                       ? "bg-secondary-fixed text-secondary"
+                      : isPercent
+                      ? "bg-purple-100 text-purple-700"
                       : "bg-primary-fixed text-primary"
                   }`}
                 >
                   <span className="material-symbols-outlined text-[26px]">
-                    {voucher.type === "shipping"
+                    {isShipping
                       ? "local_shipping"
-                      : voucher.type === "percent"
+                      : isPercent
                       ? "percent"
                       : "local_offer"}
                   </span>
@@ -118,7 +134,11 @@ export const ShopVoucherStrip: React.FC<ShopVoucherStripProps> = ({
                 <div className="flex flex-col min-w-0">
                   <span
                     className={`font-headline-md text-headline-md font-bold tracking-tight truncate ${
-                      isShipping ? "text-secondary" : "text-primary"
+                      isShipping
+                        ? "text-secondary"
+                        : isPercent
+                        ? "text-purple-700"
+                        : "text-primary"
                     }`}
                   >
                     {voucher.amountText}
@@ -155,6 +175,17 @@ export const ShopVoucherStrip: React.FC<ShopVoucherStripProps> = ({
           );
         })}
       </div>
+
+      {/* Popup Modal hiển thị toàn bộ ưu đãi của Shop */}
+      <ShopVouchersModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        shopName={shopName}
+        vouchers={vouchers}
+        claimedMap={claimedMap}
+        onClaimVoucher={handleClaim}
+        isLoading={loading}
+      />
     </div>
   );
 };

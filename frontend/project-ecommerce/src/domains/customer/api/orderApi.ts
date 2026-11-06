@@ -35,34 +35,24 @@ export const mockUserOrders: UserOrder[] = [
       {
         id: "log-1",
         time: "27/10 08:15",
-        title: "Bưu kiện đã rời kho trung chuyển Tân Bình và đang được điều phối về bưu cục phát Quận Bình Thạnh.",
+        title: "Đang vận chuyển",
         subtitle: "Bưu tá phụ trách: Trần Minh Quân - Dự kiến giao hôm nay",
         isLatest: true,
       },
       {
         id: "log-2",
-        time: "26/10 21:40",
-        title: "Đã nhập kho phân loại tổng Sài Gòn Hub (Khu công nghiệp Tân Bình).",
+        time: "26/10 18:30",
+        title: "Đơn hàng đã được lấy",
       },
       {
         id: "log-3",
-        time: "26/10 19:10",
-        title: "Đang luân chuyển liên quận - Xe trung chuyển GHN xuất phát từ kho Long Biên/Quận 7.",
+        time: "26/10 14:45",
+        title: "Chờ người vận chuyển lấy đơn hàng",
       },
       {
         id: "log-4",
-        time: "26/10 18:30",
-        title: "Shipper GHN đã lấy hàng thành công từ các Shop (UrbanStep, Indochine Studio).",
-      },
-      {
-        id: "log-5",
-        time: "26/10 14:45",
-        title: "Các Shop đã in mã vận đơn và chuẩn bị kiện hàng kèm tem niêm phong hàng dễ vỡ.",
-      },
-      {
-        id: "log-6",
         time: "26/10 14:20",
-        title: "Đơn hàng được tạo thành công trên hệ thống MarketPulse.",
+        title: "Đơn hàng đã được xác nhận",
       },
     ],
     shops: [
@@ -631,25 +621,31 @@ export const userOrderApi = {
           ? [
               {
                 id: "log-1",
-                time: "20/10 16:30",
-                title: "Giao hàng thành công. Người nhận đã ký nhận kiện hàng.",
-                subtitle: "Bưu tá: Lê Văn Cường - GHTK Express",
+                time: "28/10 14:30",
+                title: "Giao hàng thành công",
+                subtitle: "Người nhận đã ký nhận kiện hàng",
                 isLatest: true,
               },
               {
                 id: "log-2",
-                time: "20/10 08:30",
-                title: "Bưu tá đang trên đường đi giao kiện hàng đến bạn.",
+                time: "27/10 08:15",
+                title: "Đang vận chuyển",
+                subtitle: "Bưu tá phụ trách: Trần Minh Quân",
               },
               {
                 id: "log-3",
-                time: "19/10 20:15",
-                title: "Kiện hàng đã đến bưu cục phát Quận Bình Thạnh.",
+                time: "26/10 18:30",
+                title: "Đơn hàng đã được lấy",
               },
               {
                 id: "log-4",
-                time: "18/10 14:20",
-                title: "Đơn hàng được tạo thành công trên hệ thống MarketPulse.",
+                time: "26/10 14:45",
+                title: "Chờ người vận chuyển lấy đơn hàng",
+              },
+              {
+                id: "log-5",
+                time: "26/10 14:20",
+                title: "Đơn hàng đã được xác nhận",
               },
             ]
           : order.status === "cancelled"
@@ -657,65 +653,38 @@ export const userOrderApi = {
               {
                 id: "log-1",
                 time: order.cancelledAt || "15/10 12:40",
-                title: `Đơn hàng đã được hủy. Lý do: ${order.cancelReason || "Đổi ý không muốn mua nữa"}.`,
+                title: "Đơn hàng đã được hủy",
+                subtitle: `Lý do: ${order.cancelReason || "Đổi ý không muốn mua nữa"}`,
                 isLatest: true,
               },
               {
                 id: "log-2",
-                time: "15/10 11:20",
-                title: "Đơn hàng được tạo thành công trên hệ thống MarketPulse.",
-              },
-            ]
-          : order.status === "pending"
-          ? [
-              {
-                id: "log-1",
-                time: order.createdAt || "27/10 10:05",
-                title: "Đơn hàng đang chờ người bán xác nhận và đóng gói.",
-                isLatest: true,
-              },
-              {
-                id: "log-2",
-                time: order.createdAt || "27/10 10:05",
-                title: "Đơn hàng được tạo thành công trên hệ thống MarketPulse.",
-              },
-            ]
-          : order.status === "packing"
-          ? [
-              {
-                id: "log-1",
-                time: "24/10 17:00",
-                title: "Người bán đã đóng gói xong, đang chờ shipper đến lấy hàng.",
-                isLatest: true,
-              },
-              {
-                id: "log-2",
-                time: order.createdAt || "24/10 16:30",
-                title: "Đơn hàng được tạo thành công trên hệ thống MarketPulse.",
+                time: order.createdAt || "15/10 11:20",
+                title: "Đơn hàng đã được xác nhận",
               },
             ]
           : [
               {
                 id: "log-1",
                 time: "27/10 08:15",
-                title: "Bưu kiện đã rời kho trung chuyển Tân Bình và đang được điều phối về bưu cục phát Quận Bình Thạnh.",
+                title: "Đang vận chuyển",
                 subtitle: "Bưu tá phụ trách: Trần Minh Quân - Dự kiến giao hôm nay",
                 isLatest: true,
               },
               {
                 id: "log-2",
-                time: "26/10 21:40",
-                title: "Đã nhập kho phân loại tổng Sài Gòn Hub (Khu công nghiệp Tân Bình).",
+                time: "26/10 18:30",
+                title: "Đơn hàng đã được lấy",
               },
               {
                 id: "log-3",
-                time: "26/10 18:30",
-                title: "Shipper đã lấy hàng thành công từ các Shop trong đơn hàng.",
+                time: "26/10 14:45",
+                title: "Chờ người vận chuyển lấy đơn hàng",
               },
               {
                 id: "log-4",
                 time: "26/10 14:20",
-                title: "Đơn hàng được tạo thành công trên hệ thống MarketPulse.",
+                title: "Đơn hàng đã được xác nhận",
               },
             ];
 
