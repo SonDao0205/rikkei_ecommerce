@@ -1,2 +1,5 @@
 **/node_modules/
+.tmp-go-cache/
 .env
+backend/api
+backend/api.exe

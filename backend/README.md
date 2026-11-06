@@ -2,25 +2,33 @@
 
 Backend REST API cho MVP Rikkei E-Commerce, viết bằng Go 1.24+, `net/http` và MySQL `database/sql`. Tài liệu này hướng dẫn DevOps chạy/vận hành BE và FE tích hợp các API **đang có**.
 
-> BE hiện cung cấp auth/RBAC, catalog công khai, quản lý shop và duyệt shop, seller CRUD sản phẩm/biến thể/tồn kho ban đầu, sổ địa chỉ, giỏ hàng, wishlist, theo dõi shop và một số API admin inventory. Voucher, checkout, thanh toán, đơn hàng và đánh giá vẫn chưa có API.
+> Backend implements auth/RBAC, catalog, shop management, seller products, addresses, cart, wishlist, categories, and checkout quote APIs. Order creation, stock reservation, and payment processing are not implemented.
 
 ## Cấu trúc mã nguồn
 
-Code được chia theo domain; từng package quản lý routes/handlers của domain đó. `internal/server` lắp các domain vào HTTP mux, `internal/httpx` chứa helper HTTP dùng chung, còn `internal/migrations` điều phối migration. `internal/auth` chỉ phụ trách đăng nhập, hồ sơ/phiên, token, khôi phục mật khẩu, middleware và bảo mật; các luồng này được tách thành file theo trách nhiệm. Shop, seller product, địa chỉ và catalog thuộc các package riêng.
+Code được chia thành ba vùng: `internal/domain` chứa nghiệp vụ, `internal/platform` chứa hạ tầng dùng chung, và `internal/app` lắp ứng dụng. Mỗi domain là một Go package và chia file theo layout/trách nhiệm như routes, handler, migration, model và test; các file cùng package vẫn dùng chung kiểu nội bộ để tránh export API chỉ phục vụ phân lớp. `internal/app/server` là composition root đăng ký routes/middleware; `internal/app/migrations` điều phối migration. Các helper HTTP, audit log và observability thuộc platform dùng chung. Domain auth riêng biệt với shop, seller product, địa chỉ, cart, wishlist và catalog.
 
 ```text
 internal/
-  address/     # Sổ địa chỉ và migration riêng
-  auth/        # Xác thực, phiên, JWT/OTP, RBAC và security middleware
-  cart/        # Giỏ hàng theo user và biến thể, kiểm tra trạng thái/tồn kho
-  catalog/     # Catalog, theo dõi shop và admin inventory
-  httpx/       # Decode/response/validation HTTP dùng chung
-  migrations/  # Điều phối migration theo domain
-  seller/      # Seller product và variants
-  server/      # Composition root đăng ký routes/middleware
-  shop/        # Quản lý shop và duyệt shop
-  wishlist/    # Sản phẩm yêu thích theo user
+  app/
+    migrations/ # Điều phối migration theo domain
+    server/     # Composition root đăng ký routes/middleware
+  domain/
+    address/    # Sổ địa chỉ
+    auth/       # Xác thực, phiên, JWT/OTP, RBAC và bảo mật
+    cart/       # Giỏ hàng và biến thể
+    checkout/   # Voucher validation and checkout quote
+    catalog/    # Catalog công khai, danh mục và admin inventory
+    seller/     # Seller product và variants
+    shop/       # Mở shop và xét duyệt
+    wishlist/   # Sản phẩm yêu thích
+  platform/
+    auditlog/       # Business audit trail
+    httpx/          # Decode/response/validation HTTP
+    observability/  # Structured log, request ID, recovery
 ```
+
+Trong domain, routes/handlers và logic riêng domain nằm cạnh nhau theo package boundary của Go; chỉ đưa helper sang platform khi có nhiều domain dùng chung. Không tạo abstraction repository/service chỉ để đủ tên thư mục: tách lớp khi nghiệp vụ hoặc query có ranh giới ổn định và cần được kiểm thử/đổi độc lập.
 
 Contract đầy đủ của catalog và inventory nằm tại [`docs/catalog-api.md`](../docs/catalog-api.md). Hướng dẫn Compose/seed local nằm tại [`docs/local-development.md`](../docs/local-development.md).
 
@@ -79,6 +87,7 @@ Không chạy hai backend cùng bind một host port. API gốc mặc định `h
 |---|---|---|
 | `APP_ENV` | Chế độ chạy | `development`; production đặt `production` |
 | `HTTP_ADDR` | Địa chỉ listen | `:8080` |
+| `LOG_LEVEL` | Mức operational log | `info`; nhận `debug`, `info`, `warn`, `error` |
 | `DATABASE_DSN` | Kết nối MySQL | Bắt buộc; schema phải tồn tại |
 | `JWT_SECRET` | Ký JWT và HMAC OTP | Bắt buộc, tối thiểu 32 ký tự; production dùng secret ngẫu nhiên mạnh |
 | `ACCESS_TOKEN_TTL` | Tuổi thọ access token | `15m`; 1 phút–1 giờ |
@@ -96,7 +105,7 @@ Không commit `.env`, DSN/password DB, SMTP credentials hoặc JWT secret. Dùng
 
 ### Migration và production
 
-`AUTO_MIGRATE=true` chạy migration của các domain khi API khởi động. Migration security nằm tại `internal/auth/migrations/001_security.sql`; migration address/shop bổ sung các cột/constraint cần thiết, và auth migration dọn refresh token/OTP hết hạn. Migration **không tạo database và không thay thế schema commerce** trong `database/scriptDb.sql`.
+`AUTO_MIGRATE=true` chạy migration của các domain khi API khởi động. Migration security nằm tại `internal/domain/auth/migrations/001_security.sql`; migration address/shop bổ sung các cột/constraint cần thiết, và auth migration dọn refresh token/OTP hết hạn. Migration **không tạo database và không thay thế schema commerce** trong `database/scriptDb.sql`.
 
 Production nên triển khai migration riêng bằng tài khoản có DDL, sau khi xác nhận schema và backup:
 
@@ -110,15 +119,33 @@ Chạy API production với `AUTO_MIGRATE=false`, HTTPS, `COOKIE_SECURE=true`, J
 
 `GET /healthz` trả `200` khi API truy vấn được DB và `503` khi DB chưa sẵn sàng; đây là health check cơ bản, không thay thế monitoring/backup.
 
+### Logging và audit trail
+
+Backend dùng structured logging qua `log/slog`: `development` ghi text, `production` ghi JSON; log đi ra stdout để Docker/runtime thu thập và quản lý retention. Xem log local bằng `docker compose logs -f --since=10m backend`. Mỗi HTTP request nhận `X-Request-ID` do backend tạo và trả lại trong response; access log chứa request ID, method, path (không gồm query string), status, thời lượng và user ID nếu đã xác thực. Dùng `X-Request-ID` để ghép response với log. Body, Authorization, cookie, query string và dữ liệu nhạy cảm không được ghi trong access log. Panic được ghi cùng stack trace và trả lỗi 500 chung, không lộ chi tiết nội bộ cho client.
+
+`audit_logs` là business audit trail bền vững, khác với operational log. Hiện các thao tác tạo/nộp hồ sơ shop, admin đổi trạng thái shop, admin quản lý trạng thái danh mục, seller tạo/cập nhật/xóa sản phẩm và admin moderation sản phẩm được ghi cùng transaction với thay đổi nghiệp vụ; nếu ghi audit lỗi, transaction rollback. Event lưu actor, action, entity, trạng thái cũ/mới và request ID, không lưu token hay body nguyên bản. Có thể truy vấn gần đây bằng SQL:
+
+```sql
+SELECT created_at, user_id, action, entity_type, entity_id, request_id, old_value, new_value
+FROM audit_logs
+ORDER BY id DESC
+LIMIT 100;
+```
+
+Migration thêm cột request ID cho database hiện hữu; chạy `go run ./cmd/migrate` theo quy trình production trước khi phát hành code mới. Chưa có màn hình/API admin tra cứu audit trail; hiện việc truy vấn dành cho vận hành database có quyền phù hợp.
+
 ### Build và kiểm thử BE
 
 Từ thư mục `backend`:
 
 ```powershell
+gofmt -l .
 go test ./...
 go vet ./...
-go build ./...
+go build ./cmd/api
 ```
+
+`gofmt -l .` phải không in ra file nào; format file vừa sửa bằng `gofmt -w <file.go>`. Đây cũng là lệnh format gate đầu tiên của backend CI, nên lỗi tại bước này khiến unit tests/vet/build trên GitHub chưa được chạy.
 
 Smoke test tích hợp cần API đang chạy và database **local/test** đã được seed:
 
@@ -166,10 +193,10 @@ Postman collection importable kiểm thử các luồng API chính (không kiể
 | `GET` | `/api/v1/shops/{id}` | Không | Hồ sơ shop đang hoạt động |
 | `GET` | `/api/v1/shops/{id}/products` | Không | Sản phẩm công khai của shop |
 | `GET` | `/api/v1/shops/{id}/follow` | CLIENT | Trạng thái follow của user hiện tại |
-| `POST` | `/api/v1/shops` | CLIENT | Tương thích API cũ; tạo hồ sơ shop `PENDING` |
+| `POST` | `/api/v1/shops` | CLIENT | Alias tương thích; tạo hồ sơ shop `DRAFT` |
 | `POST` | `/api/v1/me/shop` | CLIENT | Tạo bản nháp shop `DRAFT` |
-| `GET` | `/api/v1/me/shop` | Access token | Xem shop của tài khoản hiện tại |
-| `PUT` | `/api/v1/me/shop` | Access token | Sửa hồ sơ shop của chủ shop; không tự gửi duyệt |
+| `GET` | `/api/v1/me/shop` | CLIENT | Xem shop của tài khoản hiện tại |
+| `PUT` | `/api/v1/me/shop` | CLIENT | Sửa hồ sơ shop của chủ shop; không tự gửi duyệt |
 | `POST` | `/api/v1/me/shop/submit` | CLIENT | Gửi bản nháp/yêu cầu bổ sung để xét duyệt |
 | `GET` | `/api/v1/admin/shops` | ADMIN | Lọc/danh sách shop |
 | `PATCH` | `/api/v1/admin/shops/{id}/status` | ADMIN | Duyệt/từ chối/khóa shop |
@@ -212,7 +239,7 @@ FE hiện có API client cho dashboard/admin shop/order nhưng BE chưa có các
 | Admin shops | `GET /api/v1/admin/shops/metrics`, `PATCH /api/v1/admin/shops/{id}/toggle-live`, `PATCH /api/v1/admin/shops/{id}/unlock`, `PATCH /api/v1/admin/shops/{id}/commission`, `GET /api/v1/admin/shops/export` |
 | Admin orders | `GET /api/v1/admin/orders`, `GET /api/v1/admin/orders/counts`, `GET /api/v1/admin/orders/{id}`, `PATCH /api/v1/admin/orders/{id}/confirm`, `PATCH /api/v1/admin/orders/{id}/cancel`, `PATCH /api/v1/admin/orders/{id}/courier`, `POST /api/v1/admin/orders/bulk-confirm`, `GET /api/v1/admin/orders/export` |
 
-BE có các route quản trị shop riêng được liệt kê ở bảng API phía trên (`approve`, `reject`, `lock`, `status`); chúng không thay thế ngữ nghĩa toggle-live, unlock, commission hoặc metrics của FE. Cart và wishlist đã có API; checkout/payment/order chưa nằm trong phạm vi BE hiện tại.
+Cart and wishlist APIs are available. Voucher validation, delivery/payment options, and checkout quote APIs are implemented; order creation and payment processing remain unimplemented.
 
 API path/query phải theo đúng tên và giới hạn dưới đây. Contract catalog/admin inventory và ví dụ response đầy đủ: [`docs/catalog-api.md`](../docs/catalog-api.md).
 
@@ -245,7 +272,7 @@ Giữ access token trong memory và gắn vào protected requests:
 Authorization: Bearer <access_token>
 ```
 
-Không lưu access/refresh token trong `localStorage` hoặc `sessionStorage`. FE hiện có thể dùng `src/api/axiosClient.ts`, vốn giữ access token trong memory và tự deduplicate refresh request song song.
+Không lưu access/refresh token trong `localStorage` hoặc `sessionStorage`. FE dùng `src/shared/api/axiosClient.ts`, vốn giữ access token trong memory và tự deduplicate refresh request song song.
 
 ### Refresh, logout và khôi phục phiên
 
@@ -328,11 +355,28 @@ Các endpoint follow yêu cầu tài khoản đã đăng nhập có role `CLIENT
 
 Gửi access token dạng Bearer. Gọi lặp là idempotent, follower count được cập nhật cùng transaction; user không thể theo dõi shop của chính mình.
 
+### Quản lý danh mục (ADMIN)
+
+Danh sách công khai `GET /api/v1/categories` chỉ trả danh mục đang hoạt động. Chỉ role `ADMIN` được dùng các API quản trị sau; chúng bao gồm cả danh mục inactive để admin có thể chỉnh sửa hoặc kích hoạt lại:
+
+| Method | Endpoint | Tác dụng |
+|---|---|---|
+| `GET` | `/api/v1/admin/categories` | Liệt kê toàn bộ danh mục (admin lọc/tìm kiếm trên danh sách) |
+| `POST` | `/api/v1/admin/categories` | Tạo danh mục |
+| `PUT` | `/api/v1/admin/categories/{id}` | Cập nhật tên, slug, ảnh, thứ tự, parent và trạng thái |
+| `PATCH` | `/api/v1/admin/categories/{id}/status` | Đổi `is_active` (`true`/`false`) |
+| `DELETE` | `/api/v1/admin/categories/{id}` | Soft-delete bằng cách chuyển inactive; không xóa lịch sử liên kết sản phẩm |
+
+Body tạo/cập nhật dùng `name` (2–120 ký tự), `slug` (chữ thường ASCII, số, dấu gạch nối; `all` dành riêng), `image_url` (HTTPS hoặc rỗng), `sort_order` (0–100000), `parent_id` (ID dương hoặc `null`) và `is_active` (boolean). Slug duy nhất; trùng slug trả `409 category_slug_in_use`. Parent phải tồn tại, không thể là chính danh mục hoặc hậu duệ; không thể kích hoạt danh mục bên dưới một ancestor inactive. Danh mục có con active không thể bị chuyển inactive cho đến khi các con được chuyển inactive trước. DELETE có thể gọi lặp an toàn. Không có hard-delete API.
+
+Trang quản trị nằm tại `/admin/categories`, yêu cầu đăng nhập ADMIN. Seller/buyer không có route quản trị; backend tiếp tục chặn truy cập kể cả khi gọi API trực tiếp.
+
 ### Mở và quản lý shop
 
+Điểm vào `/register-open-shop` không yêu cầu đăng nhập: khách mới có thể tạo tài khoản (API đăng ký chỉ cấp `CLIENT`) rồi tiếp tục khai báo shop. Người đã có `CLIENT` đăng nhập để tiếp tục hồ sơ; ràng buộc duy nhất theo chủ tài khoản ngăn tạo shop thứ hai. FE tải `GET /api/v1/me/shop` trước khi hiện form và yêu cầu thử lại nếu không lấy được trạng thái.
 - Một tài khoản có thể giữ đồng thời `CLIENT` và `SELLER`. API đăng ký public chỉ tạo `CLIENT`; không nhận role từ body. `GET /api/v1/auth/me`, login và refresh trả trường `roles` dạng mảng, `shop_status` nếu có shop, đồng thời giữ `role` dạng chuỗi để tương thích client cũ.
-- `POST /api/v1/me/shop` tạo bản nháp `DRAFT`; body gồm `name`, `description`, `logo_url`, `banner_url`, `phone`, `warehouse_address`. Tên dài 2–150 ký tự, URL nếu có phải là HTTPS. Mỗi tài khoản và tên shop chỉ được dùng một lần.
-- `PUT /api/v1/me/shop` chỉ cập nhật shop thuộc user hiện tại và không tự gửi duyệt. Bản nháp, hồ sơ bị từ chối/yêu cầu bổ sung và hồ sơ đang xét duyệt có thể chỉnh sửa; `POST /api/v1/me/shop/submit` chuyển `DRAFT`, `NEEDS_INFO` hoặc `REJECTED` về `PENDING`. Gửi lại hồ sơ `PENDING` là idempotent.
+- `POST /api/v1/me/shop` (và alias `POST /api/v1/shops`) tạo bản nháp `DRAFT`; body gồm `name`, `description`, `logo_url`, `banner_url`, `phone`, `warehouse_address`. Tên dài 2–150 ký tự, URL nếu có phải là HTTPS. Mỗi tài khoản và tên shop chỉ được dùng một lần.
+- `PUT /api/v1/me/shop` chỉ cập nhật shop thuộc user hiện tại và không tự gửi duyệt. Bản nháp, hồ sơ bị từ chối/yêu cầu bổ sung và hồ sơ đang xét duyệt có thể chỉnh sửa; `POST /api/v1/me/shop/submit` chuyển `DRAFT`, `NEEDS_INFO` hoặc `REJECTED` về `PENDING`. Body nộp gồm `agreements` với `version: "seller-onboarding-v1"` và ba cờ `service_policy`, `authenticity`, `anti_counterfeit` đều phải là `true`. Backend lưu phiên bản, thời điểm, IP và User-Agent để audit; nộp lại khi hồ sơ `PENDING` là idempotent.
 - Luồng admin: `PENDING → ACTIVE`, `PENDING → NEEDS_INFO/REJECTED`, `ACTIVE → SUSPENDED`; shop `SUSPENDED` có thể được khôi phục sang `ACTIVE`. Mỗi thao tác kiểm tra chuyển trạng thái và tài khoản chủ shop; duyệt shop cùng cấp `SELLER` trong một transaction. Từ chối/đình chỉ không xóa `CLIENT`.
 - `GET /api/v1/admin/shops` hỗ trợ `statusTab` (`all`, `draft`, `pending`, `needs_info`, `active`, `rejected`, `suspended`), `search`, `page`, `pageSize`; alias `status`/`limit` cũng được hỗ trợ. Các filter `category`, `commissionTier`, `rating` chỉ chấp nhận `all` vì schema hiện tại chưa lưu dữ liệu tương ứng.
 - Response có `data.shops`, `data.total`, `data.page`, `data.pageSize`, `data.limit` và `data.status_counts`. `total` là số shop khớp bộ lọc/tìm kiếm hiện tại; `status_counts` luôn đếm toàn bộ shop theo các trạng thái `DRAFT`, `PENDING`, `NEEDS_INFO`, `ACTIVE`, `REJECTED`, `SUSPENDED`, không phụ thuộc tab hay tìm kiếm. FE nên dùng `status_counts` cho tab/thống kê và xử lý đủ sáu trạng thái để shop ở trạng thái nháp hoặc cần bổ sung không làm hỏng toàn bộ danh sách.
@@ -400,7 +444,7 @@ Cart và wishlist yêu cầu đăng nhập với role `CLIENT`; seller vẫn gi�
 - `PUT /api/v1/cart/items/{id}` nhận `{ "quantity": 2 }` và thay số lượng tuyệt đối (không cộng dồn). Biến thể không được đổi qua endpoint này; nếu sản phẩm không còn mua được hoặc số lượng vượt tồn kho, BE trả lỗi thay vì ghi dữ liệu sai. `DELETE /api/v1/cart/items/{id}` xóa đúng item thuộc cart của user; `DELETE /api/v1/cart/items` xóa cả giỏ. Cart được khóa theo user trong transaction để tuần tự hóa thao tác ghi cùng một cart.
 - GET cart vẫn trả các item đã hết hàng/ngừng bán để người dùng nhận biết và tự xóa; mỗi item có `is_available` và `available_stock`. Chỉ item khả dụng được cộng vào subtotal. Số tiền dòng được nhân ở `DECIMAL(30,2)` để bao phủ mức giá schema và số lượng tồn kho kiểu `INT`.
 - `GET /api/v1/wishlist` trả `items` và `total`, cùng trạng thái khả dụng/tồn kho hiện tại. Có thể lưu sản phẩm hết hàng; chỉ sản phẩm public (cùng shop/category active, chưa soft-delete) mới được thêm. `POST` lặp là idempotent; `DELETE` lặp vẫn thành công. Wishlist không khóa biến thể vì được lưu theo sản phẩm.
-- Đây là API nền tảng, chưa có trang cart/wishlist hoặc checkout; FE không nên hiển thị thao tác giả thành công. Collection Postman có folder **Cart and Wishlist** với flow tích hợp; chạy trên local/test sau khi nạp fixtures seed.
+- Cart and wishlist APIs are implemented. Checkout quote APIs are documented below; they calculate current pricing but do not create orders. Postman covers authorization and invalid-request cases.
 
 ### Admin inventory
 
@@ -432,7 +476,7 @@ Body JSON bị giới hạn kích thước, field lạ, JSON sai/nhiều JSON va
 - Protected API kiểm tra user status, tất cả role đang gán và trạng thái phiên trong DB; access JWT dùng HS256. Refresh token chỉ lưu dạng hash, xoay vòng và phát hiện replay.
 - Rate limiter hiện nằm trong memory của một process; khi scale nhiều replica cần chuyển giới hạn sang gateway hoặc shared store.
 - OTP delivery qua SMTP STARTTLS cần được kiểm thử trên môi trường tích hợp; không ghi OTP hoặc secret ra log ngoài development.
-- Chưa có OAuth Google/Facebook, MFA, xác minh email/phone, quản lý thiết bị/session UI, checkout/order/payment.
+- OAuth Google/Facebook, MFA, email/phone verification, device/session UI, order creation, and payment processing are not implemented.
 - Role `SELLER` được cấp khi admin duyệt shop; `ADMIN` chỉ cấp qua quy trình quản trị tin cậy. Migration `002_multi_role.sql` tạo `roles`/`user_roles` và backfill các role hiện có, luôn bổ sung `CLIENT` mà không xóa role legacy.
 - Migration không xóa cột `users.role` trong giai đoạn tương thích; authorization sử dụng `user_roles`. Cột legacy được giữ để các client cũ không bị gãy.
 - Security migration không thay thế full commerce schema; migration domain bổ sung role assignments, trạng thái shop `DRAFT`/`NEEDS_INFO`, `addresses.address_type` và `shops.approval_notes`. Kiểm tra schema/backup trước migration tại database đã có dữ liệu.
@@ -440,22 +484,64 @@ Body JSON bị giới hạn kích thước, field lạ, JSON sai/nhiều JSON va
 ## 4. Cấu trúc BE
 
 ```text
-cmd/api/                         Entry point HTTP và graceful shutdown
-cmd/migrate/                     Chạy migration thủ công
-internal/address/                Sổ địa chỉ và migration của domain
-internal/auth/                   Auth/session, JWT, OTP, RBAC và security middleware
-internal/auth/migrations/        Migration bảo mật được embed
-internal/cart/                   Giỏ hàng theo user, biến thể và tồn kho
-internal/catalog/                Catalog, product/shop detail, follow, admin inventory
-internal/httpx/                  JSON, response và validation dùng chung
-internal/migrations/             Điều phối migration các domain
-internal/seller/                 Seller products/variants
-internal/server/                 Composition root đăng ký routes/middleware
-internal/shop/                   Onboarding và quản trị shop
-internal/wishlist/               Sản phẩm yêu thích theo user
-scripts/smoke-api.ps1             Smoke test API local
+cmd/                         Entry points api và migrate
+internal/
+  app/                        Composition root và migration orchestration
+  domain/                     auth, address, catalog, shop, seller, cart, wishlist
+    auth/                     routes, session/security/profile handlers, tokens, migrations
+    catalog/                  public catalog, filters, admin category/inventory handlers
+    shop/                     routes, onboarding/admin handlers, repository, validation, migrations
+    seller/                   routes, product handlers, model, repository, validation
+  platform/                   auditlog, httpx, observability dùng chung
+scripts/                      Smoke test API local
 ```
 
-Mỗi domain tự đăng ký routes; `internal/server` lắp các domain vào HTTP mux, còn `internal/migrations` chạy migration theo thứ tự. `internal/auth` không sở hữu routes shop/seller/address. So với mẫu `proj-mau`, đây đã là cải thiện về ranh giới domain; tuy nhiên một số handler vẫn gộp xử lý HTTP, nghiệp vụ và SQL trong cùng file (đặc biệt auth/seller/shop). Khi domain tiếp tục mở rộng, nên tách các phần này thành handler/service/repository theo từng domain thay vì thêm logic vào handler lớn.
+Mỗi domain tự đăng ký routes; `internal/app/server` lắp các domain vào HTTP mux, còn `internal/app/migrations` chạy migration theo thứ tự. `internal/domain/auth` không sở hữu routes shop/seller/address. Seller và shop được tách handler, model, repository, validation, route và transport helper thành file trong cùng package. Các domain nhỏ tiếp tục dùng ít file hơn để tránh tạo lớp/thư mục rỗng chỉ vì quy ước.
 
 Catalog dùng MySQL parameterized queries, allowlist sort, giới hạn phân trang và validate query/body tại BE. Gửi thay đổi có kiểm thử liên quan và chạy `go test ./...`, `go vet ./...`, `go build ./...` trước khi merge.
+
+
+## Voucher validation and checkout quote
+
+The checkout domain exposes these CLIENT-authenticated APIs:
+
+- `GET /api/v1/checkout/options` returns active shipping and payment methods from the database.
+- `POST /api/v1/vouchers/validate` checks a voucher against selected cart lines, scope/shop, active period, minimum subtotal, global usage limit, and per-user usage limit. Body: `{"code":"SEED-WELCOME","scope":"PLATFORM","cart_item_ids":[123]}`; shop vouchers also require `shop_id`.
+- `POST /api/v1/checkout/quote` accepts `address_id`, `shipping_method_id`, `payment_method_id`, `cart_item_ids`, optional `platform_voucher`, and optional `shop_vouchers` keyed by shop ID. It re-reads current prices, stock and product availability, verifies address ownership and active methods, then returns the line items and total.
+
+Shipping `base_fee` is currently charged once per checkout quote, including multi-shop carts, in line with the order-level `orders.shipping_fee` field. Shop vouchers apply only to selected lines from their shop. The platform discount is applied after shop discounts, and combined discounts cannot exceed the merchandise subtotal. Amounts use the schema precision of two decimal places.
+
+Payment method `MOCK_CARD` is intentionally excluded from customer checkout because it is a local test fixture without a payment gateway. The quote endpoint uses integer cents internally and rejects totals beyond `DECIMAL(15,2)` capacity.
+
+Successful response data includes `address`, `shipping_method`, `payment_method`, selected `items`, `subtotal`, `shipping_fee`, `shop_vouchers`, `shop_discount`, `platform_voucher`, `platform_discount`, and `total`. Invalid input returns `400`; unauthenticated or wrong-role callers return `401`/`403`; stale addresses/methods/cart items or invalid vouchers return `422`; database failures return a generic `500` while details are logged server-side. Common error codes include `address_unavailable`, `shipping_method_unavailable`, `payment_method_unavailable`, `cart_item_unavailable`, `cart_selection_changed`, `voucher_invalid`, `voucher_unavailable`, `voucher_minimum_not_met`, `voucher_shop_mismatch`, and `cart_total_exceeded`.
+
+A quote is advisory: it does not create an order, reserve stock, or consume a voucher. A future order-creation endpoint must repeat validation and atomically update stock and voucher usage in a transaction. The cart UI now collects delivery/payment choices and displays a server-calculated quote; it does not claim an order was placed.
+
+Example quote body:
+
+```json
+{
+  "address_id": 12,
+  "shipping_method_id": 980001,
+  "payment_method_id": 980101,
+  "cart_item_ids": [45, 46],
+  "platform_voucher": "SEED-WELCOME",
+  "shop_vouchers": {"920001": "SEED-MAY10"}
+}
+```
+
+## Checkout implementation and team follow-up
+
+Before validating a successful quote locally, start the API and seed a disposable local/test database (`database/seed.local.sql`). The seed includes `STANDARD`/`EXPRESS`, `COD`/`BANK_TRANSFER`, `SEED-WELCOME` (platform), and `SEED-MAY10` (shop 920001). Use a CLIENT access token, an address owned by that account, and cart item IDs returned by that same account's `GET /api/v1/cart`; do not substitute IDs from another user. `MOCK_CARD` is intentionally omitted from returned payment choices.
+
+Manual/API QA matrix:
+
+- Quote one available item with no voucher and compare the price, selected shipping `base_fee` (charged once), and total.
+- Apply a valid platform voucher and a valid shop voucher; confirm the shop code only applies to its own selected shop and combined discounts do not exceed merchandise subtotal.
+- Try unknown, wrong-scope, wrong-shop, expired, exhausted, per-user-used, minimum-not-met vouchers; each must fail without changing cart, inventory, or voucher usage.
+- Try another user's address/cart ID, duplicate/non-positive IDs, an unavailable product/variant/category/shop, insufficient stock, and inactive or `MOCK_CARD` methods. These must fail with a client error and no mutation.
+- Change the price after loading the cart, then quote again; the returned amount must use the new DB price. Deactivate the product/method or reduce stock below cart quantity; the quote must return a client error instead of trusting FE state.
+
+The Postman folder currently verifies auth, option response shape, and invalid requests. A successful seeded quote is still a manual integration check because the disposable auth flow does not create a guaranteed address/cart fixture.
+
+Next implementation work is order creation: repeat quote validations within a DB transaction, lock/recheck stock, increment voucher usage atomically, persist order snapshots and clear only purchased cart items. Payment gateway callbacks/verification and cancellation/refund rules must be added before claiming online payment is supported.

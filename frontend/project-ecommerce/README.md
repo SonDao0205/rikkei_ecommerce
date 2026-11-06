@@ -29,12 +29,39 @@ npm run build
 
 ## Tích hợp API
 
-- Dùng `src/api/axiosClient.ts` cho request. Access token chỉ giữ trong memory; refresh token do backend cấp qua HttpOnly cookie và Axios gửi bằng `withCredentials`.
+- Dùng `src/shared/api/axiosClient.ts` cho request. Access token chỉ giữ trong memory; refresh token do backend cấp qua HttpOnly cookie và Axios gửi bằng `withCredentials`.
 - API path bắt đầu bằng `/api/v1`. Với local Vite, dùng backend host trong `.env.local`; với Compose dùng same-origin.
+- Cart and wishlist are connected to authenticated backend APIs: `/api/v1/cart/*` and `/api/v1/wishlist/*`. Cart and voucher endpoints require the CLIENT role; state is scoped to the signed-in account. Voucher discounts are no longer hard-coded in the FE.
+- Voucher and checkout quote APIs are connected to the backend: `POST /api/v1/vouchers/validate`, `GET /api/v1/checkout/options`, and `POST /api/v1/checkout/quote`. The cart sends selected cart item IDs and voucher codes; the server rechecks ownership, active product/variant/shop/category state, stock, voucher scope/period/usage/minimum and active shipping/payment methods before calculating totals.
+- In the cart, the checkout dialog loads saved addresses plus active shipping/payment methods. Calculate shipping and view quote refreshes a server-side quote using current DB prices and stock. The test-only `MOCK_CARD` payment method is filtered out because it has no gateway. Shipping `base_fee` is charged once per multi-shop quote; shop vouchers apply only to their shop, then the platform voucher applies, capped so discounts never exceed merchandise subtotal. The cart total before this step is only an estimate.
+- Quotes do not place orders, reserve stock, or consume vouchers. Do not add a payment-success screen or clear the cart until a transactional order-creation/payment flow is implemented. A customer without a saved address should use `/profile/address` and retry.
 - Backend trả `{ "success": true, "data": ... }` hoặc lỗi có HTTP status và `errors[].code`. Không dựa vào mock fallback để xác nhận BE đã tích hợp: một số API client cũ trả dữ liệu mock sau khi request thất bại.
 - API admin shop `GET /api/v1/admin/shops` trả sáu trạng thái và `data.status_counts` trên toàn bộ shop; `data.total` chỉ đếm kết quả khớp filter/tìm kiếm. Dùng `status_counts` cho tab/thống kê, không suy ra số liệu toàn hệ thống từ trang hiện tại.
 - Một tài khoản có thể có nhiều role. User response có `role` tương thích, `roles` dạng mảng và `shop_status` nếu có shop; FE dùng các trường này để điều khiển giao diện, quyền cuối cùng do BE xác nhận. Seller Center chỉ hiện khi shop `ACTIVE`, còn storefront và tài khoản mua hàng vẫn dùng được với role `CLIENT`.
-- Luồng mở shop yêu cầu đăng nhập, lưu bản nháp qua `POST/PUT /api/v1/me/shop` và gửi duyệt qua `POST /api/v1/me/shop/submit`. Seller tiếp tục truy cập storefront và khu vực tài khoản mua hàng. Form KYC/ngân hàng chưa gửi hoặc lưu dữ liệu vì BE chưa có API phù hợp.
+- Mở shop hỗ trợ cả khách mới lẫn CLIENT đã có tài khoản: khách mới đăng ký public thành CLIENT, sau đó tạo/cập nhật DRAFT và gửi duyệt. `POST /api/v1/me/shop/submit` yêu cầu `agreements` đúng phiên bản `seller-onboarding-v1`; backend lưu chấp thuận và đưa hồ sơ sang `PENDING`. Chủ shop có thể sửa/nộp lại hồ sơ `NEEDS_INFO` hoặc `REJECTED`; admin duyệt mới cấp thêm `SELLER`. Hồ sơ KYC/ngân hàng và tải file CCCD hiện chưa được gửi/lưu vì backend chưa có API an toàn cho dữ liệu đó.
 - Một số màn admin dashboard/shop/order đang gọi endpoint BE chưa triển khai. Xem bảng “Những route FE đang gọi nhưng BE chưa triển khai” trong Backend README trước khi kết nối các màn đó.
 
 Chỉ gửi access token qua header `Authorization: Bearer ...`; không lưu access/refresh token trong `localStorage` hoặc `sessionStorage`.
+
+## Cấu trúc mã nguồn
+
+```text
+src/
+  app/                 App entry, routing, layouts và Redux store
+  domains/
+    auth/              API, pages, components, state, types
+    admin/             API, pages, components, state, types
+    shop/              API, pages, components, state, types
+    customer/          hồ sơ, địa chỉ, đơn mua và các thành phần liên quan
+    storefront/        trang chủ, catalog, chi tiết sản phẩm và API công khai
+    order/             kiểu dùng chung cho dữ liệu đơn hàng
+  shared/              API client, components dùng chung, styles, config, types, utils, assets
+```
+
+Thêm hoặc sửa nghiệp vụ trong domain tương ứng; chỉ đặt mã ở `shared` khi thực sự được nhiều domain dùng. `app` chỉ ghép ứng dụng (routes/layout/store), không chứa logic nghiệp vụ. Alias `@/` trỏ tới `src/` để import giữa domain không phụ thuộc vào độ sâu thư mục. HTML prototype cũ được giữ tại `docs/ui-prototypes`, ngoài nguồn build của ứng dụng.
+
+### Checkout QA and remaining work
+
+Verify with a CLIENT account that has a saved address and selected cart items. Exercise no-voucher quote, valid platform and shop voucher, invalid/expired/used voucher, a shop voucher for a shop absent from selected items, stale stock/product status, inactive payment/shipping method, and an address/cart item owned by another account. Errors should be displayed to the user; the cart and voucher usage must remain unchanged because quote/validation are read-only.
+
+The quote is not order submission. Do not show a payment-success state, clear cart items, or promise stock reservation. The next FE integration depends on the backend order-creation and payment APIs, which must revalidate and transact the quote data.

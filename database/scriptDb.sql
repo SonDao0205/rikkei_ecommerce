@@ -150,6 +150,24 @@ CREATE TABLE brands (
   UNIQUE KEY uq_brands_slug (slug)
 );
 
+CREATE TABLE shop_application_acceptances (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  shop_id BIGINT UNSIGNED NOT NULL,
+  owner_id BIGINT UNSIGNED NOT NULL,
+  terms_version VARCHAR(40) NOT NULL,
+  service_policy_accepted TINYINT(1) NOT NULL,
+  authenticity_accepted TINYINT(1) NOT NULL,
+  anti_counterfeit_accepted TINYINT(1) NOT NULL,
+  ip_address VARCHAR(45) NOT NULL DEFAULT '',
+  user_agent VARCHAR(512) NOT NULL DEFAULT '',
+  accepted_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_shop_acceptance_latest (shop_id,id),
+  KEY idx_shop_acceptance_owner (owner_id,id),
+  CONSTRAINT fk_shop_acceptance_shop FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE,
+  CONSTRAINT fk_shop_acceptance_owner FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 -- Thuộc tính dùng chung (vd: Màu sắc, Kích cỡ) để tạo biến thể
 CREATE TABLE attributes (
   id   BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -604,9 +622,11 @@ CREATE TABLE audit_logs (
   old_value   JSON         NULL,
   new_value   JSON         NULL,
   ip_address  VARCHAR(45)  NULL,
+  request_id  VARCHAR(128) NULL,
   created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   KEY idx_audit_logs_user (user_id, created_at),
   KEY idx_audit_logs_entity (entity_type, entity_id),
-  KEY idx_audit_logs_created (created_at)
+  KEY idx_audit_logs_created (created_at),
+  KEY idx_audit_logs_request (request_id)
 );
