@@ -118,7 +118,7 @@ export const CartOrderSummary: React.FC<CartOrderSummaryProps> = ({
         </div>
 
         <div className="flex items-center justify-between">
-          <span className="text-on-surface-variant">Estimated Shipping</span>
+          <span className="text-on-surface-variant">Estimated Shipping (final at checkout)</span>
           <span className="text-on-surface">
             {summary.estimated_shipping > 0
               ? formatCurrencyVND(summary.estimated_shipping)
@@ -164,9 +164,9 @@ export const CartOrderSummary: React.FC<CartOrderSummaryProps> = ({
         <div className="flex items-baseline justify-between">
           <div>
             <span className="text-sm sm:text-base font-bold text-on-surface block">
-              Total Amount
+              Estimated Total
             </span>
-            <span className="text-[11px] text-outline">VAT included</span>
+            <span className="text-[11px] text-outline">Final total confirmed in checkout quote</span>
           </div>
           <div className="text-right">
             <span className="text-2xl sm:text-3xl text-primary-container font-black leading-none block">
@@ -198,8 +198,8 @@ export const CartOrderSummary: React.FC<CartOrderSummaryProps> = ({
       >
         <span>
           {isCheckingOut
-            ? "Đang chuyển thanh toán..."
-            : "Proceed to Checkout (COD Available)"}
+            ? "Đang tải báo giá..."
+            : "Chọn giao hàng, thanh toán & xem báo giá"}
         </span>
         <span className="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">
           arrow_forward
@@ -239,20 +239,9 @@ export const CartOrderSummary: React.FC<CartOrderSummaryProps> = ({
         <span className="text-[10px] uppercase font-bold text-outline text-center tracking-wider">
           Accepted Payment Options
         </span>
-        <div className="flex items-center justify-center gap-1.5 flex-wrap text-on-surface text-[11px]">
-          <span className="px-2 py-1 bg-surface-container-high rounded font-bold text-primary">
-            Cash on Delivery
-          </span>
-          <span className="px-2 py-1 bg-surface-container rounded font-medium">
-            MoMo
-          </span>
-          <span className="px-2 py-1 bg-surface-container rounded font-medium">
-            VNPay
-          </span>
-          <span className="px-2 py-1 bg-surface-container rounded font-medium">
-            Visa/Mastercard
-          </span>
-        </div>
+        <p className="text-center text-[11px] text-on-surface-variant">
+          Chọn phương thức đang được hệ thống hỗ trợ ở bước checkout.
+        </p>
       </div>
     </div>
   );

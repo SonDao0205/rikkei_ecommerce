@@ -33,6 +33,7 @@
     { "key": "businessAddressId", "value": "" }
   ],
   "item": [
+
     {
       "name": "Health",
       "item": [
@@ -3037,6 +3038,118 @@
           ]
         }
       ]
-    }
+    },
+  {
+    "name": "Checkout and Voucher",
+    "description": "Non-mutating checkout option and request validation checks. A valid quote requires a customer address, active cart items, and initialized shipping/payment methods.",
+    "item": [
+      {
+        "name": "Checkout options require CLIENT auth",
+        "request": {
+          "method": "GET",
+          "url": "{{baseUrl}}/api/v1/checkout/options"
+        },
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Checkout options require authentication', () => pm.response.to.have.status(401));"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "List active shipping and payment options",
+        "request": {
+          "method": "GET",
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{clientToken}}"
+            }
+          ],
+          "url": "{{baseUrl}}/api/v1/checkout/options"
+        },
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Active checkout methods are returned', () => { pm.response.to.have.status(200); const data = pm.response.json().data; pm.expect(data.shipping_methods).to.be.an('array'); pm.expect(data.payment_methods).to.be.an('array'); });"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "Reject incomplete checkout quote",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{clientToken}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{}"
+          },
+          "url": "{{baseUrl}}/api/v1/checkout/quote"
+        },
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Incomplete quote is rejected without side effects', () => pm.response.to.have.status(400));"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "Reject invalid voucher request",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{clientToken}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\"code\":\"\",\"scope\":\"PLATFORM\",\"cart_item_ids\":[]}"
+          },
+          "url": "{{baseUrl}}/api/v1/vouchers/validate"
+        },
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Invalid voucher request is rejected', () => pm.response.to.have.status(400));"
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  }
   ]
 }

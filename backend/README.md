@@ -2,7 +2,7 @@
 
 Backend REST API cho MVP Rikkei E-Commerce, viết bằng Go 1.24+, `net/http` và MySQL `database/sql`. Tài liệu này hướng dẫn DevOps chạy/vận hành BE và FE tích hợp các API **đang có**.
 
-> BE hiện cung cấp auth/RBAC, catalog công khai, admin CRUD danh mục, quản lý shop và duyệt shop, seller CRUD sản phẩm/biến thể/tồn kho ban đầu, sổ địa chỉ, giỏ hàng, wishlist, theo dõi shop và một số API admin inventory. Voucher, checkout, thanh toán, đơn hàng và đánh giá vẫn chưa có API.
+> Backend implements auth/RBAC, catalog, shop management, seller products, addresses, cart, wishlist, categories, and checkout quote APIs. Order creation, stock reservation, and payment processing are not implemented.
 
 ## Cấu trúc mã nguồn
 
@@ -17,6 +17,7 @@ internal/
     address/    # Sổ địa chỉ
     auth/       # Xác thực, phiên, JWT/OTP, RBAC và bảo mật
     cart/       # Giỏ hàng và biến thể
+    checkout/   # Voucher validation and checkout quote
     catalog/    # Catalog công khai, danh mục và admin inventory
     seller/     # Seller product và variants
     shop/       # Mở shop và xét duyệt
@@ -238,7 +239,7 @@ FE hiện có API client cho dashboard/admin shop/order nhưng BE chưa có các
 | Admin shops | `GET /api/v1/admin/shops/metrics`, `PATCH /api/v1/admin/shops/{id}/toggle-live`, `PATCH /api/v1/admin/shops/{id}/unlock`, `PATCH /api/v1/admin/shops/{id}/commission`, `GET /api/v1/admin/shops/export` |
 | Admin orders | `GET /api/v1/admin/orders`, `GET /api/v1/admin/orders/counts`, `GET /api/v1/admin/orders/{id}`, `PATCH /api/v1/admin/orders/{id}/confirm`, `PATCH /api/v1/admin/orders/{id}/cancel`, `PATCH /api/v1/admin/orders/{id}/courier`, `POST /api/v1/admin/orders/bulk-confirm`, `GET /api/v1/admin/orders/export` |
 
-BE có các route quản trị shop riêng được liệt kê ở bảng API phía trên (`approve`, `reject`, `lock`, `status`); chúng không thay thế ngữ nghĩa toggle-live, unlock, commission hoặc metrics của FE. Cart và wishlist đã có API; checkout/payment/order chưa nằm trong phạm vi BE hiện tại.
+Cart and wishlist APIs are available. Voucher validation, delivery/payment options, and checkout quote APIs are implemented; order creation and payment processing remain unimplemented.
 
 API path/query phải theo đúng tên và giới hạn dưới đây. Contract catalog/admin inventory và ví dụ response đầy đủ: [`docs/catalog-api.md`](../docs/catalog-api.md).
 
@@ -443,7 +444,7 @@ Cart và wishlist yêu cầu đăng nhập với role `CLIENT`; seller vẫn gi�
 - `PUT /api/v1/cart/items/{id}` nhận `{ "quantity": 2 }` và thay số lượng tuyệt đối (không cộng dồn). Biến thể không được đổi qua endpoint này; nếu sản phẩm không còn mua được hoặc số lượng vượt tồn kho, BE trả lỗi thay vì ghi dữ liệu sai. `DELETE /api/v1/cart/items/{id}` xóa đúng item thuộc cart của user; `DELETE /api/v1/cart/items` xóa cả giỏ. Cart được khóa theo user trong transaction để tuần tự hóa thao tác ghi cùng một cart.
 - GET cart vẫn trả các item đã hết hàng/ngừng bán để người dùng nhận biết và tự xóa; mỗi item có `is_available` và `available_stock`. Chỉ item khả dụng được cộng vào subtotal. Số tiền dòng được nhân ở `DECIMAL(30,2)` để bao phủ mức giá schema và số lượng tồn kho kiểu `INT`.
 - `GET /api/v1/wishlist` trả `items` và `total`, cùng trạng thái khả dụng/tồn kho hiện tại. Có thể lưu sản phẩm hết hàng; chỉ sản phẩm public (cùng shop/category active, chưa soft-delete) mới được thêm. `POST` lặp là idempotent; `DELETE` lặp vẫn thành công. Wishlist không khóa biến thể vì được lưu theo sản phẩm.
-- Đây là API nền tảng, chưa có trang cart/wishlist hoặc checkout; FE không nên hiển thị thao tác giả thành công. Collection Postman có folder **Cart and Wishlist** với flow tích hợp; chạy trên local/test sau khi nạp fixtures seed.
+- Cart and wishlist APIs are implemented. Checkout quote APIs are documented below; they calculate current pricing but do not create orders. Postman covers authorization and invalid-request cases.
 
 ### Admin inventory
 
@@ -475,7 +476,7 @@ Body JSON bị giới hạn kích thước, field lạ, JSON sai/nhiều JSON va
 - Protected API kiểm tra user status, tất cả role đang gán và trạng thái phiên trong DB; access JWT dùng HS256. Refresh token chỉ lưu dạng hash, xoay vòng và phát hiện replay.
 - Rate limiter hiện nằm trong memory của một process; khi scale nhiều replica cần chuyển giới hạn sang gateway hoặc shared store.
 - OTP delivery qua SMTP STARTTLS cần được kiểm thử trên môi trường tích hợp; không ghi OTP hoặc secret ra log ngoài development.
-- Chưa có OAuth Google/Facebook, MFA, xác minh email/phone, quản lý thiết bị/session UI, checkout/order/payment.
+- OAuth Google/Facebook, MFA, email/phone verification, device/session UI, order creation, and payment processing are not implemented.
 - Role `SELLER` được cấp khi admin duyệt shop; `ADMIN` chỉ cấp qua quy trình quản trị tin cậy. Migration `002_multi_role.sql` tạo `roles`/`user_roles` và backfill các role hiện có, luôn bổ sung `CLIENT` mà không xóa role legacy.
 - Migration không xóa cột `users.role` trong giai đoạn tương thích; authorization sử dụng `user_roles`. Cột legacy được giữ để các client cũ không bị gãy.
 - Security migration không thay thế full commerce schema; migration domain bổ sung role assignments, trạng thái shop `DRAFT`/`NEEDS_INFO`, `addresses.address_type` và `shops.approval_notes`. Kiểm tra schema/backup trước migration tại database đã có dữ liệu.
@@ -498,3 +499,49 @@ scripts/                      Smoke test API local
 Mỗi domain tự đăng ký routes; `internal/app/server` lắp các domain vào HTTP mux, còn `internal/app/migrations` chạy migration theo thứ tự. `internal/domain/auth` không sở hữu routes shop/seller/address. Seller và shop được tách handler, model, repository, validation, route và transport helper thành file trong cùng package. Các domain nhỏ tiếp tục dùng ít file hơn để tránh tạo lớp/thư mục rỗng chỉ vì quy ước.
 
 Catalog dùng MySQL parameterized queries, allowlist sort, giới hạn phân trang và validate query/body tại BE. Gửi thay đổi có kiểm thử liên quan và chạy `go test ./...`, `go vet ./...`, `go build ./...` trước khi merge.
+
+
+## Voucher validation and checkout quote
+
+The checkout domain exposes these CLIENT-authenticated APIs:
+
+- `GET /api/v1/checkout/options` returns active shipping and payment methods from the database.
+- `POST /api/v1/vouchers/validate` checks a voucher against selected cart lines, scope/shop, active period, minimum subtotal, global usage limit, and per-user usage limit. Body: `{"code":"SEED-WELCOME","scope":"PLATFORM","cart_item_ids":[123]}`; shop vouchers also require `shop_id`.
+- `POST /api/v1/checkout/quote` accepts `address_id`, `shipping_method_id`, `payment_method_id`, `cart_item_ids`, optional `platform_voucher`, and optional `shop_vouchers` keyed by shop ID. It re-reads current prices, stock and product availability, verifies address ownership and active methods, then returns the line items and total.
+
+Shipping `base_fee` is currently charged once per checkout quote, including multi-shop carts, in line with the order-level `orders.shipping_fee` field. Shop vouchers apply only to selected lines from their shop. The platform discount is applied after shop discounts, and combined discounts cannot exceed the merchandise subtotal. Amounts use the schema precision of two decimal places.
+
+Payment method `MOCK_CARD` is intentionally excluded from customer checkout because it is a local test fixture without a payment gateway. The quote endpoint uses integer cents internally and rejects totals beyond `DECIMAL(15,2)` capacity.
+
+Successful response data includes `address`, `shipping_method`, `payment_method`, selected `items`, `subtotal`, `shipping_fee`, `shop_vouchers`, `shop_discount`, `platform_voucher`, `platform_discount`, and `total`. Invalid input returns `400`; unauthenticated or wrong-role callers return `401`/`403`; stale addresses/methods/cart items or invalid vouchers return `422`; database failures return a generic `500` while details are logged server-side. Common error codes include `address_unavailable`, `shipping_method_unavailable`, `payment_method_unavailable`, `cart_item_unavailable`, `cart_selection_changed`, `voucher_invalid`, `voucher_unavailable`, `voucher_minimum_not_met`, `voucher_shop_mismatch`, and `cart_total_exceeded`.
+
+A quote is advisory: it does not create an order, reserve stock, or consume a voucher. A future order-creation endpoint must repeat validation and atomically update stock and voucher usage in a transaction. The cart UI now collects delivery/payment choices and displays a server-calculated quote; it does not claim an order was placed.
+
+Example quote body:
+
+```json
+{
+  "address_id": 12,
+  "shipping_method_id": 980001,
+  "payment_method_id": 980101,
+  "cart_item_ids": [45, 46],
+  "platform_voucher": "SEED-WELCOME",
+  "shop_vouchers": {"920001": "SEED-MAY10"}
+}
+```
+
+## Checkout implementation and team follow-up
+
+Before validating a successful quote locally, start the API and seed a disposable local/test database (`database/seed.local.sql`). The seed includes `STANDARD`/`EXPRESS`, `COD`/`BANK_TRANSFER`, `SEED-WELCOME` (platform), and `SEED-MAY10` (shop 920001). Use a CLIENT access token, an address owned by that account, and cart item IDs returned by that same account's `GET /api/v1/cart`; do not substitute IDs from another user. `MOCK_CARD` is intentionally omitted from returned payment choices.
+
+Manual/API QA matrix:
+
+- Quote one available item with no voucher and compare the price, selected shipping `base_fee` (charged once), and total.
+- Apply a valid platform voucher and a valid shop voucher; confirm the shop code only applies to its own selected shop and combined discounts do not exceed merchandise subtotal.
+- Try unknown, wrong-scope, wrong-shop, expired, exhausted, per-user-used, minimum-not-met vouchers; each must fail without changing cart, inventory, or voucher usage.
+- Try another user's address/cart ID, duplicate/non-positive IDs, an unavailable product/variant/category/shop, insufficient stock, and inactive or `MOCK_CARD` methods. These must fail with a client error and no mutation.
+- Change the price after loading the cart, then quote again; the returned amount must use the new DB price. Deactivate the product/method or reduce stock below cart quantity; the quote must return a client error instead of trusting FE state.
+
+The Postman folder currently verifies auth, option response shape, and invalid requests. A successful seeded quote is still a manual integration check because the disposable auth flow does not create a guaranteed address/cart fixture.
+
+Next implementation work is order creation: repeat quote validations within a DB transaction, lock/recheck stock, increment voucher usage atomically, persist order snapshots and clear only purchased cart items. Payment gateway callbacks/verification and cancellation/refund rules must be added before claiming online payment is supported.
