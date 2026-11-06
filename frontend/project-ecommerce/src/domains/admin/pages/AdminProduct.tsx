@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import AdminLayout from "@/app/layout/AdminLayout";
 import ProductHeader from "@/domains/admin/components/product/ProductHeader";
 import ProductStatsCards from "@/domains/admin/components/product/ProductStatsCards";
@@ -44,6 +44,7 @@ const AdminProduct: React.FC = () => {
     pageSize,
   } = useAppSelector((state) => state.adminProduct);
   const { categories } = useAppSelector((state) => state.product);
+  const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
 
   useEffect(() => {
     dispatch(getInventoryStats());
@@ -61,6 +62,11 @@ const AdminProduct: React.FC = () => {
       })
     );
   }, [dispatch, searchQuery, categoryFilter, stockStatusFilter, vendorFilter, sortBy]);
+
+  const showFeedback = (msg: string) => {
+    setFeedbackMessage(msg);
+    setTimeout(() => setFeedbackMessage(null), 3500);
+  };
 
   const handleSearchChange = (val: string) => {
     dispatch(setSearchQuery(val));
@@ -94,18 +100,47 @@ const AdminProduct: React.FC = () => {
     dispatch(selectAllProducts(checked));
   };
 
-  const handleToggleStatus = (id: number) => {
-    dispatch(toggleProductStatus(id));
-  };
-
-  const handleDeleteProduct = (id: number) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa sản phẩm này không?")) {
-      dispatch(deleteProduct(id));
+  const handleToggleStatus = async (id: number) => {
+    try {
+      const res = await dispatch(toggleProductStatus(id)).unwrap();
+      showFeedback(
+        `Đã chuyển trạng thái sản phẩm #${id} sang ${
+          res.is_active ? "BẬT (ACTIVE)" : "TẮT (HIDDEN)"
+        }.`
+      );
+    } catch {
+      // Error handled in slice state.error
     }
   };
 
-  const handleApplyBulkAction = (action: "activate" | "deactivate" | "delete") => {
-    dispatch(executeBulkAction({ action, productIds: selectedIds }));
+  const handleDeleteProduct = async (id: number) => {
+    if (window.confirm("Bạn có chắc chắn muốn xóa sản phẩm này không?")) {
+      try {
+        await dispatch(deleteProduct(id)).unwrap();
+        showFeedback(`Đã xóa sản phẩm #${id} thành công.`);
+      } catch {
+        // Error handled in slice state.error
+      }
+    }
+  };
+
+  const handleApplyBulkAction = async (action: "activate" | "deactivate" | "delete") => {
+    try {
+      const res = await dispatch(executeBulkAction({ action, productIds: selectedIds })).unwrap();
+      const actionName =
+        action === "activate"
+          ? "kích hoạt"
+          : action === "deactivate"
+          ? "hủy kích hoạt"
+          : "xóa";
+      showFeedback(`Đã ${actionName} thành công ${res.count} sản phẩm.`);
+    } catch {
+      // Error handled in slice state.error
+    }
+  };
+
+  const handleAddNewProduct = () => {
+    showFeedback("Tính năng thêm sản phẩm trực tiếp dành cho Kênh người bán.");
   };
 
   const handleExportCsv = () => {
@@ -151,7 +186,29 @@ const AdminProduct: React.FC = () => {
   return (
     <AdminLayout>
       {/* Page Title & Action Header */}
-      <ProductHeader onExportCsv={handleExportCsv} />
+      <ProductHeader
+        onAddNewProduct={handleAddNewProduct}
+        onExportCsv={handleExportCsv}
+      />
+
+      {/* Success feedback banner */}
+      {feedbackMessage && (
+        <div className="mb-4 p-4 rounded-xl bg-emerald-500/10 text-emerald-800 border border-emerald-500/20 flex items-center justify-between shadow-sm animate-fade-in">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-[22px] text-emerald-600">
+              check_circle
+            </span>
+            <span className="text-sm font-semibold">{feedbackMessage}</span>
+          </div>
+          <button
+            onClick={() => setFeedbackMessage(null)}
+            className="p-1 rounded-full hover:bg-black/10 transition-colors cursor-pointer"
+            aria-label="Đóng"
+          >
+            <span className="material-symbols-outlined text-[18px]">close</span>
+          </button>
+        </div>
+      )}
 
       {/* Error notification banner */}
       {error && (

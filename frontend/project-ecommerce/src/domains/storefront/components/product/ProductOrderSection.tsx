@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import type { ProductItem, ProductVariant } from "@/domains/storefront/types";
 import { useAppDispatch, useAppSelector } from "@/app/state/store";
 import { addCartItem } from "@/domains/customer/state/cartSlice";
 import { toggleWishlistItem } from "@/domains/customer/state/wishlistSlice";
+import WishlistToast from "@/domains/customer/components/wishlist/WishlistToast";
 
 interface ProductOrderSectionProps {
   product: ProductItem;
@@ -31,6 +32,30 @@ export const ProductOrderSection: React.FC<ProductOrderSectionProps> = ({
   const isWishlisted = useAppSelector((state) => state.wishlist.items.some((item) => item.product_id === product.id));
   const isWishlistPending = useAppSelector((state) => state.wishlist.mutatingIds.includes(product.id));
   const isCartUpdating = useAppSelector((state) => state.cart.updating);
+  const [toastState, setToastState] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: "success" | "error" | "info";
+    actionText?: string;
+    actionLink?: string;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "success",
+    actionText: "Xem giỏ",
+    actionLink: "/cart",
+  });
+
+  useEffect(() => {
+    if (toastState.isOpen) {
+      const timer = setTimeout(() => {
+        setToastState((prev) => ({ ...prev, isOpen: false }));
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [toastState.isOpen]);
 
   const currentPrice = selectedVariant?.price ?? product.price ?? 0;
   const currentStock = selectedVariant?.stock ?? product.stock ?? 0;
@@ -62,17 +87,33 @@ export const ProductOrderSection: React.FC<ProductOrderSectionProps> = ({
       setActionError("Giỏ hàng chỉ dành cho tài khoản người mua.");
       return;
     }
-    if (!selectedVariant || currentStock < 1) {
+    const variantId = selectedVariant?.id || (variants.length > 0 ? variants[0].id : null);
+    if (!variantId || currentStock < 1) {
       setActionError("Vui lòng chọn phiên bản còn hàng trước khi thêm vào giỏ.");
       return;
     }
     setActionError(null);
     setIsAdding(true);
     try {
-      await dispatch(addCartItem({ variantId: selectedVariant.id, quantity })).unwrap();
+      await dispatch(addCartItem({ variantId, quantity })).unwrap();
       setCartToastMessage(`Đã thêm ${quantity} sản phẩm vào giỏ hàng.`);
+      setToastState({
+        isOpen: true,
+        title: "Đã thêm vào giỏ hàng",
+        message: `"${product.name}" (SL: ${quantity}) đã được thêm vào giỏ hàng.`,
+        type: "success",
+        actionText: "Xem giỏ",
+        actionLink: "/cart",
+      });
     } catch (error) {
-      setActionError(error instanceof Error ? error.message : "Không thể thêm sản phẩm vào giỏ.");
+      const msg = error instanceof Error ? error.message : "Không thể thêm sản phẩm vào giỏ.";
+      setActionError(msg);
+      setToastState({
+        isOpen: true,
+        title: "Không thể thêm vào giỏ",
+        message: msg,
+        type: "error",
+      });
     } finally {
       setIsAdding(false);
     }
@@ -89,9 +130,27 @@ export const ProductOrderSection: React.FC<ProductOrderSectionProps> = ({
     }
     setActionError(null);
     try {
+      const wasLiked = isWishlisted;
       await dispatch(toggleWishlistItem(product.id)).unwrap();
+      setToastState({
+        isOpen: true,
+        title: wasLiked ? "Đã bỏ thích sản phẩm" : "Đã thêm vào yêu thích",
+        message: wasLiked
+          ? `"${product.name}" đã được xóa khỏi danh sách yêu thích.`
+          : `"${product.name}" đã được lưu vào danh sách yêu thích.`,
+        type: "success",
+        actionText: "Xem yêu thích",
+        actionLink: "/wishlist",
+      });
     } catch (error) {
-      setActionError(error instanceof Error ? error.message : "Không thể cập nhật danh sách yêu thích.");
+      const msg = error instanceof Error ? error.message : "Không thể cập nhật danh sách yêu thích.";
+      setActionError(msg);
+      setToastState({
+        isOpen: true,
+        title: "Thao tác thất bại",
+        message: msg,
+        type: "error",
+      });
     }
   };
   const handleShare = () => {
@@ -120,7 +179,7 @@ export const ProductOrderSection: React.FC<ProductOrderSectionProps> = ({
               onClick={() => void handleToggleWishlist()}
               disabled={isWishlistPending}
               className="w-9 h-9 rounded-full bg-surface-container-lowest hover:bg-surface-container text-on-surface-variant hover:text-tertiary-container flex items-center justify-center transition-all shadow-xs cursor-pointer"
-              title="Thêm vào danh sách yêu thích"
+              title={isWishlisted ? "Bỏ thích sản phẩm" : "Thêm vào danh sách yêu thích"}
             >
               <span
                 className={`material-symbols-outlined text-[20px] ${
@@ -337,6 +396,17 @@ export const ProductOrderSection: React.FC<ProductOrderSectionProps> = ({
           </Link>
         </div>
       )}
+
+      {/* Pinned Bottom-Right Toast Notification */}
+      <WishlistToast
+        isOpen={toastState.isOpen}
+        title={toastState.title}
+        message={toastState.message}
+        type={toastState.type}
+        actionText={toastState.actionText || "Xem yêu thích"}
+        actionLink={toastState.actionLink || "/wishlist"}
+        onClose={() => setToastState((prev) => ({ ...prev, isOpen: false }))}
+      />
 
     </div>
   );

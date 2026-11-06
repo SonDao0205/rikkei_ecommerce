@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "@/app/state/store";
 import { toggleWishlistItem } from "@/domains/customer/state/wishlistSlice";
+import WishlistToast from "@/domains/customer/components/wishlist/WishlistToast";
 import type { ProductItem } from "@/shared/types";
 
 interface ProductCardProps {
@@ -25,30 +26,75 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
   const roles = user?.roles?.map((role) => role.toLowerCase()) ?? (user?.role ? [user.role] : []);
   const canUseCustomerFeatures = roles.includes("client");
-  const isWishlisted = useAppSelector((state) => state.wishlist.items.some((item) => item.product_id === product.id));
-  const isWishlistPending = useAppSelector((state) => state.wishlist.mutatingIds.includes(product.id));
+  const isWishlisted = useAppSelector((state) =>
+    state.wishlist.items.some((item) => item.product_id === product.id)
+  );
+  const isWishlistPending = useAppSelector((state) =>
+    state.wishlist.mutatingIds.includes(product.id)
+  );
   const cartUpdating = useAppSelector((state) => state.cart.updating);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [toastState, setToastState] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: "success" | "error";
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "success",
+  });
 
-  const handleWishlistClick = (e: React.MouseEvent) => {
+  useEffect(() => {
+    if (toastState.isOpen) {
+      const timer = setTimeout(() => {
+        setToastState((prev) => ({ ...prev, isOpen: false }));
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [toastState.isOpen]);
+
+  const handleWishlistClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+
     if (!isAuthenticated) {
       navigate("/login", { state: { from: location } });
       return;
     }
+
     if (!canUseCustomerFeatures) {
-      setActionError("Danh sách yêu thích chỉ dành cho tài khoản người mua.");
+      setToastState({
+        isOpen: true,
+        title: "Không khả dụng",
+        message: "Danh sách yêu thích chỉ dành cho tài khoản người mua.",
+        type: "error",
+      });
       return;
     }
-    setActionError(null);
-    if (onToggleWishlist) {
-      onToggleWishlist(product);
-      return;
+
+    try {
+      const wasLiked = isWishlisted;
+      await dispatch(toggleWishlistItem(product.id)).unwrap();
+      setToastState({
+        isOpen: true,
+        title: wasLiked ? "Đã bỏ thích sản phẩm" : "Đã thêm vào yêu thích",
+        message: wasLiked
+          ? `"${product.name}" đã được xóa khỏi danh sách yêu thích.`
+          : `"${product.name}" đã được lưu vào danh sách yêu thích.`,
+        type: "success",
+      });
+      onToggleWishlist?.(product);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Thao tác thất bại";
+      setToastState({
+        isOpen: true,
+        title: "Thao tác thất bại",
+        message: msg,
+        type: "error",
+      });
     }
-    void dispatch(toggleWishlistItem(product.id)).unwrap().catch((error: unknown) => {
-      setActionError(error instanceof Error ? error.message : "Không thể cập nhật danh sách yêu thích.");
-    });
   };
 
   const handleQuickAddClick = (e: React.MouseEvent) => {
@@ -234,6 +280,17 @@ const ProductCard: React.FC<ProductCardProps> = ({
           )}
         </div>
       </div>
+
+      {/* Pinned Bottom-Right Toast Notification */}
+      <WishlistToast
+        isOpen={toastState.isOpen}
+        title={toastState.title}
+        message={toastState.message}
+        type={toastState.type}
+        actionText="Xem yêu thích"
+        actionLink="/wishlist"
+        onClose={() => setToastState((prev) => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 };

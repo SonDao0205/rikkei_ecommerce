@@ -169,14 +169,89 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
 
         {/* Active Filters Display */}
         <div className="flex flex-wrap items-center gap-2">
-          <span className="font-body-sm text-body-sm text-on-surface-variant">?ang l?c:</span>
-          {!hasActiveFilters && <span className="rounded-full bg-surface-container-high px-2.5 py-1 text-sm">T?t c? s?n ph?m</span>}
-          {searchQuery && <button type="button" onClick={() => onSearchChange("")} className="rounded-full bg-primary-container px-2.5 py-1 text-sm text-on-primary">T?m: {searchQuery} ?</button>}
-          {categoryFilter && <button type="button" onClick={() => onCategoryChange("")} className="rounded-full bg-surface-container-high px-2.5 py-1 text-sm">{categoryFilter} ?</button>}
-          {stockStatusFilter && <button type="button" onClick={() => onStockStatusChange("")} className="rounded-full bg-surface-container-high px-2.5 py-1 text-sm">{stockStatusFilter.replaceAll("_", " ")} ?</button>}
-          {vendorFilter && <button type="button" onClick={() => onVendorChange("")} className="rounded-full bg-surface-container-high px-2.5 py-1 text-sm">Shop: {vendorFilter} ?</button>}
-          {sortBy !== "newest" && <button type="button" onClick={() => onSortChange("newest")} className="rounded-full bg-surface-container-high px-2.5 py-1 text-sm">Sort: {sortBy.replaceAll("_", " ")} ?</button>}
-          {hasActiveFilters && <button type="button" onClick={onClearFilters} className="ml-2 text-sm font-semibold text-primary hover:underline">X?a b? l?c</button>}
+          <span className="font-body-sm text-body-sm text-on-surface-variant">Bộ lọc đang bật:</span>
+          {!hasActiveFilters && (
+            <span className="px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm">
+              Tất cả kho hàng
+            </span>
+          )}
+          {searchQuery && (
+            <span className="px-2.5 py-1 rounded-full bg-primary-container text-on-primary font-label-sm text-label-sm flex items-center gap-1">
+              <span>Tìm: &ldquo;{searchQuery}&rdquo;</span>
+              <button
+                type="button"
+                onClick={() => onSearchChange("")}
+                className="hover:opacity-80 cursor-pointer"
+                aria-label="Xóa từ khóa"
+              >
+                <span className="material-symbols-outlined text-[14px]">close</span>
+              </button>
+            </span>
+          )}
+          {categoryFilter && (
+            <span className="px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm flex items-center gap-1">
+              <span>{categoryFilter}</span>
+              <button
+                type="button"
+                onClick={() => onCategoryChange("")}
+                className="hover:text-error cursor-pointer"
+                aria-label="Xóa danh mục"
+              >
+                <span className="material-symbols-outlined text-[14px]">close</span>
+              </button>
+            </span>
+          )}
+          {stockStatusFilter && (
+            <span className="px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm flex items-center gap-1">
+              <span>
+                {stockStatusFilter === "in_stock"
+                  ? "Còn hàng (>5)"
+                  : stockStatusFilter === "low_stock"
+                  ? "Sắp hết hàng (≤5)"
+                  : "Hết hàng (0)"}
+              </span>
+              <button
+                type="button"
+                onClick={() => onStockStatusChange("")}
+                className="hover:text-error cursor-pointer"
+                aria-label="Xóa trạng thái tồn kho"
+              >
+                <span className="material-symbols-outlined text-[14px]">close</span>
+              </button>
+            </span>
+          )}
+          {vendorFilter && (
+            <span className="px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm flex items-center gap-1">
+              <span>Shop: {vendorFilter}</span>
+              <button
+                type="button"
+                onClick={() => onVendorChange("")}
+                className="hover:text-error cursor-pointer"
+                aria-label="Xóa gian hàng"
+              >
+                <span className="material-symbols-outlined text-[14px]">close</span>
+              </button>
+            </span>
+          )}
+          {sortBy !== "newest" && (
+            <button
+              type="button"
+              onClick={() => onSortChange("newest")}
+              className="px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm flex items-center gap-1 cursor-pointer"
+            >
+              <span>Sort: {sortBy.replaceAll("_", " ")}</span>
+              <span className="material-symbols-outlined text-[14px]">close</span>
+            </button>
+          )}
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={onClearFilters}
+              className="text-primary hover:underline font-label-sm text-label-sm ml-2 cursor-pointer font-semibold"
+            >
+              Xóa tất cả
+            </button>
+          )}
         </div>
       </div>
     </div>

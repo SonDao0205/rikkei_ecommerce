@@ -153,8 +153,13 @@ axiosClient.interceptors.response.use(
             message = "Cửa hàng không tồn tại hoặc tạm ngưng hoạt động.";
         } else if (errorCode === "self_follow_denied" || errorCode === "cannot_follow_own_shop") {
             message = "Bạn không thể theo dõi cửa hàng của chính mình.";
-        } else if (errorCode === "invalid_product_status") {
-            message = "Chỉ có thể thay đổi trạng thái cho sản phẩm đã được duyệt.";
+        } else if (
+            errorCode === "invalid_product_status" ||
+            errorCode === "product_status_not_toggleable"
+        ) {
+            message = "Chỉ có thể thay đổi trạng thái kích hoạt cho sản phẩm đã được duyệt (ACTIVE hoặc HIDDEN).";
+        } else if (errorCode === "product_status_changed") {
+            message = "Trạng thái sản phẩm đã thay đổi bởi phiên làm việc khác; vui lòng tải lại trang.";
         } else if (errorCode === "invalid_product_filters") {
             message = "Bộ lọc hoặc tham số tìm kiếm không hợp lệ.";
         } else if (errorCode === "address_limit_exceeded") {
@@ -229,6 +234,18 @@ axiosClient.interceptors.response.use(
             message = "Sản phẩm phải có từ 1 đến 50 biến thể.";
         } else if (errorCode === "invalid_product_image_url") {
             message = "Đường dẫn hình ảnh sản phẩm phải là liên kết HTTPS hợp lệ.";
+        } else if (errorCode === "insufficient_stock") {
+            message = "Số lượng yêu cầu vượt quá số lượng hàng còn lại trong kho.";
+        } else if (errorCode === "cart_item_not_found") {
+            message = "Sản phẩm trong giỏ hàng không tồn tại hoặc đã bị xóa.";
+        } else if (errorCode === "variant_not_found") {
+            message = "Biến thể sản phẩm không tồn tại hoặc đã ngừng cung cấp.";
+        } else if (errorCode === "product_unavailable") {
+            message = "Sản phẩm hiện không khả dụng để mua hàng.";
+        } else if (errorCode === "invalid_cart_item_id") {
+            message = "Mã sản phẩm trong giỏ hàng không hợp lệ.";
+        } else if (errorCode === "invalid_quantity") {
+            message = "Số lượng sản phẩm trong giỏ hàng không hợp lệ.";
         } else if (errorCode === "rate_limited" || error.response?.status === 429) {
             message = "Thao tác quá nhanh. Vui lòng thử lại sau giây lát.";
         }

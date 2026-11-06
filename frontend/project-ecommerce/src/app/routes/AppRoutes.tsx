@@ -116,11 +116,7 @@ const router = createBrowserRouter([
   },
   {
     path: "/select-role",
-    element: (
-      <ProtectedRoute>
-        <RoleSelectionPage />
-      </ProtectedRoute>
-    ),
+    element: <Navigate to="/home" replace />,
   },
   {
     path: "/register-open-shop",
@@ -296,6 +292,14 @@ const router = createBrowserRouter([
       <GuestRoute>
         <LoginPage />
       </GuestRoute>
+    ),
+  },
+  {
+    path: "/select-role",
+    element: (
+      <ProtectedRoute>
+        <RoleSelectionPage />
+      </ProtectedRoute>
     ),
   },
   {

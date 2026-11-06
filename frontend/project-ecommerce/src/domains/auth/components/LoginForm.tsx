@@ -71,10 +71,9 @@ const validate = (data: LoginFormData): FormErrors => {
 // ─── Input class helper ──────────────────────────────────────────────────────────
 
 const inputClass = (hasError: boolean, extra = "") =>
-  `block w-full py-2.5 text-sm rounded-[11px] border bg-white text-slate-900 placeholder:text-slate-400 transition-all outline-none focus:ring-4 ${
-    hasError
-      ? "border-red-400 focus:ring-red-100 focus:border-red-400 bg-red-50/20"
-      : "border-slate-200 focus:border-brand-600 focus:ring-indigo-100"
+  `block w-full py-2.5 text-sm rounded-[11px] border bg-white text-slate-900 placeholder:text-slate-400 transition-all outline-none focus:ring-4 ${hasError
+    ? "border-red-400 focus:ring-red-100 focus:border-red-400 bg-red-50/20"
+    : "border-slate-200 focus:border-brand-600 focus:ring-indigo-100"
   } ${extra}`;
 
 // ─── Main Component ──────────────────────────────────────────────────────────────
@@ -95,6 +94,7 @@ const LoginForm = () => {
   const [errors, setErrors] = useState<FormErrors>({});
   const [showPassword, setShowPassword] = useState(false);
   const [loginErrorMessage, setLoginErrorMessage] = useState<string | null>(null);
+  const [selectedRole, setSelectedRole] = useState<"customer" | "seller">("customer");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -129,17 +129,49 @@ const LoginForm = () => {
 
     const resultAction = await dispatch(loginUser(formData));
     if (loginUser.fulfilled.match(resultAction)) {
+      const user = resultAction.payload.user;
+      const roles = user.roles || (user.role ? [user.role] : []);
+      const isAdmin = roles.includes("admin") || user.role === "admin";
+      const isSeller = roles.includes("seller") || user.role === "seller";
+
       const requestedPath = (
         location.state as { from?: { pathname?: string } } | null
       )?.from?.pathname;
-      if (requestedPath?.startsWith("/") && !requestedPath.startsWith("//")) {
+
+      // 1. Tài khoản Quản trị viên -> Chuyển hướng thẳng vào /admin/dashboard
+      if (isAdmin) {
+        if (requestedPath?.startsWith("/admin")) {
+          navigate(requestedPath, { replace: true });
+        } else {
+          navigate("/admin/dashboard", { replace: true });
+        }
+        return;
+      }
+
+      // 2. Người dùng chọn đăng nhập "Chủ gian hàng"
+      if (selectedRole === "seller") {
+        if (isSeller) {
+          if (requestedPath?.startsWith("/shop")) {
+            navigate(requestedPath, { replace: true });
+          } else {
+            navigate("/shop/dashboard", { replace: true });
+          }
+        } else {
+          navigate("/register-open-shop", { replace: true });
+        }
+        return;
+      }
+
+      // 3. Người dùng chọn đăng nhập "Khách hàng"
+      if (
+        requestedPath?.startsWith("/") &&
+        !requestedPath.startsWith("//") &&
+        !requestedPath.startsWith("/admin") &&
+        !requestedPath.startsWith("/shop")
+      ) {
         navigate(requestedPath, { replace: true });
-      } else if ((resultAction.payload.user.roles?.length ?? 0) > 1) {
-        navigate("/select-role", { replace: true });
-      } else if (resultAction.payload.user.roles?.includes("admin")) {
-        navigate("/admin/dashboard", { replace: true });
       } else {
-        navigate(resultAction.payload.user.roles?.includes("seller") ? "/shop/dashboard" : "/home", { replace: true });
+        navigate("/home", { replace: true });
       }
     } else if (loginUser.rejected.match(resultAction)) {
       const errorMsg = "Tài khoản hoặc mật khẩu không chính xác.";
@@ -212,6 +244,42 @@ const LoginForm = () => {
             Or continue with email
           </span>
           <div className="flex-grow border-t border-slate-200" />
+        </div>
+
+        {/* Role Selection Buttons (Khách hàng / Chủ gian hàng) */}
+        <div className="grid grid-cols-2 gap-3 -mt-2">
+          <button
+            type="button"
+            onClick={() => setSelectedRole("customer")}
+            className={`w-full inline-flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-[11px] text-xs sm:text-sm font-semibold shadow-sm border transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 cursor-pointer ${selectedRole === "customer"
+                ? "bg-indigo-50/80 border-indigo-600 text-indigo-700 ring-1 ring-indigo-600"
+                : "bg-white hover:bg-slate-50 active:bg-slate-100 border-slate-200 hover:border-slate-300 text-slate-700"
+              }`}
+          >
+            <span
+              className={`material-symbols-outlined text-[18px] transition-colors ${selectedRole === "customer" ? "text-indigo-600" : "text-slate-500"
+                }`}
+            >
+              person
+            </span>
+            <span>Khách hàng</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedRole("seller")}
+            className={`w-full inline-flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-[11px] text-xs sm:text-sm font-semibold shadow-sm border transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 cursor-pointer ${selectedRole === "seller"
+                ? "bg-indigo-50/80 border-indigo-600 text-indigo-700 ring-1 ring-indigo-600"
+                : "bg-white hover:bg-slate-50 active:bg-slate-100 border-slate-200 hover:border-slate-300 text-slate-700"
+              }`}
+          >
+            <span
+              className={`material-symbols-outlined text-[18px] transition-colors ${selectedRole === "seller" ? "text-indigo-600" : "text-slate-500"
+                }`}
+            >
+              storefront
+            </span>
+            <span>Chủ gian hàng</span>
+          </button>
         </div>
 
         {/* Login Form */}
@@ -311,9 +379,8 @@ const LoginForm = () => {
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                className={`absolute inset-y-0 right-0 pr-3.5 flex items-center transition-colors focus:outline-none cursor-pointer ${
-                  showPassword ? "text-brand-600" : "text-slate-400 hover:text-slate-600"
-                }`}
+                className={`absolute inset-y-0 right-0 pr-3.5 flex items-center transition-colors focus:outline-none cursor-pointer ${showPassword ? "text-brand-600" : "text-slate-400 hover:text-slate-600"
+                  }`}
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? (
@@ -374,8 +441,8 @@ const LoginForm = () => {
           </div>
         </form>
 
-        {/* Footer: Sign Up & Seller Onboarding Link */}
-        <div className="pt-3 text-center space-y-3 border-t border-slate-100">
+        {/* Footer: Sign Up */}
+        <div className="pt-3 text-center border-t border-slate-100">
           <p className="text-xs sm:text-sm text-slate-600">
             Don't have an account?{" "}
             <Link
@@ -385,28 +452,6 @@ const LoginForm = () => {
               Sign up
             </Link>
           </p>
-
-          <div className="pt-0.5">
-            <Link
-              to="/register-open-shop"
-              className="w-full inline-flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-indigo-50/90 via-purple-50/50 to-indigo-50/90 border border-indigo-100 hover:border-indigo-300 hover:shadow-xs transition-all group cursor-pointer"
-            >
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-brand-700/10 text-brand-700 flex items-center justify-center shrink-0 group-hover:bg-brand-700 group-hover:text-white transition-colors">
-                  <span className="material-symbols-outlined text-[18px]">storefront</span>
-                </div>
-                <div className="text-left">
-                  <span className="font-semibold text-slate-800 text-xs block leading-tight group-hover:text-brand-700 transition-colors">
-                    Bạn muốn bán hàng cùng MarketPulse?
-                  </span>
-                  <span className="text-[11px] text-slate-500">Đăng ký mở gian hàng (Seller Portal)</span>
-                </div>
-              </div>
-              <span className="material-symbols-outlined text-[18px] text-brand-700 group-hover:translate-x-0.5 transition-transform">
-                arrow_forward
-              </span>
-            </Link>
-          </div>
         </div>
 
         {/* Trust Badges */}

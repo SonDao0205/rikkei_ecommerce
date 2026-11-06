@@ -1,6 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import type { ProductItem } from "@/shared/types";
+import { useAppDispatch, useAppSelector } from "@/app/state/store";
+import { toggleWishlistItem } from "@/domains/customer/state/wishlistSlice";
+import WishlistToast from "@/domains/customer/components/wishlist/WishlistToast";
 
 interface ShopProductGridProps {
   products: ProductItem[];
@@ -20,15 +23,74 @@ export const ShopProductGrid: React.FC<ShopProductGridProps> = ({
   pageSize = 12,
 }) => {
   const navigate = useNavigate();
-  const [wishlistMap, setWishlistMap] = useState<Record<number, boolean>>({});
+  const dispatch = useAppDispatch();
+  const { items: wishlistItems } = useAppSelector((state) => state.wishlist);
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
   const [addedMap, setAddedMap] = useState<Record<number, boolean>>({});
+  const [toastState, setToastState] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: "success" | "error";
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "success",
+  });
 
-  const toggleWishlist = (e: React.MouseEvent, productId: number) => {
+  useEffect(() => {
+    if (toastState.isOpen) {
+      const timer = setTimeout(() => {
+        setToastState((prev) => ({ ...prev, isOpen: false }));
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [toastState.isOpen]);
+
+  const toggleWishlist = async (e: React.MouseEvent, productId: number) => {
     e.stopPropagation();
-    setWishlistMap((prev) => ({
-      ...prev,
-      [productId]: !prev[productId],
-    }));
+    if (!isAuthenticated) {
+      setToastState({
+        isOpen: true,
+        title: "Chưa đăng nhập",
+        message: "Vui lòng đăng nhập để lưu sản phẩm vào danh sách yêu thích.",
+        type: "error",
+      });
+      return;
+    }
+    const isLiked = wishlistItems.some(
+      (it) => it.product_id === productId || it.id === productId
+    );
+    const prod = products.find((p) => p.id === productId);
+    const prodName = prod?.name || "Sản phẩm";
+
+    try {
+      await dispatch(toggleWishlistItem(productId)).unwrap();
+      if (isLiked) {
+        setToastState({
+          isOpen: true,
+          title: "Đã bỏ thích sản phẩm",
+          message: `"${prodName}" đã được xóa khỏi danh sách yêu thích.`,
+          type: "success",
+        });
+      } else {
+        setToastState({
+          isOpen: true,
+          title: "Đã thêm vào yêu thích",
+          message: `"${prodName}" đã được lưu vào danh sách yêu thích.`,
+          type: "success",
+        });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Thao tác thất bại";
+      setToastState({
+        isOpen: true,
+        title: "Thao tác thất bại",
+        message: msg,
+        type: "error",
+      });
+    }
   };
 
   const handleAddToCart = (e: React.MouseEvent, productId: number) => {
@@ -89,7 +151,9 @@ export const ShopProductGrid: React.FC<ShopProductGridProps> = ({
       {/* 4-Column Responsive Product Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {products.map((product) => {
-          const isWishlisted = !!wishlistMap[product.id];
+          const isWishlisted = wishlistItems.some(
+            (it) => it.product_id === product.id || it.id === product.id
+          );
           const isAdded = !!addedMap[product.id];
           const discountPercent = product.discount_percent;
 
@@ -285,6 +349,17 @@ export const ShopProductGrid: React.FC<ShopProductGridProps> = ({
           </div>
         </div>
       )}
+
+      {/* Pinned Bottom-Right Toast Notification */}
+      <WishlistToast
+        isOpen={toastState.isOpen}
+        title={toastState.title}
+        message={toastState.message}
+        type={toastState.type}
+        actionText="Xem yêu thích"
+        actionLink="/wishlist"
+        onClose={() => setToastState((prev) => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 };

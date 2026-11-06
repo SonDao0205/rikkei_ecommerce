@@ -30,6 +30,7 @@ export const InforShop: React.FC = () => {
     productsLoading,
     error: shopError,
   } = useAppSelector((state) => state.publicShop);
+  const { user, isAuthenticated } = useAppSelector((state) => state.auth);
 
   const [activeTab, setActiveTab] = useState<ShopTabKey>("all");
   const [sortKey, setSortKey] = useState<ShopSortKey>("popular");
@@ -42,12 +43,14 @@ export const InforShop: React.FC = () => {
   useEffect(() => {
     if (!Number.isNaN(shopId) && shopId > 0) {
       dispatch(getShopDetail(shopId));
-      dispatch(getShopFollowState(shopId));
+      if (isAuthenticated && (user?.roles?.includes("client") || user?.role === "client")) {
+        dispatch(getShopFollowState(shopId));
+      }
     }
     return () => {
       dispatch(clearCurrentShop());
     };
-  }, [dispatch, shopId]);
+  }, [dispatch, shopId, isAuthenticated, user]);
 
   // Tải danh sách sản phẩm theo tab, sort, search và page
   const fetchProducts = useCallback(() => {

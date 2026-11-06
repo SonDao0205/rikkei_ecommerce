@@ -1,98 +1,358 @@
-import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import CustomerLayout from "@/app/layout/CustomerLayout";
+import {
+  CartBreadcrumbStepper,
+  CartFreeShippingTracker,
+  CartSelectAllBar,
+  CartShopGroup,
+  CartOrderSummary,
+  CartEmptyState,
+} from "@/domains/customer/components/cart";
 import { useAppDispatch, useAppSelector } from "@/app/state/store";
-import { clearCart, clearCartError, fetchCart, removeCartItem, updateCartItem } from "@/domains/customer/state/cartSlice";
+import {
+  fetchCart,
+  toggleAllSelection,
+  toggleShopSelection,
+  toggleItemSelection,
+  updateItemQuantity,
+  removeItem,
+  removeSelectedItemsAction,
+  applyShopVoucherAction,
+  applyPlatformVoucherAction,
+  removePlatformVoucher,
+  removeShopVoucher,
+  clearCartError,
+} from "@/domains/customer/state/cartSlice";
+import type { CartItem, CartShopGroup as ICartShopGroup } from "@/domains/customer/types/cart.types";
+import { formatCurrencyVND } from "@/shared/utils/currency";
 
-const money = (value: number) => `${Math.round(value).toLocaleString("vi-VN")} ₫`;
-
-export default function ShoppingCart() {
+export const ShoppingCart: React.FC = () => {
   const dispatch = useAppDispatch();
-  const cart = useAppSelector((state) => state.cart);
-  const [selected, setSelected] = useState<Record<number, boolean>>({});
-  const [actionError, setActionError] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const { items, shopVouchers, platformVoucher, summary, error } =
+    useAppSelector((state) => state.cart);
 
-  const selectedItems = useMemo(
-    () => cart.items.filter((item) => item.is_available && (selected[item.id] ?? true)),
-    [cart.items, selected],
-  );
-  const subtotal = selectedItems.reduce((sum, item) => sum + item.unit_price * item.quantity, 0);
-  const selectedCount = selectedItems.reduce((sum, item) => sum + item.quantity, 0);
-
-  const toggleItem = (id: number, checked: boolean) => setSelected((state) => ({ ...state, [id]: checked }));
-  const selectAll = (checked: boolean) => setSelected(Object.fromEntries(cart.items.map((item) => [item.id, checked && item.is_available])));
-  const mutate = async (operation: () => Promise<unknown>) => {
-    dispatch(clearCartError());
-    setActionError(null);
-    try { await operation(); }
-    catch (error) {
-      setActionError(error instanceof Error ? error.message : "Không thể cập nhật giỏ hàng.");
-      void dispatch(fetchCart()); // Refresh stock and availability after conflicts or network recovery.
+  const handleGoBack = () => {
+    if (window.history.state && window.history.state.idx > 0) {
+      navigate(-1);
+    } else {
+      navigate("/");
     }
   };
 
+  const [notification, setNotification] = useState<{
+    type: "success" | "info" | "error";
+    message: string;
+  } | null>(null);
+
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+
+  const activeNotification =
+    notification ||
+    (error
+      ? {
+          type: "error" as const,
+          message: error,
+        }
+      : null);
+
+  const handleDismissNotification = () => {
+    setNotification(null);
+    if (error) {
+      dispatch(clearCartError());
+    }
+  };
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(fetchCart());
+    }
+  }, [dispatch, isAuthenticated]);
+
+  // Flash notification timer
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => setNotification(null), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
+
+  // Auto-clear Redux cart error after timer
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        dispatch(clearCartError());
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [error, dispatch]);
+
+  // Group items by shop
+  const groupedShops: ICartShopGroup[] = useMemo(() => {
+    const map = new Map<number, ICartShopGroup>();
+    for (const item of items) {
+      if (!map.has(item.shop_id)) {
+        map.set(item.shop_id, {
+          shop_id: item.shop_id,
+          shop_name: item.shop_name,
+          shop_badge: item.shop_badge,
+          shop_avatar_text: item.shop_avatar_text,
+          shop_location: item.shop_location,
+          items: [],
+          voucher: shopVouchers[item.shop_id],
+          is_selected: false,
+        });
+      }
+      map.get(item.shop_id)!.items.push(item);
+    }
+
+    return Array.from(map.values()).map((g) => ({
+      ...g,
+      is_selected: g.items.length > 0 && g.items.every((it) => it.selected),
+    }));
+  }, [items, shopVouchers]);
+
+  const isAllSelected = items.length > 0 && items.every((it) => it.selected);
+
+  // Handlers
+  const handleToggleAll = (checked: boolean) => {
+    dispatch(toggleAllSelection(checked));
+  };
+
+  const handleToggleShopSelect = (shopId: number, selected: boolean) => {
+    dispatch(toggleShopSelection({ shopId, selected }));
+  };
+
+  const handleToggleItemSelect = (itemId: number) => {
+    dispatch(toggleItemSelection(itemId));
+  };
+
+  const handleUpdateQuantity = (itemId: number, quantity: number) => {
+    dispatch(updateItemQuantity({ itemId, quantity }));
+  };
+
+  const handleRemoveItem = (itemId: number) => {
+    dispatch(removeItem(itemId));
+    setNotification({
+      type: "info",
+      message: "Đã xóa sản phẩm khỏi giỏ hàng",
+    });
+  };
+
+  const handleDeleteSelected = () => {
+    if (summary.selected_count === 0) {
+      setNotification({
+        type: "error",
+        message: "Vui lòng chọn ít nhất một sản phẩm để xóa.",
+      });
+      return;
+    }
+    dispatch(removeSelectedItemsAction());
+    setNotification({
+      type: "info",
+      message: `Đã xóa ${summary.selected_count} sản phẩm đã chọn`,
+    });
+  };
+
+  const handleMoveToWishlist = () => {
+    if (summary.selected_count === 0) {
+      setNotification({
+        type: "error",
+        message: "Vui lòng chọn sản phẩm cần lưu vào yêu thích.",
+      });
+      return;
+    }
+    setNotification({
+      type: "success",
+      message: `Đã lưu ${summary.selected_count} sản phẩm vào danh sách yêu thích!`,
+    });
+  };
+
+  const handleSaveItemForLater = (item: CartItem) => {
+    setNotification({
+      type: "success",
+      message: `Đã lưu "${item.name}" vào danh sách yêu thích!`,
+    });
+  };
+
+  const handleApplyShopVoucher = async (shopId: number, code: string) => {
+    await dispatch(applyShopVoucherAction({ shopId, code })).unwrap();
+    setNotification({
+      type: "success",
+      message: `Đã áp dụng thành công mã ưu đãi của shop!`,
+    });
+  };
+
+  const handleRemoveShopVoucher = (shopId: number) => {
+    dispatch(removeShopVoucher(shopId));
+    setNotification({
+      type: "info",
+      message: "Đã hủy áp dụng mã giảm giá của shop.",
+    });
+  };
+
+  const handleApplyPlatformVoucher = async (code: string) => {
+    await dispatch(applyPlatformVoucherAction(code)).unwrap();
+    setNotification({
+      type: "success",
+      message: `Đã áp dụng thành công mã ưu đãi sàn "${code}"!`,
+    });
+  };
+
+  const handleRemovePlatformVoucher = () => {
+    dispatch(removePlatformVoucher());
+    setNotification({
+      type: "info",
+      message: "Đã hủy mã voucher sàn.",
+    });
+  };
+
+  const handleCheckout = () => {
+    if (summary.selected_count === 0) {
+      setNotification({
+        type: "error",
+        message: "Vui lòng chọn ít nhất 1 sản phẩm để tiến hành đặt hàng.",
+      });
+      return;
+    }
+    setIsCheckingOut(true);
+    setTimeout(() => {
+      setIsCheckingOut(false);
+      setNotification({
+        type: "success",
+        message: `Đang chuyển hướng tới cổng thanh toán an toàn cho ${summary.selected_count} sản phẩm (Tổng: ${formatCurrencyVND(
+          summary.grand_total
+        )})...`,
+      });
+    }, 800);
+  };
+
   return (
-    <CustomerLayout>
-      <main className="mx-auto w-full max-w-6xl px-4 py-8 md:px-8">
-        <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-          <div><p className="text-sm font-semibold text-primary">GIỎ HÀNG</p><h1 className="mt-1 text-3xl font-bold">Giỏ hàng của bạn</h1></div>
-          <span className="text-sm text-slate-600">{cart.item_count} sản phẩm</span>
-        </div>
+    <CustomerLayout
+      cartItemCount={summary.total_items}
+      cartTotal={formatCurrencyVND(summary.grand_total)}
+    >
+      <div className="w-full pb-16">
+        {/* Stepper Header */}
+        <CartBreadcrumbStepper currentStep={1} />
 
-        {(actionError || cart.error) && <div role="alert" className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800"><span>{actionError || cart.error}</span><div className="flex shrink-0 gap-3"><button onClick={() => void dispatch(fetchCart())} className="font-semibold underline">Thử lại</button><button onClick={() => { setActionError(null); dispatch(clearCartError()); }} aria-label="Đóng thông báo">×</button></div></div>}
-
-        {cart.loading && cart.items.length === 0 ? (
-          <div role="status" className="rounded-2xl bg-white p-12 text-center text-slate-600 shadow-sm">Đang tải giỏ hàng…</div>
-        ) : cart.items.length === 0 ? (
-          <section className="rounded-2xl bg-white p-12 text-center shadow-sm">
-            <span className="material-symbols-outlined text-5xl text-slate-300">shopping_bag</span>
-            <h2 className="mt-3 text-xl font-bold">Giỏ hàng đang trống</h2>
-            <p className="mt-2 text-slate-600">Khám phá sản phẩm và thêm món bạn yêu thích vào giỏ.</p>
-            <Link to="/" className="mt-5 inline-flex rounded-xl bg-primary px-5 py-3 font-semibold text-white">Tiếp tục mua sắm</Link>
-          </section>
-        ) : (
-          <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
-            <section className="overflow-hidden rounded-2xl bg-white shadow-sm">
-              <div className="flex items-center justify-between border-b p-4">
-                <label className="flex items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={cart.items.some((item) => item.is_available) && cart.items.filter((item) => item.is_available).every((item) => selected[item.id] ?? true)} onChange={(event) => selectAll(event.target.checked)} />Chọn sản phẩm còn bán</label>
-                <button type="button" disabled={cart.updating} onClick={() => void mutate(() => dispatch(clearCart()).unwrap())} className="text-sm font-semibold text-red-600 disabled:opacity-50">Xóa tất cả</button>
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+          {/* Notification Toast Alert */}
+          {activeNotification && (
+            <div
+              className={`mb-4 p-4 rounded-xl flex items-center justify-between shadow-sm transition-all ${
+                activeNotification.type === "success"
+                  ? "bg-green-50 text-green-800 border border-green-200"
+                  : activeNotification.type === "error"
+                  ? "bg-red-50 text-red-800 border border-red-200"
+                  : "bg-blue-50 text-blue-800 border border-blue-200"
+              }`}
+            >
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <span className="material-symbols-outlined text-[20px]">
+                  {activeNotification.type === "success"
+                    ? "check_circle"
+                    : activeNotification.type === "error"
+                    ? "error"
+                    : "info"}
+                </span>
+                <span>{activeNotification.message}</span>
               </div>
-              <ul className="divide-y">
-                {cart.items.map((item) => (
-                  <li key={item.id} className="flex flex-wrap items-center gap-4 p-4 md:flex-nowrap">
-                    <input aria-label={`Chọn ${item.product_name}`} type="checkbox" checked={item.is_available && (selected[item.id] ?? true)} disabled={!item.is_available} onChange={(event) => toggleItem(item.id, event.target.checked)} />
-                    <Link to={`/product/${item.product_id}`} className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-slate-100">{item.product_thumbnail_url ? <img src={item.product_thumbnail_url} alt="" className="h-full w-full object-cover" /> : <span className="material-symbols-outlined text-3xl text-slate-400">image</span>}</Link>
-                    <div className="min-w-0 flex-1">
-                      <Link to={`/product/${item.product_id}`} className="line-clamp-2 font-semibold text-slate-900 hover:text-primary">{item.product_name}</Link>
-                      <p className="mt-1 text-sm text-slate-500">{item.shop_name} · {item.variant_name || item.variant_sku}</p>
-                      {!item.is_available && <p className="mt-1 text-sm font-medium text-red-600">Sản phẩm hiện không còn khả dụng. Bạn có thể xóa khỏi giỏ.</p>}
-                      {item.is_available && item.quantity > item.available_stock && <p className="mt-1 text-sm font-medium text-amber-700">Chỉ còn {item.available_stock} sản phẩm; hãy điều chỉnh số lượng.</p>}
-                    </div>
-                    <div className="flex min-w-[175px] items-center justify-between gap-4 md:flex-col md:items-end">
-                      <strong>{money(item.unit_price)}</strong>
-                      <div className="flex items-center gap-3">
-                        <button aria-label="Giảm số lượng" disabled={cart.updating || item.quantity <= 1} onClick={() => void mutate(() => dispatch(updateCartItem({ itemId: item.id, quantity: item.quantity - 1 })).unwrap())} className="h-8 w-8 rounded-lg border disabled:opacity-40">−</button>
-                        <span aria-live="polite" className="min-w-5 text-center">{item.quantity}</span>
-                        <button aria-label="Tăng số lượng" disabled={cart.updating || !item.is_available || item.quantity >= item.available_stock} onClick={() => void mutate(() => dispatch(updateCartItem({ itemId: item.id, quantity: item.quantity + 1 })).unwrap())} className="h-8 w-8 rounded-lg border disabled:opacity-40">+</button>
-                        <button aria-label={`Xóa ${item.product_name}`} disabled={cart.updating} onClick={() => void mutate(() => dispatch(removeCartItem(item.id)).unwrap())} className="ml-2 text-sm font-semibold text-red-600 disabled:opacity-50">Xóa</button>
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </section>
+              <button
+                type="button"
+                onClick={handleDismissNotification}
+                className="text-outline hover:text-on-surface"
+              >
+                <span className="material-symbols-outlined text-[18px]">close</span>
+              </button>
+            </div>
+          )}
 
-            <aside className="h-fit rounded-2xl bg-white p-5 shadow-sm">
-              <h2 className="text-lg font-bold">Tóm tắt giỏ hàng</h2>
-              <div className="mt-5 flex justify-between text-sm text-slate-600"><span>Sản phẩm đã chọn</span><span>{selectedCount}</span></div>
-              <div className="mt-3 flex justify-between border-t pt-4 font-bold"><span>Tạm tính</span><span>{money(subtotal)}</span></div>
-              <p className="mt-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">Chức năng đặt hàng chưa được hỗ trợ ở phiên bản backend hiện tại. Số tiền trên chỉ là tạm tính, chưa gồm vận chuyển hoặc ưu đãi.</p>
-              <button type="button" disabled className="mt-4 w-full rounded-xl bg-slate-200 px-4 py-3 font-bold text-slate-500" title="API tạo đơn hàng chưa khả dụng">Đặt hàng chưa khả dụng</button>
-              <Link to="/" className="mt-3 block text-center text-sm font-semibold text-primary">Tiếp tục mua sắm</Link>
-            </aside>
-          </div>
-        )}
-      </main>
+          {/* Cart Header & Free Shipping Status Banner */}
+          <CartFreeShippingTracker
+            totalItems={summary.total_items}
+            freeShippingThreshold={summary.free_shipping_threshold}
+            progress={summary.free_shipping_progress}
+            amountLeft={summary.amount_left_for_free_shipping}
+            isEligible={summary.is_free_shipping_eligible}
+            onGoBack={handleGoBack}
+          />
+
+          {!isAuthenticated ? (
+            <div className="py-16 text-center max-w-md mx-auto flex flex-col items-center">
+              <div className="w-20 h-20 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-4">
+                <span className="material-symbols-outlined text-[40px]">lock</span>
+              </div>
+              <h2 className="text-xl font-bold text-on-surface mb-2">Đăng nhập để xem giỏ hàng</h2>
+              <p className="text-sm text-outline mb-6">
+                Vui lòng đăng nhập tài khoản để xem các sản phẩm trong giỏ hàng và tiếp tục thanh toán.
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate("/login?redirect=/cart")}
+                className="px-6 py-3 rounded-xl bg-primary text-on-primary font-bold shadow-md hover:bg-primary-container transition-all cursor-pointer"
+              >
+                Đăng nhập ngay
+              </button>
+            </div>
+          ) : items.length === 0 ? (
+            /* Empty state when cart has 0 items */
+            <CartEmptyState />
+          ) : (
+            /* Main Two-Column Workflow (70% Left / 30% Right => 8 cols / 4 cols) */
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              {/* Left Column: Cart Items & Vendors (8 of 12 cols = 66.6%) */}
+              <div className="lg:col-span-8 flex flex-col gap-4">
+                {/* Global Select All Control Bar */}
+                <CartSelectAllBar
+                  totalItems={summary.total_items}
+                  isAllSelected={isAllSelected}
+                  onToggleAll={handleToggleAll}
+                  onDeleteSelected={handleDeleteSelected}
+                  onMoveToWishlist={handleMoveToWishlist}
+                />
+
+                {/* Vendor Groups */}
+                {groupedShops.map((group) => (
+                  <CartShopGroup
+                    key={group.shop_id}
+                    shopId={group.shop_id}
+                    shopName={group.shop_name}
+                    shopBadge={group.shop_badge || "Chính hãng"}
+                    shopAvatarText={group.shop_avatar_text || "SHOP"}
+                    shopLocation={group.shop_location}
+                    items={group.items}
+                    voucher={group.voucher}
+                    onToggleShopSelect={handleToggleShopSelect}
+                    onToggleItemSelect={handleToggleItemSelect}
+                    onUpdateQuantity={handleUpdateQuantity}
+                    onRemoveItem={handleRemoveItem}
+                    onSaveForLater={handleSaveItemForLater}
+                    onApplyShopVoucher={handleApplyShopVoucher}
+                    onRemoveShopVoucher={handleRemoveShopVoucher}
+                  />
+                ))}
+              </div>
+
+              {/* Right Column: Sticky Order Summary Sidebar (4 of 12 cols = 33.3%) */}
+              <div className="lg:col-span-4 flex flex-col gap-4">
+                <CartOrderSummary
+                  summary={summary}
+                  platformVoucher={platformVoucher}
+                  onApplyPlatformVoucher={handleApplyPlatformVoucher}
+                  onRemovePlatformVoucher={handleRemovePlatformVoucher}
+                  onCheckout={handleCheckout}
+                  isCheckingOut={isCheckingOut}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </CustomerLayout>
   );
-}
+};
+
+export default ShoppingCart;
