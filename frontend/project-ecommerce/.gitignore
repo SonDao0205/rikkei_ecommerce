@@ -28,4 +28,4 @@ dist-ssr
 .env.*
 !.env.example
 
-src/html/
+docs/ui-prototypes/

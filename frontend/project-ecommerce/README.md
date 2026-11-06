@@ -29,8 +29,10 @@ npm run build
 
 ## Tích hợp API
 
-- Dùng `src/api/axiosClient.ts` cho request. Access token chỉ giữ trong memory; refresh token do backend cấp qua HttpOnly cookie và Axios gửi bằng `withCredentials`.
+- Dùng `src/shared/api/axiosClient.ts` cho request. Access token chỉ giữ trong memory; refresh token do backend cấp qua HttpOnly cookie và Axios gửi bằng `withCredentials`.
 - API path bắt đầu bằng `/api/v1`. Với local Vite, dùng backend host trong `.env.local`; với Compose dùng same-origin.
+- Cart and wishlist are connected to the authenticated backend APIs: `/cart`, `/wishlist`, `/api/v1/cart/*`, and `/api/v1/wishlist/*`. The customer layout loads counts after session restoration; all changes are persisted by the backend and are scoped to the signed-in CLIENT account.
+- The backend does not yet provide voucher validation, checkout, payment, or order creation. The cart shows an estimated selected-item subtotal only; it does not present that amount as a payable total or claim that an order was submitted.
 - Backend trả `{ "success": true, "data": ... }` hoặc lỗi có HTTP status và `errors[].code`. Không dựa vào mock fallback để xác nhận BE đã tích hợp: một số API client cũ trả dữ liệu mock sau khi request thất bại.
 - API admin shop `GET /api/v1/admin/shops` trả sáu trạng thái và `data.status_counts` trên toàn bộ shop; `data.total` chỉ đếm kết quả khớp filter/tìm kiếm. Dùng `status_counts` cho tab/thống kê, không suy ra số liệu toàn hệ thống từ trang hiện tại.
 - Một tài khoản có thể có nhiều role. User response có `role` tương thích, `roles` dạng mảng và `shop_status` nếu có shop; FE dùng các trường này để điều khiển giao diện, quyền cuối cùng do BE xác nhận. Seller Center chỉ hiện khi shop `ACTIVE`, còn storefront và tài khoản mua hàng vẫn dùng được với role `CLIENT`.
@@ -38,3 +40,20 @@ npm run build
 - Một số màn admin dashboard/shop/order đang gọi endpoint BE chưa triển khai. Xem bảng “Những route FE đang gọi nhưng BE chưa triển khai” trong Backend README trước khi kết nối các màn đó.
 
 Chỉ gửi access token qua header `Authorization: Bearer ...`; không lưu access/refresh token trong `localStorage` hoặc `sessionStorage`.
+
+## Cấu trúc mã nguồn
+
+```text
+src/
+  app/                 App entry, routing, layouts và Redux store
+  domains/
+    auth/              API, pages, components, state, types
+    admin/             API, pages, components, state, types
+    shop/              API, pages, components, state, types
+    customer/          hồ sơ, địa chỉ, đơn mua và các thành phần liên quan
+    storefront/        trang chủ, catalog, chi tiết sản phẩm và API công khai
+    order/             kiểu dùng chung cho dữ liệu đơn hàng
+  shared/              API client, components dùng chung, styles, config, types, utils, assets
+```
+
+Thêm hoặc sửa nghiệp vụ trong domain tương ứng; chỉ đặt mã ở `shared` khi thực sự được nhiều domain dùng. `app` chỉ ghép ứng dụng (routes/layout/store), không chứa logic nghiệp vụ. Alias `@/` trỏ tới `src/` để import giữa domain không phụ thuộc vào độ sâu thư mục. HTML prototype cũ được giữ tại `docs/ui-prototypes`, ngoài nguồn build của ứng dụng.
