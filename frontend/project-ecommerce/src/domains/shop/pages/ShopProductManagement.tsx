@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import ShopLayout from "@/app/layout/ShopLayout";
 import { useAppDispatch, useAppSelector } from "@/app/state/store";
 import {
@@ -15,7 +16,6 @@ import {
   resetFilters,
   toggleSelectProduct,
   selectAllProducts,
-  openCreateModal,
   openEditModal,
   closeModal,
 } from "@/domains/shop/state/shopProductSlice";
@@ -36,6 +36,7 @@ import {
 
 export const ShopProductManagement: React.FC = () => {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const [toastMessage, setToastMessage] = React.useState<{ text: string; isError?: boolean } | null>(null);
   const {
     items,
@@ -116,7 +117,7 @@ export const ShopProductManagement: React.FC = () => {
 
   const handleDeleteProduct = useCallback(
     async (id: string) => {
-      if (window.confirm("Bạn có chắc chắn muốn xoá sản phẩm này khỏi kho?")) {
+      if (window.confirm("Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n xoÃ¡ sáº£n pháº©m nÃ y khá»i kho?")) {
         const res = await dispatch(removeShopProduct(id));
         if (removeShopProduct.fulfilled.match(res)) {
           dispatch(fetchShopProductList());
@@ -128,7 +129,7 @@ export const ShopProductManagement: React.FC = () => {
 
   const handleBulkDelete = useCallback(async () => {
     if (selectedIds.length === 0) return;
-    if (window.confirm(`Bạn có chắc chắn muốn xoá ${selectedIds.length} sản phẩm đã chọn?`)) {
+    if (window.confirm(`Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n xoÃ¡ ${selectedIds.length} sáº£n pháº©m Ä‘Ã£ chá»n?`)) {
       for (const id of selectedIds) {
         await dispatch(removeShopProduct(id));
       }
@@ -141,13 +142,13 @@ export const ShopProductManagement: React.FC = () => {
       const res = await dispatch(saveShopProductItem(product));
       if (saveShopProductItem.fulfilled.match(res)) {
         setToastMessage({
-          text: product.id ? "Cập nhật sản phẩm thành công!" : "Tạo sản phẩm mới và gửi duyệt thành công!",
+          text: product.id ? "Cáº­p nháº­t sáº£n pháº©m thÃ nh cÃ´ng!" : "Táº¡o sáº£n pháº©m má»›i vÃ  gá»­i duyá»‡t thÃ nh cÃ´ng!",
           isError: false,
         });
         setTimeout(() => setToastMessage(null), 4000);
         dispatch(fetchShopProductList());
       } else {
-        const errorMsg = (res.payload as string) || "Lỗi lưu sản phẩm";
+        const errorMsg = (res.payload as string) || "Lá»—i lÆ°u sáº£n pháº©m";
         setToastMessage({ text: errorMsg, isError: true });
         setTimeout(() => setToastMessage(null), 6000);
       }
@@ -210,7 +211,7 @@ export const ShopProductManagement: React.FC = () => {
             error_outline
           </span>
           <h2 className="font-headline-md text-headline-md font-bold text-on-surface">
-            Không thể tải dữ liệu sản phẩm
+            KhÃ´ng thá»ƒ táº£i dá»¯ liá»‡u sáº£n pháº©m
           </h2>
           <p className="font-body-md text-body-md text-on-surface-variant max-w-md mt-1 mb-5">
             {error}
@@ -220,7 +221,7 @@ export const ShopProductManagement: React.FC = () => {
             onClick={() => dispatch(fetchShopProductList())}
             className="px-5 py-2.5 rounded-xl bg-primary text-white font-label-md text-label-md font-semibold shadow-sm hover:bg-primary/90 transition-all cursor-pointer"
           >
-            Thử tải lại
+            Thá»­ táº£i láº¡i
           </button>
         </div>
       )}
@@ -231,7 +232,7 @@ export const ShopProductManagement: React.FC = () => {
         <ShopProductHeader
           totalSkus={stats.totalProductsCount}
           lowStockCount={stats.lowStockSkusCount}
-          onAddNewProduct={() => dispatch(openCreateModal())}
+          onAddNewProduct={() => navigate("/shop/products/add")}
         />
 
         {/* 2. Inventory Health Summary Cards */}

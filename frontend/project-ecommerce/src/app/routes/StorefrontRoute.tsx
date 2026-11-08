@@ -1,16 +1,23 @@
 import React, { type ReactNode } from "react";
+import { Navigate } from "react-router-dom";
 import { useAppSelector } from "@/app/state/store";
+import type { UserRole } from "@/shared/types";
 
 interface StorefrontRouteProps {
   children: ReactNode;
+  disallowedRoles?: (UserRole | string)[];
 }
 
 /**
  * Route Guard cho các trang storefront bán hàng (ví dụ: Trang chủ / và /home, chi tiết sản phẩm):
- * Signed-in users can continue shopping regardless of their additional roles.
+ * - Nếu người dùng là admin đã đăng nhập: Chuyển hướng về trang quản trị (/admin/dashboard).
+ * - Các vai trò khác (khách chưa đăng nhập, người mua, người bán): Cho phép truy cập bình thường.
  */
-export const StorefrontRoute: React.FC<StorefrontRouteProps> = ({ children }) => {
-  const { isInitialized } = useAppSelector(
+export const StorefrontRoute: React.FC<StorefrontRouteProps> = ({
+  children,
+  disallowedRoles = ["admin", "ADMIN"],
+}) => {
+  const { isAuthenticated, user, role, isInitialized } = useAppSelector(
     (state) => state.auth
   );
 
@@ -26,6 +33,29 @@ export const StorefrontRoute: React.FC<StorefrontRouteProps> = ({ children }) =>
         </div>
       </div>
     );
+  }
+
+  // Khi đã đăng nhập, chặn truy cập storefront nếu vai trò nằm trong disallowedRoles (mặc định chặn Admin)
+  if (isAuthenticated) {
+    const userRoles = new Set(
+      (user?.roles?.length ? user.roles : role || user?.role ? [role || user?.role] : []).map(
+        (value) => String(value).toLowerCase().trim()
+      )
+    );
+
+    const isDisallowed = disallowedRoles.some((r) =>
+      userRoles.has(String(r).toLowerCase().trim())
+    );
+
+    if (isDisallowed) {
+      if (userRoles.has("admin")) {
+        return <Navigate to="/admin/dashboard" replace />;
+      }
+      if (userRoles.has("seller")) {
+        return <Navigate to="/shop/dashboard" replace />;
+      }
+      return <Navigate to="/admin/dashboard" replace />;
+    }
   }
 
   return <>{children}</>;

@@ -26,7 +26,6 @@ import {
 } from "@/domains/customer/state/cartSlice";
 import type { CartItem, CartShopGroup as ICartShopGroup } from "@/domains/customer/types/cart.types";
 import { formatCurrencyVND } from "@/shared/utils/currency";
-import { apiErrorMessage, cartApi, type CheckoutAddress, type CheckoutMethod, type CheckoutQuote } from "@/domains/customer/api/cartApi";
 
 export const ShoppingCart: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -47,17 +46,6 @@ export const ShoppingCart: React.FC = () => {
     type: "success" | "info" | "error";
     message: string;
   } | null>(null);
-
-  const [isCheckingOut, setIsCheckingOut] = useState(false);
-  const [checkoutOpen, setCheckoutOpen] = useState(false);
-  const [checkoutError, setCheckoutError] = useState<string | null>(null);
-  const [addresses, setAddresses] = useState<CheckoutAddress[]>([]);
-  const [shippingMethods, setShippingMethods] = useState<CheckoutMethod[]>([]);
-  const [paymentMethods, setPaymentMethods] = useState<CheckoutMethod[]>([]);
-  const [addressId, setAddressId] = useState(0);
-  const [shippingMethodId, setShippingMethodId] = useState(0);
-  const [paymentMethodId, setPaymentMethodId] = useState(0);
-  const [checkoutQuote, setCheckoutQuote] = useState<CheckoutQuote | null>(null);
 
   const activeNotification =
     notification ||
@@ -219,21 +207,15 @@ export const ShoppingCart: React.FC = () => {
     });
   };
 
-  const handleCheckout = async () => {
-    if (summary.selected_count === 0) { setNotification({type:"error",message:"Vui lòng chọn ít nhất một sản phẩm còn hàng."}); return; }
-    setIsCheckingOut(true); setCheckoutError(null); setCheckoutQuote(null);
-    try { const [options, savedAddresses] = await Promise.all([cartApi.getCheckoutOptions(), cartApi.getAddresses()]); setShippingMethods(options.shipping_methods); setPaymentMethods(options.payment_methods); setAddresses(savedAddresses); setAddressId(savedAddresses.find((a)=>a.is_default)?.id ?? savedAddresses[0]?.id ?? 0); setShippingMethodId(options.shipping_methods[0]?.id ?? 0); setPaymentMethodId(options.payment_methods[0]?.id ?? 0); setCheckoutOpen(true); }
-    catch(err) { setCheckoutError(apiErrorMessage(err, "Không tải được thông tin checkout.")); setCheckoutOpen(true); } finally { setIsCheckingOut(false); }
-  };
-
-  const handleCalculateQuote = async () => {
-    setIsCheckingOut(true); setCheckoutError(null); setCheckoutQuote(null);
-    try {
-      if (!addressId || !shippingMethodId || !paymentMethodId) throw new Error("Cần có địa chỉ nhận hàng và phương thức giao hàng, thanh toán.");
-      const selected=items.filter((item)=>item.selected && item.is_available); if(!selected.length) throw new Error("Chọn ít nhất một sản phẩm còn khả dụng.");
-      const shopCodes=Object.fromEntries(Object.entries(shopVouchers).filter(([,v])=>v.is_applied).map(([id,v])=>[id,v.code]));
-      setCheckoutQuote(await cartApi.quoteCheckout({address_id:addressId,shipping_method_id:shippingMethodId,payment_method_id:paymentMethodId,cart_item_ids:selected.map((item)=>item.id),...(platformVoucher?.is_applied?{platform_voucher:platformVoucher.code}:{}),...(Object.keys(shopCodes).length?{shop_vouchers:shopCodes}:{})}));
-    } catch(err) { setCheckoutError(apiErrorMessage(err, "Không thể tính báo giá. Vui lòng tải lại giỏ hàng.")); } finally { setIsCheckingOut(false); }
+  const handleCheckout = () => {
+    if (summary.selected_count === 0) {
+      setNotification({
+        type: "error",
+        message: "Vui lòng chọn ít nhất một sản phẩm còn hàng để thanh toán.",
+      });
+      return;
+    }
+    navigate("/checkout");
   };
 
   return (
@@ -347,28 +329,12 @@ export const ShoppingCart: React.FC = () => {
                   onApplyPlatformVoucher={handleApplyPlatformVoucher}
                   onRemovePlatformVoucher={handleRemovePlatformVoucher}
                   onCheckout={handleCheckout}
-                  isCheckingOut={isCheckingOut}
                 />
               </div>
             </div>
           )}
         </div>
       </div>
-      {checkoutOpen && (
-        <div className="fixed inset-0 z-[100] bg-black/40 p-4 flex items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="checkout-title">
-          <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4"><h2 id="checkout-title" className="text-xl font-bold">Thông tin giao hàng và báo giá</h2><button aria-label="Đóng" onClick={()=>setCheckoutOpen(false)} className="text-2xl">×</button></div>
-            {checkoutError && <p role="alert" className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{checkoutError}</p>}
-            {addresses.length===0 ? <div className="rounded-xl bg-amber-50 p-4 text-sm">Bạn chưa có địa chỉ giao hàng. Hãy thêm địa chỉ trong trang tài khoản rồi quay lại.<button type="button" onClick={()=>navigate("/profile/address")} className="ml-2 font-bold text-primary underline">Quản lý địa chỉ</button></div> : <div className="space-y-4">
-              <label className="block text-sm font-semibold">Địa chỉ nhận hàng<select value={addressId} onChange={(e)=>{setAddressId(Number(e.target.value));setCheckoutQuote(null);}} className="mt-1 w-full rounded-lg border p-3">{addresses.map((a)=><option key={a.id} value={a.id}>{a.recipient_name} · {a.phone} · {a.street_detail}, {a.ward}, {a.district}, {a.province}</option>)}</select></label>
-              <label className="block text-sm font-semibold">Vận chuyển<select value={shippingMethodId} onChange={(e)=>{setShippingMethodId(Number(e.target.value));setCheckoutQuote(null);}} className="mt-1 w-full rounded-lg border p-3">{shippingMethods.map((m)=><option key={m.id} value={m.id}>{m.name} · {formatCurrencyVND(m.base_fee??0)}{m.estimated_days?` · ${m.estimated_days}`:""}</option>)}</select></label>
-              <label className="block text-sm font-semibold">Thanh toán<select value={paymentMethodId} onChange={(e)=>{setPaymentMethodId(Number(e.target.value));setCheckoutQuote(null);}} className="mt-1 w-full rounded-lg border p-3">{paymentMethods.map((m)=><option key={m.id} value={m.id}>{m.name}</option>)}</select></label>
-              <button type="button" disabled={isCheckingOut} onClick={handleCalculateQuote} className="w-full rounded-xl bg-primary px-4 py-3 font-bold text-white disabled:opacity-50">{isCheckingOut?"Đang tính...":"Tính phí và xem báo giá"}</button>
-              {checkoutQuote && <section aria-live="polite" className="rounded-xl border bg-slate-50 p-4 space-y-2 text-sm"><p className="font-bold">Báo giá hiện tại</p><p>Tiền hàng: {formatCurrencyVND(checkoutQuote.subtotal)}</p><p>Phí giao hàng: {formatCurrencyVND(checkoutQuote.shipping_fee)}</p><p>Giảm giá shop: −{formatCurrencyVND(checkoutQuote.shop_discount)}</p><p>Voucher sàn: −{formatCurrencyVND(checkoutQuote.platform_discount)}</p><p className="border-t pt-2 text-lg font-black">Tổng thanh toán: {formatCurrencyVND(checkoutQuote.total)}</p><p className="text-xs text-slate-600">Đây là báo giá tạm tính; tạo đơn và thanh toán chưa được thực hiện ở bước này.</p></section>}
-            </div>}
-          </div>
-        </div>
-      )}
     </CustomerLayout>
   );
 };
