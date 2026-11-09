@@ -77,7 +77,27 @@ Newman không phải dependency runtime của BE/FE. Lệnh `npx --yes` có th�
 
 Auth có rate limit đăng nhập 10 request/phút/IP. Nếu vừa chạy nhiều bộ test local và nhận `429`, chờ hết `Retry-After` rồi chạy lại collection; không tắt rate limit để làm test pass.
 
+## Checkout and Order creation coverage
 
-## Checkout quote checks
+Folder **Checkout and Voucher** bao phủ toàn bộ luồng tính phí, áp mã giảm giá và tạo đơn hàng thực tế:
 
-The collection includes a **Checkout and Voucher** folder for authenticated active shipping/payment options and invalid-request checks. The folder runs after Authentication and checks active option listing plus invalid inputs. A successful quote is not included because the disposable authentication user does not have a guaranteed owned address and cart fixture. Use `POST /api/v1/vouchers/validate` with `code`, `scope`, `cart_item_ids`, and `shop_id` for shop vouchers; use `POST /api/v1/checkout/quote` with address/method IDs and selected cart IDs for server totals. Quotes do not create orders or consume voucher uses.
+1. **Kiểm tra quyền và input:**
+   - Từ chối truy cập anonymous hoặc non-CLIENT (`401`, `403`).
+   - Lấy danh sách phương thức vận chuyển và thanh toán đang kích hoạt (`GET /api/v1/checkout/options`).
+   - Từ chối body thiếu trường bắt buộc (`400`), ID trùng lặp (`400`).
+   - Từ chối địa chỉ không thuộc sở hữu của người dùng (`422 address_unavailable`).
+   - Từ chối phương thức `MOCK_CARD` (`422 payment_method_unavailable`).
+2. **Luồng End-to-End với tài khoản Buyer Seed (`seed-buyer@local.test`):**
+   - Đăng nhập tài khoản buyer seed và lấy token `buyerToken`.
+   - Đọc giỏ hàng và lấy ID sản phẩm trong giỏ `buyerCartItemId`.
+   - Tính báo giá (`POST /api/v1/checkout/quote`) có áp voucher sàn `SEED-WELCOME`.
+   - Tạo đơn hàng với phương thức **COD** (`POST /api/v1/checkout/orders`):
+     - Xác nhận mã đơn cha `ORD...` và trạng thái `PENDING`.
+     - Xác nhận đơn con theo shop (`shop_orders`) với phân bổ tiền hàng và voucher tương ứng.
+     - Xác nhận bản ghi thanh toán `payments` có mã tham chiếu `COD-{order_code}`.
+   - Xác nhận giỏ hàng tự động dọn dẹp các sản phẩm vừa mua.
+   - Thêm sản phẩm mới và tạo đơn hàng với phương thức **BANK_TRANSFER (Chuyển khoản)**:
+     - Xác nhận bản ghi thanh toán `payments` có `transaction_ref = {order_code}` dùng làm cú pháp chuyển khoản.
+   - Thử đặt lại sản phẩm đã được mua/xóa khỏi giỏ để kiểm tra chốt chặn `422 cart_selection_changed`.
+
+Nạp lại seed local (`.\database\seed-local.ps1`) trước khi chạy để đảm bảo fixture giỏ hàng và voucher của `seed-buyer@local.test` luôn sẵn sàng.
