@@ -384,7 +384,6 @@ export const ShoppingCart: React.FC = () => {
                   onApplyPlatformVoucher={handleApplyPlatformVoucher}
                   onRemovePlatformVoucher={handleRemovePlatformVoucher}
                   onCheckout={handleCheckout}
-                  isCheckingOut={isCheckingOut}
                 />
               </div>
             </div>

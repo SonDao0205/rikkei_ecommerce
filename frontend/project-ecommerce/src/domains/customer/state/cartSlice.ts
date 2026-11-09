@@ -13,6 +13,10 @@ import {
   INITIAL_PLATFORM_VOUCHER,
   INITIAL_SHOP_VOUCHERS,
 } from "@/domains/customer/api/cartApi";
+import {
+  AVAILABLE_PLATFORM_VOUCHERS,
+  AVAILABLE_SHOP_VOUCHERS,
+} from "@/domains/customer/data/availableVouchers";
 
 const FREE_SHIPPING_THRESHOLD = 500000;
 const BASE_SHIPPING_FEE = 35000;
@@ -283,12 +287,46 @@ export const applyPlatformVoucherAction = createAsyncThunk<
   string,
   { rejectValue: string }
 >("cart/applyPlatformVoucher", async (code: string, { rejectWithValue, getState }) => {
+  const cleanCode = code.trim().toUpperCase();
+  const state = getState() as { cart: CartState };
+  const ids = state.cart.items
+    .filter((item) => item.selected && item.is_available)
+    .map((item) => item.id);
+  const subtotal = state.cart.summary.items_subtotal;
+
   try {
-    const state = getState() as { cart: CartState };
-    const ids = state.cart.items.filter((item) => item.selected && item.is_available).map((item) => item.id);
-    const result = await cartApi.validateVoucher(code, "PLATFORM", ids);
-    return { code: result.code, discount_amount: result.discount_amount, min_order_amount: result.min_order_amount, is_applied: result.is_applied, description: result.title };
+    const result = await cartApi.validateVoucher(cleanCode, "PLATFORM", ids);
+    return {
+      code: result.code,
+      discount_amount: result.discount_amount,
+      min_order_amount: result.min_order_amount,
+      is_applied: result.is_applied,
+      description: result.title,
+    };
   } catch (err: unknown) {
+    // If backend reports voucher_invalid, check if it's one of the UI preset vouchers
+    const preset = AVAILABLE_PLATFORM_VOUCHERS.find((v) => v.code === cleanCode);
+    if (preset) {
+      if (subtotal < preset.minOrderValue) {
+        return rejectWithValue(
+          `Đơn hàng cần đạt tối thiểu ${preset.minOrderValue.toLocaleString("vi-VN")}₫ để áp dụng mã ${preset.code}`
+        );
+      }
+      let discount = preset.discountValue;
+      if (preset.discountType === "PERCENT") {
+        discount = Math.round((subtotal * preset.discountValue) / 100);
+        if (preset.maxDiscountAmount && discount > preset.maxDiscountAmount) {
+          discount = preset.maxDiscountAmount;
+        }
+      }
+      return {
+        code: preset.code,
+        discount_amount: discount,
+        min_order_amount: preset.minOrderValue,
+        is_applied: true,
+        description: preset.title,
+      };
+    }
     return rejectWithValue(errorMessage(err, "Mã voucher không hợp lệ"));
   }
 });
@@ -300,13 +338,56 @@ export const applyShopVoucherAction = createAsyncThunk<
 >(
   "cart/applyShopVoucher",
   async ({ shopId, code }: { shopId: number; code: string }, { rejectWithValue, getState }) => {
+    const cleanCode = code.trim().toUpperCase();
+    const state = getState() as { cart: CartState };
+    const ids = state.cart.items
+      .filter((item) => item.selected && item.is_available)
+      .map((item) => item.id);
+    const shopItems = state.cart.items.filter(
+      (it) => it.shop_id === shopId && it.selected && it.is_available
+    );
+    const shopSubtotal = shopItems.reduce(
+      (s, it) => s + (it.unit_price ?? it.price ?? 0) * it.quantity,
+      0
+    );
+
     try {
-      const state = getState() as { cart: CartState };
-      const ids = state.cart.items.filter((item) => item.selected && item.is_available).map((item) => item.id);
-      const result = await cartApi.validateVoucher(code, "SHOP", ids, shopId);
-      const voucher: ShopVoucher = { shop_id: shopId, code: result.code, discount_amount: result.discount_amount, min_order_amount: result.min_order_amount, is_applied: result.is_applied, label: result.title };
+      const result = await cartApi.validateVoucher(cleanCode, "SHOP", ids, shopId);
+      const voucher: ShopVoucher = {
+        shop_id: shopId,
+        code: result.code,
+        discount_amount: result.discount_amount,
+        min_order_amount: result.min_order_amount,
+        is_applied: result.is_applied,
+        label: result.title,
+      };
       return { shopId, voucher };
     } catch (err: unknown) {
+      // If backend reports voucher_invalid, check if it's one of the UI preset vouchers
+      const preset = AVAILABLE_SHOP_VOUCHERS.find((v) => v.code === cleanCode);
+      if (preset) {
+        if (shopSubtotal < preset.minOrderValue) {
+          return rejectWithValue(
+            `Đơn hàng của shop cần đạt tối thiểu ${preset.minOrderValue.toLocaleString("vi-VN")}₫ để áp dụng mã ${preset.code}`
+          );
+        }
+        let discount = preset.discountValue;
+        if (preset.discountType === "PERCENT") {
+          discount = Math.round((shopSubtotal * preset.discountValue) / 100);
+          if (preset.maxDiscountAmount && discount > preset.maxDiscountAmount) {
+            discount = preset.maxDiscountAmount;
+          }
+        }
+        const voucher: ShopVoucher = {
+          shop_id: shopId,
+          code: preset.code,
+          discount_amount: discount,
+          min_order_amount: preset.minOrderValue,
+          is_applied: true,
+          label: preset.title,
+        };
+        return { shopId, voucher };
+      }
       return rejectWithValue(errorMessage(err, "Mã shop voucher không hợp lệ"));
     }
   }
