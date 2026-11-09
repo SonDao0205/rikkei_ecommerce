@@ -3148,6 +3148,485 @@
             }
           }
         ]
+      },
+      {
+        "name": "Reject unauthenticated checkout order",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{}"
+          },
+          "url": "{{baseUrl}}/api/v1/checkout/orders"
+        },
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Unauthenticated order creation is rejected with 401', () => pm.response.to.have.status(401));"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "Reject non-CLIENT checkout order",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{adminToken}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\"address_id\":1,\"shipping_method_id\":980001,\"payment_method_id\":980101,\"cart_item_ids\":[1]}"
+          },
+          "url": "{{baseUrl}}/api/v1/checkout/orders"
+        },
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Non-CLIENT role is rejected with 403', () => pm.response.to.have.status(403));"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "Reject incomplete checkout order",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{clientToken}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{}"
+          },
+          "url": "{{baseUrl}}/api/v1/checkout/orders"
+        },
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Incomplete order request is rejected with 400', () => pm.response.to.have.status(400));"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "Reject duplicate cart item IDs in checkout order",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{clientToken}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\"address_id\":1,\"shipping_method_id\":980001,\"payment_method_id\":980101,\"cart_item_ids\":[1,1]}"
+          },
+          "url": "{{baseUrl}}/api/v1/checkout/orders"
+        },
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Duplicate cart item IDs rejected with 400', () => pm.response.to.have.status(400));"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "Reject unowned address in checkout order",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{clientToken}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\"address_id\":999999,\"shipping_method_id\":980001,\"payment_method_id\":980101,\"cart_item_ids\":[1]}"
+          },
+          "url": "{{baseUrl}}/api/v1/checkout/orders"
+        },
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Unowned address is rejected with 422 address_unavailable', () => { pm.response.to.have.status(422); pm.expect(pm.response.json().code).to.eql('address_unavailable'); });"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "Reject MOCK_CARD payment method in checkout order",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{clientToken}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\"address_id\":910001,\"shipping_method_id\":980001,\"payment_method_id\":980103,\"cart_item_ids\":[1]}"
+          },
+          "url": "{{baseUrl}}/api/v1/checkout/orders"
+        },
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('MOCK_CARD is rejected with 422 payment_method_unavailable', () => { pm.response.to.have.status(422); pm.expect(pm.response.json().code).to.eql('payment_method_unavailable'); });"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "Login seed buyer account",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"identifier\": \"seed-buyer@local.test\",\n  \"password\": \"{{seedPassword}}\"\n}"
+          },
+          "url": "{{baseUrl}}/api/v1/auth/login"
+        },
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Seed buyer login succeeds', function () {",
+                "  pm.response.to.have.status(200);",
+                "  const data = pm.response.json().data;",
+                "  pm.expect(data.access_token).to.be.a('string');",
+                "  pm.environment.set('buyerToken', data.access_token);",
+                "});"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "Read seed buyer cart items",
+        "request": {
+          "method": "GET",
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{buyerToken}}"
+            }
+          ],
+          "url": "{{baseUrl}}/api/v1/cart"
+        },
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Read buyer cart items successfully', function () {",
+                "  pm.response.to.have.status(200);",
+                "  const data = pm.response.json().data;",
+                "  pm.expect(data.items).to.be.an('array');",
+                "  if (data.items.length > 0) {",
+                "    pm.environment.set('buyerCartItemId', data.items[0].id);",
+                "  }",
+                "});"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "Quote checkout with platform voucher",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{buyerToken}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"address_id\": 910001,\n  \"shipping_method_id\": 980001,\n  \"payment_method_id\": 980101,\n  \"cart_item_ids\": [{{buyerCartItemId}}],\n  \"platform_voucher\": \"SEED-WELCOME\"\n}"
+          },
+          "url": "{{baseUrl}}/api/v1/checkout/quote"
+        },
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Checkout quote succeeds with platform voucher', function () {",
+                "  pm.response.to.have.status(200);",
+                "  const data = pm.response.json().data;",
+                "  pm.expect(data.subtotal).to.be.a('number');",
+                "  pm.expect(data.shipping_fee).to.be.a('number');",
+                "  pm.expect(data.total).to.be.a('number');",
+                "  pm.expect(data.address.recipient_name).to.eql('Trần Ngọc Hà');",
+                "});"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "Create order with COD (Multi-Shop Split)",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{buyerToken}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"address_id\": 910001,\n  \"shipping_method_id\": 980001,\n  \"payment_method_id\": 980101,\n  \"cart_item_ids\": [{{buyerCartItemId}}],\n  \"platform_voucher\": \"SEED-WELCOME\",\n  \"note\": \"Postman integration test - COD Order\"\n}"
+          },
+          "url": "{{baseUrl}}/api/v1/checkout/orders"
+        },
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Order with COD created successfully', function () {",
+                "  pm.response.to.have.status(201);",
+                "  const data = pm.response.json().data;",
+                "  pm.expect(data.order_id).to.be.a('number');",
+                "  pm.expect(data.order_code).to.match(/^ORD/);",
+                "  pm.expect(data.status).to.eql('PENDING');",
+                "  pm.expect(data.payment_method.code).to.eql('COD');",
+                "  pm.expect(data.payment.status).to.eql('PENDING');",
+                "  pm.expect(data.payment.transaction_ref).to.include('COD-');",
+                "  pm.expect(data.shop_orders).to.be.an('array').that.is.not.empty;",
+                "  pm.expect(data.recipient_name).to.eql('Trần Ngọc Hà');",
+                "  pm.environment.set('lastCreatedOrderId', data.order_id);",
+                "  pm.environment.set('lastCreatedOrderCode', data.order_code);",
+                "});"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "Verify purchased items cleared from buyer cart",
+        "request": {
+          "method": "GET",
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{buyerToken}}"
+            }
+          ],
+          "url": "{{baseUrl}}/api/v1/cart"
+        },
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Purchased cart item was removed', function () {",
+                "  pm.response.to.have.status(200);",
+                "  const data = pm.response.json().data;",
+                "  const remaining = (data.items || []).map(i => i.id);",
+                "  const purchasedId = parseInt(pm.environment.get('buyerCartItemId'), 10);",
+                "  pm.expect(remaining).to.not.include(purchasedId);",
+                "});"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "Add variant to cart for BANK_TRANSFER test",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{buyerToken}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"variant_id\": 961002,\n  \"quantity\": 1\n}"
+          },
+          "url": "{{baseUrl}}/api/v1/cart/items"
+        },
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Variant added to cart', function () {",
+                "  pm.response.to.have.status(200);",
+                "  const item = pm.response.json().data;",
+                "  pm.expect(item.id).to.be.a('number');",
+                "  pm.environment.set('btCartItemId', item.id);",
+                "});"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "Create order with BANK_TRANSFER",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{buyerToken}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"address_id\": 910001,\n  \"shipping_method_id\": 980001,\n  \"payment_method_id\": 980102,\n  \"cart_item_ids\": [{{btCartItemId}}],\n  \"note\": \"Postman integration test - Bank Transfer Order\"\n}"
+          },
+          "url": "{{baseUrl}}/api/v1/checkout/orders"
+        },
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Order with BANK_TRANSFER created successfully', function () {",
+                "  pm.response.to.have.status(201);",
+                "  const data = pm.response.json().data;",
+                "  pm.expect(data.order_id).to.be.a('number');",
+                "  pm.expect(data.order_code).to.match(/^ORD/);",
+                "  pm.expect(data.payment_method.code).to.eql('BANK_TRANSFER');",
+                "  pm.expect(data.payment.status).to.eql('PENDING');",
+                "  pm.expect(data.payment.transaction_ref).to.eql(data.order_code);",
+                "  pm.expect(data.shop_orders).to.be.an('array').that.is.not.empty;",
+                "});"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "Reject re-checkout with consumed cart items",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{buyerToken}}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"address_id\": 910001,\n  \"shipping_method_id\": 980001,\n  \"payment_method_id\": 980101,\n  \"cart_item_ids\": [{{btCartItemId}}]\n}"
+          },
+          "url": "{{baseUrl}}/api/v1/checkout/orders"
+        },
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Consumed cart item returns 422 cart_selection_changed', function () {",
+                "  pm.response.to.have.status(422);",
+                "  pm.expect(pm.response.json().code).to.eql('cart_selection_changed');",
+                "});"
+              ]
+            }
+          }
+        ]
       }
     ]
   }
