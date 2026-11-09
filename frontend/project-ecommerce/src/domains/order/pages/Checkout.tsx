@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
+import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import CustomerLayout from "@/app/layout/CustomerLayout";
 import { CartBreadcrumbStepper } from "@/domains/customer/components/cart/CartBreadcrumbStepper";
@@ -211,7 +212,30 @@ export const Checkout: React.FC = () => {
       });
 
       setCheckoutQuote(res);
+      setQuoteError(null);
     } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        const errData = err.response?.data as
+          | { errors?: Array<{ code?: string; message?: string }> }
+          | undefined;
+        const errCode = errData?.errors?.[0]?.code;
+        if (errCode && errCode.startsWith("voucher_")) {
+          try {
+            // Obtain base server quote without the failing voucher
+            const baseQuote = await cartApi.quoteCheckout({
+              address_id: selectedAddressId,
+              shipping_method_id: selectedShippingId,
+              payment_method_id: selectedPaymentId,
+              cart_item_ids: selectedItems.map((it) => it.id),
+            });
+            setCheckoutQuote(baseQuote);
+            setQuoteError(apiErrorMessage(err, "Mã ưu đãi không hợp lệ trên máy chủ."));
+            return;
+          } catch {
+            // Fall through to offline calculation
+          }
+        }
+      }
       const msg = apiErrorMessage(
         err,
         "Không thể tính báo giá tự động từ server. Đang dùng tạm tính offline."
