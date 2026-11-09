@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import type { CartItem, ShopVoucher } from "@/domains/customer/types/cart.types";
 import CartItemRow from "./CartItemRow";
 import { formatCurrencyVND } from "@/shared/utils/currency";
+import { getAvailableShopVouchers } from "@/domains/customer/data/availableVouchers";
 
 export interface CartShopGroupProps {
   shopId: number;
@@ -143,84 +144,127 @@ export const CartShopGroup: React.FC<CartShopGroupProps> = ({
       </div>
 
       {/* Shop Footer Voucher & Subtotal Strip */}
-      <div className="bg-surface-container-low/70 px-4 py-3 flex flex-wrap items-center justify-between gap-3 border-t border-outline-variant/40">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-bold text-on-surface-variant">
-            Shop Voucher:
-          </span>
+      <div className="bg-surface-container-low/70 px-4 py-3 flex flex-col gap-2.5 border-t border-outline-variant/40">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-on-surface-variant">
+            <span className="material-symbols-outlined text-[16px] text-primary">sell</span>
+            <span>Voucher của Shop:</span>
+          </div>
 
-          {voucher && voucher.is_applied && !showVoucherInput ? (
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-container-lowest text-xs text-primary font-bold shadow-xs">
-                <span>{voucher.code} applied</span>
-                <span className="material-symbols-outlined text-[14px]">check</span>
-              </div>
+          <div className="flex items-center gap-2 text-xs sm:text-sm">
+            <span className="text-on-surface-variant">
+              Tổng shop ({selectedItemsCount} {selectedItemsCount === 1 ? "món" : "món"}):
+            </span>
+            <span className="font-label-lg text-sm sm:text-base text-on-surface font-bold">
+              {formatCurrencyVND(finalShopTotal)}
+            </span>
+            {voucherDiscount > 0 && (
+              <span className="text-secondary text-xs font-bold">
+                (Tiết kiệm {formatCurrencyVND(voucherDiscount)})
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Available Vouchers Pills & Selection */}
+        <div className="flex flex-wrap items-center gap-2 pt-0.5">
+          {getAvailableShopVouchers(shopId).slice(0, 3).map((v) => {
+            const isThisApplied = voucher?.is_applied && voucher.code === v.code;
+            const isEligible = shopSubtotal >= v.minOrderValue;
+
+            return (
               <button
+                key={v.id}
                 type="button"
-                onClick={() => setShowVoucherInput(true)}
-                className="text-xs text-secondary hover:underline cursor-pointer font-semibold"
+                disabled={isApplyingVoucher}
+                onClick={async () => {
+                  if (isThisApplied) {
+                    onRemoveShopVoucher?.(shopId);
+                  } else {
+                    try {
+                      setIsApplyingVoucher(true);
+                      setVoucherErrorMessage(null);
+                      await onApplyShopVoucher(shopId, v.code);
+                    } catch (err: unknown) {
+                      setVoucherErrorMessage(
+                        typeof err === "string"
+                          ? err
+                          : err instanceof Error
+                          ? err.message
+                          : "Không thể áp dụng voucher"
+                      );
+                    } finally {
+                      setIsApplyingVoucher(false);
+                    }
+                  }
+                }}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer border ${
+                  isThisApplied
+                    ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                    : isEligible
+                    ? "bg-surface-container-lowest text-on-surface hover:border-primary/50 border-outline-variant/60"
+                    : "bg-surface-container/60 text-outline border-outline-variant/30 opacity-70"
+                }`}
+                title={v.description}
               >
-                Đổi mã
+                <span className="font-bold text-[10px] uppercase">{v.highlightText}</span>
+                <span className="opacity-75">• {v.code}</span>
+                {isThisApplied && (
+                  <span className="material-symbols-outlined text-[13px]">check</span>
+                )}
               </button>
-              {onRemoveShopVoucher && (
-                <button
-                  type="button"
-                  onClick={() => onRemoveShopVoucher(shopId)}
-                  className="text-xs text-outline hover:text-error transition-colors cursor-pointer"
-                  title="Hủy voucher shop"
-                >
-                  <span className="material-symbols-outlined text-[14px]">close</span>
-                </button>
-              )}
-            </div>
+            );
+          })}
+
+          {/* Toggle manual code entry */}
+          {!showVoucherInput ? (
+            <button
+              type="button"
+              onClick={() => setShowVoucherInput(true)}
+              className="text-xs text-primary hover:underline font-semibold cursor-pointer py-1 px-1 flex items-center gap-0.5"
+            >
+              <span>+ Nhập mã khác</span>
+            </button>
           ) : (
-            <form onSubmit={handleApplyCoupon} className="flex items-center gap-2">
+            <form onSubmit={handleApplyCoupon} className="flex items-center gap-1.5">
               <input
                 type="text"
                 placeholder="Nhập mã ưu đãi shop"
                 value={voucherCodeInput}
                 onChange={(e) => setVoucherCodeInput(e.target.value)}
-                className="h-8 px-2.5 rounded bg-surface-container-lowest text-xs focus:outline-none focus:ring-1 focus:ring-primary w-40 border border-outline-variant/60"
+                className="h-7 px-2 rounded bg-surface-container-lowest text-xs focus:outline-none focus:ring-1 focus:ring-primary w-36 border border-outline-variant/60 uppercase font-semibold"
               />
               <button
                 type="submit"
                 disabled={isApplyingVoucher || !voucherCodeInput.trim()}
-                className="h-8 px-3 rounded bg-surface-container text-xs text-on-surface font-bold hover:bg-surface-container-high transition-colors cursor-pointer disabled:opacity-50"
+                className="h-7 px-2.5 rounded bg-primary text-xs text-on-primary font-bold hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-50"
               >
                 {isApplyingVoucher ? "..." : "Áp dụng"}
               </button>
-              {showVoucherInput && (
-                <button
-                  type="button"
-                  onClick={() => setShowVoucherInput(false)}
-                  className="text-xs text-outline hover:text-on-surface cursor-pointer"
-                >
-                  Hủy
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => setShowVoucherInput(false)}
+                className="text-xs text-outline hover:text-on-surface cursor-pointer px-1"
+              >
+                Hủy
+              </button>
             </form>
           )}
 
-          {voucherErrorMessage && (
-            <span className="text-xs text-error font-medium">
-              {voucherErrorMessage}
-            </span>
+          {voucher?.is_applied && onRemoveShopVoucher && (
+            <button
+              type="button"
+              onClick={() => onRemoveShopVoucher(shopId)}
+              className="text-xs text-error hover:underline cursor-pointer font-medium ml-auto"
+            >
+              Gỡ voucher
+            </button>
           )}
         </div>
 
-        <div className="flex items-center gap-2 text-xs sm:text-sm">
-          <span className="text-on-surface-variant">
-            Tổng shop ({selectedItemsCount} {selectedItemsCount === 1 ? "món" : "món"}):
-          </span>
-          <span className="font-label-lg text-sm sm:text-base text-on-surface font-bold">
-            {formatCurrencyVND(finalShopTotal)}
-          </span>
-          {voucherDiscount > 0 && (
-            <span className="text-secondary text-xs font-bold">
-              (Tiết kiệm {formatCurrencyVND(voucherDiscount)})
-            </span>
-          )}
-        </div>
+        {voucherErrorMessage && (
+          <p className="text-xs text-error font-medium">{voucherErrorMessage}</p>
+        )}
       </div>
     </div>
   );

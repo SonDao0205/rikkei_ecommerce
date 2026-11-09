@@ -9,14 +9,18 @@ import { useAppSelector } from "@/app/state/store";
  * - Người dùng khác / khách: Chuyển về trang chủ /
  */
 const WildcardRoute: React.FC = () => {
-  const { isAuthenticated, role } = useAppSelector((state) => state.auth);
+  const { isAuthenticated, user, role } = useAppSelector((state) => state.auth);
 
   if (isAuthenticated) {
-    const userRole = (role || "").toLowerCase().trim();
-    if (userRole === "admin") {
+    const userRoles = new Set(
+      (user?.roles?.length ? user.roles : role || user?.role ? [role || user?.role] : []).map(
+        (value) => String(value).toLowerCase().trim()
+      )
+    );
+    if (userRoles.has("admin")) {
       return <Navigate to="/admin/dashboard" replace />;
     }
-    if (userRole === "seller") {
+    if (userRoles.has("seller")) {
       return <Navigate to="/shop/dashboard" replace />;
     }
   }

@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { useAppSelector } from "@/app/state/store";
 import { BrandIcon } from "@/shared/components/common/BrandLogo";
 
 interface NavItem {
@@ -15,7 +16,7 @@ const NAV_ITEMS: NavItem[] = [
   { path: "dashboard", label: "Tổng quan", icon: "grid_view", to: "/shop/dashboard" },
   { path: "products", label: "Quản lý sản phẩm", icon: "inventory_2", badge: "124" },
   { path: "orders", label: "Đơn hàng & Vận chuyển", icon: "local_shipping", badge: "11 mới", badgeVariant: "error" },
-  { path: "promotions", label: "Khuyến mãi & Sale", icon: "campaign" },
+  { path: "vouchers", label: "Quản lý voucher", icon: "confirmation_number", to: "/shop/vouchers" },
   { path: "finances", label: "Ví & Doanh thu", icon: "account_balance_wallet" },
   { path: "customer-chat", label: "Chăm sóc khách", icon: "chat", badge: "3", badgeVariant: "secondary" },
   { path: "shop-settings", label: "Cài đặt gian hàng", icon: "settings" },
@@ -34,6 +35,24 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
   isOpenMobile = false,
   onCloseMobile,
 }) => {
+  const { user, role } = useAppSelector((state) => state.auth);
+
+  const userRoles = new Set(
+    (user?.roles?.length ? user.roles : user?.role ? [user.role] : []).map((v) =>
+      String(v).toLowerCase().trim()
+    )
+  );
+  if (role) {
+    userRoles.add(String(role).toLowerCase().trim());
+  }
+
+  const hasCustomerRole =
+    userRoles.has("client") ||
+    userRoles.has("customer") ||
+    userRoles.has("buyer");
+  const hasSellerRole = userRoles.has("seller");
+  const canSwitchToBuyer = hasCustomerRole && hasSellerRole;
+
   return (
     <>
       {/* Mobile backdrop */}
@@ -127,8 +146,22 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
           </nav>
         </div>
 
-        {/* Footer info */}
+        {/* Footer info & Customer Portal Return */}
         <div className="p-space-md border-t border-outline/20 flex flex-col gap-space-sm">
+          {canSwitchToBuyer && (
+            <Link
+              to="/home"
+              onClick={onCloseMobile}
+              className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-surface-container-highest/10 hover:bg-surface-container-highest/20 text-inverse-on-surface/85 hover:text-white transition-all text-xs font-semibold border border-outline-variant/15 group cursor-pointer shadow-xs"
+              title="Quay lại giao diện mua sắm"
+            >
+              <span className="material-symbols-outlined text-[18px] text-primary-fixed group-hover:-translate-x-1 transition-transform">
+                arrow_back
+              </span>
+              <span>Quay lại trang mua hàng</span>
+            </Link>
+          )}
+
           <div className="flex items-center justify-between px-space-xs font-body-sm text-body-sm text-outline-variant">
             <span>Hotline hỗ trợ:</span>
             <span className="font-label-md text-label-md text-inverse-on-surface">1900 6868</span>

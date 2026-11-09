@@ -27,17 +27,20 @@ const getStandardTimeline = (order: UserOrder): UserOrderTimelineLog[] => {
       {
         id: "std-log-3",
         time: "26/10 18:30",
-        title: "Đơn hàng đã được lấy",
+        title: "Chờ lấy đơn hàng",
+        subtitle: "Shop đã đóng gói và chuẩn bị bàn giao cho bưu tá",
       },
       {
         id: "std-log-2",
         time: "26/10 14:45",
-        title: "Chờ người vận chuyển lấy đơn hàng",
+        title: "Chờ xác nhận",
+        subtitle: "Người bán đang kiểm tra và xác nhận đơn hàng",
       },
       {
         id: "std-log-1",
         time: "26/10 14:20",
-        title: "Đơn hàng đã được xác nhận",
+        title: "Đơn hàng đã đặt",
+        subtitle: "Hệ thống ghi nhận đơn hàng thành công",
       },
     ];
   }
@@ -54,7 +57,7 @@ const getStandardTimeline = (order: UserOrder): UserOrderTimelineLog[] => {
       {
         id: "std-log-confirm",
         time: "26/10 14:20",
-        title: "Đơn hàng đã được xác nhận",
+        title: "Đơn hàng đã đặt",
       },
     ];
   }
@@ -71,17 +74,20 @@ const getStandardTimeline = (order: UserOrder): UserOrderTimelineLog[] => {
     {
       id: "std-log-3",
       time: "26/10 18:30",
-      title: "Đơn hàng đã được lấy",
+      title: "Chờ lấy đơn hàng",
+      subtitle: "Shop đã đóng gói và chuẩn bị bàn giao cho bưu tá",
     },
     {
       id: "std-log-2",
       time: "26/10 14:45",
-      title: "Chờ người vận chuyển lấy đơn hàng",
+      title: "Chờ xác nhận",
+      subtitle: "Người bán đang kiểm tra và xác nhận đơn hàng",
     },
     {
       id: "std-log-1",
       time: "26/10 14:20",
-      title: "Đơn hàng đã được xác nhận",
+      title: "Đơn hàng đã đặt",
+      subtitle: "Hệ thống ghi nhận đơn hàng thành công",
     },
   ];
 };
@@ -93,22 +99,27 @@ export const OrderDetailStepper: React.FC<OrderDetailStepperProps> = ({
 }) => {
   const [isTimelineCollapsed, setIsTimelineCollapsed] = useState(false);
 
-  // Stepper progress index (0 to 4)
+  // Stepper progress index (0 to 4):
+  // 0: Đơn hàng đã đặt
+  // 1: Chờ xác nhận
+  // 2: Chờ lấy đơn hàng
+  // 3: Đang vận chuyển
+  // 4: Giao hàng thành công
   const getStepIndex = () => {
     switch (order.status) {
       case "pending":
-        return 0;
-      case "packing":
         return 1;
+      case "packing":
+        return 2;
       case "shipping":
         return 3;
       case "completed":
         return 4;
       case "cancelled":
       case "returned":
-        return 1;
+        return 0;
       default:
-        return 2;
+        return 1;
     }
   };
 
@@ -174,10 +185,10 @@ export const OrderDetailStepper: React.FC<OrderDetailStepperProps> = ({
       {/* Horizontal 5-Step Visual Stepper */}
       <div className="w-full py-2">
         <div className="grid grid-cols-1 sm:grid-cols-5 gap-6 sm:gap-0 relative">
-          {/* Step 1 */}
+          {/* Step 1: Đơn hàng đã đặt */}
           <div className="flex flex-col items-center text-center relative group">
             <div
-              className={`hidden sm:block absolute top-5 left-1/2 w-full h-1 -z-0 ${
+              className={`hidden sm:block absolute top-5 -translate-y-1/2 left-1/2 w-full h-1 -z-0 ${
                 currentStep >= 1 ? "bg-secondary-container" : "bg-surface-container-high"
               }`}
             />
@@ -206,10 +217,10 @@ export const OrderDetailStepper: React.FC<OrderDetailStepperProps> = ({
             </span>
           </div>
 
-          {/* Step 2 */}
+          {/* Step 2: Chờ xác nhận */}
           <div className="flex flex-col items-center text-center relative group">
             <div
-              className={`hidden sm:block absolute top-5 left-1/2 w-full h-1 -z-0 ${
+              className={`hidden sm:block absolute top-5 -translate-y-1/2 left-1/2 w-full h-1 -z-0 ${
                 currentStep >= 2 ? "bg-secondary-container" : "bg-surface-container-high"
               }`}
             />
@@ -223,7 +234,7 @@ export const OrderDetailStepper: React.FC<OrderDetailStepperProps> = ({
               }`}
             >
               <span className="material-symbols-outlined text-[20px] font-bold">
-                {currentStep > 1 ? "check" : "inventory_2"}
+                {currentStep > 1 ? "check" : "pending_actions"}
               </span>
             </div>
             <span
@@ -231,17 +242,17 @@ export const OrderDetailStepper: React.FC<OrderDetailStepperProps> = ({
                 currentStep === 1 ? "text-primary" : "text-on-surface"
               }`}
             >
-              Chờ lấy hàng
+              Chờ xác nhận
             </span>
             <span className="font-body-sm text-body-sm text-outline mt-0.5">
               26/10 14:45
             </span>
           </div>
 
-          {/* Step 3 */}
+          {/* Step 3: Chờ lấy đơn hàng */}
           <div className="flex flex-col items-center text-center relative group">
             <div
-              className={`hidden sm:block absolute top-5 left-1/2 w-full h-1 -z-0 ${
+              className={`hidden sm:block absolute top-5 -translate-y-1/2 left-1/2 w-full h-1 -z-0 ${
                 currentStep >= 3 ? "bg-secondary-container" : "bg-surface-container-high"
               }`}
             />
@@ -255,7 +266,7 @@ export const OrderDetailStepper: React.FC<OrderDetailStepperProps> = ({
               }`}
             >
               <span className="material-symbols-outlined text-[20px] font-bold">
-                {currentStep > 2 ? "check" : "directions_walk"}
+                {currentStep > 2 ? "check" : "inventory_2"}
               </span>
             </div>
             <span
@@ -263,17 +274,17 @@ export const OrderDetailStepper: React.FC<OrderDetailStepperProps> = ({
                 currentStep === 2 ? "text-primary" : "text-on-surface"
               }`}
             >
-              Đã giao bưu tá
+              Chờ lấy đơn hàng
             </span>
             <span className="font-body-sm text-body-sm text-outline mt-0.5">
               26/10 18:30
             </span>
           </div>
 
-          {/* Step 4 */}
+          {/* Step 4: Đang vận chuyển */}
           <div className="flex flex-col items-center text-center relative group">
             <div
-              className={`hidden sm:block absolute top-5 left-1/2 w-full h-1 -z-0 ${
+              className={`hidden sm:block absolute top-5 -translate-y-1/2 left-1/2 w-full h-1 -z-0 ${
                 currentStep >= 4 ? "bg-secondary-container" : "bg-surface-container-high"
               }`}
             />
@@ -306,7 +317,7 @@ export const OrderDetailStepper: React.FC<OrderDetailStepperProps> = ({
             </span>
           </div>
 
-          {/* Step 5 */}
+          {/* Step 5: Giao hàng thành công */}
           <div className="flex flex-col items-center text-center relative group">
             <div
               className={`w-10 h-10 rounded-full flex items-center justify-center z-10 shadow-inner ring-4 ${
@@ -316,7 +327,7 @@ export const OrderDetailStepper: React.FC<OrderDetailStepperProps> = ({
               }`}
             >
               <span className="material-symbols-outlined text-[20px]">
-                {currentStep === 4 ? "check_circle" : "inventory_2"}
+                {currentStep === 4 ? "check_circle" : "task_alt"}
               </span>
             </div>
             <span
@@ -324,7 +335,7 @@ export const OrderDetailStepper: React.FC<OrderDetailStepperProps> = ({
                 currentStep === 4 ? "text-emerald-700" : "text-outline"
               }`}
             >
-              Giao thành công
+              Giao hàng thành công
             </span>
             <span className="font-body-sm text-body-sm text-outline mt-0.5">
               {order.status === "completed" ? "28/10 14:30" : `Dự kiến ${estimatedDate}`}

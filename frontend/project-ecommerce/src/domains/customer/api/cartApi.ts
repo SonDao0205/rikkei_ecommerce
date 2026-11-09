@@ -152,7 +152,51 @@ export const cartApi = {
     const response = await axiosClient.post<ApiResponse<CheckoutQuote>>("/api/v1/checkout/quote", request);
     return response.data.data;
   },
+
+  async createOrder(request: CreateOrderRequest) {
+    const response = await axiosClient.post<ApiResponse<CreatedOrder>>("/api/v1/checkout/orders", request);
+    return response.data.data;
+  },
 };
+
+export interface CreateOrderRequest extends CheckoutQuoteRequest {
+  note?: string;
+}
+
+export interface CreatedOrder {
+  order_id: number;
+  order_code: string;
+  status: string;
+  subtotal: number;
+  shipping_fee: number;
+  shop_discount_total: number;
+  platform_discount: number;
+  total_amount: number;
+  recipient_name: string;
+  recipient_phone: string;
+  shipping_address: string;
+  note?: string;
+  payment_method: CheckoutMethod;
+  payment: {
+    id: number;
+    status: string;
+    amount: number;
+    transaction_ref: string;
+  };
+  shop_orders: Array<{
+    id: number;
+    shop_id: number;
+    shop_name: string;
+    shop_order_code: string;
+    status: string;
+    subtotal: number;
+    shipping_fee: number;
+    shop_discount: number;
+    platform_discount: number;
+    total_amount: number;
+    item_count: number;
+  }>;
+}
 
 export interface CheckoutMethod {
   id: number;
@@ -212,8 +256,35 @@ export interface VoucherValidation {
 
 export function apiErrorMessage(error: unknown, fallback: string): string {
   if (axios.isAxiosError(error)) {
-    const data = error.response?.data as { message?: string; errors?: Array<{ message?: string }> } | undefined;
-    return data?.errors?.[0]?.message || data?.message || fallback;
+    const data = error.response?.data as
+      | { message?: string; errors?: Array<{ code?: string; message?: string }> }
+      | undefined;
+    const errCode = data?.errors?.[0]?.code;
+    const errMsg = data?.errors?.[0]?.message;
+
+    if (errCode === "voucher_invalid") {
+      return "Mã voucher không tồn tại hoặc đã bị vô hiệu hóa.";
+    }
+    if (errCode === "voucher_unavailable") {
+      return "Voucher đã hết lượt sử dụng hoặc tài khoản của bạn đã dùng mã này rồi.";
+    }
+    if (errCode === "voucher_minimum_not_met") {
+      return "Đơn hàng chưa đạt giá trị tối thiểu để áp dụng mã này.";
+    }
+    if (errCode === "voucher_shop_mismatch") {
+      return "Mã voucher của shop không khớp với các sản phẩm được chọn.";
+    }
+    if (errCode === "cart_selection_changed" || errCode === "cart_item_unavailable") {
+      return "Một số sản phẩm trong giỏ hàng đã thay đổi hoặc không đủ tồn kho.";
+    }
+    if (errCode === "cart_total_exceeded") {
+      return "Tổng giá trị đơn hàng vượt quá giới hạn tối đa cho phép.";
+    }
+
+    return errMsg || data?.message || fallback;
+  }
+  if (typeof error === "string") {
+    return error;
   }
   return error instanceof Error ? error.message : fallback;
 }

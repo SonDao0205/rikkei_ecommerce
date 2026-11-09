@@ -44,7 +44,7 @@ export const ShopLayout: React.FC<ShopLayoutProps> = ({ children }) => {
       badge: "11 mới",
       badgeVariant: "error",
     },
-    { label: "Khuyến mãi & Marketing", path: "/shop/promotions", icon: "campaign" },
+    { label: "Quản lý voucher", path: "/shop/vouchers", icon: "confirmation_number" },
     { label: "Ví & Doanh thu", path: "/shop/finances", icon: "account_balance_wallet" },
     {
       label: "Chăm sóc khách",
@@ -204,8 +204,8 @@ export const ShopLayout: React.FC<ShopLayoutProps> = ({ children }) => {
                   ? "Quản lý sản phẩm"
                   : location.pathname.startsWith("/shop/order")
                   ? "Đơn hàng & Vận chuyển"
-                  : location.pathname.startsWith("/shop/promotion")
-                  ? "Khuyến mãi & Marketing"
+                  : location.pathname.startsWith("/shop/voucher") || location.pathname.startsWith("/shop/promotion")
+                  ? "Quản lý voucher"
                   : location.pathname.startsWith("/shop/finance")
                   ? "Ví & Doanh thu"
                   : location.pathname.startsWith("/shop/setting")
