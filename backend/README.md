@@ -515,7 +515,7 @@ Payment method `MOCK_CARD` is intentionally excluded from customer checkout beca
 
 Successful response data includes `address`, `shipping_method`, `payment_method`, selected `items`, `subtotal`, `shipping_fee`, `shop_vouchers`, `shop_discount`, `platform_voucher`, `platform_discount`, and `total`. Invalid input returns `400`; unauthenticated or wrong-role callers return `401`/`403`; stale addresses/methods/cart items or invalid vouchers return `422`; database failures return a generic `500` while details are logged server-side. Common error codes include `address_unavailable`, `shipping_method_unavailable`, `payment_method_unavailable`, `cart_item_unavailable`, `cart_selection_changed`, `voucher_invalid`, `voucher_unavailable`, `voucher_minimum_not_met`, `voucher_shop_mismatch`, and `cart_total_exceeded`.
 
-A quote is advisory: it does not create an order, reserve stock, or consume a voucher. A future order-creation endpoint must repeat validation and atomically update stock and voucher usage in a transaction. The cart UI now collects delivery/payment choices and displays a server-calculated quote; it does not claim an order was placed.
+A quote is advisory: it does not create an order, reserve stock, or consume a voucher. The order-creation endpoint `POST /api/v1/checkout/orders` executes inside a single database transaction, atomically locking and updating stock and voucher usage, creating parent and sub-orders per shop, recording payment, and clearing purchased cart items.
 
 Example quote body:
 
@@ -529,6 +529,42 @@ Example quote body:
   "shop_vouchers": {"920001": "SEED-MAY10"}
 }
 ```
+
+### Order creation: `POST /api/v1/checkout/orders`
+
+Tạo đơn hàng từ giỏ hàng được bảo vệ bởi role `CLIENT`, thực thi toàn bộ trong một transaction cơ sở dữ liệu duy nhất:
+
+- **Input:**
+  - `address_id` (ID địa chỉ nhận hàng của chính người dùng).
+  - `shipping_method_id` (phương thức vận chuyển đang hoạt động).
+  - `payment_method_id` (`COD` hoặc `BANK_TRANSFER`; phương thức `MOCK_CARD` bị từ chối).
+  - `cart_item_ids` (mảng 1–100 ID dòng giỏ hàng thuộc về người dùng, không trùng lặp).
+  - `platform_voucher` (tùy chọn: mã voucher toàn sàn).
+  - `shop_vouchers` (tùy chọn: map mã voucher theo shop ID `{"920001": "SEED-MAY10"}`).
+  - `note` (tùy chọn: tối đa 500 ký tự).
+- **Cơ chế chống bán vượt tồn kho (Oversell Prevention) và chống Deadlock:**
+  1. Tập hợp tất cả `variant_id` liên quan và sắp xếp tăng dần theo ID trước khi khóa hàng (`ORDER BY v.id ASC FOR UPDATE`) để tránh deadlock khi nhiều người mua đồng thời.
+  2. Kiểm tra trạng thái khả dụng và số lượng tồn kho `v.stock >= requested_quantity`.
+  3. Trừ tồn kho nguyên tử bằng câu lệnh SQL `UPDATE product_variants SET stock = stock - ? WHERE id = ? AND stock >= ?`. Nếu không có dòng nào bị ảnh hưởng (`RowsAffected == 0`), transaction tự động rollback ngay lập tức và trả về `422 cart_item_unavailable`.
+  4. Ràng buộc toàn vẹn MySQL `CONSTRAINT chk_variants_stock CHECK (stock >= 0)` bảo vệ tuyệt đối ở tầng engine.
+- **Tách đơn theo Shop (Multi-Shop Splitting):**
+  - Tạo 1 đơn hàng cha trong bảng `orders` (tính tổng tiền hàng, phí vận chuyển chung, voucher sàn, voucher shop, tổng thanh toán).
+  - Tạo $N$ đơn hàng con trong bảng `shop_orders` theo từng shop:
+    - Trạng thái khởi tạo: `PENDING`.
+    - Phân bổ tỷ lệ phí ship và voucher sàn theo giá trị đơn của từng shop, đảm bảo tổng các đơn con khớp chính xác 100% với đơn cha.
+    - Snapshot tỷ lệ hoa hồng (`commission_rate = 0`, `commission_amount = 0`).
+  - Lưu chi tiết sản phẩm vào `order_items` gắn với từng `shop_orders`.
+  - Ghi log lịch sử trạng thái ban đầu vào `order_status_history` (`PENDING`).
+- **Thanh toán COD & Chuyển khoản (Bank Transfer):**
+  - Khởi tạo bản ghi trong bảng `payments` với trạng thái `PENDING`.
+  - Phương thức `COD`: `transaction_ref = "COD-" + order_code`.
+  - Phương thức `BANK_TRANSFER`: `transaction_ref = order_code` (được dùng làm nội dung chuyển khoản để đối soát).
+- **Voucher & Giỏ hàng:**
+  - Khóa voucher `FOR UPDATE`, kiểm tra hạn dùng, điều kiện tối thiểu và giới hạn `usage_limit`, `usage_per_user`.
+  - Tăng số lượt dùng nguyên tử `used_count = used_count + 1`.
+  - Lưu lịch sử dùng vào `voucher_usages`.
+  - Xóa chính xác các sản phẩm đã mua khỏi bảng `cart_items`.
+- **Response `201 Created`:** Trả về thông tin đầy đủ đơn hàng cha, phương thức thanh toán, hướng dẫn thanh toán `payment`, và danh sách các đơn con `shop_orders`.
 
 ## Checkout implementation and team follow-up
 
