@@ -1,0 +1,415 @@
+import React, { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import type { ProductItem, ProductVariant } from "@/domains/storefront/types";
+import { useAppDispatch, useAppSelector } from "@/app/state/store";
+import { addCartItem } from "@/domains/customer/state/cartSlice";
+import { toggleWishlistItem } from "@/domains/customer/state/wishlistSlice";
+import WishlistToast from "@/domains/customer/components/wishlist/WishlistToast";
+
+interface ProductOrderSectionProps {
+  product: ProductItem;
+  variants: ProductVariant[];
+  selectedVariant: ProductVariant | null;
+  onSelectVariant: (variant: ProductVariant) => void;
+}
+
+export const ProductOrderSection: React.FC<ProductOrderSectionProps> = ({
+  product,
+  variants,
+  selectedVariant,
+  onSelectVariant,
+}) => {
+  const [requestedQuantity, setRequestedQuantity] = useState<number>(1);
+  const [cartToastMessage, setCartToastMessage] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [isAdding, setIsAdding] = useState(false);
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { isAuthenticated, user } = useAppSelector((state) => state.auth);
+  const roles = user?.roles?.map((role) => role.toLowerCase()) ?? (user?.role ? [user.role] : []);
+  const canUseCustomerFeatures = roles.includes("client");
+  const isWishlisted = useAppSelector((state) => state.wishlist.items.some((item) => item.product_id === product.id));
+  const isWishlistPending = useAppSelector((state) => state.wishlist.mutatingIds.includes(product.id));
+  const isCartUpdating = useAppSelector((state) => state.cart.updating);
+  const [toastState, setToastState] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: "success" | "error" | "info";
+    actionText?: string;
+    actionLink?: string;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "success",
+    actionText: "Xem giỏ",
+    actionLink: "/cart",
+  });
+
+  useEffect(() => {
+    if (toastState.isOpen) {
+      const timer = setTimeout(() => {
+        setToastState((prev) => ({ ...prev, isOpen: false }));
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [toastState.isOpen]);
+
+  const currentPrice = selectedVariant?.price ?? product.price ?? 0;
+  const currentStock = selectedVariant?.stock ?? product.stock ?? 0;
+  const quantity = Math.max(1, Math.min(requestedQuantity, currentStock || 1));
+  const currentSku = selectedVariant?.sku || `MP-PRD-${product.id}`;
+
+  const formatPrice = (amount: number) => {
+    return amount.toLocaleString("vi-VN") + " ₫";
+  };
+
+  const handleQtyMinus = () => {
+    if (quantity > 1) {
+      setRequestedQuantity((prev) => prev - 1);
+    }
+  };
+
+  const handleQtyPlus = () => {
+    if (quantity < currentStock) {
+      setRequestedQuantity((prev) => prev + 1);
+    }
+  };
+
+  const handleAddToCart = async () => {
+    if (!isAuthenticated) {
+      navigate("/login", { state: { from: location } });
+      return;
+    }
+    if (!canUseCustomerFeatures) {
+      setActionError("Giỏ hàng chỉ dành cho tài khoản người mua.");
+      return;
+    }
+    const variantId = selectedVariant?.id || (variants.length > 0 ? variants[0].id : null);
+    if (!variantId || currentStock < 1) {
+      setActionError("Vui lòng chọn phiên bản còn hàng trước khi thêm vào giỏ.");
+      return;
+    }
+    setActionError(null);
+    setIsAdding(true);
+    try {
+      await dispatch(addCartItem({ variantId, quantity })).unwrap();
+      setCartToastMessage(`Đã thêm ${quantity} sản phẩm vào giỏ hàng.`);
+      setToastState({
+        isOpen: true,
+        title: "Đã thêm vào giỏ hàng",
+        message: `"${product.name}" (SL: ${quantity}) đã được thêm vào giỏ hàng.`,
+        type: "success",
+        actionText: "Xem giỏ",
+        actionLink: "/cart",
+      });
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "Không thể thêm sản phẩm vào giỏ.";
+      setActionError(msg);
+      setToastState({
+        isOpen: true,
+        title: "Không thể thêm vào giỏ",
+        message: msg,
+        type: "error",
+      });
+    } finally {
+      setIsAdding(false);
+    }
+  };
+
+  const handleToggleWishlist = async () => {
+    if (!isAuthenticated) {
+      navigate("/login", { state: { from: location } });
+      return;
+    }
+    if (!canUseCustomerFeatures) {
+      setActionError("Danh sách yêu thích chỉ dành cho tài khoản người mua.");
+      return;
+    }
+    setActionError(null);
+    try {
+      const wasLiked = isWishlisted;
+      await dispatch(toggleWishlistItem(product.id)).unwrap();
+      setToastState({
+        isOpen: true,
+        title: wasLiked ? "Đã bỏ thích sản phẩm" : "Đã thêm vào yêu thích",
+        message: wasLiked
+          ? `"${product.name}" đã được xóa khỏi danh sách yêu thích.`
+          : `"${product.name}" đã được lưu vào danh sách yêu thích.`,
+        type: "success",
+        actionText: "Xem yêu thích",
+        actionLink: "/wishlist",
+      });
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "Không thể cập nhật danh sách yêu thích.";
+      setActionError(msg);
+      setToastState({
+        isOpen: true,
+        title: "Thao tác thất bại",
+        message: msg,
+        type: "error",
+      });
+    }
+  };
+  const handleShare = () => {
+    if (navigator.clipboard) {
+      void navigator.clipboard.writeText(window.location.href).then(
+        () => setCartToastMessage("Đã sao chép liên kết sản phẩm."),
+        () => setActionError("Không thể sao chép liên kết sản phẩm."),
+      );
+    } else {
+      setActionError("Trình duyệt không hỗ trợ sao chép liên kết.");
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Product Identity, Ratings & Micro-Engagement */}
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center justify-between gap-4">
+          <span className="text-label-md font-label-md text-secondary font-bold uppercase tracking-wider text-xs">
+            {product.category_name ? `${product.category_name} • Season 2025` : "Marketplace Verified • Official"}
+          </span>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => void handleToggleWishlist()}
+              disabled={isWishlistPending}
+              className="w-9 h-9 rounded-full bg-surface-container-lowest hover:bg-surface-container text-on-surface-variant hover:text-tertiary-container flex items-center justify-center transition-all shadow-xs cursor-pointer"
+              title={isWishlisted ? "Bỏ thích sản phẩm" : "Thêm vào danh sách yêu thích"}
+            >
+              <span
+                className={`material-symbols-outlined text-[20px] ${
+                  isWishlisted ? "text-tertiary-container" : ""
+                }`}
+                style={{ fontVariationSettings: isWishlisted ? "'FILL' 1" : "'FILL' 0" }}
+              >
+                favorite
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleShare}
+              className="w-9 h-9 rounded-full bg-surface-container-lowest hover:bg-surface-container text-on-surface-variant hover:text-primary flex items-center justify-center transition-all shadow-xs cursor-pointer"
+              title="Chia sẻ sản phẩm"
+            >
+              <span className="material-symbols-outlined text-[20px]">share</span>
+            </button>
+          </div>
+        </div>
+
+        <h1 className="text-2xl md:text-3xl font-headline-xl text-on-surface font-bold tracking-tight leading-tight">
+          {product.name}
+        </h1>
+
+        <div className="flex items-center gap-3 pt-1 text-body-md font-body-md flex-wrap text-sm">
+          <div className="flex items-center gap-1.5 bg-amber-500/10 px-2.5 py-1 rounded-lg">
+            <span className="text-amber-500 font-bold">{product.rating_avg.toFixed(1)}</span>
+            <div className="flex items-center text-amber-500 text-[14px]">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <span
+                  key={star}
+                  className="material-symbols-outlined text-[16px]"
+                  style={{
+                    fontVariationSettings:
+                      product.rating_avg >= star
+                        ? "'FILL' 1"
+                        : product.rating_avg >= star - 0.5
+                        ? "'FILL' 0.5"
+                        : "'FILL' 0",
+                  }}
+                >
+                  {product.rating_avg >= star ? "star" : product.rating_avg >= star - 0.5 ? "star_half" : "star"}
+                </span>
+              ))}
+            </div>
+            <span className="text-outline text-body-sm text-xs">({product.rating_count} đánh giá xác thực)</span>
+          </div>
+
+          <span className="text-outline">•</span>
+          <span className="text-on-surface-variant font-label-md">
+            <strong className="text-on-surface">{product.sold_count}</strong> Đã bán
+          </span>
+          <span className="text-outline">•</span>
+          <span className="text-on-surface-variant font-label-md">
+            <strong className="text-on-surface">Mã SKU:</strong> {currentSku}
+          </span>
+        </div>
+      </div>
+
+      {/* Dynamic Pricing & Flash Voucher Box */}
+      <div className="rounded-2xl bg-surface-container-lowest p-5 shadow-sm flex flex-col gap-2.5 border border-outline-variant/30">
+        <div className="flex items-baseline gap-3 flex-wrap">
+          <span className="text-3xl md:text-4xl font-bold tracking-tight text-primary leading-none">
+            {formatPrice(currentPrice)}
+          </span>
+
+          {product.original_price && product.original_price > currentPrice && (
+            <span className="text-lg font-headline-md text-outline line-through">
+              {formatPrice(product.original_price)}
+            </span>
+          )}
+
+          {product.discount_percent && (
+            <span className="px-2.5 py-1 rounded-lg bg-tertiary-container text-on-primary font-label-sm font-bold tracking-wide uppercase text-xs">
+              Tiết kiệm {product.discount_percent}%
+            </span>
+          )}
+        </div>
+
+      </div>
+
+      {/* Variant Selector */}
+      {variants.length > 0 && (
+        <div className="flex flex-col gap-2.5">
+          <div className="flex items-center justify-between">
+            <span className="font-label-lg font-bold text-on-surface text-sm">
+              Phiên bản / Phân loại ({variants.length} lựa chọn):
+            </span>
+            {selectedVariant && (
+              <span className="text-xs text-primary font-semibold font-mono">
+                {selectedVariant.name || selectedVariant.sku}
+              </span>
+            )}
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {variants.map((v) => {
+              const isSelected = selectedVariant?.id === v.id;
+              const isOutOfStock = v.stock <= 0;
+
+              return (
+                <button
+                  key={v.id}
+                  type="button"
+                  onClick={() => !isOutOfStock && onSelectVariant(v)}
+                  disabled={isOutOfStock}
+                  className={`px-3.5 py-2.5 rounded-xl font-label-md text-xs font-bold transition-all flex items-center gap-2 border cursor-pointer ${
+                    isSelected
+                      ? "bg-primary text-on-primary border-primary shadow-sm"
+                      : isOutOfStock
+                      ? "bg-surface-container-low text-outline opacity-50 cursor-not-allowed border-transparent line-through"
+                      : "bg-surface-container-lowest text-on-surface hover:bg-surface-container border-outline-variant/40"
+                  }`}
+                >
+                  <span>{v.name || v.sku}</span>
+                  <span
+                    className={`text-[11px] font-normal ${
+                      isSelected ? "text-on-primary/80" : "text-outline"
+                    }`}
+                  >
+                    ({v.stock > 0 ? `${v.stock} sẵn` : "Hết hàng"})
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Quantity & Real-time Scarcity Indicator */}
+      <div className="flex items-center justify-between pt-1 flex-wrap gap-2">
+        <div className="flex items-center gap-3">
+          <span className="font-label-lg font-bold text-on-surface text-sm">Số lượng:</span>
+          <div className="inline-flex items-center rounded-xl bg-surface-container-lowest p-1 shadow-sm border border-outline-variant/30">
+            <button
+              type="button"
+              onClick={handleQtyMinus}
+              disabled={quantity <= 1}
+              className="w-8 h-8 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface flex items-center justify-center font-bold transition-all disabled:opacity-40 cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[18px]">remove</span>
+            </button>
+
+            <input
+              type="text"
+              readOnly
+              value={quantity}
+              className="w-12 text-center bg-transparent font-label-lg font-bold text-on-surface focus:outline-none"
+            />
+
+            <button
+              type="button"
+              onClick={handleQtyPlus}
+              disabled={quantity >= currentStock}
+              className="w-8 h-8 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface flex items-center justify-center font-bold transition-all disabled:opacity-40 cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[18px]">add</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1.5 text-xs font-semibold">
+          {currentStock <= 5 && currentStock > 0 ? (
+            <span className="text-amber-600 flex items-center gap-1 animate-pulse font-bold">
+              <span className="material-symbols-outlined text-[18px]">emergency</span>
+              Chỉ còn {currentStock} sản phẩm trong kho!
+            </span>
+          ) : currentStock <= 0 ? (
+            <span className="text-error font-bold flex items-center gap-1">
+              <span className="material-symbols-outlined text-[18px]">block</span>
+              Tạm thời hết hàng
+            </span>
+          ) : (
+            <span className="text-secondary flex items-center gap-1">
+              <span className="material-symbols-outlined text-[18px]">check_circle</span>
+              {currentStock} sản phẩm có sẵn
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* High-Impact Conversion Action Row */}
+      <div className="flex flex-col sm:flex-row items-stretch gap-3 pt-2">
+        {/* Cart Secondary CTA */}
+        <button
+          type="button"
+          onClick={() => void handleAddToCart()}
+          disabled={currentStock <= 0 || !selectedVariant || isAdding || isCartUpdating}
+          className="flex-1 py-4 px-6 rounded-xl bg-surface-container-lowest hover:bg-surface-container text-primary font-label-lg font-bold transition-all flex items-center justify-center gap-2 shadow-sm transform active:scale-[0.98] border border-primary/20 cursor-pointer disabled:opacity-50"
+        >
+          <span className="material-symbols-outlined text-[20px]">add_shopping_cart</span>
+          <span>Thêm Vào Giỏ Hàng</span>
+        </button>
+
+        <Link to="/cart" className="flex-1 py-4 px-6 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-label-lg font-bold transition-all flex items-center justify-center gap-2 shadow-md">View cart</Link>
+      </div>
+
+      {actionError && <p role="alert" className="rounded-xl bg-error-container p-3 text-sm text-error">{actionError}</p>}
+
+      {/* Added to Cart Feedback Toast */}
+      {cartToastMessage && (
+        <div className="p-3.5 rounded-xl bg-inverse-surface text-inverse-on-surface flex items-center justify-between shadow-lg transition-all animate-bounce">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-green-400">check_circle</span>
+            <span className="font-body-sm font-semibold text-xs md:text-sm">{cartToastMessage}</span>
+          </div>
+          <Link
+            to="/cart"
+            className="text-secondary-fixed text-label-sm font-bold uppercase underline text-xs"
+          >
+            Xem giỏ hàng
+          </Link>
+        </div>
+      )}
+
+      {/* Pinned Bottom-Right Toast Notification */}
+      <WishlistToast
+        isOpen={toastState.isOpen}
+        title={toastState.title}
+        message={toastState.message}
+        type={toastState.type}
+        actionText={toastState.actionText || "Xem yêu thích"}
+        actionLink={toastState.actionLink || "/wishlist"}
+        onClose={() => setToastState((prev) => ({ ...prev, isOpen: false }))}
+      />
+
+    </div>
+  );
+};
+
+export default ProductOrderSection;

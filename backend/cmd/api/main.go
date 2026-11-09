@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -12,9 +13,10 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
-	"rikkei-ecommerce/internal/auth"
-	"rikkei-ecommerce/internal/migrations"
-	"rikkei-ecommerce/internal/server"
+	"rikkei-ecommerce/internal/app/migrations"
+	"rikkei-ecommerce/internal/app/server"
+	"rikkei-ecommerce/internal/domain/auth"
+	"rikkei-ecommerce/internal/platform/observability"
 )
 
 func main() {
@@ -22,9 +24,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	structuredLogger := observability.NewLogger(cfg.AppEnv, cfg.LogLevel)
+	legacyLogger := observability.LegacyLogger(structuredLogger)
 	db, err := sql.Open("mysql", cfg.DatabaseDSN)
 	if err != nil {
-		log.Fatal(err)
+		structuredLogger.Error("database initialization failed", slog.Any("error", err))
+		os.Exit(1)
 	}
 	defer db.Close()
 	db.SetMaxOpenConns(20)
@@ -33,18 +38,21 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if err = db.PingContext(ctx); err != nil {
-		log.Fatalf("database connection failed: %v", err)
+		structuredLogger.Error("database connection failed", slog.Any("error", err))
+		os.Exit(1)
 	}
 	if cfg.AutoMigrate {
 		if err = migrations.Run(ctx, db); err != nil {
-			log.Fatal(err)
+			structuredLogger.Error("database migration failed", slog.Any("error", err))
+			os.Exit(1)
 		}
 	}
-	srv := &http.Server{Addr: cfg.HTTPAddr, Handler: server.NewHandler(cfg, db, log.Default()), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, WriteTimeout: 20 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 1 << 20}
+	srv := &http.Server{Addr: cfg.HTTPAddr, Handler: observability.Wrap(structuredLogger, server.NewHandler(cfg, db, legacyLogger)), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, WriteTimeout: 20 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 1 << 20}
 	go func() {
-		log.Printf("API listening on %s", cfg.HTTPAddr)
+		structuredLogger.Info("API listening", slog.String("addr", cfg.HTTPAddr), slog.String("environment", cfg.AppEnv))
 		if e := srv.ListenAndServe(); e != nil && !errors.Is(e, http.ErrServerClosed) {
-			log.Fatal(e)
+			structuredLogger.Error("HTTP server failed", slog.Any("error", e))
+			os.Exit(1)
 		}
 	}()
 	stop, stopCancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -53,6 +61,8 @@ func main() {
 	shutdown, done := context.WithTimeout(context.Background(), 10*time.Second)
 	defer done()
 	if err := srv.Shutdown(shutdown); err != nil {
-		log.Printf("shutdown: %v", err)
+		structuredLogger.Error("HTTP server shutdown failed", slog.Any("error", err))
+	} else {
+		structuredLogger.Info("HTTP server stopped")
 	}
 }

@@ -25,6 +25,30 @@ CREATE TABLE users (
   CONSTRAINT chk_users_role check (role in ('client', 'seller', 'admin'))
 );
 
+-- Legacy users.role is retained during the compatibility period. Authorization
+-- reads user_roles so one account can hold CLIENT and SELLER simultaneously.
+CREATE TABLE roles (
+  code       VARCHAR(16) NOT NULL,
+  name       VARCHAR(32) NOT NULL,
+  PRIMARY KEY (code),
+  CONSTRAINT chk_roles_code CHECK (code IN ('CLIENT','SELLER','ADMIN'))
+);
+
+INSERT INTO roles (code, name) VALUES
+  ('CLIENT','Client'),
+  ('SELLER','Seller'),
+  ('ADMIN','Administrator');
+
+CREATE TABLE user_roles (
+  user_id    BIGINT UNSIGNED NOT NULL,
+  role_code  VARCHAR(16) NOT NULL,
+  granted_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, role_code),
+  KEY idx_user_roles_role (role_code, user_id),
+  CONSTRAINT fk_user_roles_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+  CONSTRAINT fk_user_roles_role FOREIGN KEY (role_code) REFERENCES roles (code)
+);
+
 CREATE TABLE refresh_tokens (
   id         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   user_id    BIGINT UNSIGNED NOT NULL,
@@ -82,7 +106,7 @@ CREATE TABLE shops (
   UNIQUE KEY uq_shops_name (name),
   KEY idx_shops_status (status),
   CONSTRAINT fk_shops_owner    FOREIGN KEY (owner_id)    REFERENCES users (id),
-  CONSTRAINT chk_shops_status CHECK (status IN ('PENDING','ACTIVE','REJECTED','SUSPENDED'))
+  CONSTRAINT chk_shops_status CHECK (status IN ('DRAFT','PENDING','NEEDS_INFO','ACTIVE','REJECTED','SUSPENDED'))
 );
 
 CREATE TABLE shop_followers (
@@ -124,6 +148,24 @@ CREATE TABLE brands (
   PRIMARY KEY (id),
   UNIQUE KEY uq_brands_name (name),
   UNIQUE KEY uq_brands_slug (slug)
+);
+
+CREATE TABLE shop_application_acceptances (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  shop_id BIGINT UNSIGNED NOT NULL,
+  owner_id BIGINT UNSIGNED NOT NULL,
+  terms_version VARCHAR(40) NOT NULL,
+  service_policy_accepted TINYINT(1) NOT NULL,
+  authenticity_accepted TINYINT(1) NOT NULL,
+  anti_counterfeit_accepted TINYINT(1) NOT NULL,
+  ip_address VARCHAR(45) NOT NULL DEFAULT '',
+  user_agent VARCHAR(512) NOT NULL DEFAULT '',
+  accepted_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_shop_acceptance_latest (shop_id,id),
+  KEY idx_shop_acceptance_owner (owner_id,id),
+  CONSTRAINT fk_shop_acceptance_shop FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE,
+  CONSTRAINT fk_shop_acceptance_owner FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Thuộc tính dùng chung (vd: Màu sắc, Kích cỡ) để tạo biến thể
@@ -580,9 +622,11 @@ CREATE TABLE audit_logs (
   old_value   JSON         NULL,
   new_value   JSON         NULL,
   ip_address  VARCHAR(45)  NULL,
+  request_id  VARCHAR(128) NULL,
   created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   KEY idx_audit_logs_user (user_id, created_at),
   KEY idx_audit_logs_entity (entity_type, entity_id),
-  KEY idx_audit_logs_created (created_at)
+  KEY idx_audit_logs_created (created_at),
+  KEY idx_audit_logs_request (request_id)
 );

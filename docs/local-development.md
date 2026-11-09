@@ -34,18 +34,24 @@ Seed dùng các ID cố định khai báo trong file và có thể chạy lại;
 | Quản trị | `seed-admin@local.test` | admin, hoạt động |
 | Người bán A | `seed-seller-a@local.test` | seller, shop hoạt động |
 | Người mua | `seed-buyer@local.test` | client, hoạt động |
-| Người bán B | `seed-seller-b@local.test` | seller, shop chờ duyệt |
-| Người bán công nghệ | `seed-seller-tech@local.test` | seller, shop Tech World hoạt động |
+| Người đăng ký shop B | `seed-seller-b@local.test` | client, shop chờ duyệt; chưa có role seller |
+| Người bán công nghệ | `seed-seller-tech@local.test` | seller, shop Tech An Việt hoạt động |
 | Tài khoản khóa | `seed-locked@local.test` | client, bị khóa để thử đăng nhập |
 | Chưa xác minh email | `seed-unverified@local.test` | client, `email_verified=0` |
 
 Seed tạo dữ liệu liên kết cho địa chỉ, shop, danh mục, thương hiệu, thuộc tính, sản phẩm/biến thể, kho, giỏ hàng, wishlist, voucher, phương thức giao hàng/thanh toán, đơn hàng, thanh toán, hoàn tiền, đánh giá, thông báo và audit log. Script không chèn vào `refresh_tokens`, `auth_refresh_history`, `password_reset_otps` vì đây là trạng thái phiên/OTP sống; không nên seed token giả.
 
-Seed có các sản phẩm công nghệ `960004`–`960008` để kiểm tra xếp hạng tìm kiếm. Ví dụ gọi `GET /api/v1/products?q=iphone+pro+max`: sản phẩm có đủ ba từ trong tên được xếp trước sản phẩm chỉ khớp một phần. Seed local có thể chạy lại bằng lệnh ở trên.
+Seed có 36 sản phẩm thuộc 12 danh mục và 10 thương hiệu, gồm thời trang, đồ gia dụng, cà phê, điện thoại và máy tính. Mỗi sản phẩm có ảnh và ít nhất một biến thể còn hàng; áo khoác có thuộc tính màu/kích cỡ, laptop có CPU/RAM và tùy chọn dung lượng lưu trữ. Có hai sản phẩm chờ duyệt để thử trạng thái seller; cửa hàng chờ duyệt không xuất hiện trong catalog công khai. Đơn hàng `SEED-ORDER-001` gồm sản phẩm từ hai shop đang hoạt động, có tổng tiền, phí, voucher, thanh toán, tồn kho và đánh giá liên kết nhất quán.
 
-Collection kiểm thử Postman bao phủ tất cả các route backend hiện tại, gồm cả fixture inventory riêng `960009`, được hướng dẫn tại [`postman/README.md`](../postman/README.md). Nạp lại seed sau mỗi lần chạy collection để khôi phục fixture này trước lượt test tiếp theo.
+Các tên/description thương mại được dùng trên catalog; tài khoản bị khóa/chưa xác minh, shop pending và sản phẩm `960009` là fixture chuyên biệt để thử auth, duyệt shop và Postman. Giữ nguyên ID `960009` vì collection Postman dùng nó để kiểm thử tồn kho.
 
-FE hiện lấy danh mục và sản phẩm từ `GET /api/v1/categories` và `GET /api/v1/products`. Hồ sơ auth dùng `GET /api/v1/auth/me` và `PUT /api/v1/auth/profile`; đổi mật khẩu dùng `PUT /api/v1/auth/password`. Shop onboarding, duyệt shop, seller product CRUD và address book có API; seller API chỉ hoạt động khi shop ACTIVE. Trang quản trị inventory dùng `/api/v1/admin/products` và các route liên quan, yêu cầu role `ADMIN`. Giỏ hàng, checkout và các nghiệp vụ đơn hàng chưa có API để demo end-to-end.
+FE storefront gọi trực tiếp BE để tải danh mục, danh sách/tìm kiếm/chi tiết sản phẩm và shop công khai; auth, hồ sơ và sổ địa chỉ cũng dùng API BE. Adapter FE không tự tạo giá giảm, phần trăm Flash Sale, đánh giá 5 sao hay nhãn shop đã xác minh khi BE không trả các dữ liệu đó. Có thể kiểm tra nhanh qua FE tại `http://localhost:5173`, hoặc gọi `GET /api/v1/categories`, `GET /api/v1/products?limit=36`, `GET /api/v1/products?q=iphone+pro+max` và `GET /api/v1/products/960004`. Sản phẩm iPhone 15 Pro Max phải đứng trên sản phẩm phụ kiện khi tìm kiếm theo ba từ.
+
+**Giới hạn tích hợp:** dashboard admin và quản lý đơn hàng hiện vẫn có dữ liệu mock phía FE vì BE chưa có API tương ứng. Trang quản lý shop cũng có một số thao tác/số liệu chưa được BE hỗ trợ. Không dùng các màn này để xác nhận dữ liệu đơn hàng/dashboard đã đồng bộ với DB; các API shop admin hiện có gồm danh sách, duyệt, từ chối và khóa shop.
+
+Postman/Newman có collection kiểm thử các luồng API chính, không kiểm thử đầy đủ mọi route/nhánh. Folder **Cart and Wishlist** chạy sau folder **Authentication** để dùng CLIENT vừa đăng ký; nó kiểm tra cart rỗng, thêm/cộng dồn/cập nhật/xóa, giới hạn tồn kho, wishlist idempotent và xóa. Collection dùng fixture inventory `960009`; nạp lại seed sau khi chạy để khôi phục fixture. Collection cũng tạo user/shop test và một số dữ liệu không tự dọn, vì vậy chỉ chạy trên database local/test riêng. Xem phạm vi tác động, cách chạy và giới hạn trong [`postman/README.md`](../postman/README.md).
+
+FE storefront hiện lấy danh mục và sản phẩm từ `GET /api/v1/categories` và `GET /api/v1/products`. Hồ sơ auth dùng `GET /api/v1/auth/me` và `PUT /api/v1/auth/profile`; đổi mật khẩu dùng `PUT /api/v1/auth/password`. Shop onboarding, duyệt shop, seller product CRUD và address book có API; seller API chỉ hoạt động khi shop ACTIVE. Trang quản trị inventory dùng `/api/v1/admin/products` và các route liên quan, yêu cầu role `ADMIN`. Backend cũng cung cấp cart (`/api/v1/cart`) và wishlist (`/api/v1/wishlist`) cho CLIENT đã đăng nhập; xem contract và giới hạn trong [Backend README](../backend/README.md#giỏ-hàng-và-wishlist). Tuy nhiên trang giỏ hàng/wishlist của FE và checkout/đơn hàng chưa hoàn chỉnh để demo end-to-end.
 
 Seed chỉ thay đổi dữ liệu DB local; các workflow CI/CD không theo dõi `database/**` hay `docs/**`. Các thay đổi code BE và FE vẫn kích hoạt workflow tương ứng khi push vào nhánh `build`.
 

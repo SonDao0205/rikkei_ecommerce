@@ -1,0 +1,43 @@
+package auth
+
+import (
+	"context"
+	"database/sql"
+	"embed"
+	"strings"
+)
+
+//go:embed migrations/*.sql
+var migrationFS embed.FS
+
+func Migrate(ctx context.Context, db *sql.DB) error {
+	for _, file := range []string{"migrations/001_security.sql", "migrations/002_multi_role.sql"} {
+		b, err := migrationFS.ReadFile(file)
+		if err != nil {
+			return err
+		}
+		for _, statement := range strings.Split(string(b), ";") {
+			statement = strings.TrimSpace(statement)
+			if statement != "" {
+				if _, err = db.ExecContext(ctx, statement); err != nil {
+					return err
+				}
+			}
+		}
+	}
+	var indexExists int
+	err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema=DATABASE() AND table_name='refresh_tokens' AND index_name='idx_refresh_tokens_expiry'`).Scan(&indexExists)
+	if err != nil {
+		return err
+	}
+	if indexExists == 0 {
+		if _, err = db.ExecContext(ctx, `ALTER TABLE refresh_tokens ADD KEY idx_refresh_tokens_expiry (expires_at)`); err != nil {
+			return err
+		}
+	}
+	if _, err = db.ExecContext(ctx, `DELETE FROM refresh_tokens WHERE expires_at<=UTC_TIMESTAMP() OR (revoked=1 AND created_at<DATE_SUB(UTC_TIMESTAMP(),INTERVAL 30 DAY))`); err != nil {
+		return err
+	}
+	_, err = db.ExecContext(ctx, `DELETE FROM password_reset_otps WHERE expires_at<DATE_SUB(UTC_TIMESTAMP(),INTERVAL 30 DAY)`)
+	return err
+}
