@@ -152,7 +152,51 @@ export const cartApi = {
     const response = await axiosClient.post<ApiResponse<CheckoutQuote>>("/api/v1/checkout/quote", request);
     return response.data.data;
   },
+
+  async createOrder(request: CreateOrderRequest) {
+    const response = await axiosClient.post<ApiResponse<CreatedOrder>>("/api/v1/checkout/orders", request);
+    return response.data.data;
+  },
 };
+
+export interface CreateOrderRequest extends CheckoutQuoteRequest {
+  note?: string;
+}
+
+export interface CreatedOrder {
+  order_id: number;
+  order_code: string;
+  status: string;
+  subtotal: number;
+  shipping_fee: number;
+  shop_discount_total: number;
+  platform_discount: number;
+  total_amount: number;
+  recipient_name: string;
+  recipient_phone: string;
+  shipping_address: string;
+  note?: string;
+  payment_method: CheckoutMethod;
+  payment: {
+    id: number;
+    status: string;
+    amount: number;
+    transaction_ref: string;
+  };
+  shop_orders: Array<{
+    id: number;
+    shop_id: number;
+    shop_name: string;
+    shop_order_code: string;
+    status: string;
+    subtotal: number;
+    shipping_fee: number;
+    shop_discount: number;
+    platform_discount: number;
+    total_amount: number;
+    item_count: number;
+  }>;
+}
 
 export interface CheckoutMethod {
   id: number;
