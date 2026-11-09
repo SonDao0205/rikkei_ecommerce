@@ -239,7 +239,7 @@ FE hiện có API client cho dashboard/admin shop/order nhưng BE chưa có các
 | Admin shops | `GET /api/v1/admin/shops/metrics`, `PATCH /api/v1/admin/shops/{id}/toggle-live`, `PATCH /api/v1/admin/shops/{id}/unlock`, `PATCH /api/v1/admin/shops/{id}/commission`, `GET /api/v1/admin/shops/export` |
 | Admin orders | `GET /api/v1/admin/orders`, `GET /api/v1/admin/orders/counts`, `GET /api/v1/admin/orders/{id}`, `PATCH /api/v1/admin/orders/{id}/confirm`, `PATCH /api/v1/admin/orders/{id}/cancel`, `PATCH /api/v1/admin/orders/{id}/courier`, `POST /api/v1/admin/orders/bulk-confirm`, `GET /api/v1/admin/orders/export` |
 
-Cart and wishlist APIs are available. Voucher validation, delivery/payment options, and checkout quote APIs are implemented; order creation and payment processing remain unimplemented.
+Cart and wishlist APIs are available. Voucher validation, delivery/payment options, checkout quote, and order creation/inventory deduction APIs are implemented.
 
 API path/query phải theo đúng tên và giới hạn dưới đây. Contract catalog/admin inventory và ví dụ response đầy đủ: [`docs/catalog-api.md`](../docs/catalog-api.md).
 
