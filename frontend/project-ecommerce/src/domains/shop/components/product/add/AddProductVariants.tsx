@@ -1,119 +1,274 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import type {
   AddProductFormData,
   AddProductVariantRow,
   AddProductColorItem,
 } from "@/domains/shop/types/shopAddProduct.types";
+import { CATEGORY_TREE_DATA } from "@/domains/shop/constants/categoryTreeData";
 
 interface AddProductVariantsProps {
   formData: AddProductFormData;
   onChange: (fields: Partial<AddProductFormData>) => void;
 }
 
+const PRESET_COLORS: { name: string; hex: string }[] = [
+  { name: "Đen Tuyền", hex: "#18181b" },
+  { name: "Trắng Kem", hex: "#fef3c7" },
+  { name: "Trắng", hex: "#ffffff" },
+  { name: "Xám Khói", hex: "#64748b" },
+  { name: "Xanh Navy", hex: "#1e3a8a" },
+  { name: "Đỏ Đô", hex: "#991b1b" },
+  { name: "Nâu Đất", hex: "#78350f" },
+  { name: "Xanh Rêu", hex: "#365314" },
+  { name: "Be", hex: "#f5f5dc" },
+  { name: "Cam Đất", hex: "#ea580c" },
+];
+
+const DEFAULT_SHOE_SIZES = ["38", "39", "40", "41", "42", "43", "44"];
+
 export const AddProductVariants: React.FC<AddProductVariantsProps> = ({
   formData,
   onChange,
 }) => {
-  const [newColorName, setNewColorName] = useState("");
-  const [newSizeName, setNewSizeName] = useState("");
-
   // Batch apply fields
   const [batchCostPrice, setBatchCostPrice] = useState("");
   const [batchSellPrice, setBatchSellPrice] = useState("");
   const [batchStock, setBatchStock] = useState("");
 
-  // Generate SKU matrix based on cross-product of colors & sizes
-  const regenerateVariants = (
-    colors: AddProductColorItem[],
-    sizes: string[],
-    existingVariants: AddProductVariantRow[]
-  ) => {
-    const list: AddProductVariantRow[] = [];
-    const prefix = formData.name
-      ? formData.name
-          .split(" ")
+  // Custom size inputs keyed by color ID
+  const [customSizeInputs, setCustomSizeInputs] = useState<Record<string, string>>({});
+
+  // Suggested sizes from category or fallback
+  const suggestedSizes = useMemo(() => {
+    const category = CATEGORY_TREE_DATA.find((c) => c.id === formData.categoryId);
+    return category?.suggestedSizes && category.suggestedSizes.length > 0
+      ? category.suggestedSizes
+      : DEFAULT_SHOE_SIZES;
+  }, [formData.categoryId]);
+
+  // Generate SKU helper
+  const generateSku = (productName: string, colorName: string, size: string) => {
+    const prefix = productName
+      ? productName
+          .trim()
+          .split(/\s+/)
           .map((w) => w[0]?.toUpperCase())
           .slice(0, 3)
           .join("")
       : "PRD";
+    const colorCode =
+      colorName
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9]/g, "")
+        .substring(0, 3)
+        .toUpperCase() || "CLR";
+    const sizeCode = size.replace(/[^a-zA-Z0-9]/g, "").toUpperCase() || "SZ";
+    return `${prefix}-${colorCode}-${sizeCode}`;
+  };
 
-    for (const c of colors) {
-      for (const s of sizes) {
-        const id = `${c.name}-${s}`;
-        const existing = existingVariants.find(
-          (v) => v.color === c.name && v.size === s
-        );
+  // Add new color block
+  const handleAddNewColorBlock = () => {
+    const newId = `c-${Date.now()}`;
+    const newColor: AddProductColorItem = {
+      id: newId,
+      name: "",
+      hex: "#18181b",
+    };
+    onChange({ colors: [...formData.colors, newColor] });
+  };
 
-        if (existing) {
-          list.push(existing);
-        } else {
-          const colorCode = c.name
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "")
-            .replace(/[^a-zA-Z0-9]/g, "")
-            .substring(0, 3)
-            .toUpperCase();
-          const skuCode = `${prefix}-${colorCode}-${s}`;
-          list.push({
-            id,
-            color: c.name,
-            size: s,
-            colorHex: c.hex,
-            sku: skuCode,
-            costPrice: 450000,
-            sellPrice: 890000,
-            stock: 25,
-            status: "available",
-          });
-        }
+  // Remove entire color block
+  const handleRemoveColorBlock = (colorId: string) => {
+    const colorToRemove = formData.colors.find((c) => c.id === colorId);
+    if (!colorToRemove) return;
+
+    const nextColors = formData.colors.filter((c) => c.id !== colorId);
+    const nextVariants = formData.variants.filter((v) => v.color !== colorToRemove.name);
+    const nextSizes = Array.from(new Set(nextVariants.map((v) => v.size)));
+
+    onChange({
+      colors: nextColors,
+      variants: nextVariants,
+      sizes: nextSizes,
+    });
+  };
+
+  // Update color name
+  const handleColorNameChange = (colorId: string, newName: string) => {
+    const oldColor = formData.colors.find((c) => c.id === colorId);
+    if (!oldColor) return;
+    const oldName = oldColor.name;
+
+    const nextColors = formData.colors.map((c) =>
+      c.id === colorId ? { ...c, name: newName } : c
+    );
+
+    const nextVariants = formData.variants.map((v) => {
+      if (v.color === oldName) {
+        return {
+          ...v,
+          color: newName,
+          id: `${newName}-${v.size}`,
+          sku: generateSku(formData.name, newName, v.size),
+        };
       }
+      return v;
+    });
+
+    onChange({ colors: nextColors, variants: nextVariants });
+  };
+
+  // Update color hex
+  const handleColorHexChange = (colorId: string, newHex: string) => {
+    const targetColor = formData.colors.find((c) => c.id === colorId);
+    if (!targetColor) return;
+
+    const nextColors = formData.colors.map((c) =>
+      c.id === colorId ? { ...c, hex: newHex } : c
+    );
+
+    const nextVariants = formData.variants.map((v) => {
+      if (v.color === targetColor.name) {
+        return { ...v, colorHex: newHex };
+      }
+      return v;
+    });
+
+    onChange({ colors: nextColors, variants: nextVariants });
+  };
+
+  // Choose preset color
+  const handleSelectPresetColor = (colorId: string, preset: { name: string; hex: string }) => {
+    const targetColor = formData.colors.find((c) => c.id === colorId);
+    if (!targetColor) return;
+    const oldName = targetColor.name;
+
+    const nextColors = formData.colors.map((c) =>
+      c.id === colorId ? { ...c, name: preset.name, hex: preset.hex } : c
+    );
+
+    const nextVariants = formData.variants.map((v) => {
+      if (v.color === oldName) {
+        return {
+          ...v,
+          color: preset.name,
+          colorHex: preset.hex,
+          id: `${preset.name}-${v.size}`,
+          sku: generateSku(formData.name, preset.name, v.size),
+        };
+      }
+      return v;
+    });
+
+    onChange({ colors: nextColors, variants: nextVariants });
+  };
+
+  // Toggle size for a specific color
+  const handleToggleSizeForColor = (
+    colorItem: AddProductColorItem,
+    size: string
+  ) => {
+    const isCurrentlyActive = formData.variants.some(
+      (v) => v.color === colorItem.name && v.size === size
+    );
+
+    let nextVariants: AddProductVariantRow[];
+
+    if (isCurrentlyActive) {
+      // Remove variant
+      nextVariants = formData.variants.filter(
+        (v) => !(v.color === colorItem.name && v.size === size)
+      );
+    } else {
+      // Add variant with 0 / blank default values
+      const defaultCost = batchCostPrice ? Number(batchCostPrice) : 0;
+      const defaultSell = batchSellPrice ? Number(batchSellPrice) : 0;
+      const defaultStock = batchStock !== "" ? Number(batchStock) : 0;
+
+      const newRow: AddProductVariantRow = {
+        id: `${colorItem.name}-${size}`,
+        color: colorItem.name,
+        size,
+        colorHex: colorItem.hex,
+        sku: generateSku(formData.name, colorItem.name, size),
+        costPrice: defaultCost,
+        sellPrice: defaultSell,
+        stock: defaultStock,
+        status: defaultStock === 0 ? "out_of_stock" : defaultStock <= 15 ? "low_stock" : "available",
+      };
+      nextVariants = [...formData.variants, newRow];
     }
-    return list;
+
+    const nextSizes = Array.from(new Set(nextVariants.map((v) => v.size)));
+    onChange({ variants: nextVariants, sizes: nextSizes });
   };
 
-  // Add Color
-  const handleAddColor = () => {
-    const name = newColorName.trim();
-    if (!name) return;
-    if (formData.colors.some((c) => c.name.toLowerCase() === name.toLowerCase())) {
-      setNewColorName("");
-      return;
+  // Add custom size to a specific color
+  const handleAddCustomSizeToColor = (colorItem: AddProductColorItem) => {
+    const rawInput = customSizeInputs[colorItem.id] || "";
+    const trimmedSize = rawInput.trim();
+    if (!trimmedSize) return;
+
+    // Check if already active
+    const alreadyExists = formData.variants.some(
+      (v) => v.color === colorItem.name && v.size.toLowerCase() === trimmedSize.toLowerCase()
+    );
+
+    if (!alreadyExists) {
+      const defaultCost = batchCostPrice ? Number(batchCostPrice) : 0;
+      const defaultSell = batchSellPrice ? Number(batchSellPrice) : 0;
+      const defaultStock = batchStock !== "" ? Number(batchStock) : 0;
+
+      const newRow: AddProductVariantRow = {
+        id: `${colorItem.name}-${trimmedSize}`,
+        color: colorItem.name,
+        size: trimmedSize,
+        colorHex: colorItem.hex,
+        sku: generateSku(formData.name, colorItem.name, trimmedSize),
+        costPrice: defaultCost,
+        sellPrice: defaultSell,
+        stock: defaultStock,
+        status: defaultStock === 0 ? "out_of_stock" : defaultStock <= 15 ? "low_stock" : "available",
+      };
+      const nextVariants = [...formData.variants, newRow];
+      const nextSizes = Array.from(new Set(nextVariants.map((v) => v.size)));
+      onChange({ variants: nextVariants, sizes: nextSizes });
     }
-    const newColors: AddProductColorItem[] = [
-      ...formData.colors,
-      { id: `c-${Date.now()}`, name, hex: "#6366f1" },
-    ];
-    const newVariants = regenerateVariants(newColors, formData.sizes, formData.variants);
-    onChange({ colors: newColors, variants: newVariants });
-    setNewColorName("");
+
+    setCustomSizeInputs((prev) => ({ ...prev, [colorItem.id]: "" }));
   };
 
-  // Remove Color
-  const handleRemoveColor = (colorName: string) => {
-    const newColors = formData.colors.filter((c) => c.name !== colorName);
-    const newVariants = regenerateVariants(newColors, formData.sizes, formData.variants);
-    onChange({ colors: newColors, variants: newVariants });
+  // Remove single size from a color
+  const handleRemoveSizeFromColor = (colorName: string, size: string) => {
+    const nextVariants = formData.variants.filter(
+      (v) => !(v.color === colorName && v.size === size)
+    );
+    const nextSizes = Array.from(new Set(nextVariants.map((v) => v.size)));
+    onChange({ variants: nextVariants, sizes: nextSizes });
   };
 
-  // Add Size
-  const handleAddSize = () => {
-    const size = newSizeName.trim();
-    if (!size) return;
-    if (formData.sizes.some((s) => s.toLowerCase() === size.toLowerCase())) {
-      setNewSizeName("");
-      return;
-    }
-    const newSizes = [...formData.sizes, size];
-    const newVariants = regenerateVariants(formData.colors, newSizes, formData.variants);
-    onChange({ sizes: newSizes, variants: newVariants });
-    setNewSizeName("");
-  };
-
-  // Remove Size
-  const handleRemoveSize = (sizeName: string) => {
-    const newSizes = formData.sizes.filter((s) => s !== sizeName);
-    const newVariants = regenerateVariants(formData.colors, newSizes, formData.variants);
-    onChange({ sizes: newSizes, variants: newVariants });
+  // Update specific variant field (stock, prices, sku)
+  const handleUpdateVariantField = (
+    id: string,
+    field: keyof AddProductVariantRow,
+    value: string | number
+  ) => {
+    const updated = formData.variants.map((row) => {
+      if (row.id !== id) return row;
+      const next = { ...row, [field]: value };
+      if (field === "stock") {
+        const numStock = Number(value);
+        next.status =
+          numStock === 0
+            ? "out_of_stock"
+            : numStock <= 15
+            ? "low_stock"
+            : "available";
+      }
+      return next;
+    });
+    onChange({ variants: updated });
   };
 
   // Batch Apply
@@ -141,28 +296,8 @@ export const AddProductVariants: React.FC<AddProductVariantsProps> = ({
     onChange({ variants: updated });
   };
 
-  // Update specific variant field
-  const handleUpdateVariantField = (
-    id: string,
-    field: keyof AddProductVariantRow,
-    value: string | number
-  ) => {
-    const updated = formData.variants.map((row) => {
-      if (row.id !== id) return row;
-      const next = { ...row, [field]: value };
-      if (field === "stock") {
-        const numStock = Number(value);
-        next.status =
-          numStock === 0
-            ? "out_of_stock"
-            : numStock <= 15
-            ? "low_stock"
-            : "available";
-      }
-      return next;
-    });
-    onChange({ variants: updated });
-  };
+  // Overall totals
+  const totalStockAll = formData.variants.reduce((acc, v) => acc + (v.stock || 0), 0);
 
   return (
     <section className="bg-surface-container-lowest rounded-2xl p-4 sm:p-6 lg:p-7 shadow-xs border border-outline-variant/30 flex flex-col gap-6">
@@ -177,7 +312,7 @@ export const AddProductVariants: React.FC<AddProductVariantsProps> = ({
               3. Phân loại hàng &amp; Ma trận SKU
             </h2>
             <p className="font-body-sm text-body-sm text-outline">
-              Thiết lập các nhóm biến thể như Màu sắc, Kích cỡ và quản lý giá vốn, giá bán lẻ từng SKU
+              Thiết lập từng nhóm màu sắc, chọn danh sách kích cỡ (size) và số lượng kho cho từng màu
             </p>
           </div>
         </div>
@@ -189,7 +324,18 @@ export const AddProductVariants: React.FC<AddProductVariantsProps> = ({
           </span>
           <button
             type="button"
-            onClick={() => onChange({ hasVariants: !formData.hasVariants })}
+            onClick={() => {
+              const nextHasVariants = !formData.hasVariants;
+              if (nextHasVariants && formData.colors.length === 0) {
+                // Initialize with 1 empty color block when switching on
+                onChange({
+                  hasVariants: true,
+                  colors: [{ id: `c-${Date.now()}`, name: "", hex: "#18181b" }],
+                });
+              } else {
+                onChange({ hasVariants: nextHasVariants });
+              }
+            }}
             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
               formData.hasVariants ? "bg-primary" : "bg-outline-variant"
             }`}
@@ -212,7 +358,7 @@ export const AddProductVariants: React.FC<AddProductVariantsProps> = ({
               type="text"
               value={formData.singleSku}
               onChange={(e) => onChange({ singleSku: e.target.value })}
-              placeholder="VD: SKU-BASIC-01"
+              placeholder="Ví dụ: SKU-BASIC-01"
               className="bg-surface-container-lowest text-on-surface px-3 py-2 rounded-xl border border-outline-variant/40 outline-none focus:border-primary text-sm font-body-sm"
             />
           </div>
@@ -220,9 +366,14 @@ export const AddProductVariants: React.FC<AddProductVariantsProps> = ({
             <label className="font-label-md text-label-md text-on-surface">Giá vốn (₫)</label>
             <input
               type="number"
-              value={formData.singleCostPrice}
-              onChange={(e) => onChange({ singleCostPrice: Number(e.target.value) })}
-              placeholder="450000"
+              min={0}
+              value={formData.singleCostPrice === 0 ? "" : formData.singleCostPrice}
+              onChange={(e) =>
+                onChange({
+                  singleCostPrice: e.target.value === "" ? 0 : Math.max(0, Number(e.target.value)),
+                })
+              }
+              placeholder="Ví dụ: 450.000"
               className="bg-surface-container-lowest text-on-surface px-3 py-2 rounded-xl border border-outline-variant/40 outline-none focus:border-primary text-sm font-body-sm"
             />
           </div>
@@ -230,9 +381,14 @@ export const AddProductVariants: React.FC<AddProductVariantsProps> = ({
             <label className="font-label-md text-label-md text-on-surface">Giá bán niêm yết (₫)</label>
             <input
               type="number"
-              value={formData.singleSellPrice}
-              onChange={(e) => onChange({ singleSellPrice: Number(e.target.value) })}
-              placeholder="890000"
+              min={0}
+              value={formData.singleSellPrice === 0 ? "" : formData.singleSellPrice}
+              onChange={(e) =>
+                onChange({
+                  singleSellPrice: e.target.value === "" ? 0 : Math.max(0, Number(e.target.value)),
+                })
+              }
+              placeholder="Ví dụ: 890.000"
               className="bg-surface-container-lowest text-on-surface px-3 py-2 rounded-xl border border-outline-variant/40 outline-none focus:border-primary text-sm font-body-sm font-bold text-primary"
             />
           </div>
@@ -240,155 +396,430 @@ export const AddProductVariants: React.FC<AddProductVariantsProps> = ({
             <label className="font-label-md text-label-md text-on-surface">Kho hàng</label>
             <input
               type="number"
-              value={formData.singleStock}
-              onChange={(e) => onChange({ singleStock: Number(e.target.value) })}
-              placeholder="100"
+              min={0}
+              value={formData.singleStock === 0 ? "" : formData.singleStock}
+              onChange={(e) =>
+                onChange({
+                  singleStock: e.target.value === "" ? 0 : Math.max(0, Number(e.target.value)),
+                })
+              }
+              placeholder="Ví dụ: 100"
               className="bg-surface-container-lowest text-on-surface px-3 py-2 rounded-xl border border-outline-variant/40 outline-none focus:border-primary text-sm font-body-sm"
             />
           </div>
         </div>
       ) : (
-        /* Multi-Variant Mode */
-        <div className="flex flex-col gap-5">
-          {/* Option 1: Colors */}
-          <div className="bg-surface-container-low rounded-xl p-4 flex flex-col gap-3 border border-outline-variant/20">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="font-label-md text-label-md text-on-surface font-semibold">
-                  Nhóm phân loại 1:
-                </span>
-                <span className="px-2.5 py-0.5 rounded-md bg-surface-container-lowest text-primary font-label-md text-label-md shadow-xs font-bold">
-                  Màu sắc
-                </span>
-              </div>
+        /* Multi-Variant Mode: Per-Color Configuration Cards */
+        <div className="flex flex-col gap-6">
+          {/* Quick Notice */}
+          <div className="p-3.5 rounded-xl bg-primary/5 border border-primary/20 text-on-surface text-body-sm font-body-sm flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <span className="material-symbols-outlined text-primary text-[20px]">
+                style
+              </span>
+              <span>
+                Mỗi khung bên dưới đại diện cho 1 màu sắc. Bạn có thể chọn các kích cỡ có sẵn cho màu đó và nhập số lượng kho tương ứng.
+              </span>
             </div>
-
-            <div className="flex flex-wrap items-center gap-2.5">
-              {formData.colors.map((c) => (
-                <span
-                  key={c.id}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-container-lowest text-on-surface font-label-md text-label-md shadow-xs border border-outline-variant/20"
-                >
-                  <span
-                    className="w-3.5 h-3.5 rounded-full ring-1 ring-black/10"
-                    style={{ backgroundColor: c.hex }}
-                  />
-                  <span>{c.name}</span>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveColor(c.name)}
-                    className="text-outline hover:text-error ml-0.5 cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-[15px]">close</span>
-                  </button>
-                </span>
-              ))}
-
-              <div className="relative inline-flex items-center gap-1.5">
-                <input
-                  type="text"
-                  value={newColorName}
-                  onChange={(e) => setNewColorName(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddColor())}
-                  placeholder="+ Thêm màu khác..."
-                  className="w-40 bg-surface-container-lowest text-on-surface font-body-sm text-body-sm px-3 py-1.5 rounded-xl outline-none ring-1 ring-outline-variant/40 focus:ring-2 focus:ring-primary"
-                />
-                {newColorName.trim() && (
-                  <button
-                    type="button"
-                    onClick={handleAddColor}
-                    className="px-2.5 py-1.5 rounded-xl bg-primary text-on-primary font-label-sm text-label-sm font-semibold cursor-pointer"
-                  >
-                    Thêm
-                  </button>
-                )}
-              </div>
-            </div>
+            <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-surface-container-lowest text-primary shadow-2xs shrink-0">
+              {formData.colors.length} nhóm màu • {formData.variants.length} SKU
+            </span>
           </div>
 
-          {/* Option 2: Sizes */}
-          <div className="bg-surface-container-low rounded-xl p-4 flex flex-col gap-3 border border-outline-variant/20">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="font-label-md text-label-md text-on-surface font-semibold">
-                  Nhóm phân loại 2:
-                </span>
-                <span className="px-2.5 py-0.5 rounded-md bg-surface-container-lowest text-primary font-label-md text-label-md shadow-xs font-bold">
-                  Kích cỡ (Size)
-                </span>
+          {/* List of Color Blocks or Empty State */}
+          {formData.colors.length === 0 ? (
+            <div className="p-8 rounded-2xl bg-surface-container-low border-2 border-dashed border-outline-variant/40 flex flex-col items-center justify-center text-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+                <span className="material-symbols-outlined text-[28px]">palette</span>
               </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2.5">
-              {formData.sizes.map((s) => (
-                <span
-                  key={s}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container-lowest text-on-surface font-label-md text-label-md shadow-xs border border-outline-variant/20"
-                >
-                  <span>{s.startsWith("Size") ? s : `Size ${s}`}</span>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveSize(s)}
-                    className="text-outline hover:text-error ml-0.5 cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-[15px]">close</span>
-                  </button>
-                </span>
-              ))}
-
-              <div className="relative inline-flex items-center gap-1.5">
-                <input
-                  type="text"
-                  value={newSizeName}
-                  onChange={(e) => setNewSizeName(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddSize())}
-                  placeholder="+ Thêm size..."
-                  className="w-32 bg-surface-container-lowest text-on-surface font-body-sm text-body-sm px-3 py-1.5 rounded-xl outline-none ring-1 ring-outline-variant/40 focus:ring-2 focus:ring-primary"
-                />
-                {newSizeName.trim() && (
-                  <button
-                    type="button"
-                    onClick={handleAddSize}
-                    className="px-2.5 py-1.5 rounded-xl bg-primary text-on-primary font-label-sm text-label-sm font-semibold cursor-pointer"
-                  >
-                    Thêm
-                  </button>
-                )}
+              <div>
+                <h3 className="font-headline-sm text-headline-sm font-bold text-on-surface">
+                  Chưa có nhóm biến thể màu sắc
+                </h3>
+                <p className="font-body-sm text-body-sm text-outline max-w-md mt-1">
+                  Bấm nút bên dưới để thêm màu sắc đầu tiên và thiết lập kích cỡ, giá và kho hàng tương ứng.
+                </p>
               </div>
+              <button
+                type="button"
+                onClick={handleAddNewColorBlock}
+                className="mt-2 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-label-md text-sm font-bold shadow-xs cursor-pointer transition-all"
+              >
+                <span className="material-symbols-outlined text-[20px]">add_circle</span>
+                <span>+ Thêm nhóm màu sắc đầu tiên</span>
+              </button>
             </div>
-          </div>
+          ) : (
+            <div className="flex flex-col gap-5">
+              {formData.colors.map((colorItem, colorIndex) => {
+                const colorVariants = formData.variants.filter((v) => v.color === colorItem.name);
+                const activeSizesSet = new Set(colorVariants.map((v) => v.size));
+                const totalStockThisColor = colorVariants.reduce((sum, v) => sum + (v.stock || 0), 0);
+
+                // All sizes to show as chips: suggested + any custom sizes this color already has
+                const allSizeChips = Array.from(
+                  new Set([...suggestedSizes, ...colorVariants.map((v) => v.size)])
+                );
+
+                return (
+                  <div
+                    key={colorItem.id}
+                    className="bg-surface-container-low rounded-2xl p-4 sm:p-5 lg:p-6 border border-outline-variant/30 flex flex-col gap-5 shadow-2xs hover:border-primary/40 transition-all"
+                  >
+                    {/* Block Header */}
+                    <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-outline-variant/20">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
+                          {colorIndex + 1}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="w-4 h-4 rounded-full ring-2 ring-black/15 shadow-2xs shrink-0"
+                            style={{ backgroundColor: colorItem.hex }}
+                          />
+                          <span className="font-headline-sm text-headline-sm font-bold text-on-surface">
+                            {colorItem.name || `Nhóm màu ${colorIndex + 1}`}
+                          </span>
+                        </div>
+                        <span className="text-xs px-2.5 py-0.5 rounded-full bg-surface-container-lowest text-outline font-medium">
+                          {colorVariants.length} size • {totalStockThisColor} sản phẩm trong kho
+                        </span>
+                      </div>
+
+                      {formData.colors.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveColorBlock(colorItem.id)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-outline hover:text-error hover:bg-error-container/20 text-xs font-semibold transition-colors cursor-pointer"
+                          title="Xóa nhóm màu này"
+                        >
+                          <span className="material-symbols-outlined text-[16px]">delete</span>
+                          <span>Xóa màu này</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* 1. Color Selector & Input */}
+                    <div className="flex flex-col gap-2">
+                      <label className="font-label-md text-label-md text-on-surface font-semibold flex items-center gap-1.5">
+                        <span>Màu sắc:</span>
+                        <span className="text-xs font-normal text-outline">
+                          (Nhập tên màu hoặc chọn nhanh từ bảng màu gợi ý)
+                        </span>
+                      </label>
+
+                      <div className="flex flex-wrap items-center gap-3">
+                        {/* Color Picker Dot + Color Name Input */}
+                        <div className="inline-flex items-center gap-2 bg-surface-container-lowest px-3 py-1.5 rounded-xl border border-outline-variant/40 shadow-2xs">
+                          <label
+                            htmlFor={`color-picker-${colorItem.id}`}
+                            className="w-6 h-6 rounded-full cursor-pointer ring-1 ring-black/20 shrink-0 hover:scale-105 transition-transform"
+                            style={{ backgroundColor: colorItem.hex }}
+                            title="Nhấp để đổi mã màu sắc"
+                          >
+                            <input
+                              id={`color-picker-${colorItem.id}`}
+                              type="color"
+                              value={colorItem.hex}
+                              onChange={(e) => handleColorHexChange(colorItem.id, e.target.value)}
+                              className="opacity-0 w-0 h-0 pointer-events-none"
+                            />
+                          </label>
+                          <input
+                            type="text"
+                            value={colorItem.name}
+                            onChange={(e) => handleColorNameChange(colorItem.id, e.target.value)}
+                            placeholder="Nhập tên màu (VD: Đen Tuyền)..."
+                            className="bg-transparent text-on-surface font-body-sm text-body-sm font-semibold outline-none w-48 sm:w-56"
+                          />
+                        </div>
+
+                        {/* Quick preset chips */}
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="text-xs text-outline font-medium mr-1">Gợi ý:</span>
+                          {PRESET_COLORS.map((preset) => {
+                            const isCurrent =
+                              colorItem.name.toLowerCase() === preset.name.toLowerCase();
+                            return (
+                              <button
+                                key={preset.name}
+                                type="button"
+                                onClick={() => handleSelectPresetColor(colorItem.id, preset)}
+                                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                                  isCurrent
+                                    ? "bg-primary text-on-primary font-bold shadow-2xs"
+                                    : "bg-surface-container-lowest text-on-surface hover:bg-surface-container-high border border-outline-variant/30"
+                                }`}
+                              >
+                                <span
+                                  className="w-2.5 h-2.5 rounded-full ring-1 ring-black/10"
+                                  style={{ backgroundColor: preset.hex }}
+                                />
+                                <span>{preset.name}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 2. Choose Sizes for this Color */}
+                    <div className="flex flex-col gap-2.5 pt-2">
+                      <div className="flex items-center justify-between">
+                        <label className="font-label-md text-label-md text-on-surface font-semibold flex items-center gap-1.5">
+                          <span className="material-symbols-outlined text-[18px] text-primary">
+                            straighten
+                          </span>
+                          <span>
+                            Chọn các kích cỡ (Size) cho màu &quot;{colorItem.name || "này"}&quot;:
+                          </span>
+                        </label>
+                        <span className="text-xs text-outline">
+                          Nhấp để bật / tắt size cho màu này
+                        </span>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        {allSizeChips.map((size) => {
+                          const isActive = activeSizesSet.has(size);
+                          return (
+                            <button
+                              key={size}
+                              type="button"
+                              onClick={() => handleToggleSizeForColor(colorItem, size)}
+                              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-label-md text-sm transition-all cursor-pointer ${
+                                isActive
+                                  ? "bg-primary text-on-primary font-bold shadow-xs ring-2 ring-primary/20 scale-[1.02]"
+                                  : "bg-surface-container-lowest text-on-surface hover:border-primary/60 hover:text-primary border border-outline-variant/40"
+                              }`}
+                            >
+                              <span>{size.startsWith("Size") ? size : `Size ${size}`}</span>
+                              {isActive && (
+                                <span className="material-symbols-outlined text-[15px]">check</span>
+                              )}
+                            </button>
+                          );
+                        })}
+
+                        {/* Custom Size Input */}
+                        <div className="inline-flex items-center gap-1 bg-surface-container-lowest rounded-xl px-2 py-1 border border-outline-variant/40 shadow-2xs">
+                          <input
+                            type="text"
+                            value={customSizeInputs[colorItem.id] || ""}
+                            onChange={(e) =>
+                              setCustomSizeInputs((prev) => ({
+                                ...prev,
+                                [colorItem.id]: e.target.value,
+                              }))
+                            }
+                            onKeyDown={(e) =>
+                              e.key === "Enter" &&
+                              (e.preventDefault(), handleAddCustomSizeToColor(colorItem))
+                            }
+                            placeholder="+ Thêm size..."
+                            className="w-28 bg-transparent text-on-surface text-xs font-body-sm outline-none px-1"
+                          />
+                          {(customSizeInputs[colorItem.id] || "").trim() && (
+                            <button
+                              type="button"
+                              onClick={() => handleAddCustomSizeToColor(colorItem)}
+                              className="px-2 py-0.5 rounded-lg bg-primary text-on-primary text-xs font-bold cursor-pointer"
+                            >
+                              Thêm
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 3. Quantity & Pricing Table for this Color */}
+                    <div className="flex flex-col gap-2 pt-2">
+                      <span className="font-label-md text-label-md text-on-surface font-semibold">
+                        Danh sách biến thể &amp; Số lượng kho cho màu &quot;{colorItem.name || "này"}&quot;:
+                      </span>
+
+                      {colorVariants.length === 0 ? (
+                        <div className="p-4 rounded-xl bg-surface-container-lowest border border-dashed border-outline-variant/40 text-center flex flex-col items-center justify-center gap-1 text-outline">
+                          <span className="material-symbols-outlined text-[24px] text-primary/60">
+                            touch_app
+                          </span>
+                          <p className="font-body-sm text-body-sm">
+                            Chưa chọn kích cỡ nào cho màu này. Bấm vào các nút size ở trên hoặc nhập size mới để thiết lập số lượng kho!
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="overflow-x-auto rounded-xl bg-surface-container-lowest border border-outline-variant/30 shadow-2xs">
+                          <table className="w-full text-left font-body-sm text-body-sm">
+                            <thead>
+                              <tr className="bg-surface-container-high/40 font-label-md text-label-md text-on-surface border-b border-outline-variant/20">
+                                <th className="py-2.5 px-3">Kích cỡ (Size)</th>
+                                <th className="py-2.5 px-3">Mã SKU Phân loại</th>
+                                <th className="py-2.5 px-3">Giá vốn (₫)</th>
+                                <th className="py-2.5 px-3">Giá bán (₫)</th>
+                                <th className="py-2.5 px-3">Số lượng (Kho)</th>
+                                <th className="py-2.5 px-3 text-center">Trạng thái</th>
+                                <th className="py-2.5 px-2 text-center">Xóa</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-outline-variant/10 text-on-surface">
+                              {colorVariants.map((v) => (
+                                <tr
+                                  key={v.id}
+                                  className="hover:bg-surface-container-high/20 transition-colors"
+                                >
+                                  <td className="py-2 px-3">
+                                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-container text-on-surface font-bold text-xs">
+                                      <span>{v.size.startsWith("Size") ? v.size : `Size ${v.size}`}</span>
+                                    </div>
+                                  </td>
+                                  <td className="py-2 px-3">
+                                    <input
+                                      type="text"
+                                      value={v.sku}
+                                      onChange={(e) =>
+                                        handleUpdateVariantField(v.id, "sku", e.target.value)
+                                      }
+                                      placeholder="Mã SKU (VD: RR-BLK-39)"
+                                      className="w-36 bg-surface-container-low px-2 py-1 rounded-lg font-mono text-xs outline-none ring-1 ring-outline-variant/30 focus:ring-2 focus:ring-primary"
+                                    />
+                                  </td>
+                                  <td className="py-2 px-3">
+                                    <input
+                                      type="number"
+                                      min={0}
+                                      value={v.costPrice === 0 ? "" : v.costPrice}
+                                      onChange={(e) =>
+                                        handleUpdateVariantField(
+                                          v.id,
+                                          "costPrice",
+                                          e.target.value === "" ? 0 : Math.max(0, Number(e.target.value))
+                                        )
+                                      }
+                                      placeholder="Giá vốn ₫"
+                                      className="w-24 bg-surface-container-low px-2 py-1 rounded-lg text-xs outline-none ring-1 ring-outline-variant/30 focus:ring-2 focus:ring-primary text-right"
+                                    />
+                                  </td>
+                                  <td className="py-2 px-3">
+                                    <input
+                                      type="number"
+                                      min={0}
+                                      value={v.sellPrice === 0 ? "" : v.sellPrice}
+                                      onChange={(e) =>
+                                        handleUpdateVariantField(
+                                          v.id,
+                                          "sellPrice",
+                                          e.target.value === "" ? 0 : Math.max(0, Number(e.target.value))
+                                        )
+                                      }
+                                      placeholder="Giá bán ₫"
+                                      className="w-24 bg-surface-container-low px-2 py-1 rounded-lg font-bold text-xs text-primary outline-none ring-1 ring-outline-variant/30 focus:ring-2 focus:ring-primary text-right"
+                                    />
+                                  </td>
+                                  <td className="py-2 px-3">
+                                    <input
+                                      type="number"
+                                      min={0}
+                                      value={v.stock === 0 ? "" : v.stock}
+                                      onChange={(e) =>
+                                        handleUpdateVariantField(
+                                          v.id,
+                                          "stock",
+                                          e.target.value === "" ? 0 : Math.max(0, Number(e.target.value))
+                                        )
+                                      }
+                                      placeholder="0"
+                                      className="w-20 bg-surface-container-low px-2 py-1 rounded-lg text-xs font-bold text-on-surface outline-none ring-1 ring-outline-variant/30 focus:ring-2 focus:ring-primary text-right"
+                                    />
+                                  </td>
+                                  <td className="py-2 px-3 text-center">
+                                    {v.stock === 0 ? (
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-error-container text-on-error-container text-[10px] font-bold">
+                                        Hết hàng
+                                      </span>
+                                    ) : v.stock <= 15 ? (
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">
+                                        Sắp hết ({v.stock})
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                                        Sẵn hàng ({v.stock})
+                                      </span>
+                                    )}
+                                  </td>
+                                  <td className="py-2 px-2 text-center">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRemoveSizeFromColor(colorItem.name, v.size)}
+                                      className="text-outline hover:text-error p-1 rounded-md hover:bg-error-container/20 transition-colors cursor-pointer"
+                                      title="Xóa kích cỡ này"
+                                    >
+                                      <span className="material-symbols-outlined text-[18px]">
+                                        close
+                                      </span>
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Add Another Color Block Button */}
+          <button
+            type="button"
+            onClick={handleAddNewColorBlock}
+            className="w-full py-4 px-4 rounded-2xl border-2 border-dashed border-primary/40 hover:border-primary bg-primary/5 hover:bg-primary/10 text-primary font-label-md text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs hover:shadow-xs"
+          >
+            <span className="material-symbols-outlined text-[24px]">add_circle</span>
+            <span>+ Thêm khung biến thể màu sắc khác</span>
+          </button>
 
           {/* Batch Apply Bar */}
-          <div className="bg-surface-container rounded-xl p-4 flex flex-wrap items-center justify-between gap-4 border border-outline-variant/20">
-            <div className="flex items-center gap-2">
+          <div className="bg-surface-container rounded-2xl p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4 border border-outline-variant/20 shadow-2xs">
+            <div className="flex items-center gap-2.5">
               <span className="material-symbols-outlined text-[22px] text-primary">bolt</span>
-              <span className="font-label-md text-label-md text-on-surface font-bold">
-                Áp dụng hàng loạt cho tất cả biến thể:
-              </span>
+              <div>
+                <span className="font-label-md text-label-md text-on-surface font-bold block">
+                  Áp dụng giá &amp; kho hàng đồng loạt:
+                </span>
+                <span className="text-xs text-outline font-normal">
+                  Điền nhanh giá và số lượng cho tất cả {formData.variants.length} biến thể
+                </span>
+              </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              <div className="relative w-36">
+              <div className="relative w-32 sm:w-36">
                 <input
                   type="number"
+                  min={0}
                   value={batchCostPrice}
                   onChange={(e) => setBatchCostPrice(e.target.value)}
                   placeholder="Giá vốn ₫"
                   className="w-full bg-surface-container-lowest text-on-surface font-body-sm text-body-sm px-3 py-2 rounded-xl outline-none ring-1 ring-outline-variant/40 focus:ring-2 focus:ring-primary"
                 />
               </div>
-              <div className="relative w-36">
+              <div className="relative w-32 sm:w-36">
                 <input
                   type="number"
+                  min={0}
                   value={batchSellPrice}
                   onChange={(e) => setBatchSellPrice(e.target.value)}
                   placeholder="Giá bán ₫"
-                  className="w-full bg-surface-container-lowest text-on-surface font-body-sm text-body-sm px-3 py-2 rounded-xl outline-none ring-1 ring-outline-variant/40 focus:ring-2 focus:ring-primary"
+                  className="w-full bg-surface-container-lowest text-on-surface font-body-sm text-body-sm px-3 py-2 rounded-xl outline-none ring-1 ring-outline-variant/40 focus:ring-2 focus:ring-primary font-bold text-primary"
                 />
               </div>
-              <div className="relative w-28">
+              <div className="relative w-24 sm:w-28">
                 <input
                   type="number"
+                  min={0}
                   value={batchStock}
                   onChange={(e) => setBatchStock(e.target.value)}
                   placeholder="Kho hàng"
@@ -398,118 +829,22 @@ export const AddProductVariants: React.FC<AddProductVariantsProps> = ({
               <button
                 type="button"
                 onClick={handleApplyBatch}
-                className="px-4 py-2 rounded-xl bg-primary text-on-primary font-label-md text-label-md hover:bg-primary-container transition-colors shadow-xs cursor-pointer font-semibold"
+                className="px-4 py-2 rounded-xl bg-primary text-on-primary font-label-md text-label-md hover:bg-primary-container transition-colors shadow-xs cursor-pointer font-bold"
               >
-                Áp dụng cho {formData.variants.length} biến thể
+                Áp dụng tất cả
               </button>
             </div>
           </div>
 
-          {/* Dynamic SKU Matrix Table */}
-          <div className="overflow-x-auto rounded-xl bg-surface-container-low border border-outline-variant/30">
-            <table className="w-full text-left font-body-sm text-body-sm">
-              <thead>
-                <tr className="bg-surface-container-high/60 font-label-md text-label-md text-on-surface border-b border-outline-variant/20">
-                  <th className="py-3 px-4">Biến thể phân loại</th>
-                  <th className="py-3 px-3">Mã SKU Phân loại</th>
-                  <th className="py-3 px-3">Giá vốn (₫)</th>
-                  <th className="py-3 px-3">Giá bán niêm yết (₫)</th>
-                  <th className="py-3 px-3">Kho hàng</th>
-                  <th className="py-3 px-3 text-center">Trạng thái</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-outline-variant/10 text-on-surface">
-                {formData.variants.map((v) => (
-                  <tr
-                    key={v.id}
-                    className="hover:bg-surface-container-lowest/60 transition-colors"
-                  >
-                    <td className="py-2.5 px-4">
-                      <div className="flex items-center gap-2.5">
-                        <span
-                          className="w-3.5 h-3.5 rounded-full ring-1 ring-black/10 shrink-0"
-                          style={{ backgroundColor: v.colorHex || "#3f3f46" }}
-                        />
-                        <span className="font-label-md text-label-md font-semibold">
-                          {v.color} - {v.size}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="py-2.5 px-3">
-                      <input
-                        type="text"
-                        value={v.sku}
-                        onChange={(e) =>
-                          handleUpdateVariantField(v.id, "sku", e.target.value)
-                        }
-                        className="w-36 bg-surface-container-lowest px-2.5 py-1.5 rounded-lg font-body-sm text-body-sm outline-none ring-1 ring-outline-variant/30 focus:ring-2 focus:ring-primary font-mono text-xs"
-                      />
-                    </td>
-                    <td className="py-2.5 px-3">
-                      <input
-                        type="number"
-                        value={v.costPrice}
-                        onChange={(e) =>
-                          handleUpdateVariantField(
-                            v.id,
-                            "costPrice",
-                            Number(e.target.value)
-                          )
-                        }
-                        className="w-28 bg-surface-container-lowest px-2.5 py-1.5 rounded-lg font-body-sm text-body-sm outline-none ring-1 ring-outline-variant/30 focus:ring-2 focus:ring-primary text-right"
-                      />
-                    </td>
-                    <td className="py-2.5 px-3">
-                      <input
-                        type="number"
-                        value={v.sellPrice}
-                        onChange={(e) =>
-                          handleUpdateVariantField(
-                            v.id,
-                            "sellPrice",
-                            Number(e.target.value)
-                          )
-                        }
-                        className="w-28 bg-surface-container-lowest px-2.5 py-1.5 rounded-lg font-label-md text-label-md text-primary font-bold outline-none ring-1 ring-outline-variant/30 focus:ring-2 focus:ring-primary text-right"
-                      />
-                    </td>
-                    <td className="py-2.5 px-3">
-                      <input
-                        type="number"
-                        value={v.stock}
-                        onChange={(e) =>
-                          handleUpdateVariantField(
-                            v.id,
-                            "stock",
-                            Number(e.target.value)
-                          )
-                        }
-                        className="w-20 bg-surface-container-lowest px-2.5 py-1.5 rounded-lg font-body-sm text-body-sm outline-none ring-1 ring-outline-variant/30 focus:ring-2 focus:ring-primary text-right"
-                      />
-                    </td>
-                    <td className="py-2.5 px-3 text-center">
-                      {v.stock === 0 ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-error-container text-on-error-container font-label-sm text-[10px] font-bold">
-                          Hết hàng
-                        </span>
-                      ) : v.stock <= 15 ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-label-sm text-[10px] font-bold">
-                          Sắp hết ({v.stock})
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-label-sm text-[10px] font-bold">
-                          Sẵn hàng
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="flex items-center justify-between font-body-sm text-body-sm text-outline pt-1">
-            <span>Hiển thị {formData.variants.length} phân loại đang kích hoạt</span>
+          {/* Footer Summary */}
+          <div className="flex flex-wrap items-center justify-between text-body-sm font-body-sm text-outline px-1">
+            <span>
+              Tổng cộng: <strong className="text-on-surface font-semibold">{formData.colors.length}</strong> màu sắc,{" "}
+              <strong className="text-on-surface font-semibold">{formData.variants.length}</strong> biến thể SKU
+            </span>
+            <span>
+              Tổng số lượng tồn kho: <strong className="text-primary font-bold">{totalStockAll}</strong> sản phẩm
+            </span>
           </div>
         </div>
       )}
@@ -517,3 +852,4 @@ export const AddProductVariants: React.FC<AddProductVariantsProps> = ({
   );
 };
 
+export default AddProductVariants;

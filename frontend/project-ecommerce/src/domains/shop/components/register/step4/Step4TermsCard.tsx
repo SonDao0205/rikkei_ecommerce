@@ -25,12 +25,12 @@ export const Step4TermsCard: React.FC<Step4TermsCardProps> = ({ terms, onChange 
 
       <div className="flex flex-col gap-space-md">
         {/* Checkbox 1 */}
-        <label className="flex items-start gap-space-sm p-space-md rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors cursor-pointer select-none border border-outline-variant/20">
+        <label className="flex items-start gap-space-sm p-space-md rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors cursor-pointer select-none">
           <input
             type="checkbox"
             checked={terms.authVerified}
             onChange={(e) => onChange("authVerified", e.target.checked)}
-            className="mt-1 w-5 h-5 rounded text-primary focus:ring-0 cursor-pointer accent-primary"
+            className="mt-0.5 w-5 h-5 rounded text-primary focus:ring-0 cursor-pointer accent-primary"
           />
           <div className="flex flex-col">
             <span className="font-label-lg text-label-lg text-on-surface font-bold">
@@ -43,12 +43,12 @@ export const Step4TermsCard: React.FC<Step4TermsCardProps> = ({ terms, onChange 
         </label>
 
         {/* Checkbox 2 */}
-        <label className="flex items-start gap-space-sm p-space-md rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors cursor-pointer select-none border border-outline-variant/20">
+        <label className="flex items-start gap-space-sm p-space-md rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors cursor-pointer select-none">
           <input
             type="checkbox"
             checked={terms.platformRules}
             onChange={(e) => onChange("platformRules", e.target.checked)}
-            className="mt-1 w-5 h-5 rounded text-primary focus:ring-0 cursor-pointer accent-primary"
+            className="mt-0.5 w-5 h-5 rounded text-primary focus:ring-0 cursor-pointer accent-primary"
           />
           <div className="flex flex-col">
             <span className="font-label-lg text-label-lg text-on-surface font-bold">
@@ -56,20 +56,41 @@ export const Step4TermsCard: React.FC<Step4TermsCardProps> = ({ terms, onChange 
             </span>
             <span className="font-body-sm text-body-sm text-on-surface-variant">
               Tôi đã đọc, hiểu rõ và đồng ý với{" "}
-              <span className="text-primary underline cursor-pointer">Quy chế hoạt động sàn</span>,{" "}
-              <span className="text-primary underline cursor-pointer">Chính sách bảo mật dữ liệu khách hàng</span>, và{" "}
-              <span className="text-primary underline cursor-pointer">Biểu phí hoa hồng người bán MarketPulse 2025</span>.
+              <button
+                type="button"
+                onClick={(e) => e.stopPropagation()}
+                className="text-primary underline hover:text-primary-container font-medium inline cursor-pointer"
+              >
+                Quy chế hoạt động sàn
+              </button>
+              ,{" "}
+              <button
+                type="button"
+                onClick={(e) => e.stopPropagation()}
+                className="text-primary underline hover:text-primary-container font-medium inline cursor-pointer"
+              >
+                Chính sách bảo mật dữ liệu khách hàng
+              </button>
+              , và{" "}
+              <button
+                type="button"
+                onClick={(e) => e.stopPropagation()}
+                className="text-primary underline hover:text-primary-container font-medium inline cursor-pointer"
+              >
+                Biểu phí hoa hồng người bán MarketPulse 2025
+              </button>
+              .
             </span>
           </div>
         </label>
 
         {/* Checkbox 3 */}
-        <label className="flex items-start gap-space-sm p-space-md rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors cursor-pointer select-none border border-outline-variant/20">
+        <label className="flex items-start gap-space-sm p-space-md rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors cursor-pointer select-none">
           <input
             type="checkbox"
             checked={terms.antiCounterfeit}
             onChange={(e) => onChange("antiCounterfeit", e.target.checked)}
-            className="mt-1 w-5 h-5 rounded text-primary focus:ring-0 cursor-pointer accent-primary"
+            className="mt-0.5 w-5 h-5 rounded text-primary focus:ring-0 cursor-pointer accent-primary"
           />
           <div className="flex flex-col">
             <span className="font-label-lg text-label-lg text-on-surface font-bold">

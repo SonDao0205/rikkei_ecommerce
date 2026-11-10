@@ -5,6 +5,8 @@ import type { ProductItem } from "@/shared/types";
 
 interface FlashSaleSectionProps {
   products: ProductItem[];
+  categoryName?: string;
+  loading?: boolean;
   onQuickAdd?: (product: ProductItem) => void | Promise<void>;
   onSelectProduct?: (product: ProductItem) => void;
   onSelectShop?: (shopId: number) => void;
@@ -12,6 +14,8 @@ interface FlashSaleSectionProps {
 
 const FlashSaleSection: React.FC<FlashSaleSectionProps> = ({
   products,
+  categoryName,
+  loading = false,
   onQuickAdd,
   onSelectProduct,
   onSelectShop,
@@ -20,14 +24,36 @@ const FlashSaleSection: React.FC<FlashSaleSectionProps> = ({
     <div className="flex items-center justify-between gap-space-md mb-space-lg p-space-md rounded-xl bg-surface-container-lowest shadow-sm">
       <div>
         <h2 className="font-headline-md text-headline-md font-bold text-on-surface">Sản phẩm nổi bật</h2>
-        <p className="text-on-surface-variant">Dữ liệu sản phẩm hiện có trong cửa hàng</p>
+        <p className="text-on-surface-variant">
+          {categoryName
+            ? `Dữ liệu sản phẩm nổi bật thuộc danh mục: ${categoryName}`
+            : "Dữ liệu sản phẩm hiện có trong cửa hàng"}
+        </p>
       </div>
       <Link className="flex items-center gap-1 text-primary font-label-md font-bold hover:underline" to="#catalog">
         Xem danh mục <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
       </Link>
     </div>
-    {products.length === 0 ? (
-      <p className="py-8 text-center text-on-surface-variant">Chưa có sản phẩm để hiển thị.</p>
+    {loading ? (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter">
+        {[1, 2, 3, 4].map((n) => (
+          <div
+            key={n}
+            className="flex flex-col rounded-2xl bg-surface-container-lowest p-3 border border-outline-variant/40 animate-pulse h-80"
+          >
+            <div className="w-full h-48 rounded-xl bg-surface-container mb-3" />
+            <div className="h-4 bg-surface-container rounded w-3/4 mb-2" />
+            <div className="h-4 bg-surface-container rounded w-1/2 mb-4" />
+            <div className="mt-auto h-6 bg-surface-container rounded w-1/3" />
+          </div>
+        ))}
+      </div>
+    ) : products.length === 0 ? (
+      <p className="py-8 text-center text-on-surface-variant">
+        {categoryName
+          ? `Chưa có sản phẩm nổi bật cho danh mục ${categoryName}.`
+          : "Chưa có sản phẩm để hiển thị."}
+      </p>
     ) : (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter">
         {products.map((product) => (
