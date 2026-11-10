@@ -20,7 +20,8 @@ const INITIAL_FORM_DATA: AddProductFormData = {
   name: "",
   categoryId: 0,
   categoryPath: [],
-  brand: "",
+  brand: "No Brand",
+  brandId: null,
   isBrandVerified: false,
   origin: "",
   description: "",
@@ -143,12 +144,12 @@ export const ShopAddProduct: React.FC = () => {
       showToast("Tên sản phẩm không được vượt quá 120 ký tự", true);
       return;
     }
-    if (formData.categoryPath.length === 0) {
+    if (!formData.categoryId || formData.categoryPath.length === 0) {
       showToast("Vui lòng chọn ngành hàng & danh mục sản phẩm", true);
       return;
     }
     if (!formData.brand.trim()) {
-      showToast("Vui lòng nhập thương hiệu sản phẩm", true);
+      showToast("Vui lòng chọn thương hiệu sản phẩm", true);
       return;
     }
     if (!formData.origin.trim()) {
@@ -218,6 +219,7 @@ export const ShopAddProduct: React.FC = () => {
         categoryLabel: formData.categoryPath[formData.categoryPath.length - 1] || "Sản phẩm",
         imageUrl: formData.coverImage || DEFAULT_COVER_IMAGE,
         description: formData.description,
+        brand_id: formData.brandId ?? null,
         rawVariants,
         rawImages,
       };
@@ -225,6 +227,22 @@ export const ShopAddProduct: React.FC = () => {
       const result = await dispatch(saveShopProductItem(payload));
 
       if (saveShopProductItem.fulfilled.match(result)) {
+        const primaryCostPrice = formData.hasVariants
+          ? formData.variants[0]?.costPrice || Math.round(primaryPrice * 0.6)
+          : formData.singleCostPrice || Math.round(primaryPrice * 0.6);
+        try {
+          const storedCosts = JSON.parse(
+            localStorage.getItem("marketpulse_product_cost_prices") || "{}"
+          );
+          storedCosts[result.payload.id] = primaryCostPrice;
+          storedCosts[primarySku] = primaryCostPrice;
+          localStorage.setItem(
+            "marketpulse_product_cost_prices",
+            JSON.stringify(storedCosts)
+          );
+        } catch {
+          // ignore
+        }
         showToast("Thêm sản phẩm thành công! Đang chuyển hướng...");
         dispatch(fetchShopProductList());
         setTimeout(() => {

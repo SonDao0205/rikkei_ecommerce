@@ -160,6 +160,8 @@ axiosClient.interceptors.response.use(
             message = "Chỉ có thể thay đổi trạng thái kích hoạt cho sản phẩm đã được duyệt (ACTIVE hoặc HIDDEN).";
         } else if (errorCode === "product_status_changed") {
             message = "Trạng thái sản phẩm đã thay đổi bởi phiên làm việc khác; vui lòng tải lại trang.";
+        } else if (errorCode === "invalid_product_relation") {
+            message = "Danh mục hoặc thương hiệu sản phẩm không hợp lệ.";
         } else if (errorCode === "invalid_product_filters") {
             message = "Bộ lọc hoặc tham số tìm kiếm không hợp lệ.";
         } else if (errorCode === "address_limit_exceeded") {
