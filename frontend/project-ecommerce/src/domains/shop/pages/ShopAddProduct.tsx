@@ -17,125 +17,28 @@ const DEFAULT_COVER_IMAGE =
   "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800";
 
 const INITIAL_FORM_DATA: AddProductFormData = {
-  name: "Giày Sneaker Retro Runner V2 Cổ Thấp Da Lộn Thủ Công",
-  categoryId: 930011,
-  categoryPath: ["Thời trang nam", "Giày dép & Phụ kiện", "Giày Sneakers Cổ Thấp"],
-  brand: "MarketPulse Craft Studio",
-  isBrandVerified: true,
-  origin: "Việt Nam - Xưởng Thủ Công Gia Định",
-  description: `• Chất liệu da lộn tự nhiên (Suede Leather) cao cấp, được xử lý chống bám bẩn nano nhẹ.
-• Thiết kế phom dáng Retro cổ thấp thanh thoát, đệm gót Microfiber êm ái chống phồng rộp.
-• Đế ngoài cao su đúc nguyên khối cấu trúc rãnh gai chống trượt, tăng độ bám khi vận động.
-• Lót giày OrthoLite thế hệ mới thoáng khí, kháng khuẩn và giảm mùi hôi chân hiệu quả.
-• Quy cách hoàn thiện: Khâu viền chỉ dù chịu lực toàn bộ mép đế (Stitched Sole).
-• Chính sách bảo hành: Hỗ trợ đổi size trong 7 ngày, bảo hành keo chỉ 12 tháng chính hãng.`,
-  coverImage: DEFAULT_COVER_IMAGE,
-  detailImages: [
-    {
-      id: "img-1",
-      url: "https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?w=600",
-      tag: "Cận cảnh da",
-    },
-    {
-      id: "img-2",
-      url: "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=600",
-      tag: "Đế giày",
-    },
-    {
-      id: "img-3",
-      url: "https://images.unsplash.com/photo-1584735935682-2f2b69dff9d2?w=600",
-      tag: "On-feet",
-    },
-    {
-      id: "img-4",
-      url: "https://images.unsplash.com/photo-1600185365926-3a2ce3cdb9eb?w=600",
-      tag: "Góc gót giày",
-    },
-  ],
+  name: "",
+  categoryId: 0,
+  categoryPath: [],
+  brand: "",
+  isBrandVerified: false,
+  origin: "",
+  description: "",
+  coverImage: "",
+  detailImages: [],
   videoUrl: undefined,
-  hasVariants: true,
-  colors: [
-    { id: "c1", name: "Đen Tuyền", hex: "#18181b" },
-    { id: "c2", name: "Trắng Kem", hex: "#fef3c7" },
-    { id: "c3", name: "Xám Khói", hex: "#64748b" },
-  ],
-  sizes: ["39", "40", "41", "42"],
-  variants: [
-    {
-      id: "Đen Tuyền-39",
-      color: "Đen Tuyền",
-      size: "39",
-      colorHex: "#18181b",
-      sku: "RR-V2-BLK-39",
-      costPrice: 450000,
-      sellPrice: 890000,
-      stock: 25,
-      status: "available",
-    },
-    {
-      id: "Đen Tuyền-40",
-      color: "Đen Tuyền",
-      size: "40",
-      colorHex: "#18181b",
-      sku: "RR-V2-BLK-40",
-      costPrice: 450000,
-      sellPrice: 890000,
-      stock: 30,
-      status: "available",
-    },
-    {
-      id: "Đen Tuyền-41",
-      color: "Đen Tuyền",
-      size: "41",
-      colorHex: "#18181b",
-      sku: "RR-V2-BLK-41",
-      costPrice: 450000,
-      sellPrice: 890000,
-      stock: 40,
-      status: "available",
-    },
-    {
-      id: "Trắng Kem-40",
-      color: "Trắng Kem",
-      size: "40",
-      colorHex: "#fef3c7",
-      sku: "RR-V2-WHT-40",
-      costPrice: 450000,
-      sellPrice: 890000,
-      stock: 35,
-      status: "available",
-    },
-    {
-      id: "Trắng Kem-41",
-      color: "Trắng Kem",
-      size: "41",
-      colorHex: "#fef3c7",
-      sku: "RR-V2-WHT-41",
-      costPrice: 450000,
-      sellPrice: 890000,
-      stock: 20,
-      status: "available",
-    },
-    {
-      id: "Xám Khói-41",
-      color: "Xám Khói",
-      size: "41",
-      colorHex: "#64748b",
-      sku: "RR-V2-GRY-41",
-      costPrice: 450000,
-      sellPrice: 890000,
-      stock: 15,
-      status: "low_stock",
-    },
-  ],
-  singleSku: "RR-V2-BASIC",
-  singleCostPrice: 450000,
-  singleSellPrice: 890000,
-  singleStock: 100,
-  weightGram: 650,
-  lengthCm: 30,
-  widthCm: 20,
-  heightCm: 12,
+  hasVariants: false,
+  colors: [],
+  sizes: [],
+  variants: [],
+  singleSku: "",
+  singleCostPrice: 0,
+  singleSellPrice: 0,
+  singleStock: 0,
+  weightGram: 0,
+  lengthCm: 0,
+  widthCm: 0,
+  heightCm: 0,
 };
 
 export const ShopAddProduct: React.FC = () => {
@@ -240,12 +143,24 @@ export const ShopAddProduct: React.FC = () => {
       showToast("Tên sản phẩm không được vượt quá 120 ký tự", true);
       return;
     }
+    if (formData.categoryPath.length === 0) {
+      showToast("Vui lòng chọn ngành hàng & danh mục sản phẩm", true);
+      return;
+    }
     if (!formData.brand.trim()) {
       showToast("Vui lòng nhập thương hiệu sản phẩm", true);
       return;
     }
     if (!formData.origin.trim()) {
       showToast("Vui lòng nhập xuất xứ / xưởng sản xuất", true);
+      return;
+    }
+    if (formData.hasVariants && formData.variants.length === 0) {
+      showToast("Vui lòng thêm ít nhất một biến thể (màu sắc & kích cỡ)", true);
+      return;
+    }
+    if (!formData.hasVariants && (formData.singleSellPrice <= 0 || formData.singleStock <= 0)) {
+      showToast("Vui lòng nhập giá bán và số lượng tồn kho", true);
       return;
     }
     if (formData.weightGram <= 0) {
@@ -256,14 +171,14 @@ export const ShopAddProduct: React.FC = () => {
     setIsSubmitting(true);
     try {
       const primaryPrice = formData.hasVariants
-        ? formData.variants[0]?.sellPrice || 500000
+        ? formData.variants[0]?.sellPrice || 0
         : formData.singleSellPrice;
       const totalStock = formData.hasVariants
         ? formData.variants.reduce((sum, v) => sum + v.stock, 0)
         : formData.singleStock;
       const primarySku = formData.hasVariants
         ? formData.variants[0]?.sku || `SKU-${Date.now().toString(36).toUpperCase()}`
-        : formData.singleSku;
+        : formData.singleSku || `SKU-${Date.now().toString(36).toUpperCase()}`;
 
       const rawVariants = formData.hasVariants
         ? formData.variants.map((v) => ({

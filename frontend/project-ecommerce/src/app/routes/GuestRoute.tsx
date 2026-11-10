@@ -38,10 +38,14 @@ export const GuestRoute: React.FC<GuestRouteProps> = ({ children }) => {
       )
     );
     const isAdmin = userRoles.has("admin");
+    const isCustomer = userRoles.has("client") || userRoles.has("customer");
     const isSeller = userRoles.has("seller");
 
     if (isAdmin) {
       return <Navigate to="/admin/dashboard" replace />;
+    }
+    if (isCustomer) {
+      return <Navigate to="/home" replace />;
     }
     if (isSeller && user?.shop_status === "ACTIVE") {
       return <Navigate to="/shop/dashboard" replace />;

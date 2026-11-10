@@ -6,7 +6,7 @@ interface OnboardingSuccessModalProps {
   onClose: () => void;
   applicationId?: string;
   shopName: string;
-  ownerEmail: string;
+  ownerEmail?: string;
   message?: string;
 }
 
@@ -15,80 +15,95 @@ export const OnboardingSuccessModal: React.FC<OnboardingSuccessModalProps> = ({
   onClose,
   applicationId,
   shopName,
-  ownerEmail,
-  message,
 }) => {
   if (!isOpen) return null;
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-on-background/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
-      id="modal-success"
+      className="fixed inset-0 z-50 flex items-center justify-center p-space-md bg-inverse-surface/60 backdrop-blur-sm animate-fade-in"
+      id="successSubmissionModal"
     >
-      <div className="bg-surface-container-lowest max-w-xl w-full rounded-2xl shadow-xl p-6 sm:p-8 space-y-6 relative animate-in zoom-in-95 duration-200">
+      <div className="w-full max-w-xl rounded-2xl bg-surface-container-lowest shadow-2xl p-space-xl flex flex-col items-center text-center relative overflow-hidden animate-in zoom-in-95 duration-200">
+        {/* Top aesthetic badge */}
+        <div className="w-20 h-20 rounded-full bg-primary-fixed text-primary flex items-center justify-center mb-space-md shadow-md">
+          <span
+            className="material-symbols-outlined text-[42px]"
+            style={{ fontVariationSettings: "'FILL' 1" }}
+          >
+            task_alt
+          </span>
+        </div>
+
+        <div className="flex items-center gap-space-xs mb-space-xs">
+          <span className="px-space-sm py-0.5 rounded-full bg-secondary-container/40 text-secondary font-label-sm text-label-sm font-bold uppercase tracking-wider">
+            Hồ sơ đã được gửi thành công
+          </span>
+        </div>
+
+        <h2 className="font-headline-xl text-headline-xl text-on-surface tracking-tight font-bold">
+          Chào mừng đến với MarketPulse!
+        </h2>
+
+        <p className="font-body-md text-body-md text-on-surface-variant mt-space-xs max-w-md">
+          Hồ sơ gian hàng của bạn đã được chuyển đến bộ phận Thẩm định Người bán. Kết quả xét duyệt sẽ được thông báo qua SMS và Email trong 24h làm việc.
+        </p>
+
+        {/* Ticket Metadata Box */}
+        <div className="w-full mt-space-lg p-space-md rounded-xl bg-surface-container-low flex flex-col gap-space-xs text-left">
+          <div className="flex justify-between items-center">
+            <span className="font-body-sm text-body-sm text-on-surface-variant">
+              Mã hồ sơ phê duyệt:
+            </span>
+            <span className="font-label-md text-label-md text-primary font-bold font-mono">
+              {applicationId || "#REQ-SHOP-8812"}
+            </span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="font-body-sm text-body-sm text-on-surface-variant">
+              Trạng thái hồ sơ:
+            </span>
+            <span className="px-space-sm py-0.5 rounded bg-surface-container-highest text-primary font-label-sm text-label-sm font-bold">
+              PENDING_APPROVAL (Đang thẩm định)
+            </span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="font-body-sm text-body-sm text-on-surface-variant">
+              Tên gian hàng đã tạo:
+            </span>
+            <span className="font-label-md text-label-md text-on-surface font-bold">
+              {shopName || "UrbanStep Sneaker Hub"}
+            </span>
+          </div>
+        </div>
+
+        {/* Modal Action Buttons */}
+        <div className="w-full flex flex-col sm:flex-row gap-space-sm mt-space-lg">
+          <Link
+            to="/shop/dashboard"
+            onClick={onClose}
+            className="grow py-3 px-space-md rounded-lg bg-primary-container text-on-primary font-label-md text-label-md font-bold hover:bg-primary transition-colors flex items-center justify-center gap-space-xs shadow-sm cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[18px]">dashboard</span>
+            <span>Vào tham quan Seller Center</span>
+          </Link>
+          <button
+            onClick={onClose}
+            type="button"
+            className="grow py-3 px-space-md rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md font-medium transition-colors cursor-pointer"
+          >
+            Về trang chủ MarketPulse
+          </button>
+        </div>
+
+        {/* Close Icon Button */}
         <button
-          className="absolute top-4 right-4 w-8 h-8 rounded-full bg-surface-container text-on-surface-variant flex items-center justify-center hover:bg-surface-container-high transition-colors cursor-pointer"
           onClick={onClose}
           type="button"
+          className="absolute top-4 right-4 p-1.5 rounded-full text-on-surface-variant hover:bg-surface-container transition-colors cursor-pointer"
           title="Đóng modal"
         >
-          <span className="material-symbols-outlined text-[18px]">close</span>
+          <span className="material-symbols-outlined text-[20px]">close</span>
         </button>
-
-        <div className="flex items-center gap-4 pr-8">
-          <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center flex-shrink-0 shadow-sm">
-            <span className="material-symbols-outlined text-[32px]">info</span>
-          </div>
-          <div>
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 font-label-sm text-label-sm font-bold uppercase tracking-wide">
-              Đang chờ xét duyệt
-            </div>
-            <h3 className="font-headline-lg text-headline-lg font-bold text-on-surface mt-1">
-              Hồ sơ đã được gửi
-            </h3>
-          </div>
-        </div>
-
-        <div role="status" className="p-4 rounded-xl bg-amber-50 border border-amber-200 space-y-2">
-          <p className="font-body-md text-body-md text-amber-950">
-            {message || "Hồ sơ shop đã được lưu trên máy chủ và đang chờ xét duyệt."}
-          </p>
-          <p className="font-body-sm text-body-sm text-amber-900">
-            Thông tin giấy tờ định danh và tài khoản ngân hàng chưa được thu thập trong luồng này.
-          </p>
-        </div>
-
-        <div className="p-4 rounded-xl bg-surface-container-low space-y-2 text-body-sm">
-          <div className="flex justify-between gap-4">
-            <span className="text-on-surface-variant">Mã hồ sơ:</span>
-            <span className="font-mono font-bold text-on-surface">{applicationId || "Chưa tạo"}</span>
-          </div>
-          <div className="flex justify-between gap-4">
-            <span className="text-on-surface-variant">Tên gian hàng:</span>
-            <span className="font-semibold text-on-surface">{shopName || "Chưa nhập"}</span>
-          </div>
-          <div className="flex justify-between gap-4">
-            <span className="text-on-surface-variant">Email tài khoản:</span>
-            <span className="font-mono text-on-surface">{ownerEmail || "Chưa nhập"}</span>
-          </div>
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-space-sm pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 py-3 px-4 rounded-lg bg-primary text-on-primary font-label-md text-label-md text-center hover:bg-primary-container transition-colors shadow-sm cursor-pointer"
-          >
-            Đóng
-          </button>
-          <Link
-            to="/"
-            onClick={onClose}
-            className="py-3 px-5 rounded-lg bg-surface-container text-on-surface font-label-md text-label-md text-center hover:bg-surface-container-high transition-colors"
-          >
-            Về trang chủ
-          </Link>
-        </div>
       </div>
     </div>
   );

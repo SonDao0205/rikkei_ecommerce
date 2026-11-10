@@ -69,12 +69,16 @@ export const productApi = {
   },
 
   /**
-   * Lấy danh sách Flash Sale cho trang Home
-   * GET /api/v1/products?sort=best_selling&limit=4
+   * Lấy danh sách Flash Sale / Sản phẩm nổi bật cho trang Home
+   * GET /api/v1/products?sort=best_selling&limit=4[&category_id=...]
    */
-  fetchFlashSaleProducts: async (): Promise<ProductItem[]> => {
+  fetchFlashSaleProducts: async (categoryId?: number): Promise<ProductItem[]> => {
+    const params: Record<string, string | number> = { sort: "best_selling", limit: 4 };
+    if (typeof categoryId === "number" && categoryId > 0) {
+      params.category_id = categoryId;
+    }
     const response = await axiosClient.get<ApiResponse<{ products: BackendProductRaw[]; total: number }>>("/api/v1/products", {
-      params: { sort: "best_selling", limit: 4 },
+      params,
     });
     const products = response.data?.data?.products || [];
     return products.map(mapBackendProductToProductItem);
