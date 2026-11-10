@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import CustomerLayout from "@/app/layout/CustomerLayout";
 import FlashNotificationBar from "@/domains/storefront/components/home/FlashNotificationBar";
 import CategoryBar from "@/domains/storefront/components/home/CategoryBar";
@@ -20,23 +20,48 @@ import { productApi } from "@/domains/storefront/api/productApi";
 const HomePage: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const categoryParam = searchParams.get("category_id");
+
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
   const roles = user?.roles?.map((role) => role.toLowerCase()) ?? (user?.role ? [user.role] : []);
   const canUseCustomerFeatures = roles.includes("client");
   const {
     categories,
     flashSaleProducts,
+    flashSaleLoading,
     catalogProducts,
     totalCatalogProducts,
     selectedCategoryId,
     sortBy,
   } = useAppSelector((state) => state.product);
 
-  // Nạp danh mục và flash sale 1 lần khi trang được khởi tạo
+  const selectedCategory = categories.find((c) => c.id === selectedCategoryId);
+  const selectedCategoryName =
+    selectedCategory && selectedCategory.id !== 0 ? selectedCategory.name : undefined;
+
+  // Đồng bộ danh mục từ URL query parameters nếu có
+  useEffect(() => {
+    if (categoryParam !== null) {
+      const parsedId = parseInt(categoryParam, 10);
+      if (!isNaN(parsedId) && parsedId !== selectedCategoryId) {
+        dispatch(setSelectedCategory(parsedId));
+      }
+    } else if (selectedCategoryId !== 0 && !location.search) {
+      dispatch(setSelectedCategory(0));
+    }
+  }, [categoryParam, location.search, dispatch, selectedCategoryId]);
+
+  // Nạp danh mục 1 lần khi trang được khởi tạo
   useEffect(() => {
     dispatch(getCategories());
-    dispatch(getFlashSaleProducts());
   }, [dispatch]);
+
+  // Cập nhật sản phẩm nổi bật khi danh mục thay đổi
+  useEffect(() => {
+    dispatch(getFlashSaleProducts(selectedCategoryId));
+  }, [dispatch, selectedCategoryId]);
 
   // Tải danh sách catalog khi thay đổi danh mục hoặc tiêu chí sắp xếp
   useEffect(() => {
@@ -50,6 +75,11 @@ const HomePage: React.FC = () => {
 
   const handleSelectCategory = (categoryId: number) => {
     dispatch(setSelectedCategory(categoryId));
+    if (categoryId > 0) {
+      setSearchParams({ category_id: String(categoryId) }, { replace: true });
+    } else {
+      setSearchParams({}, { replace: true });
+    }
   };
 
   const handleSortChange = (newSort: string) => {
@@ -104,6 +134,8 @@ const HomePage: React.FC = () => {
       {/* SECTION 2: Featured products from the backend */}
       <FlashSaleSection
         products={flashSaleProducts}
+        categoryName={selectedCategoryName}
+        loading={flashSaleLoading}
         onQuickAdd={handleQuickAdd}
         onSelectProduct={handleSelectProduct}
         onSelectShop={handleSelectShop}

@@ -17,19 +17,15 @@ export const RegisterOpenShopStep3: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const { formData, currentStep, isSavingDraft, lastSavedAt } = useAppSelector(
+  const { formData, isSavingDraft, lastSavedAt } = useAppSelector(
     (state) => state.shopRegister
   );
 
   useEffect(() => {
-    if (currentStep < 3) {
-      navigate("/register-open-shop", { replace: true });
-      return;
-    }
     // Ensure Redux step state is set to 3 when mounting this page
     dispatch(setStep(3));
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [currentStep, dispatch, navigate]);
+  }, [dispatch]);
 
   const handleStepClick = (targetStep: number) => {
     if (targetStep === 1) {
@@ -42,13 +38,13 @@ export const RegisterOpenShopStep3: React.FC = () => {
   };
 
   const handleNextStep = async () => {
+    dispatch(setStep(4));
     try {
       await dispatch(saveDraftShopRegistration(formData)).unwrap();
-      dispatch(setStep(4));
-      navigate("/register-open-shop/step4");
-    } catch (error: unknown) {
-      setToastMessage(error instanceof Error ? error.message : typeof error === "string" ? error : "Không thể lưu bản nháp.");
+    } catch {
+      // Non-blocking draft save, proceed to Step 4
     }
+    navigate("/register-open-shop/step4");
   };
 
   const handleSaveDraft = async () => {

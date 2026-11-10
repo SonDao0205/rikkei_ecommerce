@@ -3,139 +3,177 @@ import { Link } from "react-router-dom";
 
 interface Step4StepperProps {
   onStepClick?: (step: number) => void;
+  shopName?: string;
+  accountType?: string;
+  kycSummary?: string;
 }
 
-export const Step4Stepper: React.FC<Step4StepperProps> = ({ onStepClick }) => {
+export const Step4Stepper: React.FC<Step4StepperProps> = ({
+  onStepClick,
+  shopName = "UrbanStep Sneaker Hub",
+  accountType = "Cá nhân / Hộ kinh doanh",
+  kycSummary = "CCCD & Vietcombank",
+}) => {
   return (
     <div className="flex flex-col gap-space-md sm:gap-space-lg w-full">
       {/* Top Navigation Context & Security Indicator */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-space-sm">
-        <nav className="flex items-center flex-wrap gap-2 font-body-sm text-body-sm text-on-surface-variant">
+        <nav className="flex items-center flex-wrap gap-space-xs font-body-sm text-body-sm text-on-surface-variant">
           <Link
             to="/register-open-shop"
-            className="hover:text-primary transition-colors flex items-center gap-1"
+            className="text-on-surface-variant hover:text-on-surface transition-colors"
           >
-            <span className="material-symbols-outlined text-[16px]">storefront</span>
-            <span>Kênh Người Bán</span>
+            Kênh Người Bán
           </Link>
-          <span className="material-symbols-outlined text-[14px] text-outline-variant">
-            chevron_right
+          <span className="text-outline-variant font-body-sm text-body-sm">/</span>
+          <span className="text-on-surface-variant">Đăng ký đối tác Merchant</span>
+          <span className="text-outline-variant font-body-sm text-body-sm">/</span>
+          <span className="bg-primary-container text-on-primary-container font-bold rounded-lg px-2 py-0.5">
+            Quy trình thiết lập gian hàng
           </span>
-          <span className="hover:text-primary transition-colors">Đăng ký đối tác Merchant</span>
-          <span className="material-symbols-outlined text-[14px] text-outline-variant">
-            chevron_right
-          </span>
-          <span className="text-on-surface font-semibold">Quy trình thiết lập gian hàng</span>
         </nav>
 
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm shadow-sm w-fit">
+        <div className="inline-flex items-center gap-space-xs font-label-sm text-label-sm text-secondary bg-surface-container-lowest px-space-sm py-space-xs rounded-full shadow-[0_1px_4px_rgba(0,0,0,0.03)] border border-outline-variant/30 w-fit">
           <span
-            className="material-symbols-outlined text-[18px] text-secondary"
+            className="material-symbols-outlined text-secondary text-[16px]"
             style={{ fontVariationSettings: "'FILL' 1" }}
           >
             verified_user
           </span>
-          <span>Bảo mật KYC chuẩn e-Commerce Việt Nam (Nghị định 52 &amp; 13/2023/NĐ-CP)</span>
-          <span className="w-2 h-2 rounded-full bg-secondary animate-pulse ml-0.5"></span>
+          <span>Hệ thống bảo mật KYC chuẩn e-Commerce Việt Nam (Nghị định 52 &amp; 13/2023/NĐ-CP)</span>
         </div>
       </div>
 
       {/* Stepper Progress Bar (4 Bước) */}
-      <div className="w-full bg-surface-container-lowest rounded-xl shadow-sm p-space-md sm:p-space-lg">
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 relative">
-          {/* Step 1: Hoàn thành - Bấm để quay lại */}
-          <Link
-            to="/register-open-shop"
-            onClick={() => onStepClick?.(1)}
-            className="flex items-center gap-3 group text-left cursor-pointer"
-          >
-            <div className="relative flex items-center justify-center flex-shrink-0">
-              <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-on-secondary shadow-sm transition-transform group-hover:scale-105">
-                <span className="material-symbols-outlined text-[20px] font-bold">check</span>
+      <section className="w-full bg-surface-container-lowest shadow-sm rounded-xl border border-outline-variant/30">
+        <div className="w-full p-space-md sm:p-space-lg">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-space-md relative">
+            {/* Step 1 Complete */}
+            <Link
+              to="/register-open-shop"
+              onClick={() => onStepClick?.(1)}
+              className="group flex items-center gap-space-sm p-space-sm rounded-xl transition-all duration-200 hover:bg-surface-container-low cursor-pointer"
+            >
+              <div className="w-10 h-10 rounded-full bg-secondary-container/30 text-secondary flex items-center justify-center shrink-0">
+                <span
+                  className="material-symbols-outlined text-[20px]"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  check_circle
+                </span>
               </div>
-            </div>
-            <div className="flex flex-col min-w-0">
-              <span className="font-label-sm text-label-sm text-secondary uppercase tracking-wider font-semibold">
-                Bước 01
-              </span>
-              <span className="font-label-md text-label-md text-on-surface truncate group-hover:text-primary transition-colors">
-                Loại hình &amp; Tài khoản
-              </span>
-              <span className="font-body-sm text-body-sm text-secondary flex items-center gap-0.5">
-                Đã xác nhận
-              </span>
-            </div>
-          </Link>
+              <div className="min-w-0">
+                <div className="flex items-center gap-space-xs">
+                  <span className="font-label-sm text-label-sm text-secondary uppercase tracking-wider font-semibold">
+                    Bước 1
+                  </span>
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                  <span className="font-label-sm text-label-sm text-secondary font-medium">
+                    Hoàn tất
+                  </span>
+                </div>
+                <p className="font-label-lg text-label-lg text-on-surface truncate group-hover:text-primary transition-colors font-bold">
+                  Loại hình &amp; Tài khoản
+                </p>
+                <p className="font-body-sm text-body-sm text-on-surface-variant truncate">
+                  {accountType}
+                </p>
+              </div>
+            </Link>
 
-          {/* Step 2: Hoàn thành - Bấm để quay lại */}
-          <Link
-            to="/register-open-shop/step2"
-            onClick={() => onStepClick?.(2)}
-            className="flex items-center gap-3 group text-left cursor-pointer"
-          >
-            <div className="relative flex items-center justify-center flex-shrink-0">
-              <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-on-secondary shadow-sm transition-transform group-hover:scale-105">
-                <span className="material-symbols-outlined text-[20px] font-bold">check</span>
+            {/* Step 2 Complete */}
+            <Link
+              to="/register-open-shop/step2"
+              onClick={() => onStepClick?.(2)}
+              className="group flex items-center gap-space-sm p-space-sm rounded-xl transition-all duration-200 hover:bg-surface-container-low cursor-pointer"
+            >
+              <div className="w-10 h-10 rounded-full bg-secondary-container/30 text-secondary flex items-center justify-center shrink-0">
+                <span
+                  className="material-symbols-outlined text-[20px]"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  check_circle
+                </span>
               </div>
-            </div>
-            <div className="flex flex-col min-w-0">
-              <span className="font-label-sm text-label-sm text-secondary uppercase tracking-wider font-semibold">
-                Bước 02
-              </span>
-              <span className="font-label-md text-label-md text-on-surface truncate group-hover:text-primary transition-colors">
-                Shop &amp; Kho hàng
-              </span>
-              <span className="font-body-sm text-body-sm text-secondary flex items-center gap-0.5">
-                Đã xác nhận
-              </span>
-            </div>
-          </Link>
+              <div className="min-w-0">
+                <div className="flex items-center gap-space-xs">
+                  <span className="font-label-sm text-label-sm text-secondary uppercase tracking-wider font-semibold">
+                    Bước 2
+                  </span>
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                  <span className="font-label-sm text-label-sm text-secondary font-medium">
+                    Hoàn tất
+                  </span>
+                </div>
+                <p className="font-label-lg text-label-lg text-on-surface truncate group-hover:text-primary transition-colors font-bold">
+                  Shop &amp; Kho hàng
+                </p>
+                <p className="font-body-sm text-body-sm text-on-surface-variant truncate">
+                  {shopName}
+                </p>
+              </div>
+            </Link>
 
-          {/* Step 3: Hoàn thành - Bấm để quay lại */}
-          <Link
-            to="/register-open-shop/step3"
-            onClick={() => onStepClick?.(3)}
-            className="flex items-center gap-3 group text-left cursor-pointer"
-          >
-            <div className="relative flex items-center justify-center flex-shrink-0">
-              <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-on-secondary shadow-sm transition-transform group-hover:scale-105">
-                <span className="material-symbols-outlined text-[20px] font-bold">check</span>
+            {/* Step 3 Complete */}
+            <Link
+              to="/register-open-shop/step3"
+              onClick={() => onStepClick?.(3)}
+              className="group flex items-center gap-space-sm p-space-sm rounded-xl transition-all duration-200 hover:bg-surface-container-low cursor-pointer"
+            >
+              <div className="w-10 h-10 rounded-full bg-secondary-container/30 text-secondary flex items-center justify-center shrink-0">
+                <span
+                  className="material-symbols-outlined text-[20px]"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  check_circle
+                </span>
               </div>
-            </div>
-            <div className="flex flex-col min-w-0">
-              <span className="font-label-sm text-label-sm text-secondary uppercase tracking-wider font-semibold">
-                Bước 03
-              </span>
-              <span className="font-label-md text-label-md text-on-surface truncate group-hover:text-primary transition-colors">
-                KYC &amp; Ngân hàng
-              </span>
-              <span className="font-body-sm text-body-sm text-secondary flex items-center gap-0.5">
-                Đã xác nhận
-              </span>
-            </div>
-          </Link>
+              <div className="min-w-0">
+                <div className="flex items-center gap-space-xs">
+                  <span className="font-label-sm text-label-sm text-secondary uppercase tracking-wider font-semibold">
+                    Bước 3
+                  </span>
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                  <span className="font-label-sm text-label-sm text-secondary font-medium">
+                    Hoàn tất
+                  </span>
+                </div>
+                <p className="font-label-lg text-label-lg text-on-surface truncate group-hover:text-primary transition-colors font-bold">
+                  KYC &amp; Ngân hàng
+                </p>
+                <p className="font-body-sm text-body-sm text-on-surface-variant truncate">
+                  {kycSummary}
+                </p>
+              </div>
+            </Link>
 
-          {/* Step 4: Đang thực hiện (Active) */}
-          <div className="flex items-center gap-3">
-            <div className="relative flex items-center justify-center flex-shrink-0">
-              <div className="w-10 h-10 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-label-md text-label-md shadow-md ring-4 ring-primary-fixed">
-                <span>04</span>
+            {/* Step 4 Active Highlight */}
+            <div className="flex items-center gap-space-sm p-space-sm rounded-xl bg-primary-fixed shadow-sm">
+              <div className="w-10 h-10 rounded-full bg-primary-container text-on-primary flex items-center justify-center shrink-0 shadow-md">
+                <span
+                  className="material-symbols-outlined text-[20px]"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  assignment_turned_in
+                </span>
               </div>
-            </div>
-            <div className="flex flex-col min-w-0">
-              <span className="font-label-sm text-label-sm text-primary uppercase tracking-wider font-bold">
-                Bước 04 • Đang làm
-              </span>
-              <span className="font-label-lg text-label-lg text-primary font-bold truncate">
-                Duyệt &amp; Hoàn tất
-              </span>
-              <span className="font-body-sm text-body-sm text-on-surface-variant">
-                Kích hoạt bán hàng
-              </span>
+              <div className="min-w-0">
+                <div className="flex items-center gap-space-xs">
+                  <span className="font-label-sm text-label-sm text-primary font-bold uppercase tracking-wider">
+                    Bước 4 • Hiện tại
+                  </span>
+                </div>
+                <p className="font-label-lg text-label-lg text-primary font-bold truncate">
+                  Duyệt &amp; Hoàn tất
+                </p>
+                <p className="font-body-sm text-body-sm text-on-primary-fixed-variant truncate font-medium">
+                  Xem lại &amp; Gửi hồ sơ
+                </p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </section>
     </div>
   );
 };

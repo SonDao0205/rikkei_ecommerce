@@ -26,7 +26,6 @@ import {
 } from "@/domains/customer/state/cartSlice";
 import type { CartItem, CartShopGroup as ICartShopGroup } from "@/domains/customer/types/cart.types";
 import { formatCurrencyVND } from "@/shared/utils/currency";
-import { apiErrorMessage, cartApi, type CheckoutAddress, type CheckoutMethod, type CheckoutQuote, type CreatedOrder } from "@/domains/customer/api/cartApi";
 
 export const ShoppingCart: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -47,20 +46,6 @@ export const ShoppingCart: React.FC = () => {
     type: "success" | "info" | "error";
     message: string;
   } | null>(null);
-
-  const [isCheckingOut, setIsCheckingOut] = useState(false);
-  const [checkoutOpen, setCheckoutOpen] = useState(false);
-  const [checkoutError, setCheckoutError] = useState<string | null>(null);
-  const [addresses, setAddresses] = useState<CheckoutAddress[]>([]);
-  const [shippingMethods, setShippingMethods] = useState<CheckoutMethod[]>([]);
-  const [paymentMethods, setPaymentMethods] = useState<CheckoutMethod[]>([]);
-  const [addressId, setAddressId] = useState(0);
-  const [shippingMethodId, setShippingMethodId] = useState(0);
-  const [paymentMethodId, setPaymentMethodId] = useState(0);
-  const [checkoutQuote, setCheckoutQuote] = useState<CheckoutQuote | null>(null);
-  const [orderNote, setOrderNote] = useState("");
-  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
-  const [createdOrder, setCreatedOrder] = useState<CreatedOrder | null>(null);
 
   const activeNotification =
     notification ||
@@ -222,55 +207,15 @@ export const ShoppingCart: React.FC = () => {
     });
   };
 
-  const handleCheckout = async () => {
-    if (summary.selected_count === 0) { setNotification({type:"error",message:"Vui lòng chọn ít nhất một sản phẩm còn hàng."}); return; }
-    setIsCheckingOut(true); setCheckoutError(null); setCheckoutQuote(null); setCreatedOrder(null); setOrderNote("");
-    try { const [options, savedAddresses] = await Promise.all([cartApi.getCheckoutOptions(), cartApi.getAddresses()]); setShippingMethods(options.shipping_methods); setPaymentMethods(options.payment_methods); setAddresses(savedAddresses); setAddressId(savedAddresses.find((a)=>a.is_default)?.id ?? savedAddresses[0]?.id ?? 0); setShippingMethodId(options.shipping_methods[0]?.id ?? 0); setPaymentMethodId(options.payment_methods[0]?.id ?? 0); setCheckoutOpen(true); }
-    catch(err) { setCheckoutError(apiErrorMessage(err, "Không tải được thông tin checkout.")); setCheckoutOpen(true); } finally { setIsCheckingOut(false); }
-  };
-
-  const handleCalculateQuote = async () => {
-    setIsCheckingOut(true); setCheckoutError(null); setCheckoutQuote(null); setCreatedOrder(null);
-    try {
-      if (!addressId || !shippingMethodId || !paymentMethodId) throw new Error("Cần có địa chỉ nhận hàng và phương thức giao hàng, thanh toán.");
-      const selected=items.filter((item)=>item.selected && item.is_available); if(!selected.length) throw new Error("Chọn ít nhất một sản phẩm còn khả dụng.");
-      const shopCodes=Object.fromEntries(Object.entries(shopVouchers).filter(([,v])=>v.is_applied).map(([id,v])=>[id,v.code]));
-      setCheckoutQuote(await cartApi.quoteCheckout({address_id:addressId,shipping_method_id:shippingMethodId,payment_method_id:paymentMethodId,cart_item_ids:selected.map((item)=>item.id),...(platformVoucher?.is_applied?{platform_voucher:platformVoucher.code}:{}),...(Object.keys(shopCodes).length?{shop_vouchers:shopCodes}:{})}));
-    } catch(err) { setCheckoutError(apiErrorMessage(err, "Không thể tính báo giá. Vui lòng tải lại giỏ hàng.")); } finally { setIsCheckingOut(false); }
-  };
-
-  const handlePlaceOrder = async () => {
-    setIsPlacingOrder(true); setCheckoutError(null);
-    try {
-      if (!addressId || !shippingMethodId || !paymentMethodId) throw new Error("Cần có địa chỉ nhận hàng và phương thức giao hàng, thanh toán.");
-      const selected = items.filter((item) => item.selected && item.is_available);
-      if (!selected.length) throw new Error("Chọn ít nhất một sản phẩm còn khả dụng.");
-      const shopCodes = Object.fromEntries(
-        Object.entries(shopVouchers)
-          .filter(([, v]) => v.is_applied)
-          .map(([id, v]) => [id, v.code])
-      );
-      const res = await cartApi.createOrder({
-        address_id: addressId,
-        shipping_method_id: shippingMethodId,
-        payment_method_id: paymentMethodId,
-        cart_item_ids: selected.map((item) => item.id),
-        note: orderNote.trim() || undefined,
-        ...(platformVoucher?.is_applied ? { platform_voucher: platformVoucher.code } : {}),
-        ...(Object.keys(shopCodes).length ? { shop_vouchers: shopCodes } : {}),
-      });
-      setCreatedOrder(res);
-      setCheckoutQuote(null);
-      dispatch(fetchCart());
+  const handleCheckout = () => {
+    if (summary.selected_count === 0) {
       setNotification({
-        type: "success",
-        message: `Đặt hàng thành công! Mã đơn: ${res.order_code}`,
+        type: "error",
+        message: "Vui lòng chọn ít nhất một sản phẩm còn hàng để tiếp tục thanh toán.",
       });
-    } catch (err) {
-      setCheckoutError(apiErrorMessage(err, "Không thể tạo đơn hàng. Vui lòng thử lại."));
-    } finally {
-      setIsPlacingOrder(false);
+      return;
     }
+    navigate("/checkout");
   };
 
   return (
@@ -390,117 +335,6 @@ export const ShoppingCart: React.FC = () => {
           )}
         </div>
       </div>
-      {checkoutOpen && (
-        <div className="fixed inset-0 z-[100] bg-black/40 p-4 flex items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="checkout-title">
-          <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4"><h2 id="checkout-title" className="text-xl font-bold">{createdOrder ? "Đặt hàng thành công!" : "Thông tin giao hàng và báo giá"}</h2><button aria-label="Đóng" onClick={()=>setCheckoutOpen(false)} className="text-2xl">×</button></div>
-            {checkoutError && <p role="alert" className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{checkoutError}</p>}
-            {createdOrder ? (
-              <div className="space-y-4">
-                <div className="rounded-xl border border-green-200 bg-green-50 p-4 text-center">
-                  <span className="material-symbols-outlined text-[48px] text-green-600">check_circle</span>
-                  <h3 className="text-lg font-bold text-green-800 mt-2">Cảm ơn bạn đã đặt hàng!</h3>
-                  <p className="text-sm text-green-700 mt-1">Mã đơn hàng: <strong className="font-mono text-base">{createdOrder.order_code}</strong></p>
-                </div>
-                <div className="rounded-xl border bg-slate-50 p-4 space-y-2 text-sm">
-                  <p className="font-semibold text-slate-800">Thông tin người nhận:</p>
-                  <p className="text-slate-600">{createdOrder.recipient_name} · {createdOrder.recipient_phone}</p>
-                  <p className="text-slate-600">{createdOrder.shipping_address}</p>
-                  {createdOrder.note && <p className="text-slate-600 italic">Ghi chú: {createdOrder.note}</p>}
-                  <div className="border-t pt-2 mt-2">
-                    <p className="font-semibold text-slate-800">Hình thức thanh toán: {createdOrder.payment_method?.name}</p>
-                    {createdOrder.payment_method?.code === "BANK_TRANSFER" ? (
-                      <div className="mt-2 rounded-lg bg-amber-50 p-3 text-amber-900 border border-amber-200 text-xs leading-relaxed">
-                        <p className="font-bold">Hướng dẫn chuyển khoản:</p>
-                        <p>Số tiền: <strong>{formatCurrencyVND(createdOrder.total_amount)}</strong></p>
-                        <p>Nội dung chuyển khoản (bắt buộc): <strong className="font-mono text-sm bg-amber-100 px-1 py-0.5 rounded">{createdOrder.order_code}</strong></p>
-                      </div>
-                    ) : (
-                      <p className="text-xs text-slate-500 mt-1">Vui lòng chuẩn bị đủ tiền mặt khi nhân viên giao hàng liên hệ.</p>
-                    )}
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <p className="font-semibold text-sm">Đơn hàng tách theo shop ({createdOrder.shop_orders?.length} shop):</p>
-                  {createdOrder.shop_orders?.map((so) => (
-                    <div key={so.id} className="rounded-lg border p-3 text-xs flex justify-between items-center bg-white shadow-sm">
-                      <div>
-                        <p className="font-bold text-slate-800">{so.shop_name}</p>
-                        <p className="text-slate-500 font-mono">Mã: {so.shop_order_code}</p>
-                        <p className="text-slate-500">{so.item_count} sản phẩm</p>
-                      </div>
-                      <div className="text-right">
-                        <span className="font-bold text-sm text-primary">{formatCurrencyVND(so.total_amount)}</span>
-                        <span className="block px-2 py-0.5 mt-1 rounded text-[10px] font-semibold bg-amber-100 text-amber-800 text-center">Chờ xác nhận</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="border-t pt-3 flex justify-between items-center">
-                  <span className="font-bold text-slate-800">Tổng thanh toán:</span>
-                  <span className="text-xl font-black text-primary">{formatCurrencyVND(createdOrder.total_amount)}</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setCheckoutOpen(false)}
-                  className="w-full rounded-xl bg-primary px-4 py-3 font-bold text-white shadow hover:bg-primary-container transition-all"
-                >
-                  Hoàn tất
-                </button>
-              </div>
-            ) : addresses.length===0 ? <div className="rounded-xl bg-amber-50 p-4 text-sm">Bạn chưa có địa chỉ giao hàng. Hãy thêm địa chỉ trong trang tài khoản rồi quay lại.<button type="button" onClick={()=>navigate("/profile/address")} className="ml-2 font-bold text-primary underline">Quản lý địa chỉ</button></div> : <div className="space-y-4">
-              <label className="block text-sm font-semibold">Địa chỉ nhận hàng<select value={addressId} onChange={(e)=>{setAddressId(Number(e.target.value));setCheckoutQuote(null);}} className="mt-1 w-full rounded-lg border p-3">{addresses.map((a)=><option key={a.id} value={a.id}>{a.recipient_name} · {a.phone} · {a.street_detail}, {a.ward}, {a.district}, {a.province}</option>)}</select></label>
-              <label className="block text-sm font-semibold">Vận chuyển<select value={shippingMethodId} onChange={(e)=>{setShippingMethodId(Number(e.target.value));setCheckoutQuote(null);}} className="mt-1 w-full rounded-lg border p-3">{shippingMethods.map((m)=><option key={m.id} value={m.id}>{m.name} · {formatCurrencyVND(m.base_fee??0)}{m.estimated_days?` · ${m.estimated_days}`:""}</option>)}</select></label>
-              <label className="block text-sm font-semibold">Thanh toán<select value={paymentMethodId} onChange={(e)=>{setPaymentMethodId(Number(e.target.value));setCheckoutQuote(null);}} className="mt-1 w-full rounded-lg border p-3">{paymentMethods.map((m)=><option key={m.id} value={m.id}>{m.name}</option>)}</select></label>
-              <button type="button" disabled={isCheckingOut || isPlacingOrder} onClick={handleCalculateQuote} className="w-full rounded-xl bg-slate-800 px-4 py-3 font-bold text-white disabled:opacity-50">{isCheckingOut?"Đang tính...":"Tính phí và xem báo giá"}</button>
-              {checkoutQuote && (
-                <section aria-live="polite" className="rounded-xl border bg-slate-50 p-4 space-y-3 text-sm">
-                  <p className="font-bold text-slate-800">Chi tiết báo giá</p>
-                  <div className="space-y-1 text-slate-600">
-                    <div className="flex justify-between"><span>Tiền hàng:</span><span>{formatCurrencyVND(checkoutQuote.subtotal)}</span></div>
-                    <div className="flex justify-between"><span>Phí giao hàng:</span><span>{formatCurrencyVND(checkoutQuote.shipping_fee)}</span></div>
-                    {checkoutQuote.shop_discount > 0 && <div className="flex justify-between text-green-700"><span>Giảm giá shop:</span><span>−{formatCurrencyVND(checkoutQuote.shop_discount)}</span></div>}
-                    {checkoutQuote.platform_discount > 0 && <div className="flex justify-between text-green-700"><span>Voucher sàn:</span><span>−{formatCurrencyVND(checkoutQuote.platform_discount)}</span></div>}
-                    <div className="border-t pt-2 flex justify-between items-center text-base font-black text-on-surface">
-                      <span>Tổng thanh toán:</span>
-                      <span className="text-lg text-primary">{formatCurrencyVND(checkoutQuote.total)}</span>
-                    </div>
-                  </div>
-                  <label className="block pt-2">
-                    <span className="text-xs font-semibold text-slate-700">Ghi chú cho đơn hàng (tùy chọn):</span>
-                    <input
-                      type="text"
-                      maxLength={500}
-                      value={orderNote}
-                      onChange={(e) => setOrderNote(e.target.value)}
-                      placeholder="Ví dụ: Giao giờ hành chính, gọi trước khi giao..."
-                      className="mt-1 w-full rounded-lg border bg-white p-2.5 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-primary"
-                    />
-                  </label>
-                  <button
-                    type="button"
-                    disabled={isPlacingOrder}
-                    onClick={handlePlaceOrder}
-                    className="w-full rounded-xl bg-primary px-4 py-3.5 font-bold text-white shadow-md hover:bg-primary-container transition-all disabled:opacity-50 cursor-pointer text-base flex items-center justify-center gap-2"
-                  >
-                    {isPlacingOrder ? (
-                      <>
-                        <span className="material-symbols-outlined animate-spin text-[20px]">progress_activity</span>
-                        <span>Đang xử lý đơn hàng...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="material-symbols-outlined text-[20px]">shopping_bag</span>
-                        <span>Xác nhận đặt hàng</span>
-                      </>
-                    )}
-                  </button>
-                </section>
-              )}
-            </div>}
-          </div>
-        </div>
-      )}
     </CustomerLayout>
   );
 };

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "@/app/state/store";
 import { refreshAccessToken, registerUser } from "@/domains/auth/state/authSlice";
 import {
@@ -16,6 +16,7 @@ import {
 import {
   Step1Stepper,
   Step1FooterBar,
+  Step1AccountPanel,
 } from "@/domains/shop/components/register/step1";
 import { shopRegisterApi, type BackendShop } from "@/domains/shop/api/shopRegisterApi";
 
@@ -219,34 +220,33 @@ export const RegisterOpenShopStep1: React.FC = () => {
 
                 {/* Form Content Wrapper with width matching Stepper */}
                 <div className="w-full flex flex-col gap-space-lg mb-20">
-              <div className="w-full bg-surface-container-lowest rounded-2xl shadow-sm p-6 sm:p-10 transition-all">
-                <div className="max-w-3xl space-y-4">
-                  <p className="inline-flex rounded-full bg-primary-fixed px-3 py-1 text-label-sm font-semibold text-on-primary-fixed">
-                    Một tài khoản cho cả mua sắm và bán hàng
-                  </p>
-                  <h2 className="text-2xl font-bold text-on-surface">{user ? "Dùng tài khoản hiện tại để mở shop" : "Tạo tài khoản để bắt đầu bán hàng"}</h2>
-                  <p className="text-on-surface-variant">
-                    {user ? "Bạn không cần tạo tài khoản người bán riêng. Sau khi shop được duyệt, tài khoản này được bổ sung quyền SELLER và vẫn giữ quyền mua hàng." : "Tạo một tài khoản duy nhất để mua sắm và đăng ký bán hàng. Quyền SELLER chỉ được cấp sau khi admin duyệt hồ sơ."}
-                  </p>
-                  <dl className="grid gap-3 rounded-xl bg-surface-container-low p-4 sm:grid-cols-2">
-                    {user ? <>
-                      <div><dt className="text-sm text-on-surface-variant">Chủ tài khoản</dt><dd className="font-semibold">{user.full_name}</dd></div>
-                      <div><dt className="text-sm text-on-surface-variant">Email</dt><dd className="font-semibold">{user.email || "Chưa có email"}</dd></div>
-                      <div><dt className="text-sm text-on-surface-variant">Số điện thoại</dt><dd className="font-semibold">{user.phone}</dd></div>
-                      <div><dt className="text-sm text-on-surface-variant">Vai trò hiện tại</dt><dd className="font-semibold">{user.roles?.join(", ") || user.role}</dd></div>
-                    </> : <div className="grid gap-4 sm:grid-cols-2">
-                      <label className="text-sm font-medium">Họ và tên<input required autoComplete="name" value={formData.account.fullName} onChange={(e) => dispatch(updateAccount({ fullName: e.target.value }))} className="mt-1 w-full rounded-lg border p-3" /></label>
-                      <label className="text-sm font-medium">Email<input required type="email" autoComplete="email" value={formData.account.email} onChange={(e) => dispatch(updateAccount({ email: e.target.value }))} className="mt-1 w-full rounded-lg border p-3" /></label>
-                      <label className="text-sm font-medium">Số điện thoại<input required type="tel" autoComplete="tel" value={formData.account.phone} onChange={(e) => dispatch(updateAccount({ phone: e.target.value }))} className="mt-1 w-full rounded-lg border p-3" /></label>
-                      <label className="text-sm font-medium">Mật khẩu<input required type="password" autoComplete="new-password" minLength={10} value={formData.account.password} onChange={(e) => dispatch(updateAccount({ password: e.target.value }))} className="mt-1 w-full rounded-lg border p-3" /><span className="text-xs text-slate-500">Ít nhất 10 ký tự, gồm chữ cái và chữ số.</span></label>
-                      <label className="text-sm font-medium sm:col-span-2">Xác nhận mật khẩu<input required type="password" autoComplete="new-password" value={formData.account.confirmPassword} onChange={(e) => dispatch(updateAccount({ confirmPassword: e.target.value }))} className="mt-1 w-full rounded-lg border p-3" /></label>
-                      <p className="text-sm text-slate-600 sm:col-span-2">Tài khoản mới được tạo với quyền người mua. Quyền người bán chỉ được cấp khi shop được admin duyệt.</p>
-                      <p className="text-sm sm:col-span-2">Đã có tài khoản? <Link className="font-semibold text-indigo-700 underline" to="/login" state={{ from: { pathname: "/register-open-shop" } }}>Đăng nhập để tiếp tục</Link></p>
-                    </div>}
-                  </dl>
-                </div>
-              </div>
-              {(notice || registrationError) && <p role="alert" className="rounded-lg bg-blue-50 p-3 text-sm text-blue-900">{notice || registrationError}</p>}
+                <Step1AccountPanel
+                  data={formData.account}
+                  onChange={(fields) => dispatch(updateAccount(fields))}
+                  user={user}
+                />
+
+                {(notice || registrationError) && (
+                  <div
+                    role="alert"
+                    className="p-4 rounded-xl bg-error-container/30 border border-error/40 text-on-error-container text-sm font-medium flex items-center justify-between gap-3 shadow-xs"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className="material-symbols-outlined text-error text-[20px]">
+                        error
+                      </span>
+                      <span>{notice || registrationError}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setNotice(null)}
+                      className="text-outline hover:text-on-surface p-1 rounded-lg cursor-pointer"
+                      title="Đóng thông báo"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">close</span>
+                    </button>
+                  </div>
+                )}
 
               {/* Action Footer Bar */}
               <Step1FooterBar

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "@/app/state/store";
 import { openLogoutModal } from "@/domains/auth/state/authSlice";
 import { getDefaultAvatar } from "@/shared/utils/avatar";
@@ -7,6 +7,7 @@ import { fetchCart, resetCart } from "@/domains/customer/state/cartSlice";
 import { fetchWishlist, resetWishlist } from "@/domains/customer/state/wishlistSlice";
 import { formatCurrencyVND } from "@/shared/utils/currency";
 import { BrandIcon } from "@/shared/components/common/BrandLogo";
+import SwitchToShopModal from "@/shared/components/common/SwitchToShopModal";
 
 export interface HeaderProps {
   cartItemCount?: number;
@@ -20,20 +21,33 @@ const Header: React.FC<HeaderProps> = ({
   wishlistCount = 0,
 }) => {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const { user, isAuthenticated } = useAppSelector((state) => state.auth);
   const { profile } = useAppSelector((state) => state.profile);
   const cartState = useAppSelector((state) => state.cart);
   const wishlistState = useAppSelector((state) => state.wishlist);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+  const [isSwitchShopModalOpen, setIsSwitchShopModalOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   const userAvatar =
     profile?.avatar_url || user?.avatar_url || getDefaultAvatar(user?.full_name || profile?.full_name);
-  const hasSellerRole =
-    (user?.roles?.includes("seller") ?? user?.role === "seller") &&
-    user?.shop_status === "ACTIVE";
-  const sellerEntryPath = hasSellerRole ? "/shop/dashboard" : "/register-open-shop";
+  const userRoles = (
+    user?.roles?.length ? user.roles : user?.role ? [user.role] : []
+  ).map((v) => String(v).toLowerCase().trim());
+  const hasSellerRole = userRoles.includes("seller");
+
+  const handleOpenSwitchShop = () => {
+    setShowUserMenu(false);
+    setIsMobileDrawerOpen(false);
+    setIsSwitchShopModalOpen(true);
+  };
+
+  const handleConfirmSwitchShop = () => {
+    setIsSwitchShopModalOpen(false);
+    navigate("/shop/dashboard");
+  };
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -329,14 +343,16 @@ const Header: React.FC<HeaderProps> = ({
                       <span>Hồ sơ của tôi</span>
                     </Link>
 
-                    <Link
-                      to={sellerEntryPath}
-                      onClick={() => setShowUserMenu(false)}
-                      className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-on-surface hover:bg-surface-container hover:text-primary transition-colors cursor-pointer"
-                    >
-                      <span className="material-symbols-outlined text-[16px]">storefront</span>
-                      <span>Gian hàng của tôi</span>
-                    </Link>
+                    {hasSellerRole && (
+                      <button
+                        type="button"
+                        onClick={handleOpenSwitchShop}
+                        className="w-full flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-on-surface hover:bg-surface-container hover:text-primary transition-colors cursor-pointer text-left"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">storefront</span>
+                        <span>Gian hàng của tôi</span>
+                      </button>
+                    )}
 
                     <button
                       type="button"
@@ -456,21 +472,23 @@ const Header: React.FC<HeaderProps> = ({
                     </span>
                   </Link>
 
-                  <Link
-                    to={sellerEntryPath}
-                    onClick={() => setIsMobileDrawerOpen(false)}
-                    className="flex items-center justify-between px-2 py-2 rounded-xl text-xs font-semibold text-on-surface hover:bg-surface-container transition-colors cursor-pointer"
-                  >
-                    <span className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-[18px] text-primary">
-                        storefront
+                  {hasSellerRole && (
+                    <button
+                      type="button"
+                      onClick={handleOpenSwitchShop}
+                      className="w-full flex items-center justify-between px-2 py-2 rounded-xl text-xs font-semibold text-on-surface hover:bg-surface-container transition-colors cursor-pointer text-left"
+                    >
+                      <span className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[18px] text-primary">
+                          storefront
+                        </span>
+                        <span>Gian hàng của tôi</span>
                       </span>
-                      <span>Gian hàng của tôi</span>
-                    </span>
-                    <span className="material-symbols-outlined text-outline text-[16px]">
-                      chevron_right
-                    </span>
-                  </Link>
+                      <span className="material-symbols-outlined text-outline text-[16px]">
+                        chevron_right
+                      </span>
+                    </button>
+                  )}
 
                   <button
                     type="button"
@@ -562,6 +580,13 @@ const Header: React.FC<HeaderProps> = ({
           MarketPulse © 2026 – Nền tảng thương mại điện tử
         </div>
       </aside>
+
+      <SwitchToShopModal
+        isOpen={isSwitchShopModalOpen}
+        onClose={() => setIsSwitchShopModalOpen(false)}
+        onConfirm={handleConfirmSwitchShop}
+        userName={user?.full_name}
+      />
     </>
   );
 };

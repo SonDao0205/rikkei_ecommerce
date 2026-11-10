@@ -89,7 +89,7 @@ export const AddProductBasicInfo: React.FC<AddProductBasicInfoProps> = ({
             type="text"
             value={formData.name}
             onChange={(e) => onChange({ name: e.target.value })}
-            placeholder="Ví dụ: Giày Sneaker Nam Phong Cách Retro Runner V2..."
+            placeholder="Ví dụ: Giày Sneaker Nam Phong Cách Retro Runner V2 Cổ Thấp Da Lộn..."
             className={`w-full bg-surface-container-low focus:bg-surface-container-lowest text-on-surface font-body-md text-body-md px-4 py-2.5 rounded-xl outline-none ring-1 transition-all ${
               isNameOverLimit
                 ? "ring-error focus:ring-2 focus:ring-error"
@@ -115,18 +115,24 @@ export const AddProductBasicInfo: React.FC<AddProductBasicInfoProps> = ({
         </label>
         <div className="p-3.5 bg-surface-container-low rounded-xl flex flex-wrap items-center justify-between gap-3 border border-outline-variant/20">
           <div className="flex items-center flex-wrap gap-2 text-on-surface font-label-md text-label-md">
-            {formData.categoryPath.map((path, idx) => (
-              <React.Fragment key={path}>
-                <span className="px-3 py-1 rounded-lg bg-surface-container-lowest text-on-surface shadow-xs font-semibold">
-                  {path}
-                </span>
-                {idx < formData.categoryPath.length - 1 && (
-                  <span className="material-symbols-outlined text-[14px] text-outline">
-                    arrow_forward
+            {formData.categoryPath.length > 0 ? (
+              formData.categoryPath.map((path, idx) => (
+                <React.Fragment key={path}>
+                  <span className="px-3 py-1 rounded-lg bg-surface-container-lowest text-on-surface shadow-xs font-semibold">
+                    {path}
                   </span>
-                )}
-              </React.Fragment>
-            ))}
+                  {idx < formData.categoryPath.length - 1 && (
+                    <span className="material-symbols-outlined text-[14px] text-outline">
+                      arrow_forward
+                    </span>
+                  )}
+                </React.Fragment>
+              ))
+            ) : (
+              <span className="text-outline italic font-body-sm">
+                Chưa chọn ngành hàng &amp; danh mục sản phẩm (Nhấp nút &quot;Chọn danh mục&quot; bên phải)
+              </span>
+            )}
           </div>
           <button
             type="button"
@@ -134,7 +140,7 @@ export const AddProductBasicInfo: React.FC<AddProductBasicInfoProps> = ({
             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-surface-container-lowest hover:bg-surface-container text-primary font-label-md text-label-md shadow-xs transition-colors cursor-pointer"
           >
             <span className="material-symbols-outlined text-[16px]">edit</span>
-            <span>Thay đổi danh mục</span>
+            <span>{formData.categoryPath.length > 0 ? "Thay đổi danh mục" : "Chọn danh mục"}</span>
           </button>
         </div>
       </div>
@@ -261,7 +267,7 @@ export const AddProductBasicInfo: React.FC<AddProductBasicInfoProps> = ({
               type="button"
               onClick={() =>
                 handleApplyFormat(
-                  "\n| Thông số | Giá trị |\n| --- | --- |\n| Chất liệu | Da lộn tự nhiên |\n| Trọng lượng | 650g |\n"
+                  "\n| Thông số | Giá trị |\n| --- | --- |\n| Chất liệu | Da tự nhiên |\n| Trọng lượng | 500g |\n"
                 )
               }
               className="p-1.5 rounded-lg hover:bg-surface-container-lowest hover:text-on-surface transition-colors cursor-pointer"
@@ -283,7 +289,7 @@ export const AddProductBasicInfo: React.FC<AddProductBasicInfoProps> = ({
             value={formData.description}
             onChange={(e) => onChange({ description: e.target.value })}
             className="w-full bg-transparent px-4 py-3 text-on-surface font-body-md text-body-md outline-none resize-y leading-relaxed"
-            placeholder="Nhập thông tin mô tả chi tiết, ưu điểm, bảng kích cỡ và bảo hành sản phẩm..."
+            placeholder="• Nhập thông tin mô tả chi tiết sản phẩm...&#10;• Đặc tính chất liệu, kiểu dáng và quy cách hoàn thiện...&#10;• Hướng dẫn bảo quản, đổi trả và bảo hành chính hãng..."
           />
         </div>
       </div>
@@ -291,3 +297,4 @@ export const AddProductBasicInfo: React.FC<AddProductBasicInfoProps> = ({
   );
 };
 
+export default AddProductBasicInfo;

@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import CustomerLayout from "@/app/layout/CustomerLayout";
 import ProductBreadcrumb from "@/domains/storefront/components/product/ProductBreadcrumb";
 import ProductGallery from "@/domains/storefront/components/product/ProductGallery";
+import ProductReviewsSection from "@/domains/storefront/components/product/ProductReviewsSection";
 import ProductShopInfo from "@/domains/storefront/components/product/ProductShopInfo";
 import ProductOrderSection from "@/domains/storefront/components/product/ProductOrderSection";
 import ProductAccordions from "@/domains/storefront/components/product/ProductAccordions";
@@ -172,7 +173,9 @@ export const ProductDetail: React.FC = () => {
             {/* Breadcrumb Hierarchy Navigation */}
             <ProductBreadcrumb
               categoryName={product.category_name}
+              categoryId={product.category_id}
               shopName={shop?.name || product.shop_name}
+              shopId={shop?.id || product.shop_id}
               productName={product.name}
             />
 
@@ -186,6 +189,12 @@ export const ProductDetail: React.FC = () => {
                   productName={product.name}
                   discountPercent={product.discount_percent}
                   badgeInfo={product.badge_info || "Chính hãng • MarketPulse Store"}
+                />
+
+                {/* Product Reviews Section (Input, 5 Latest Reviews, All Reviews Modal) */}
+                <ProductReviewsSection
+                  productId={product.id}
+                  productName={product.name}
                 />
               </div>
 

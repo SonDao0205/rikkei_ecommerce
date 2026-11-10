@@ -47,8 +47,14 @@ export const AddProductShipping: React.FC<AddProductShippingProps> = ({
           <div className="relative">
             <input
               type="number"
-              value={formData.weightGram}
-              onChange={(e) => onChange({ weightGram: Number(e.target.value) })}
+              min={0}
+              value={formData.weightGram === 0 ? "" : formData.weightGram}
+              onChange={(e) =>
+                onChange({
+                  weightGram: e.target.value === "" ? 0 : Math.max(0, Number(e.target.value)),
+                })
+              }
+              placeholder="Ví dụ: 650"
               className="w-full bg-surface-container-low focus:bg-surface-container-lowest text-on-surface font-body-md text-body-md px-4 py-2.5 rounded-xl outline-none ring-1 ring-outline-variant/40 focus:ring-2 focus:ring-primary transition-all pr-16"
             />
             <span className="absolute right-4 top-2.5 font-label-md text-label-md text-outline">
@@ -70,8 +76,14 @@ export const AddProductShipping: React.FC<AddProductShippingProps> = ({
             <div className="relative">
               <input
                 type="number"
-                value={formData.lengthCm}
-                onChange={(e) => onChange({ lengthCm: Number(e.target.value) })}
+                min={0}
+                value={formData.lengthCm === 0 ? "" : formData.lengthCm}
+                onChange={(e) =>
+                  onChange({
+                    lengthCm: e.target.value === "" ? 0 : Math.max(0, Number(e.target.value)),
+                  })
+                }
+                placeholder="Dài (VD: 30)"
                 className="w-full bg-surface-container-low focus:bg-surface-container-lowest text-on-surface font-body-md text-body-md px-3.5 py-2.5 rounded-xl outline-none ring-1 ring-outline-variant/40 focus:ring-2 focus:ring-primary transition-all pr-14"
               />
               <span className="absolute right-3 top-2.5 font-label-sm text-label-sm text-outline">
@@ -81,8 +93,14 @@ export const AddProductShipping: React.FC<AddProductShippingProps> = ({
             <div className="relative">
               <input
                 type="number"
-                value={formData.widthCm}
-                onChange={(e) => onChange({ widthCm: Number(e.target.value) })}
+                min={0}
+                value={formData.widthCm === 0 ? "" : formData.widthCm}
+                onChange={(e) =>
+                  onChange({
+                    widthCm: e.target.value === "" ? 0 : Math.max(0, Number(e.target.value)),
+                  })
+                }
+                placeholder="Rộng (VD: 20)"
                 className="w-full bg-surface-container-low focus:bg-surface-container-lowest text-on-surface font-body-md text-body-md px-3.5 py-2.5 rounded-xl outline-none ring-1 ring-outline-variant/40 focus:ring-2 focus:ring-primary transition-all pr-16"
               />
               <span className="absolute right-3 top-2.5 font-label-sm text-label-sm text-outline">
@@ -92,8 +110,14 @@ export const AddProductShipping: React.FC<AddProductShippingProps> = ({
             <div className="relative">
               <input
                 type="number"
-                value={formData.heightCm}
-                onChange={(e) => onChange({ heightCm: Number(e.target.value) })}
+                min={0}
+                value={formData.heightCm === 0 ? "" : formData.heightCm}
+                onChange={(e) =>
+                  onChange({
+                    heightCm: e.target.value === "" ? 0 : Math.max(0, Number(e.target.value)),
+                  })
+                }
+                placeholder="Cao (VD: 12)"
                 className="w-full bg-surface-container-low focus:bg-surface-container-lowest text-on-surface font-body-md text-body-md px-3.5 py-2.5 rounded-xl outline-none ring-1 ring-outline-variant/40 focus:ring-2 focus:ring-primary transition-all pr-14"
               />
               <span className="absolute right-3 top-2.5 font-label-sm text-label-sm text-outline">
@@ -134,3 +158,4 @@ export const AddProductShipping: React.FC<AddProductShippingProps> = ({
   );
 };
 
+export default AddProductShipping;
