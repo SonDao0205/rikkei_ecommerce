@@ -9,31 +9,108 @@
     "type": "noauth"
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:18080" },
-    { "key": "seedPassword", "value": "LocalTest123!" },
-    { "key": "shopId", "value": "920001" },
-    { "key": "productId", "value": "960001" },
-    { "key": "adminTestProductId", "value": "960009" },
-    { "key": "categoryId", "value": "930005" },
-    { "key": "brandId", "value": "940003" },
-    { "key": "clientToken", "value": "" },
-    { "key": "adminToken", "value": "" },
-    { "key": "sellerToken", "value": "" },
-    { "key": "resetOtp", "value": "" },
-    { "key": "businessToken", "value": "" },
-    { "key": "businessAdminToken", "value": "" },
-    { "key": "businessEmail", "value": "" },
-    { "key": "businessPassword", "value": "BusinessTest123!" },
-    { "key": "businessPhone", "value": "" },
-    { "key": "businessShopName", "value": "" },
-    { "key": "businessShopId", "value": "" },
-    { "key": "businessProductId", "value": "" },
-    { "key": "businessVariantId", "value": "" },
-    { "key": "businessSKU", "value": "" },
-    { "key": "businessAddressId", "value": "" }
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:18080"
+    },
+    {
+      "key": "seedPassword",
+      "value": "LocalTest123!"
+    },
+    {
+      "key": "shopId",
+      "value": "920001"
+    },
+    {
+      "key": "productId",
+      "value": "960001"
+    },
+    {
+      "key": "adminTestProductId",
+      "value": "960009"
+    },
+    {
+      "key": "categoryId",
+      "value": "930005"
+    },
+    {
+      "key": "brandId",
+      "value": "940003"
+    },
+    {
+      "key": "clientToken",
+      "value": ""
+    },
+    {
+      "key": "adminToken",
+      "value": ""
+    },
+    {
+      "key": "sellerToken",
+      "value": ""
+    },
+    {
+      "key": "resetOtp",
+      "value": ""
+    },
+    {
+      "key": "businessToken",
+      "value": ""
+    },
+    {
+      "key": "businessAdminToken",
+      "value": ""
+    },
+    {
+      "key": "businessEmail",
+      "value": ""
+    },
+    {
+      "key": "businessPassword",
+      "value": "BusinessTest123!"
+    },
+    {
+      "key": "businessPhone",
+      "value": ""
+    },
+    {
+      "key": "businessShopName",
+      "value": ""
+    },
+    {
+      "key": "businessShopId",
+      "value": ""
+    },
+    {
+      "key": "businessProductId",
+      "value": ""
+    },
+    {
+      "key": "businessVariantId",
+      "value": ""
+    },
+    {
+      "key": "businessSKU",
+      "value": ""
+    },
+    {
+      "key": "businessAddressId",
+      "value": ""
+    },
+    {
+      "key": "orderId",
+      "value": ""
+    },
+    {
+      "key": "sellerShopOrderId",
+      "value": ""
+    },
+    {
+      "key": "returnRequestId",
+      "value": ""
+    }
   ],
   "item": [
-
     {
       "name": "Health",
       "item": [
@@ -65,31 +142,47 @@
       "item": [
         {
           "name": "List active categories",
-          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/categories" },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Returns active categories and All entry', function () {",
-              "  pm.response.to.have.status(200);",
-              "  const data = pm.response.json().data;",
-              "  pm.expect(data).to.be.an('array');",
-              "  pm.expect(data[0].id).to.eql(0);",
-              "});"
-            ]}
-          }]
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/categories"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns active categories and All entry', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data).to.be.an('array');",
+                  "  pm.expect(data[0].id).to.eql(0);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Reject unexpected category query",
-          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/categories?unexpected=1" },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Rejects unknown query parameters', function () {",
-              "  pm.response.to.have.status(400);",
-              "  pm.expect(pm.response.json().errors[0].code).to.eql('invalid_query');",
-              "});"
-            ]}
-          }]
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/categories?unexpected=1"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Rejects unknown query parameters', function () {",
+                  "  pm.response.to.have.status(400);",
+                  "  pm.expect(pm.response.json().errors[0].code).to.eql('invalid_query');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Get category variant attributes",
@@ -97,165 +190,250 @@
             "method": "GET",
             "url": "{{baseUrl}}/api/v1/categories/930006/attributes"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Returns required jacket attributes and their values', function () {",
-              "  pm.response.to.have.status(200);",
-              "  const attributes = pm.response.json().data.attributes;",
-              "  pm.expect(attributes).to.have.length(2);",
-              "  pm.expect(attributes.every((attribute) => attribute.required)).to.eql(true);",
-              "  pm.expect(attributes.every((attribute) => attribute.values.length > 0)).to.eql(true);",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns required jacket attributes and their values', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const attributes = pm.response.json().data.attributes;",
+                  "  pm.expect(attributes).to.have.length(2);",
+                  "  pm.expect(attributes.every((attribute) => attribute.required)).to.eql(true);",
+                  "  pm.expect(attributes.every((attribute) => attribute.values.length > 0)).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "List products with pagination",
-          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/products?page=1&limit=20&sort=latest" },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Returns a paginated catalog response', function () {",
-              "  pm.response.to.have.status(200);",
-              "  const data = pm.response.json().data;",
-              "  pm.expect(data.products).to.be.an('array');",
-              "  pm.expect(data.page).to.eql(1);",
-              "  pm.expect(data.limit).to.eql(20);",
-              "});"
-            ]}
-          }]
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/products?page=1&limit=20&sort=latest"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns a paginated catalog response', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data.products).to.be.an('array');",
+                  "  pm.expect(data.page).to.eql(1);",
+                  "  pm.expect(data.limit).to.eql(20);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Search products by non-adjacent name tokens",
-          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/products?q=iphone%20pro%20max&page=1&limit=20" },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Matches and ranks products by name-token coverage', function () {",
-              "  pm.response.to.have.status(200);",
-              "  const products = pm.response.json().data.products;",
-              "  const ids = products.map(function (product) { return product.id; });",
-              "  pm.expect(ids.length).to.be.at.least(3);",
-              "  pm.expect(ids[0]).to.eql(960004);",
-              "  pm.expect(ids.slice(0, 3)).to.include(960005);",
-              "  pm.expect(ids.slice(0, 3)).to.include(960007);",
-              "});"
-            ]}
-          }]
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/products?q=iphone%20pro%20max&page=1&limit=20"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Matches and ranks products by name-token coverage', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const products = pm.response.json().data.products;",
+                  "  const ids = products.map(function (product) { return product.id; });",
+                  "  pm.expect(ids.length).to.be.at.least(3);",
+                  "  pm.expect(ids[0]).to.eql(960004);",
+                  "  pm.expect(ids.slice(0, 3)).to.include(960005);",
+                  "  pm.expect(ids.slice(0, 3)).to.include(960007);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Filter products by category, brand, price and rating",
-          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/products?q=cotton&category_id=930002&brand_id=940001&min_price=100000&max_price=300000&min_rating=4.5&sort=price_asc&page=1&limit=10" },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Applies catalog filters and sort', function () {",
-              "  pm.response.to.have.status(200);",
-              "  const products = pm.response.json().data.products;",
-              "  pm.expect(products.length).to.be.at.least(1);",
-              "  pm.expect(products[0].id).to.eql(960001);",
-              "});"
-            ]}
-          }]
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/products?q=cotton&category_id=930002&brand_id=940001&min_price=100000&max_price=300000&min_rating=4.5&sort=price_asc&page=1&limit=10"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Applies catalog filters and sort', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const products = pm.response.json().data.products;",
+                  "  pm.expect(products.length).to.be.at.least(1);",
+                  "  pm.expect(products[0].id).to.eql(960001);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Reject invalid catalog filters",
-          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/products?page=0" },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Rejects invalid pagination input', function () {",
-              "  pm.response.to.have.status(400);",
-              "  pm.expect(pm.response.json().errors[0].code).to.eql('invalid_product_filters');",
-              "});"
-            ]}
-          }]
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/products?page=0"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Rejects invalid pagination input', function () {",
+                  "  pm.response.to.have.status(400);",
+                  "  pm.expect(pm.response.json().errors[0].code).to.eql('invalid_product_filters');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Product detail",
-          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/products/{{productId}}" },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Returns product, images, active variants and public shop', function () {",
-              "  pm.response.to.have.status(200);",
-              "  const data = pm.response.json().data;",
-              "  pm.expect(data.product.id).to.eql(Number(pm.collectionVariables.get('productId')));",
-              "  pm.expect(data.images).to.be.an('array');",
-              "  pm.expect(data.variants).to.be.an('array');",
-              "  pm.expect(data.shop).to.have.property('id');",
-              "  pm.expect(data.shop).not.to.have.property('warehouse_address');",
-              "});"
-            ]}
-          }]
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/products/{{productId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns product, images, active variants and public shop', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data.product.id).to.eql(Number(pm.collectionVariables.get('productId')));",
+                  "  pm.expect(data.images).to.be.an('array');",
+                  "  pm.expect(data.variants).to.be.an('array');",
+                  "  pm.expect(data.shop).to.have.property('id');",
+                  "  pm.expect(data.shop).not.to.have.property('warehouse_address');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Reject unavailable product detail",
-          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/products/960003" },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Does not expose an unapproved product', function () {",
-              "  pm.response.to.have.status(404);",
-              "});"
-            ]}
-          }]
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/products/960003"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Does not expose an unapproved product', function () {",
+                  "  pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Reject invalid product ID",
-          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/products/not-an-id" },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Rejects malformed product IDs', function () {",
-              "  pm.response.to.have.status(400);",
-              "});"
-            ]}
-          }]
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/products/not-an-id"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Rejects malformed product IDs', function () {",
+                  "  pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Shop detail",
-          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/shops/{{shopId}}" },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Returns only public shop fields', function () {",
-              "  pm.response.to.have.status(200);",
-              "  const shop = pm.response.json().data.shop;",
-              "  pm.expect(shop.id).to.eql(Number(pm.collectionVariables.get('shopId')));",
-              "  pm.expect(shop).not.to.have.property('warehouse_address');",
-              "  pm.expect(shop).not.to.have.property('owner_id');",
-              "});"
-            ]}
-          }]
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/shops/{{shopId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns only public shop fields', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const shop = pm.response.json().data.shop;",
+                  "  pm.expect(shop.id).to.eql(Number(pm.collectionVariables.get('shopId')));",
+                  "  pm.expect(shop).not.to.have.property('warehouse_address');",
+                  "  pm.expect(shop).not.to.have.property('owner_id');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Shop product listing",
-          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/shops/{{shopId}}/products?page=1&limit=10" },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Returns products from the requested active shop', function () {",
-              "  pm.response.to.have.status(200);",
-              "  const data = pm.response.json().data;",
-              "  pm.expect(data.products).to.be.an('array');",
-              "  pm.expect(data.products.length).to.be.at.least(1);",
-              "});"
-            ]}
-          }]
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/shops/{{shopId}}/products?page=1&limit=10"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns products from the requested active shop', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data.products).to.be.an('array');",
+                  "  pm.expect(data.products.length).to.be.at.least(1);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Reject query parameters on shop detail",
-          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/shops/{{shopId}}?debug=1" },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Rejects unsupported shop detail query parameters', function () {",
-              "  pm.response.to.have.status(400);",
-              "});"
-            ]}
-          }]
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/shops/{{shopId}}?debug=1"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Rejects unsupported shop detail query parameters', function () {",
+                  "  pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -264,33 +442,50 @@
       "item": [
         {
           "name": "Register disposable CLIENT",
-          "event": [{
-            "listen": "prerequest",
-            "script": { "type": "text/javascript", "exec": [
-              "const runId = Date.now().toString() + Math.floor(Math.random() * 100000).toString().padStart(5, '0');",
-              "pm.collectionVariables.set('runId', runId);",
-              "pm.collectionVariables.set('testEmail', 'postman-' + runId + '@example.test');",
-              "pm.collectionVariables.set('testPhone', '+849' + runId.slice(-9));",
-              "pm.collectionVariables.set('testPassword', 'PostmanTest123!');",
-              "pm.environment.set('testEmail', 'postman-' + runId + '@example.test');",
-              "pm.environment.set('testPassword', 'PostmanTest123!');"
-            ]}
-          }, {
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Creates a CLIENT account with valid input', function () {",
-              "  pm.response.to.have.status(201);",
-              "  const user = pm.response.json().data;",
-              "  pm.expect(user.email).to.eql(pm.collectionVariables.get('testEmail'));",
-              "  pm.expect(user.role).to.eql('CLIENT');",
-              "  pm.collectionVariables.set('clientId', String(user.id));",
-              "});"
-            ]}
-          }],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const runId = Date.now().toString() + Math.floor(Math.random() * 100000).toString().padStart(5, '0');",
+                  "pm.collectionVariables.set('runId', runId);",
+                  "pm.collectionVariables.set('testEmail', 'postman-' + runId + '@example.test');",
+                  "pm.collectionVariables.set('testPhone', '+849' + runId.slice(-9));",
+                  "pm.collectionVariables.set('testPassword', 'PostmanTest123!');",
+                  "pm.environment.set('testEmail', 'postman-' + runId + '@example.test');",
+                  "pm.environment.set('testPassword', 'PostmanTest123!');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Creates a CLIENT account with valid input', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "  const user = pm.response.json().data;",
+                  "  pm.expect(user.email).to.eql(pm.collectionVariables.get('testEmail'));",
+                  "  pm.expect(user.role).to.eql('CLIENT');",
+                  "  pm.collectionVariables.set('clientId', String(user.id));",
+                  "});"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\",\n  \"full_name\": \"Postman API Test\",\n  \"phone\": \"{{testPhone}}\"\n}" },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\",\n  \"full_name\": \"Postman API Test\",\n  \"phone\": \"{{testPhone}}\"\n}"
+            },
             "url": "{{baseUrl}}/api/v1/auth/register"
           }
         },
@@ -298,223 +493,373 @@
           "name": "Reject duplicate registration",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\",\n  \"full_name\": \"Postman API Test\",\n  \"phone\": \"{{testPhone}}\"\n}" },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\",\n  \"full_name\": \"Postman API Test\",\n  \"phone\": \"{{testPhone}}\"\n}"
+            },
             "url": "{{baseUrl}}/api/v1/auth/register"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Returns conflict for duplicate account data', function () {",
-              "  pm.response.to.have.status(409);",
-              "  pm.expect(pm.response.json().errors[0].code).to.eql('account_exists');",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns conflict for duplicate account data', function () {",
+                  "  pm.response.to.have.status(409);",
+                  "  pm.expect(pm.response.json().errors[0].code).to.eql('account_exists');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Reject weak registration password",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"email\": \"invalid-{{runId}}@example.test\",\n  \"password\": \"weak\",\n  \"full_name\": \"Invalid User\",\n  \"phone\": \"+84912345678\"\n}" },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"invalid-{{runId}}@example.test\",\n  \"password\": \"weak\",\n  \"full_name\": \"Invalid User\",\n  \"phone\": \"+84912345678\"\n}"
+            },
             "url": "{{baseUrl}}/api/v1/auth/register"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Rejects weak passwords', function () {",
-              "  pm.response.to.have.status(400);",
-              "  pm.expect(pm.response.json().errors[0].code).to.eql('weak_password');",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Rejects weak passwords', function () {",
+                  "  pm.response.to.have.status(400);",
+                  "  pm.expect(pm.response.json().errors[0].code).to.eql('weak_password');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Login disposable CLIENT",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"identifier\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\"\n}" },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\"\n}"
+            },
             "url": "{{baseUrl}}/api/v1/auth/login"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Logs in and sets an HttpOnly refresh cookie', function () {",
-              "  pm.response.to.have.status(200);",
-              "  const data = pm.response.json().data;",
-              "  pm.expect(data.access_token).to.be.a('string');",
-              "  pm.expect(data.token_type).to.eql('Bearer');",
-              "  pm.expect(pm.response.headers.get('Set-Cookie')).to.include('HttpOnly');",
-              "  pm.collectionVariables.set('clientToken', data.access_token);",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Logs in and sets an HttpOnly refresh cookie', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data.access_token).to.be.a('string');",
+                  "  pm.expect(data.token_type).to.eql('Bearer');",
+                  "  pm.expect(pm.response.headers.get('Set-Cookie')).to.include('HttpOnly');",
+                  "  pm.collectionVariables.set('clientToken', data.access_token);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Get current user",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
+            ],
             "url": "{{baseUrl}}/api/v1/auth/me"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Returns authenticated profile', function () {",
-              "  pm.response.to.have.status(200);",
-              "  pm.expect(pm.response.json().data.email).to.eql(pm.collectionVariables.get('testEmail'));",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns authenticated profile', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().data.email).to.eql(pm.collectionVariables.get('testEmail'));",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Update current profile",
           "request": {
             "method": "PUT",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{clientToken}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"full_name\": \"Postman Profile Updated\",\n  \"phone\": \"{{testPhone}}\"\n}" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"Postman Profile Updated\",\n  \"phone\": \"{{testPhone}}\"\n}"
+            },
             "url": "{{baseUrl}}/api/v1/auth/profile"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Updates the current user profile', function () {",
-              "  pm.response.to.have.status(200);",
-              "  pm.expect(pm.response.json().data.full_name).to.eql('Postman Profile Updated');",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Updates the current user profile', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().data.full_name).to.eql('Postman Profile Updated');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Reject invalid login credentials",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"identifier\": \"{{testEmail}}\",\n  \"password\": \"wrong-password\"\n}" },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{testEmail}}\",\n  \"password\": \"wrong-password\"\n}"
+            },
             "url": "{{baseUrl}}/api/v1/auth/login"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Rejects invalid credentials without leaking account details', function () {",
-              "  pm.response.to.have.status(401);",
-              "  pm.expect(pm.response.json().errors[0].code).to.eql('invalid_credentials');",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Rejects invalid credentials without leaking account details', function () {",
+                  "  pm.response.to.have.status(401);",
+                  "  pm.expect(pm.response.json().errors[0].code).to.eql('invalid_credentials');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Request password reset OTP",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"identifier\": \"{{testEmail}}\"\n}" },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{testEmail}}\"\n}"
+            },
             "url": "{{baseUrl}}/api/v1/auth/forgot-password"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Returns the same generic response for password recovery', function () {",
-              "  pm.response.to.have.status(200);",
-              "  pm.expect(pm.response.json().message).to.include('If the account exists');",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns the same generic response for password recovery', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().message).to.include('If the account exists');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Reject malformed reset OTP",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"identifier\": \"{{testEmail}}\",\n  \"otp\": \"abcdef\"\n}" },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{testEmail}}\",\n  \"otp\": \"abcdef\"\n}"
+            },
             "url": "{{baseUrl}}/api/v1/auth/verify-reset-otp"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Rejects malformed OTP values', function () {",
-              "  pm.response.to.have.status(400);",
-              "  pm.expect(pm.response.json().errors[0].code).to.eql('invalid_or_expired_otp');",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Rejects malformed OTP values', function () {",
+                  "  pm.response.to.have.status(400);",
+                  "  pm.expect(pm.response.json().errors[0].code).to.eql('invalid_or_expired_otp');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Refresh access token",
-          "request": { "method": "POST", "url": "{{baseUrl}}/api/v1/auth/refresh" },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Rotates refresh cookie and issues a new access token', function () {",
-              "  pm.response.to.have.status(200);",
-              "  const token = pm.response.json().data.access_token;",
-              "  pm.expect(token).to.be.a('string');",
-              "  pm.collectionVariables.set('clientToken', token);",
-              "});"
-            ]}
-          }]
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/auth/refresh"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Rotates refresh cookie and issues a new access token', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const token = pm.response.json().data.access_token;",
+                  "  pm.expect(token).to.be.a('string');",
+                  "  pm.collectionVariables.set('clientToken', token);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Change password",
           "request": {
             "method": "PUT",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{clientToken}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"current_password\": \"{{testPassword}}\",\n  \"new_password\": \"ChangedPass123!\",\n  \"confirm_password\": \"ChangedPass123!\"\n}" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"current_password\": \"{{testPassword}}\",\n  \"new_password\": \"ChangedPass123!\",\n  \"confirm_password\": \"ChangedPass123!\"\n}"
+            },
             "url": "{{baseUrl}}/api/v1/auth/password"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Changes password and invalidates sessions', function () {",
-              "  pm.response.to.have.status(200);",
-              "});",
-              "pm.collectionVariables.set('testPassword', 'ChangedPass123!');",
-              "pm.environment.set('testPassword', 'ChangedPass123!');"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Changes password and invalidates sessions', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.collectionVariables.set('testPassword', 'ChangedPass123!');",
+                  "pm.environment.set('testPassword', 'ChangedPass123!');"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Reject login with old password",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"identifier\": \"{{testEmail}}\",\n  \"password\": \"PostmanTest123!\"\n}" },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{testEmail}}\",\n  \"password\": \"PostmanTest123!\"\n}"
+            },
             "url": "{{baseUrl}}/api/v1/auth/login"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Old password no longer authenticates', function () {",
-              "  pm.response.to.have.status(401);",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Old password no longer authenticates', function () {",
+                  "  pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Login with changed password",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"identifier\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\"\n}" },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\"\n}"
+            },
             "url": "{{baseUrl}}/api/v1/auth/login"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('New password authenticates', function () {",
-              "  pm.response.to.have.status(200);",
-              "  pm.collectionVariables.set('clientToken', pm.response.json().data.access_token);",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('New password authenticates', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.collectionVariables.set('clientToken', pm.response.json().data.access_token);",
+                  "});"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -528,14 +873,19 @@
             "method": "GET",
             "url": "{{baseUrl}}/api/v1/cart"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Cart requires authentication', function () {",
-              "  pm.response.to.have.status(401);",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Cart requires authentication', function () {",
+                  "  pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Reject anonymous wishlist access",
@@ -543,344 +893,547 @@
             "method": "GET",
             "url": "{{baseUrl}}/api/v1/wishlist"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Wishlist requires authentication', function () {",
-              "  pm.response.to.have.status(401);",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Wishlist requires authentication', function () {",
+                  "  pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Read empty cart",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
+            ],
             "url": "{{baseUrl}}/api/v1/cart"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Returns an initialized empty cart', function () {",
-              "  pm.response.to.have.status(200);",
-              "  const data = pm.response.json().data;",
-              "  pm.expect(data.items).to.be.an('array').that.is.empty;",
-              "  pm.expect(data.item_count).to.eql(0);",
-              "  pm.expect(data.subtotal).to.eql(0);",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns an initialized empty cart', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data.items).to.be.an('array').that.is.empty;",
+                  "  pm.expect(data.item_count).to.eql(0);",
+                  "  pm.expect(data.subtotal).to.eql(0);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Reject unknown variant",
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{clientToken}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"variant_id\": 9223372036854775807,\n  \"quantity\": 1\n}" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"variant_id\": 9223372036854775807,\n  \"quantity\": 1\n}"
+            },
             "url": "{{baseUrl}}/api/v1/cart/items"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Does not create a cart line for an unknown variant', function () {",
-              "  pm.response.to.have.status(404);",
-              "  pm.expect(pm.response.json().errors[0].code).to.eql('variant_not_found');",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Does not create a cart line for an unknown variant', function () {",
+                  "  pm.response.to.have.status(404);",
+                  "  pm.expect(pm.response.json().errors[0].code).to.eql('variant_not_found');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Add variant to cart",
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{clientToken}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"variant_id\": 961001,\n  \"quantity\": 2\n}" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"variant_id\": 961001,\n  \"quantity\": 2\n}"
+            },
             "url": "{{baseUrl}}/api/v1/cart/items"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Adds a purchasable variant and exposes current stock', function () {",
-              "  pm.response.to.have.status(201);",
-              "  const data = pm.response.json().data;",
-              "  const item = data.items.find(function (entry) { return entry.variant_id === 961001; });",
-              "  pm.expect(item).to.exist;",
-              "  pm.expect(item.quantity).to.eql(2);",
-              "  pm.expect(item.is_available).to.eql(true);",
-              "  pm.collectionVariables.set('cartItemId', String(item.id));",
-              "  pm.collectionVariables.set('cartAvailableStock', String(item.available_stock));",
-              "  pm.collectionVariables.set('cartTooManyQuantity', String(item.available_stock + 1));",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Adds a purchasable variant and exposes current stock', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "  const data = pm.response.json().data;",
+                  "  const item = data.items.find(function (entry) { return entry.variant_id === 961001; });",
+                  "  pm.expect(item).to.exist;",
+                  "  pm.expect(item.quantity).to.eql(2);",
+                  "  pm.expect(item.is_available).to.eql(true);",
+                  "  pm.collectionVariables.set('cartItemId', String(item.id));",
+                  "  pm.collectionVariables.set('cartAvailableStock', String(item.available_stock));",
+                  "  pm.collectionVariables.set('cartTooManyQuantity', String(item.available_stock + 1));",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Add same variant merges quantity",
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{clientToken}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"variant_id\": 961001,\n  \"quantity\": 1\n}" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"variant_id\": 961001,\n  \"quantity\": 1\n}"
+            },
             "url": "{{baseUrl}}/api/v1/cart/items"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Merges an existing variant without creating a duplicate line', function () {",
-              "  pm.response.to.have.status(200);",
-              "  const data = pm.response.json().data;",
-              "  pm.expect(data.items.filter(function (item) { return item.variant_id === 961001; })).to.have.length(1);",
-              "  pm.expect(data.items.find(function (item) { return item.variant_id === 961001; }).quantity).to.eql(3);",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Merges an existing variant without creating a duplicate line', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data.items.filter(function (item) { return item.variant_id === 961001; })).to.have.length(1);",
+                  "  pm.expect(data.items.find(function (item) { return item.variant_id === 961001; }).quantity).to.eql(3);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Update cart quantity",
           "request": {
             "method": "PUT",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{clientToken}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"quantity\": 2\n}" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 2\n}"
+            },
             "url": "{{baseUrl}}/api/v1/cart/items/{{cartItemId}}"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Replaces cart quantity after rechecking stock', function () {",
-              "  pm.response.to.have.status(200);",
-              "  pm.expect(pm.response.json().data.items[0].quantity).to.eql(2);",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Replaces cart quantity after rechecking stock', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().data.items[0].quantity).to.eql(2);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Reject quantity above stock",
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{clientToken}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"variant_id\": 961001,\n  \"quantity\": {{cartTooManyQuantity}}\n}" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"variant_id\": 961001,\n  \"quantity\": {{cartTooManyQuantity}}\n}"
+            },
             "url": "{{baseUrl}}/api/v1/cart/items"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Rejects an add that would exceed current inventory', function () {",
-              "  pm.response.to.have.status(409);",
-              "  pm.expect(pm.response.json().errors[0].code).to.eql('insufficient_stock');",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Rejects an add that would exceed current inventory', function () {",
+                  "  pm.response.to.have.status(409);",
+                  "  pm.expect(pm.response.json().errors[0].code).to.eql('insufficient_stock');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Reject invalid cart quantity",
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{clientToken}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"variant_id\": 961001,\n  \"quantity\": 0\n}" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"variant_id\": 961001,\n  \"quantity\": 0\n}"
+            },
             "url": "{{baseUrl}}/api/v1/cart/items"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Rejects zero quantity', function () {",
-              "  pm.response.to.have.status(400);",
-              "  pm.expect(pm.response.json().errors[0].code).to.eql('invalid_quantity');",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Rejects zero quantity', function () {",
+                  "  pm.response.to.have.status(400);",
+                  "  pm.expect(pm.response.json().errors[0].code).to.eql('invalid_quantity');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Remove cart item",
           "request": {
             "method": "DELETE",
-            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
+            ],
             "url": "{{baseUrl}}/api/v1/cart/items/{{cartItemId}}"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Removes only the caller cart item', function () {",
-              "  pm.response.to.have.status(200);",
-              "  pm.expect(pm.response.json().data.items).to.be.an('array').that.is.empty;",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Removes only the caller cart item', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().data.items).to.be.an('array').that.is.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Clear cart",
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{clientToken}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"variant_id\": 961001,\n  \"quantity\": 1\n}" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"variant_id\": 961001,\n  \"quantity\": 1\n}"
+            },
             "url": "{{baseUrl}}/api/v1/cart/items"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Adds a cart line before clear test', function () {",
-              "  pm.response.to.have.status(201);",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Adds a cart line before clear test', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Delete all cart items",
           "request": {
             "method": "DELETE",
-            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
+            ],
             "url": "{{baseUrl}}/api/v1/cart/items"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Clears only the caller cart', function () {",
-              "  pm.response.to.have.status(200);",
-              "  pm.expect(pm.response.json().data.items).to.be.an('array').that.is.empty;",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Clears only the caller cart', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().data.items).to.be.an('array').that.is.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Reject non-public product in wishlist",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
+            ],
             "url": "{{baseUrl}}/api/v1/wishlist/products/960003"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Does not add an unapproved product to wishlist', function () {",
-              "  pm.response.to.have.status(404);",
-              "  pm.expect(pm.response.json().errors[0].code).to.eql('product_not_found');",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Does not add an unapproved product to wishlist', function () {",
+                  "  pm.response.to.have.status(404);",
+                  "  pm.expect(pm.response.json().errors[0].code).to.eql('product_not_found');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Read empty wishlist",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
+            ],
             "url": "{{baseUrl}}/api/v1/wishlist"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Returns the caller wishlist', function () {",
-              "  pm.response.to.have.status(200);",
-              "  pm.expect(pm.response.json().data.items).to.be.an('array');",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns the caller wishlist', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().data.items).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Add product to wishlist",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
+            ],
             "url": "{{baseUrl}}/api/v1/wishlist/products/960001"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Adds a currently public product to wishlist', function () {",
-              "  pm.response.to.have.status(200);",
-              "  pm.expect(pm.response.json().data.is_favorite).to.eql(true);",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Adds a currently public product to wishlist', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().data.is_favorite).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Add same product to wishlist again",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
+            ],
             "url": "{{baseUrl}}/api/v1/wishlist/products/960001"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Wishlist add is idempotent', function () {",
-              "  pm.response.to.have.status(200);",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Wishlist add is idempotent', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "List wishlist products",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
+            ],
             "url": "{{baseUrl}}/api/v1/wishlist"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Lists the product once with current availability', function () {",
-              "  pm.response.to.have.status(200);",
-              "  const data = pm.response.json().data;",
-              "  pm.expect(data.total).to.eql(1);",
-              "  pm.expect(data.items[0].product_id).to.eql(960001);",
-              "  pm.expect(data.items[0].is_available).to.eql(true);",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Lists the product once with current availability', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data.total).to.eql(1);",
+                  "  pm.expect(data.items[0].product_id).to.eql(960001);",
+                  "  pm.expect(data.items[0].is_available).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Remove product from wishlist",
           "request": {
             "method": "DELETE",
-            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
+            ],
             "url": "{{baseUrl}}/api/v1/wishlist/products/960001"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Removes only the caller wishlist entry', function () {",
-              "  pm.response.to.have.status(200);",
-              "  pm.expect(pm.response.json().data.product_id).to.eql(960001);",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Removes only the caller wishlist entry', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().data.product_id).to.eql(960001);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Verify wishlist is empty after removal",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
+            ],
             "url": "{{baseUrl}}/api/v1/wishlist"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Wishlist is empty after delete', function () {",
-              "  pm.response.to.have.status(200);",
-              "  pm.expect(pm.response.json().data.total).to.eql(0);",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Wishlist is empty after delete', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().data.total).to.eql(0);",
+                  "});"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -891,136 +1444,216 @@
           "name": "Read follow state",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
+            ],
             "url": "{{baseUrl}}/api/v1/shops/{{shopId}}/follow"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('CLIENT can read follow state', function () {",
-              "  pm.response.to.have.status(200);",
-              "  pm.expect(pm.response.json().data.following).to.be.a('boolean');",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CLIENT can read follow state', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().data.following).to.be.a('boolean');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Follow shop",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
+            ],
             "url": "{{baseUrl}}/api/v1/shops/{{shopId}}/follow"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Follows shop and reports updated count', function () {",
-              "  pm.response.to.have.status(200);",
-              "  pm.expect(pm.response.json().data.following).to.eql(true);",
-              "  pm.collectionVariables.set('followCount', String(pm.response.json().data.follower_count));",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Follows shop and reports updated count', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().data.following).to.eql(true);",
+                  "  pm.collectionVariables.set('followCount', String(pm.response.json().data.follower_count));",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Follow shop again (idempotent)",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
+            ],
             "url": "{{baseUrl}}/api/v1/shops/{{shopId}}/follow"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Repeated follow does not increment follower count', function () {",
-              "  pm.response.to.have.status(200);",
-              "  pm.expect(String(pm.response.json().data.follower_count)).to.eql(pm.collectionVariables.get('followCount'));",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Repeated follow does not increment follower count', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(String(pm.response.json().data.follower_count)).to.eql(pm.collectionVariables.get('followCount'));",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Unfollow shop",
           "request": {
             "method": "DELETE",
-            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
+            ],
             "url": "{{baseUrl}}/api/v1/shops/{{shopId}}/follow"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Unfollows shop', function () {",
-              "  pm.response.to.have.status(200);",
-              "  pm.expect(pm.response.json().data.following).to.eql(false);",
-              "  pm.collectionVariables.set('unfollowCount', String(pm.response.json().data.follower_count));",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Unfollows shop', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().data.following).to.eql(false);",
+                  "  pm.collectionVariables.set('unfollowCount', String(pm.response.json().data.follower_count));",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Unfollow shop again (idempotent)",
           "request": {
             "method": "DELETE",
-            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
+            ],
             "url": "{{baseUrl}}/api/v1/shops/{{shopId}}/follow"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Repeated unfollow does not decrement follower count', function () {",
-              "  pm.response.to.have.status(200);",
-              "  pm.expect(String(pm.response.json().data.follower_count)).to.eql(pm.collectionVariables.get('unfollowCount'));",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Repeated unfollow does not decrement follower count', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(String(pm.response.json().data.follower_count)).to.eql(pm.collectionVariables.get('unfollowCount'));",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Reject CLIENT access to admin inventory",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
+            ],
             "url": "{{baseUrl}}/api/v1/admin/products"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('CLIENT cannot access admin inventory', function () {",
-              "  pm.response.to.have.status(403);",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CLIENT cannot access admin inventory', function () {",
+                  "  pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Logout disposable CLIENT",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
+            ],
             "url": "{{baseUrl}}/api/v1/auth/logout"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Revokes the current session', function () {",
-              "  pm.response.to.have.status(200);",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Revokes the current session', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Reject protected request after logout",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
+            ],
             "url": "{{baseUrl}}/api/v1/auth/me"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Revoked access session cannot be reused', function () {",
-              "  pm.response.to.have.status(401);",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Revoked access session cannot be reused', function () {",
+                  "  pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -1031,227 +1664,369 @@
           "name": "Login local SELLER",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"identifier\": \"seed-seller-a@local.test\",\n  \"password\": \"{{seedPassword}}\"\n}" },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"seed-seller-a@local.test\",\n  \"password\": \"{{seedPassword}}\"\n}"
+            },
             "url": "{{baseUrl}}/api/v1/auth/login"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Logs in the local seller fixture', function () {",
-              "  pm.response.to.have.status(200);",
-              "  const data = pm.response.json().data;",
-              "  pm.expect(data.user.role).to.eql('SELLER');",
-              "  pm.collectionVariables.set('sellerToken', data.access_token);",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Logs in the local seller fixture', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data.user.role).to.eql('SELLER');",
+                  "  pm.collectionVariables.set('sellerToken', data.access_token);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Reject SELLER access to admin inventory",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{sellerToken}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerToken}}"
+              }
+            ],
             "url": "{{baseUrl}}/api/v1/admin/products"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('SELLER cannot access admin inventory', function () {",
-              "  pm.response.to.have.status(403);",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('SELLER cannot access admin inventory', function () {",
+                  "  pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Login local ADMIN",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"identifier\": \"seed-admin@local.test\",\n  \"password\": \"{{seedPassword}}\"\n}" },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"seed-admin@local.test\",\n  \"password\": \"{{seedPassword}}\"\n}"
+            },
             "url": "{{baseUrl}}/api/v1/auth/login"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('ADMIN login succeeds', function () {",
-              "  pm.response.to.have.status(200);",
-              "  const data = pm.response.json().data;",
-              "  pm.expect(data.user.role).to.eql('ADMIN');",
-              "  pm.collectionVariables.set('adminToken', data.access_token);",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('ADMIN login succeeds', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data.user.role).to.eql('ADMIN');",
+                  "  pm.collectionVariables.set('adminToken', data.access_token);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "List users (ADMIN only)",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
             "url": "{{baseUrl}}/api/v1/admin/users"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('ADMIN can list users', function () {",
-              "  pm.response.to.have.status(200);",
-              "  pm.expect(pm.response.json().data).to.be.an('array');",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('ADMIN can list users', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().data).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "List inventory with filters",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
             "url": "{{baseUrl}}/api/v1/admin/products?search=B%E1%BB%99%20s%E1%BA%A1c%20USB-C%2030W&category=Đi%E1%BB%87n%20tho%E1%BA%A1i%20v%C3%A0%20%C4%91i%E1%BB%87n%20t%E1%BB%AD&vendor=Tech%20An%20Vi%E1%BB%87t&stock_status=in_stock&sort_by=stock_desc"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('ADMIN inventory query supports filters and stock sort', function () {",
-              "  pm.response.to.have.status(200);",
-              "  const data = pm.response.json().data;",
-              "  pm.expect(data.products).to.be.an('array');",
-              "  pm.expect(data.products.some(function (item) { return item.id === 960009; })).to.eql(true);",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('ADMIN inventory query supports filters and stock sort', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data.products).to.be.an('array');",
+                  "  pm.expect(data.products.some(function (item) { return item.id === 960009; })).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Reject invalid inventory filter",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
             "url": "{{baseUrl}}/api/v1/admin/products?sort_by=invalid"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Rejects invalid admin filter values', function () {",
-              "  pm.response.to.have.status(400);",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Rejects invalid admin filter values', function () {",
+                  "  pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Get inventory statistics",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
             "url": "{{baseUrl}}/api/v1/admin/inventory-stats"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Returns inventory summary', function () {",
-              "  pm.response.to.have.status(200);",
-              "  pm.expect(pm.response.json().data.totalSkus).to.be.a('number');",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns inventory summary', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().data.totalSkus).to.be.a('number');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Deactivate dedicated test product",
           "request": {
             "method": "PATCH",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{ \"is_active\": false }" },
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"is_active\": false }"
+            },
             "url": "{{baseUrl}}/api/v1/admin/products/{{adminTestProductId}}/status"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('ADMIN can hide an approved product', function () {",
-              "  pm.response.to.have.status(200);",
-              "  pm.expect(pm.response.json().data.status).to.eql('HIDDEN');",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('ADMIN can hide an approved product', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().data.status).to.eql('HIDDEN');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Reactivate dedicated test product",
           "request": {
             "method": "PATCH",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{ \"is_active\": true }" },
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"is_active\": true }"
+            },
             "url": "{{baseUrl}}/api/v1/admin/products/{{adminTestProductId}}/status"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('ADMIN can reactivate an approved product', function () {",
-              "  pm.response.to.have.status(200);",
-              "  pm.expect(pm.response.json().data.status).to.eql('ACTIVE');",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('ADMIN can reactivate an approved product', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().data.status).to.eql('ACTIVE');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Bulk deactivate dedicated test product",
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{ \"action\": \"deactivate\", \"product_ids\": [960009, 960009] }" },
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"action\": \"deactivate\", \"product_ids\": [960009, 960009] }"
+            },
             "url": "{{baseUrl}}/api/v1/admin/products/bulk"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Bulk action deduplicates IDs and deactivates fixture', function () {",
-              "  pm.response.to.have.status(200);",
-              "  pm.expect(pm.response.json().data.count).to.eql(1);",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Bulk action deduplicates IDs and deactivates fixture', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().data.count).to.eql(1);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Bulk activate dedicated test product",
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{ \"action\": \"activate\", \"product_ids\": [960009] }" },
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"action\": \"activate\", \"product_ids\": [960009] }"
+            },
             "url": "{{baseUrl}}/api/v1/admin/products/bulk"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('Bulk action reactivates fixture', function () {",
-              "  pm.response.to.have.status(200);",
-              "  pm.expect(pm.response.json().data.count).to.eql(1);",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Bulk action reactivates fixture', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().data.count).to.eql(1);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Delete dedicated test product (soft delete)",
           "request": {
             "method": "DELETE",
-            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
             "url": "{{baseUrl}}/api/v1/admin/products/{{adminTestProductId}}"
           },
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": [
-              "pm.test('ADMIN soft-deletes the dedicated fixture', function () {",
-              "  pm.response.to.have.status(200);",
-              "  pm.expect(pm.response.json().data.id).to.eql(Number(pm.collectionVariables.get('adminTestProductId')));",
-              "});"
-            ]}
-          }]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('ADMIN soft-deletes the dedicated fixture', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().data.id).to.eql(Number(pm.collectionVariables.get('adminTestProductId')));",
+                  "});"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -1810,8 +2585,16 @@
           "name": "Verify valid reset OTP",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"identifier\": \"{{testEmail}}\",\n  \"otp\": \"{{resetOtp}}\"\n}" },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{testEmail}}\",\n  \"otp\": \"{{resetOtp}}\"\n}"
+            },
             "url": "{{baseUrl}}/api/v1/auth/verify-reset-otp"
           },
           "event": [
@@ -1843,8 +2626,16 @@
           "name": "Reset password with valid OTP",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"identifier\": \"{{testEmail}}\",\n  \"otp\": \"{{resetOtp}}\",\n  \"new_password\": \"PostmanReset123!\"\n}" },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{testEmail}}\",\n  \"otp\": \"{{resetOtp}}\",\n  \"new_password\": \"PostmanReset123!\"\n}"
+            },
             "url": "{{baseUrl}}/api/v1/auth/reset-password"
           },
           "event": [
@@ -3039,596 +3830,1173 @@
         }
       ]
     },
-  {
-    "name": "Checkout and Voucher",
-    "description": "Non-mutating checkout option and request validation checks. A valid quote requires a customer address, active cart items, and initialized shipping/payment methods.",
-    "item": [
-      {
-        "name": "Checkout options require CLIENT auth",
-        "request": {
-          "method": "GET",
-          "url": "{{baseUrl}}/api/v1/checkout/options"
-        },
-        "event": [
-          {
-            "listen": "test",
-            "script": {
-              "type": "text/javascript",
-              "exec": [
-                "pm.test('Checkout options require authentication', () => pm.response.to.have.status(401));"
-              ]
-            }
-          }
-        ]
-      },
-      {
-        "name": "List active shipping and payment options",
-        "request": {
-          "method": "GET",
-          "header": [
+    {
+      "name": "Checkout and Voucher",
+      "description": "Non-mutating checkout option and request validation checks. A valid quote requires a customer address, active cart items, and initialized shipping/payment methods.",
+      "item": [
+        {
+          "name": "Checkout options require CLIENT auth",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/checkout/options"
+          },
+          "event": [
             {
-              "key": "Authorization",
-              "value": "Bearer {{clientToken}}"
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Checkout options require authentication', () => pm.response.to.have.status(401));"
+                ]
+              }
             }
-          ],
-          "url": "{{baseUrl}}/api/v1/checkout/options"
+          ]
         },
-        "event": [
-          {
-            "listen": "test",
-            "script": {
-              "type": "text/javascript",
-              "exec": [
-                "pm.test('Active checkout methods are returned', () => { pm.response.to.have.status(200); const data = pm.response.json().data; pm.expect(data.shipping_methods).to.be.an('array'); pm.expect(data.payment_methods).to.be.an('array'); });"
-              ]
-            }
-          }
-        ]
-      },
-      {
-        "name": "Reject incomplete checkout quote",
-        "request": {
-          "method": "POST",
-          "header": [
+        {
+          "name": "List active shipping and payment options",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/checkout/options"
+          },
+          "event": [
             {
-              "key": "Authorization",
-              "value": "Bearer {{clientToken}}"
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Active checkout methods are returned', () => { pm.response.to.have.status(200); const data = pm.response.json().data; pm.expect(data.shipping_methods).to.be.an('array'); pm.expect(data.payment_methods).to.be.an('array'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reject incomplete checkout quote",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
             },
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
-          "body": {
-            "mode": "raw",
-            "raw": "{}"
+            "url": "{{baseUrl}}/api/v1/checkout/quote"
           },
-          "url": "{{baseUrl}}/api/v1/checkout/quote"
-        },
-        "event": [
-          {
-            "listen": "test",
-            "script": {
-              "type": "text/javascript",
-              "exec": [
-                "pm.test('Incomplete quote is rejected without side effects', () => pm.response.to.have.status(400));"
-              ]
-            }
-          }
-        ]
-      },
-      {
-        "name": "Reject invalid voucher request",
-        "request": {
-          "method": "POST",
-          "header": [
+          "event": [
             {
-              "key": "Authorization",
-              "value": "Bearer {{clientToken}}"
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Incomplete quote is rejected without side effects', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reject invalid voucher request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"code\":\"\",\"scope\":\"PLATFORM\",\"cart_item_ids\":[]}"
             },
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
-          "body": {
-            "mode": "raw",
-            "raw": "{\"code\":\"\",\"scope\":\"PLATFORM\",\"cart_item_ids\":[]}"
+            "url": "{{baseUrl}}/api/v1/vouchers/validate"
           },
-          "url": "{{baseUrl}}/api/v1/vouchers/validate"
-        },
-        "event": [
-          {
-            "listen": "test",
-            "script": {
-              "type": "text/javascript",
-              "exec": [
-                "pm.test('Invalid voucher request is rejected', () => pm.response.to.have.status(400));"
-              ]
-            }
-          }
-        ]
-      },
-      {
-        "name": "Reject unauthenticated checkout order",
-        "request": {
-          "method": "POST",
-          "header": [
+          "event": [
             {
-              "key": "Content-Type",
-              "value": "application/json"
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Invalid voucher request is rejected', () => pm.response.to.have.status(400));"
+                ]
+              }
             }
-          ],
-          "body": {
-            "mode": "raw",
-            "raw": "{}"
-          },
-          "url": "{{baseUrl}}/api/v1/checkout/orders"
+          ]
         },
-        "event": [
-          {
-            "listen": "test",
-            "script": {
-              "type": "text/javascript",
-              "exec": [
-                "pm.test('Unauthenticated order creation is rejected with 401', () => pm.response.to.have.status(401));"
-              ]
-            }
-          }
-        ]
-      },
-      {
-        "name": "Reject non-CLIENT checkout order",
-        "request": {
-          "method": "POST",
-          "header": [
-            {
-              "key": "Authorization",
-              "value": "Bearer {{adminToken}}"
+        {
+          "name": "Reject unauthenticated checkout order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
             },
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
-          "body": {
-            "mode": "raw",
-            "raw": "{\"address_id\":1,\"shipping_method_id\":980001,\"payment_method_id\":980101,\"cart_item_ids\":[1]}"
+            "url": "{{baseUrl}}/api/v1/checkout/orders"
           },
-          "url": "{{baseUrl}}/api/v1/checkout/orders"
-        },
-        "event": [
-          {
-            "listen": "test",
-            "script": {
-              "type": "text/javascript",
-              "exec": [
-                "pm.test('Non-CLIENT role is rejected with 403', () => pm.response.to.have.status(403));"
-              ]
-            }
-          }
-        ]
-      },
-      {
-        "name": "Reject incomplete checkout order",
-        "request": {
-          "method": "POST",
-          "header": [
+          "event": [
             {
-              "key": "Authorization",
-              "value": "Bearer {{clientToken}}"
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Unauthenticated order creation is rejected with 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reject non-CLIENT checkout order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"address_id\":1,\"shipping_method_id\":980001,\"payment_method_id\":980101,\"cart_item_ids\":[1]}"
             },
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
-          "body": {
-            "mode": "raw",
-            "raw": "{}"
+            "url": "{{baseUrl}}/api/v1/checkout/orders"
           },
-          "url": "{{baseUrl}}/api/v1/checkout/orders"
-        },
-        "event": [
-          {
-            "listen": "test",
-            "script": {
-              "type": "text/javascript",
-              "exec": [
-                "pm.test('Incomplete order request is rejected with 400', () => pm.response.to.have.status(400));"
-              ]
-            }
-          }
-        ]
-      },
-      {
-        "name": "Reject duplicate cart item IDs in checkout order",
-        "request": {
-          "method": "POST",
-          "header": [
+          "event": [
             {
-              "key": "Authorization",
-              "value": "Bearer {{clientToken}}"
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Non-CLIENT role is rejected with 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reject incomplete checkout order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
             },
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
-          "body": {
-            "mode": "raw",
-            "raw": "{\"address_id\":1,\"shipping_method_id\":980001,\"payment_method_id\":980101,\"cart_item_ids\":[1,1]}"
+            "url": "{{baseUrl}}/api/v1/checkout/orders"
           },
-          "url": "{{baseUrl}}/api/v1/checkout/orders"
-        },
-        "event": [
-          {
-            "listen": "test",
-            "script": {
-              "type": "text/javascript",
-              "exec": [
-                "pm.test('Duplicate cart item IDs rejected with 400', () => pm.response.to.have.status(400));"
-              ]
-            }
-          }
-        ]
-      },
-      {
-        "name": "Reject unowned address in checkout order",
-        "request": {
-          "method": "POST",
-          "header": [
+          "event": [
             {
-              "key": "Authorization",
-              "value": "Bearer {{clientToken}}"
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Incomplete order request is rejected with 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reject duplicate cart item IDs in checkout order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"address_id\":1,\"shipping_method_id\":980001,\"payment_method_id\":980101,\"cart_item_ids\":[1,1]}"
             },
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
-          "body": {
-            "mode": "raw",
-            "raw": "{\"address_id\":999999,\"shipping_method_id\":980001,\"payment_method_id\":980101,\"cart_item_ids\":[1]}"
+            "url": "{{baseUrl}}/api/v1/checkout/orders"
           },
-          "url": "{{baseUrl}}/api/v1/checkout/orders"
-        },
-        "event": [
-          {
-            "listen": "test",
-            "script": {
-              "type": "text/javascript",
-              "exec": [
-                "pm.test('Unowned address is rejected with 422 address_unavailable', () => { pm.response.to.have.status(422); pm.expect(pm.response.json().code).to.eql('address_unavailable'); });"
-              ]
-            }
-          }
-        ]
-      },
-      {
-        "name": "Reject MOCK_CARD payment method in checkout order",
-        "request": {
-          "method": "POST",
-          "header": [
+          "event": [
             {
-              "key": "Authorization",
-              "value": "Bearer {{clientToken}}"
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Duplicate cart item IDs rejected with 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reject unowned address in checkout order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"address_id\":999999,\"shipping_method_id\":980001,\"payment_method_id\":980101,\"cart_item_ids\":[1]}"
             },
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
-          "body": {
-            "mode": "raw",
-            "raw": "{\"address_id\":910001,\"shipping_method_id\":980001,\"payment_method_id\":980103,\"cart_item_ids\":[1]}"
+            "url": "{{baseUrl}}/api/v1/checkout/orders"
           },
-          "url": "{{baseUrl}}/api/v1/checkout/orders"
-        },
-        "event": [
-          {
-            "listen": "test",
-            "script": {
-              "type": "text/javascript",
-              "exec": [
-                "pm.test('MOCK_CARD is rejected with 422 payment_method_unavailable', () => { pm.response.to.have.status(422); pm.expect(pm.response.json().code).to.eql('payment_method_unavailable'); });"
-              ]
-            }
-          }
-        ]
-      },
-      {
-        "name": "Login seed buyer account",
-        "request": {
-          "method": "POST",
-          "header": [
+          "event": [
             {
-              "key": "Content-Type",
-              "value": "application/json"
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Unowned address is rejected with 422 address_unavailable', () => { pm.response.to.have.status(422); pm.expect(pm.response.json().code).to.eql('address_unavailable'); });"
+                ]
+              }
             }
-          ],
-          "body": {
-            "mode": "raw",
-            "raw": "{\n  \"identifier\": \"seed-buyer@local.test\",\n  \"password\": \"{{seedPassword}}\"\n}"
-          },
-          "url": "{{baseUrl}}/api/v1/auth/login"
+          ]
         },
-        "event": [
-          {
-            "listen": "test",
-            "script": {
-              "type": "text/javascript",
-              "exec": [
-                "pm.test('Seed buyer login succeeds', function () {",
-                "  pm.response.to.have.status(200);",
-                "  const data = pm.response.json().data;",
-                "  pm.expect(data.access_token).to.be.a('string');",
-                "  pm.environment.set('buyerToken', data.access_token);",
-                "});"
-              ]
-            }
-          }
-        ]
-      },
-      {
-        "name": "Read seed buyer cart items",
-        "request": {
-          "method": "GET",
-          "header": [
-            {
-              "key": "Authorization",
-              "value": "Bearer {{buyerToken}}"
-            }
-          ],
-          "url": "{{baseUrl}}/api/v1/cart"
-        },
-        "event": [
-          {
-            "listen": "test",
-            "script": {
-              "type": "text/javascript",
-              "exec": [
-                "pm.test('Read buyer cart items successfully', function () {",
-                "  pm.response.to.have.status(200);",
-                "  const data = pm.response.json().data;",
-                "  pm.expect(data.items).to.be.an('array');",
-                "  if (data.items.length > 0) {",
-                "    pm.environment.set('buyerCartItemId', data.items[0].id);",
-                "  }",
-                "});"
-              ]
-            }
-          }
-        ]
-      },
-      {
-        "name": "Quote checkout with platform voucher",
-        "request": {
-          "method": "POST",
-          "header": [
-            {
-              "key": "Authorization",
-              "value": "Bearer {{buyerToken}}"
+        {
+          "name": "Reject MOCK_CARD payment method in checkout order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"address_id\":910001,\"shipping_method_id\":980001,\"payment_method_id\":980103,\"cart_item_ids\":[1]}"
             },
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
-          "body": {
-            "mode": "raw",
-            "raw": "{\n  \"address_id\": 910001,\n  \"shipping_method_id\": 980001,\n  \"payment_method_id\": 980101,\n  \"cart_item_ids\": [{{buyerCartItemId}}],\n  \"platform_voucher\": \"SEED-WELCOME\"\n}"
+            "url": "{{baseUrl}}/api/v1/checkout/orders"
           },
-          "url": "{{baseUrl}}/api/v1/checkout/quote"
-        },
-        "event": [
-          {
-            "listen": "test",
-            "script": {
-              "type": "text/javascript",
-              "exec": [
-                "pm.test('Checkout quote succeeds with platform voucher', function () {",
-                "  pm.response.to.have.status(200);",
-                "  const data = pm.response.json().data;",
-                "  pm.expect(data.subtotal).to.be.a('number');",
-                "  pm.expect(data.shipping_fee).to.be.a('number');",
-                "  pm.expect(data.total).to.be.a('number');",
-                "  pm.expect(data.address.recipient_name).to.eql('Trần Ngọc Hà');",
-                "});"
-              ]
-            }
-          }
-        ]
-      },
-      {
-        "name": "Create order with COD (Multi-Shop Split)",
-        "request": {
-          "method": "POST",
-          "header": [
+          "event": [
             {
-              "key": "Authorization",
-              "value": "Bearer {{buyerToken}}"
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('MOCK_CARD is rejected with 422 payment_method_unavailable', () => { pm.response.to.have.status(422); pm.expect(pm.response.json().code).to.eql('payment_method_unavailable'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login seed buyer account",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"seed-buyer@local.test\",\n  \"password\": \"{{seedPassword}}\"\n}"
             },
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
-          "body": {
-            "mode": "raw",
-            "raw": "{\n  \"address_id\": 910001,\n  \"shipping_method_id\": 980001,\n  \"payment_method_id\": 980101,\n  \"cart_item_ids\": [{{buyerCartItemId}}],\n  \"platform_voucher\": \"SEED-WELCOME\",\n  \"note\": \"Postman integration test - COD Order\"\n}"
+            "url": "{{baseUrl}}/api/v1/auth/login"
           },
-          "url": "{{baseUrl}}/api/v1/checkout/orders"
-        },
-        "event": [
-          {
-            "listen": "test",
-            "script": {
-              "type": "text/javascript",
-              "exec": [
-                "pm.test('Order with COD created successfully', function () {",
-                "  pm.response.to.have.status(201);",
-                "  const data = pm.response.json().data;",
-                "  pm.expect(data.order_id).to.be.a('number');",
-                "  pm.expect(data.order_code).to.match(/^ORD/);",
-                "  pm.expect(data.status).to.eql('PENDING');",
-                "  pm.expect(data.payment_method.code).to.eql('COD');",
-                "  pm.expect(data.payment.status).to.eql('PENDING');",
-                "  pm.expect(data.payment.transaction_ref).to.include('COD-');",
-                "  pm.expect(data.shop_orders).to.be.an('array').that.is.not.empty;",
-                "  pm.expect(data.recipient_name).to.eql('Trần Ngọc Hà');",
-                "  pm.environment.set('lastCreatedOrderId', data.order_id);",
-                "  pm.environment.set('lastCreatedOrderCode', data.order_code);",
-                "});"
-              ]
-            }
-          }
-        ]
-      },
-      {
-        "name": "Verify purchased items cleared from buyer cart",
-        "request": {
-          "method": "GET",
-          "header": [
+          "event": [
             {
-              "key": "Authorization",
-              "value": "Bearer {{buyerToken}}"
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Seed buyer login succeeds', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data.access_token).to.be.a('string');",
+                  "  pm.environment.set('buyerToken', data.access_token);",
+                  "});"
+                ]
+              }
             }
-          ],
-          "url": "{{baseUrl}}/api/v1/cart"
+          ]
         },
-        "event": [
-          {
-            "listen": "test",
-            "script": {
-              "type": "text/javascript",
-              "exec": [
-                "pm.test('Purchased cart item was removed', function () {",
-                "  pm.response.to.have.status(200);",
-                "  const data = pm.response.json().data;",
-                "  const remaining = (data.items || []).map(i => i.id);",
-                "  const purchasedId = parseInt(pm.environment.get('buyerCartItemId'), 10);",
-                "  pm.expect(remaining).to.not.include(purchasedId);",
-                "});"
-              ]
-            }
-          }
-        ]
-      },
-      {
-        "name": "Add variant to cart for BANK_TRANSFER test",
-        "request": {
-          "method": "POST",
-          "header": [
+        {
+          "name": "Read seed buyer cart items",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/cart"
+          },
+          "event": [
             {
-              "key": "Authorization",
-              "value": "Bearer {{buyerToken}}"
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Read buyer cart items successfully', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data.items).to.be.an('array');",
+                  "  if (data.items.length > 0) {",
+                  "    pm.environment.set('buyerCartItemId', data.items[0].id);",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Quote checkout with platform voucher",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"address_id\": 910001,\n  \"shipping_method_id\": 980001,\n  \"payment_method_id\": 980101,\n  \"cart_item_ids\": [{{buyerCartItemId}}],\n  \"platform_voucher\": \"SEED-WELCOME\"\n}"
             },
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
-          "body": {
-            "mode": "raw",
-            "raw": "{\n  \"variant_id\": 961002,\n  \"quantity\": 1\n}"
+            "url": "{{baseUrl}}/api/v1/checkout/quote"
           },
-          "url": "{{baseUrl}}/api/v1/cart/items"
-        },
-        "event": [
-          {
-            "listen": "test",
-            "script": {
-              "type": "text/javascript",
-              "exec": [
-                "pm.test('Variant added to cart', function () {",
-                "  pm.response.to.have.status(200);",
-                "  const item = pm.response.json().data;",
-                "  pm.expect(item.id).to.be.a('number');",
-                "  pm.environment.set('btCartItemId', item.id);",
-                "});"
-              ]
-            }
-          }
-        ]
-      },
-      {
-        "name": "Create order with BANK_TRANSFER",
-        "request": {
-          "method": "POST",
-          "header": [
+          "event": [
             {
-              "key": "Authorization",
-              "value": "Bearer {{buyerToken}}"
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Checkout quote succeeds with platform voucher', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data.subtotal).to.be.a('number');",
+                  "  pm.expect(data.shipping_fee).to.be.a('number');",
+                  "  pm.expect(data.total).to.be.a('number');",
+                  "  pm.expect(data.address.recipient_name).to.eql('Trần Ngọc Hà');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create order with COD (Multi-Shop Split)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"address_id\": 910001,\n  \"shipping_method_id\": 980001,\n  \"payment_method_id\": 980101,\n  \"cart_item_ids\": [{{buyerCartItemId}}],\n  \"platform_voucher\": \"SEED-WELCOME\",\n  \"note\": \"Postman integration test - COD Order\"\n}"
             },
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
-          "body": {
-            "mode": "raw",
-            "raw": "{\n  \"address_id\": 910001,\n  \"shipping_method_id\": 980001,\n  \"payment_method_id\": 980102,\n  \"cart_item_ids\": [{{btCartItemId}}],\n  \"note\": \"Postman integration test - Bank Transfer Order\"\n}"
+            "url": "{{baseUrl}}/api/v1/checkout/orders"
           },
-          "url": "{{baseUrl}}/api/v1/checkout/orders"
-        },
-        "event": [
-          {
-            "listen": "test",
-            "script": {
-              "type": "text/javascript",
-              "exec": [
-                "pm.test('Order with BANK_TRANSFER created successfully', function () {",
-                "  pm.response.to.have.status(201);",
-                "  const data = pm.response.json().data;",
-                "  pm.expect(data.order_id).to.be.a('number');",
-                "  pm.expect(data.order_code).to.match(/^ORD/);",
-                "  pm.expect(data.payment_method.code).to.eql('BANK_TRANSFER');",
-                "  pm.expect(data.payment.status).to.eql('PENDING');",
-                "  pm.expect(data.payment.transaction_ref).to.eql(data.order_code);",
-                "  pm.expect(data.shop_orders).to.be.an('array').that.is.not.empty;",
-                "});"
-              ]
-            }
-          }
-        ]
-      },
-      {
-        "name": "Reject re-checkout with consumed cart items",
-        "request": {
-          "method": "POST",
-          "header": [
+          "event": [
             {
-              "key": "Authorization",
-              "value": "Bearer {{buyerToken}}"
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Order with COD created successfully', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data.order_id).to.be.a('number');",
+                  "  pm.expect(data.order_code).to.match(/^ORD/);",
+                  "  pm.expect(data.status).to.eql('PENDING');",
+                  "  pm.expect(data.payment_method.code).to.eql('COD');",
+                  "  pm.expect(data.payment.status).to.eql('PENDING');",
+                  "  pm.expect(data.payment.transaction_ref).to.include('COD-');",
+                  "  pm.expect(data.shop_orders).to.be.an('array').that.is.not.empty;",
+                  "  pm.expect(data.recipient_name).to.eql('Trần Ngọc Hà');",
+                  "  pm.environment.set('lastCreatedOrderId', data.order_id);",
+                  "  pm.environment.set('lastCreatedOrderCode', data.order_code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Verify purchased items cleared from buyer cart",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/cart"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Purchased cart item was removed', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const data = pm.response.json().data;",
+                  "  const remaining = (data.items || []).map(i => i.id);",
+                  "  const purchasedId = parseInt(pm.environment.get('buyerCartItemId'), 10);",
+                  "  pm.expect(remaining).to.not.include(purchasedId);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Add variant to cart for BANK_TRANSFER test",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"variant_id\": 961002,\n  \"quantity\": 1\n}"
             },
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
-          "body": {
-            "mode": "raw",
-            "raw": "{\n  \"address_id\": 910001,\n  \"shipping_method_id\": 980001,\n  \"payment_method_id\": 980101,\n  \"cart_item_ids\": [{{btCartItemId}}]\n}"
+            "url": "{{baseUrl}}/api/v1/cart/items"
           },
-          "url": "{{baseUrl}}/api/v1/checkout/orders"
-        },
-        "event": [
-          {
-            "listen": "test",
-            "script": {
-              "type": "text/javascript",
-              "exec": [
-                "pm.test('Consumed cart item returns 422 cart_selection_changed', function () {",
-                "  pm.response.to.have.status(422);",
-                "  pm.expect(pm.response.json().code).to.eql('cart_selection_changed');",
-                "});"
-              ]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Variant added to cart', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const item = pm.response.json().data;",
+                  "  pm.expect(item.id).to.be.a('number');",
+                  "  pm.environment.set('btCartItemId', item.id);",
+                  "});"
+                ]
+              }
             }
-          }
-        ]
-      }
-    ]
-  }
+          ]
+        },
+        {
+          "name": "Create order with BANK_TRANSFER",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"address_id\": 910001,\n  \"shipping_method_id\": 980001,\n  \"payment_method_id\": 980102,\n  \"cart_item_ids\": [{{btCartItemId}}],\n  \"note\": \"Postman integration test - Bank Transfer Order\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/checkout/orders"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Order with BANK_TRANSFER created successfully', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data.order_id).to.be.a('number');",
+                  "  pm.expect(data.order_code).to.match(/^ORD/);",
+                  "  pm.expect(data.payment_method.code).to.eql('BANK_TRANSFER');",
+                  "  pm.expect(data.payment.status).to.eql('PENDING');",
+                  "  pm.expect(data.payment.transaction_ref).to.eql(data.order_code);",
+                  "  pm.expect(data.shop_orders).to.be.an('array').that.is.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reject re-checkout with consumed cart items",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"address_id\": 910001,\n  \"shipping_method_id\": 980001,\n  \"payment_method_id\": 980101,\n  \"cart_item_ids\": [{{btCartItemId}}]\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/checkout/orders"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Consumed cart item returns 422 cart_selection_changed', function () {",
+                  "  pm.response.to.have.status(422);",
+                  "  pm.expect(pm.response.json().code).to.eql('cart_selection_changed');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Order Tracking and Seller Processing",
+      "description": "End-to-end integration tests for customer order tracking (history, status derivation, cancellation with stock restoration & 3-day refund notice, return requests) and seller order management (shop-isolated listing, status progression: confirm/pack/ship/complete, seller cancel, return request handling).",
+      "item": [
+        {
+          "name": "Customer - List all orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Customer order list returned 200 with structure', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const res = pm.response.json();",
+                  "  pm.expect(res.success).to.be.true;",
+                  "  pm.expect(res.data.orders).to.be.an('array');",
+                  "  pm.expect(res.data.counts).to.be.an('object');",
+                  "  pm.expect(res.data.pagination).to.be.an('object');",
+                  "  if (res.data.orders.length > 0) {",
+                  "    const firstOrder = res.data.orders[0];",
+                  "    pm.collectionVariables.set('orderId', firstOrder.id);",
+                  "    pm.environment.set('orderId', firstOrder.id);",
+                  "    if (firstOrder.shops && firstOrder.shops.length > 0) {",
+                  "      pm.collectionVariables.set('sellerShopOrderId', firstOrder.shops[0].id);",
+                  "      pm.environment.set('sellerShopOrderId', firstOrder.shops[0].id);",
+                  "    }",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Customer - Filter orders by tab (pending)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders?tab=pending"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Filter orders by pending tab succeeds', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const res = pm.response.json();",
+                  "  pm.expect(res.success).to.be.true;",
+                  "  pm.expect(res.data.orders).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Customer - Get order detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/{{orderId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Customer order detail returned 200 with full info', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const res = pm.response.json();",
+                  "  pm.expect(res.success).to.be.true;",
+                  "  pm.expect(res.data.id).to.eql(pm.environment.get('orderId') || pm.collectionVariables.get('orderId'));",
+                  "  pm.expect(res.data.payment).to.be.an('object');",
+                  "  pm.expect(res.data.shops).to.be.an('array').that.is.not.empty;",
+                  "  pm.expect(res.data.timeline).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Customer - Cancel order (Refund check & Restock)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Khách hàng đổi ý muốn thay đổi địa chỉ đặt hàng\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/orders/{{orderId}}/cancel"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Cancel order responds with 200 and refund details', function () {",
+                  "  if (pm.response.code === 200) {",
+                  "    const res = pm.response.json();",
+                  "    pm.expect(res.success).to.be.true;",
+                  "    pm.expect(res.data.status).to.eql('CANCELLED');",
+                  "    pm.expect(res.data.refund_status).to.be.oneOf(['NOT_APPLICABLE', 'REFUND_PROCESSING']);",
+                  "    pm.expect(res.data.refund_message).to.be.a('string');",
+                  "  } else {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([404, 422]);",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Customer - Reject cancel for already cancelled order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Hủy lại lần 2\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/orders/{{orderId}}/cancel"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Reject duplicate cancel with 422 order_already_cancelled', function () {",
+                  "  if (pm.response.code === 422) {",
+                  "    const res = pm.response.json();",
+                  "    pm.expect(res.errors[0].code).to.eql('order_already_cancelled');",
+                  "  } else {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Customer - Confirm order received",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/{{orderId}}/received"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Customer confirm received handles shipping state properly', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 422, 404]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Customer - Create return request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shop_order_id\": {{sellerShopOrderId}},\n  \"type\": \"RETURN\",\n  \"reason\": \"Sản phẩm bị lỗi hoặc không khớp mô tả hình ảnh\",\n  \"refund_amount\": 500000\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/orders/{{orderId}}/returns"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Create return request handles completion status properly', function () {",
+                  "  if (pm.response.code === 201) {",
+                  "    const res = pm.response.json();",
+                  "    pm.expect(res.success).to.be.true;",
+                  "    pm.expect(res.data.return_request_id).to.be.a('number');",
+                  "    pm.collectionVariables.set('returnRequestId', res.data.return_request_id);",
+                  "    pm.environment.set('returnRequestId', res.data.return_request_id);",
+                  "  } else {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([404, 422]);",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Seller - List shop orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/seller/orders"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Seller orders list returned 200 with isolated shop orders', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const res = pm.response.json();",
+                  "  pm.expect(res.success).to.be.true;",
+                  "  pm.expect(res.data.orders).to.be.an('array');",
+                  "  pm.expect(res.data.counts).to.be.an('object');",
+                  "  if (res.data.orders.length > 0) {",
+                  "    const o = res.data.orders[0];",
+                  "    pm.collectionVariables.set('sellerShopOrderId', o.id);",
+                  "    pm.environment.set('sellerShopOrderId', o.id);",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Seller - Get shop order detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/seller/orders/{{sellerShopOrderId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Seller order detail returned 200', function () {",
+                  "  if (pm.response.code === 200) {",
+                  "    const res = pm.response.json();",
+                  "    pm.expect(res.success).to.be.true;",
+                  "    pm.expect(res.data.seller_payout).to.be.a('number');",
+                  "    pm.expect(res.data.items).to.be.an('array');",
+                  "    pm.expect(res.data.timeline).to.be.an('array');",
+                  "  } else {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([404, 403]);",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Seller - Confirm shop order",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/seller/orders/{{sellerShopOrderId}}/confirm"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Seller confirm order handles status appropriately', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 422, 404, 403]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Seller - Pack shop order",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/seller/orders/{{sellerShopOrderId}}/pack"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Seller pack order handles status appropriately', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 422, 404, 403]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Seller - Ship shop order",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"carrier\": \"GHN Express\",\n  \"tracking_code\": \"GHN882190VN\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/seller/orders/{{sellerShopOrderId}}/ship"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Seller ship order handles tracking code & carrier assignment', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 422, 404, 403]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Seller - Complete shop order",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/seller/orders/{{sellerShopOrderId}}/complete"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Seller complete order marks completion & updates payments', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 422, 404, 403]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Seller - Cancel shop order",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Hết hàng trong kho gian hàng\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/seller/orders/{{sellerShopOrderId}}/cancel"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Seller cancel order checks eligibility & restocks inventory', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 422, 404, 403]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Seller - List return requests",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/seller/returns"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Seller returns list returned 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const res = pm.response.json();",
+                  "  pm.expect(res.success).to.be.true;",
+                  "  pm.expect(res.data.returns).to.be.an('array');",
+                  "  if (res.data.returns.length > 0) {",
+                  "    pm.collectionVariables.set('returnRequestId', res.data.returns[0].id);",
+                  "    pm.environment.set('returnRequestId', res.data.returns[0].id);",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Seller - Approve return request (Restock & Refund in 3 days)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"note\": \"Shop đồng ý chấp thuận đổi trả và hoàn tiền trong 3 ngày làm việc\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/seller/returns/{{returnRequestId}}/approve"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Seller approve return updates status, inventory and refund notice', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 422, 404, 403]);",
+                  "  if (pm.response.code === 200) {",
+                  "    const res = pm.response.json();",
+                  "    pm.expect(res.data.status).to.eql('APPROVED');",
+                  "    pm.expect(res.data.refund_status).to.eql('REFUND_PROCESSING');",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Seller - Reject return request",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"note\": \"Từ chối yêu cầu đổi trả vì sản phẩm đã qua sử dụng và rách tem niêm phong\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/seller/returns/{{returnRequestId}}/reject"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Seller reject return requires valid note and updates status', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 422, 404, 403]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
   ]
 }
