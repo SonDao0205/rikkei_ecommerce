@@ -41,10 +41,11 @@ export const MyOrder: React.FC = () => {
   const { profile } = useAppSelector((state) => state.profile);
   const { user } = useAppSelector((state) => state.auth);
 
-  const [localSearch, setLocalSearch] = useState(searchQuery);
+  const [localSearch, setLocalSearch] = useState("");
 
-  // Fetch profile and order counts once
+  // Fetch profile and order counts once & reset search on enter
   useEffect(() => {
+    dispatch(setSearchQuery(""));
     dispatch(fetchUserProfile());
     dispatch(getUserOrderCounts());
   }, [dispatch]);

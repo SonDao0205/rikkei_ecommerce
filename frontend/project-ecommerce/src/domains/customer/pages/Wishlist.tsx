@@ -60,6 +60,8 @@ export const Wishlist: React.FC = () => {
   });
 
   useEffect(() => {
+    dispatch(setWishlistSearchQuery(""));
+    dispatch(setWishlistFilter("all"));
     if (isAuthenticated) {
       dispatch(fetchWishlist());
     }

@@ -184,7 +184,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
         <div>
           {/* Shop / Brand Info */}
           <div
-            className="flex items-center gap-1 mb-1 hover:opacity-80 transition-opacity"
+            className="flex items-center gap-1 mb-1 hover:opacity-80 transition-opacity cursor-pointer"
             onClick={(e) => {
               if (onShopClick) {
                 e.stopPropagation();

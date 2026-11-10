@@ -39,6 +39,17 @@ export const InforShop: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const pageSize = 12;
 
+  // Reset filters and search input on page enter / shop change
+  const [prevShopId, setPrevShopId] = useState(shopId);
+  if (shopId !== prevShopId) {
+    setPrevShopId(shopId);
+    setSearchTerm("");
+    setSubmittedSearch("");
+    setActiveTab("all");
+    setSortKey("popular");
+    setCurrentPage(1);
+  }
+
   // Tải chi tiết Shop và trạng thái Follow khi ID thay đổi
   useEffect(() => {
     if (!Number.isNaN(shopId) && shopId > 0) {

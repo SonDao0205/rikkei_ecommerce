@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import type { ShopStoreData } from "@/shared/types";
+import { toSlug } from "@/shared/utils/slug";
 
 interface Step4StoreCardProps {
   store: ShopStoreData;
@@ -23,12 +24,10 @@ export const Step4StoreCard: React.FC<Step4StoreCardProps> = ({ store }) => {
   const defaultLogo =
     "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=300&q=80";
 
-  const slug = (store.shopName || "urbanstep-sneaker")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)+/g, "") || "urbanstep-sneaker";
+  const slug =
+    store.slug ||
+    toSlug(store.shopName || "urbanstep-sneaker") ||
+    "urbanstep-sneaker";
 
   const warehouseContact =
     store.warehouseContact || store.pickupAddress?.contactName || "Nguyễn Văn An";
@@ -89,12 +88,12 @@ export const Step4StoreCard: React.FC<Step4StoreCardProps> = ({ store }) => {
 
           <div className="flex flex-col gap-space-xs grow min-w-0 pt-2 md:pt-0">
             <div className="flex flex-wrap items-center gap-space-xs">
-              <h3 className="font-headline-md text-headline-md text-on-surface font-bold">
+              <h3 className="font-headline-md text-headline-md text-white font-bold">
                 {store.shopName || "UrbanStep Sneaker Hub"}
               </h3>
-              <span className="px-space-sm py-0.5 rounded-full bg-secondary-container/40 text-secondary font-label-sm text-label-sm font-bold flex items-center gap-1">
-                <span className="material-symbols-outlined text-[12px]">verified</span>
-                Hợp lệ
+              <span className="px-2.5 py-0.5 rounded-full bg-secondary text-white font-label-sm text-xs font-bold flex items-center gap-1 shadow-xs">
+                <span className="material-symbols-outlined text-[13px] text-white">verified</span>
+                <span>Hợp lệ</span>
               </span>
               <span className="px-space-sm py-0.5 rounded bg-surface-container text-on-surface-variant font-label-sm text-label-sm">
                 {store.category || "Giày dép & Thời trang Streetwear"}
@@ -121,9 +120,6 @@ export const Step4StoreCard: React.FC<Step4StoreCardProps> = ({ store }) => {
             <span className="material-symbols-outlined text-primary text-[18px]">warehouse</span>
             Địa chỉ Kho lấy hàng tiêu chuẩn (Pickup Hub)
           </span>
-          <span className="font-label-sm text-label-sm text-secondary bg-surface-container-lowest px-2 py-0.5 rounded font-bold">
-            Đã chuẩn hóa tọa độ GPS
-          </span>
         </div>
         <p className="font-body-md text-body-md text-on-surface font-medium mt-1">
           {fullAddress}
@@ -132,14 +128,6 @@ export const Step4StoreCard: React.FC<Step4StoreCardProps> = ({ store }) => {
           <span>
             Người phụ trách kho: <strong className="text-on-surface">{warehouseContact}</strong> (
             {warehousePhone})
-          </span>
-          <span>•</span>
-          <span className="flex items-center gap-1">
-            <span className="material-symbols-outlined text-[16px] text-secondary">sync</span>
-            Kho hoàn trả:{" "}
-            {store.sameReturnAddress || store.returnSameAsPickup
-              ? "Sử dụng chung địa chỉ kho lấy hàng"
-              : "Địa chỉ kho riêng biệt"}
           </span>
         </div>
       </div>

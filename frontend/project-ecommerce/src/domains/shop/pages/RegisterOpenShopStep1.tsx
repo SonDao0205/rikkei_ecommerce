@@ -5,7 +5,7 @@ import { refreshAccessToken, registerUser } from "@/domains/auth/state/authSlice
 import {
   setStep,
   updateAccount,
-  updateStore,
+  resetStore,
   setSuccessModalOpen,
 } from "@/domains/shop/state/shopRegisterSlice";
 import {
@@ -19,6 +19,7 @@ import {
   Step1AccountPanel,
 } from "@/domains/shop/components/register/step1";
 import { shopRegisterApi, type BackendShop } from "@/domains/shop/api/shopRegisterApi";
+import { isValidEmail, isValidVietnamesePhone } from "@/shared/utils/validation";
 
 export const RegisterOpenShopStep1: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -40,23 +41,11 @@ export const RegisterOpenShopStep1: React.FC = () => {
 
   const applyShopToForm = useCallback((shop: BackendShop | null) => {
     setExistingShop(shop);
-    if (!shop) return;
-    const address = (shop.warehouse_address || "").split(",").map((part) => part.trim());
-    dispatch(updateStore({
-      shopName: shop.name,
-      bio: shop.description || "",
-      logoUrl: shop.logo_url || "",
-      bannerUrl: shop.banner_url || "",
-      warehousePhone: shop.phone || "",
-      addressDetail: address.length > 3 ? address.slice(0, -3).join(", ") : address[0] || "",
-      ward: address.length > 3 ? address[address.length - 3] : "",
-      district: address.length > 2 ? address[address.length - 2] : "",
-      province: address.length > 1 ? address[address.length - 1] : "",
-    }));
-  }, [dispatch]);
+  }, []);
 
   useEffect(() => {
     dispatch(setStep(1));
+    dispatch(resetStore());
     if (user) {
       dispatch(updateAccount({
         fullName: user.full_name,
@@ -108,6 +97,14 @@ export const RegisterOpenShopStep1: React.FC = () => {
         setNotice("Vui lòng điền đầy đủ họ tên, email, số điện thoại và mật khẩu để tạo tài khoản.");
         return;
       }
+      if (!isValidEmail(email.trim())) {
+        setNotice("Email không đúng định dạng. Ví dụ: seller@example.com");
+        return;
+      }
+      if (!isValidVietnamesePhone(phone.trim())) {
+        setNotice("Số điện thoại không đúng định dạng số di động Việt Nam. Ví dụ: 0909 123 456");
+        return;
+      }
       if (password !== confirmPassword) {
         setNotice("Mật khẩu xác nhận chưa khớp.");
         return;
@@ -122,6 +119,7 @@ export const RegisterOpenShopStep1: React.FC = () => {
       dispatch(updateAccount({ password: "", confirmPassword: "", agreeTerms: true }));
     }
     // Navigate to Step 2 page
+    dispatch(resetStore());
     dispatch(setStep(2));
     navigate("/register-open-shop/step2");
   };
@@ -180,22 +178,19 @@ export const RegisterOpenShopStep1: React.FC = () => {
           <div className="w-full max-w-[1440px] mx-auto px-gutter py-space-md sm:py-space-lg flex flex-col gap-space-lg">
             {shopLoading && user && <p role="status" className="rounded-xl bg-surface-container-low p-4">Đang tải trạng thái gian hàng...</p>}
             {shopLoadError && <div role="alert" className="rounded-xl border border-error/30 bg-error-container/30 p-4 text-sm"><p>Không thể tải hồ sơ shop. Để tránh tạo trùng shop, vui lòng tải lại trước khi tiếp tục.</p><button type="button" onClick={reloadShop} className="mt-2 rounded-lg border px-3 py-2 font-semibold">Thử tải lại</button></div>}
-            {existingShop && (
+            {existingShop && existingShop.status !== "PENDING" && (
               <section className={`rounded-xl border p-5 ${existingShop.status === "ACTIVE" ? "border-green-300 bg-green-50" : "border-amber-300 bg-amber-50"}`}>
                 <h2 className="font-semibold text-on-surface">
                   {existingShop.status === "ACTIVE" ? "Shop đã được duyệt" :
-                    existingShop.status === "PENDING" ? "Hồ sơ đang chờ xét duyệt" :
-                      existingShop.status === "SUSPENDED" ? "Shop đang bị tạm ngưng" :
-                        "Đã tìm thấy bản nháp hồ sơ shop"}
+                    existingShop.status === "SUSPENDED" ? "Shop đang bị tạm ngưng" :
+                      "Đã tìm thấy bản nháp hồ sơ shop"}
                 </h2>
                 <p className="mt-1 text-sm text-on-surface-variant">
                   {existingShop.status === "ACTIVE"
                     ? "Quyền SELLER đã được cấp. Bạn vẫn có thể mua sắm bằng tài khoản này."
-                    : existingShop.status === "PENDING"
-                      ? "Không cần gửi lại. Bạn có thể tiếp tục mua sắm trong lúc hồ sơ được xét duyệt."
-                      : existingShop.status === "SUSPENDED"
-                        ? "Liên hệ bộ phận hỗ trợ để biết thêm thông tin. Quyền mua hàng vẫn được giữ nguyên."
-                        : "Thông tin shop được tải từ máy chủ để bạn tiếp tục hoàn thiện."}
+                    : existingShop.status === "SUSPENDED"
+                      ? "Liên hệ bộ phận hỗ trợ để biết thêm thông tin. Quyền mua hàng vẫn được giữ nguyên."
+                      : "Thông tin shop được tải từ máy chủ để bạn tiếp tục hoàn thiện."}
                 </p>
                 {existingShop.reject_reason && (
                   <p className="mt-2 text-sm text-red-800">Ghi chú xét duyệt: {existingShop.reject_reason}</p>
@@ -213,7 +208,7 @@ export const RegisterOpenShopStep1: React.FC = () => {
               </section>
             )}
 
-            {!shopLoading && !shopLoadError && (!existingShop || ["DRAFT", "NEEDS_INFO", "REJECTED"].includes(existingShop.status)) && (
+            {!shopLoading && !shopLoadError && (!existingShop || ["DRAFT", "NEEDS_INFO", "REJECTED", "PENDING"].includes(existingShop.status)) && (
               <>
                 {/* Context subheader & 4-step stepper */}
                 <Step1Stepper onStepClick={handleStepClick} />
