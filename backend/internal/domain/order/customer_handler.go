@@ -133,6 +133,8 @@ func (h *CustomerHandler) listCustomerOrders(w http.ResponseWriter, r *http.Requ
 			matchTab = true
 		} else if tab == derivedLower {
 			matchTab = true
+		} else if tab == "pending" && derivedLower == "confirmed" {
+			matchTab = true
 		}
 
 		matchSearch := true
@@ -854,7 +856,7 @@ func (h *CustomerHandler) createCustomerReturnRequest(w http.ResponseWriter, r *
 
 func (h *CustomerHandler) loadShopOrdersForOrder(ctx context.Context, orderID int64) ([]ShopOrderView, []string, error) {
 	rows, err := h.db.QueryContext(ctx,
-		`SELECT so.id, so.order_id, so.shop_id, s.shop_name, so.shop_order_code, so.status,
+		`SELECT so.id, so.order_id, so.shop_id, s.name, so.shop_order_code, so.status,
 			so.subtotal, so.shipping_fee, so.shop_discount, so.platform_discount, so.total_amount,
 			so.carrier, so.tracking_code, so.cancel_reason,
 			so.confirmed_at, so.packed_at, so.shipped_at, so.completed_at, so.cancelled_at,

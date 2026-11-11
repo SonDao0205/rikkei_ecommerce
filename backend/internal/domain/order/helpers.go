@@ -103,7 +103,7 @@ func deriveParentStatus(statuses []string) (string, string) {
 func activeSellerShop(ctx context.Context, db *sql.DB, userID string) (int64, string, error) {
 	var shopID int64
 	var shopName string
-	err := db.QueryRowContext(ctx, `SELECT s.id, s.shop_name FROM shops s 
+	err := db.QueryRowContext(ctx, `SELECT s.id, s.name FROM shops s 
 		JOIN users u ON u.id = s.owner_id
 		JOIN user_roles ur ON ur.user_id = u.id AND ur.role_code = 'SELLER'
 		WHERE s.owner_id = ? AND s.status = 'ACTIVE' AND u.status = 'ACTIVE'`, userID).Scan(&shopID, &shopName)

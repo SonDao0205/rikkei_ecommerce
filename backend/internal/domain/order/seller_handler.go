@@ -100,8 +100,12 @@ func (h *SellerHandler) listSellerOrders(w http.ResponseWriter, r *http.Request)
 	args = append(args, shopID)
 
 	if statusFilter != "" {
-		whereClauses = append(whereClauses, "so.status = ?")
-		args = append(args, statusFilter)
+		if statusFilter == "PACKING" {
+			whereClauses = append(whereClauses, "so.status IN ('PACKING', 'CONFIRMED')")
+		} else {
+			whereClauses = append(whereClauses, "so.status = ?")
+			args = append(args, statusFilter)
+		}
 	}
 
 	if search != "" {
