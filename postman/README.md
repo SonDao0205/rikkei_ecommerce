@@ -134,3 +134,9 @@ Use disposable local accounts/data. These checks change order state; do not repl
 7. As CLIENT, cancel a cancellable order and confirm receipt of a shipped order. Verify unauthorized or invalid-state requests are rejected.
 
 Automated checks for this change: `go test ./...`, `go vet ./...`, frontend `npm run lint`, and frontend `npm run build`. Record database-backed Postman results separately because those require a running local MySQL/API and disposable fixtures.
+
+## Upload image and product media
+
+The media API is `POST /api/v1/media` (`Authorization: Bearer ...`, multipart fields `purpose` and `file`). It accepts JPEG images only up to 5 MiB and MP4/MOV/WebM product videos up to 20 MiB. Verify JPEG success; reject PNG renamed as JPG; reject oversized files; test unauthenticated access, CLIENT vs SELLER purpose permissions, malformed multipart, and Cloudinary unavailable responses. Then save a returned avatar URL with `PUT /api/v1/auth/profile/avatar` and check `GET /api/v1/auth/me`; use `DELETE /api/v1/auth/profile/avatar` to remove it. Product create/update should persist `video_url` and product detail should return it.
+
+Uploads continue while navigating between SPA routes and report progress in the global upload panel. A browser reload/close interrupts an in-flight transfer. Use local test files and a local Cloudinary account; do not commit `.env` files or Postman secrets.

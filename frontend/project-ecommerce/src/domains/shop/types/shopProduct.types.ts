@@ -41,6 +41,7 @@ export interface BackendSellerProduct {
   slug: string;
   description: string | null;
   thumbnail_url: string | null;
+  video_url?: string | null;
   price: number;
   status: string;
   images: BackendSellerProductImage[];
@@ -67,6 +68,7 @@ export interface CreateSellerProductPayload {
   category_id: number;
   brand_id?: number | null;
   price: number;
+  video_url?: string | null;
   images: BackendSellerProductImage[];
   variants: Omit<BackendSellerProductVariant, "id">[];
 }
@@ -77,6 +79,7 @@ export interface UpdateSellerProductPayload {
   category_id: number;
   brand_id?: number | null;
   price: number;
+  video_url?: string | null;
   images: BackendSellerProductImage[];
   variants: BackendSellerProductVariant[];
 }
@@ -89,6 +92,7 @@ export interface ShopProductItem {
   categoryId?: number;
   categoryLabel: string;
   imageUrl: string;
+  videoUrl?: string;
   imageAlt: string;
   soldCount: number;
   variationTitle: string;

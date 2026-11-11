@@ -35,6 +35,14 @@ func validateSellerProductRequest(w http.ResponseWriter, request *sellerProductR
 		writeError(w, http.StatusBadRequest, "invalid_product_images", "A product must have 1 to 10 images")
 		return false
 	}
+	if request.VideoURL != nil {
+		value := strings.TrimSpace(*request.VideoURL)
+		if value != "" && !validHTTPSURL(value, 500) {
+			writeError(w, http.StatusBadRequest, "invalid_product_video_url", "Product video URL must be an absolute HTTPS URL")
+			return false
+		}
+		request.VideoURL = &value
+	}
 	primaryCount := 0
 	for index := range request.Images {
 		request.Images[index].URL = strings.TrimSpace(request.Images[index].URL)

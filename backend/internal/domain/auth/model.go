@@ -7,6 +7,7 @@ type User struct {
 	Email         string    `json:"email"`
 	FullName      string    `json:"full_name"`
 	Phone         string    `json:"phone"`
+	AvatarURL     *string   `json:"avatar_url"`
 	Role          string    `json:"role"`
 	Roles         []string  `json:"roles"`
 	ShopStatus    string    `json:"shop_status,omitempty"`

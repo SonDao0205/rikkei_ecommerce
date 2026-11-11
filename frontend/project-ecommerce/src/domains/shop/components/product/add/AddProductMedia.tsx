@@ -1,51 +1,105 @@
-import React, { useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import type { AddProductFormData } from "@/domains/shop/types/shopAddProduct.types";
+import { uploadMedia } from "@/shared/api/mediaUpload";
 
 interface AddProductMediaProps {
   formData: AddProductFormData;
   onChange: (fields: Partial<AddProductFormData>) => void;
+  onUploadingChange?: (uploading: boolean) => void;
 }
 
 export const AddProductMedia: React.FC<AddProductMediaProps> = ({
   formData,
   onChange,
+  onUploadingChange,
 }) => {
   const coverFileInputRef = useRef<HTMLInputElement>(null);
   const detailFileInputRef = useRef<HTMLInputElement>(null);
   const videoFileInputRef = useRef<HTMLInputElement>(null);
+  const detailImagesRef = useRef(formData.detailImages);
+  const uploadingCount = useRef(0);
+  const coverSelection = useRef(0);
+  const videoSelection = useRef(0);
 
-  const handleCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => { detailImagesRef.current = formData.detailImages; }, [formData.detailImages]);
+
+  const beginUpload = () => {
+    uploadingCount.current += 1;
+    onUploadingChange?.(true);
+  };
+  const endUpload = () => {
+    uploadingCount.current = Math.max(0, uploadingCount.current - 1);
+    onUploadingChange?.(uploadingCount.current > 0);
+  };
+
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      onChange({ coverImage: url });
+    e.target.value = "";
+    if (!file) return;
+    const selection = ++coverSelection.current;
+    const preview = URL.createObjectURL(file);
+    const previous = formData.coverImage;
+    onChange({ coverImage: preview });
+    beginUpload();
+    try {
+      const result = await uploadMedia(file, "product-image");
+      if (selection === coverSelection.current) onChange({ coverImage: result.url });
+    } catch {
+      if (selection === coverSelection.current) onChange({ coverImage: previous });
+    } finally {
+      URL.revokeObjectURL(preview);
+      endUpload();
     }
   };
 
-  const handleDetailUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDetailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (files && files.length > 0) {
-      const newImages = Array.from(files).map((file, idx) => ({
-        id: `img-${Date.now()}-${idx}`,
-        url: URL.createObjectURL(file),
-        tag: "Ảnh chi tiết",
-      }));
-      const updated = [...formData.detailImages, ...newImages].slice(0, 8);
-      onChange({ detailImages: updated });
-    }
+    e.target.value = "";
+    if (!files?.length) return;
+    const accepted = Array.from(files).slice(0, Math.max(0, 8 - detailImagesRef.current.length));
+    const previews = accepted.map((file, idx) => ({ id: `img-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 6)}`, file, preview: URL.createObjectURL(file) }));
+    detailImagesRef.current = [...detailImagesRef.current, ...previews.map(({ id, preview }) => ({ id, url: preview, tag: "Ảnh chi tiết" }))];
+    onChange({ detailImages: detailImagesRef.current });
+    await Promise.all(previews.map(async ({ id, file, preview }) => {
+      beginUpload();
+      try {
+        const result = await uploadMedia(file, "product-image");
+        detailImagesRef.current = detailImagesRef.current.map((image) => image.id === id ? { ...image, url: result.url } : image);
+        onChange({ detailImages: detailImagesRef.current });
+      } catch {
+        detailImagesRef.current = detailImagesRef.current.filter((image) => image.id !== id);
+        onChange({ detailImages: detailImagesRef.current });
+      } finally {
+        URL.revokeObjectURL(preview);
+        endUpload();
+      }
+    }));
   };
 
   const handleRemoveDetailImage = (id: string) => {
+    detailImagesRef.current = detailImagesRef.current.filter((img) => img.id !== id);
     onChange({
-      detailImages: formData.detailImages.filter((img) => img.id !== id),
+      detailImages: detailImagesRef.current,
     });
   };
 
-  const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      onChange({ videoUrl: url });
+    e.target.value = "";
+    if (!file) return;
+    const selection = ++videoSelection.current;
+    const previous = formData.videoUrl;
+    const preview = URL.createObjectURL(file);
+    onChange({ videoUrl: preview });
+    beginUpload();
+    try {
+      const result = await uploadMedia(file, "product-video");
+      if (selection === videoSelection.current) onChange({ videoUrl: result.url });
+    } catch {
+      if (selection === videoSelection.current) onChange({ videoUrl: previous });
+    } finally {
+      URL.revokeObjectURL(preview);
+      endUpload();
     }
   };
 
@@ -88,7 +142,7 @@ export const AddProductMedia: React.FC<AddProductMediaProps> = ({
             type="file"
             ref={coverFileInputRef}
             onChange={handleCoverUpload}
-            accept="image/*"
+            accept=".jpg,.jpeg,image/jpeg"
             className="hidden"
           />
 
@@ -125,7 +179,7 @@ export const AddProductMedia: React.FC<AddProductMediaProps> = ({
                   Tải lên ảnh bìa
                 </span>
                 <span className="font-body-sm text-body-sm">
-                  Định dạng PNG, JPG tỷ lệ 1:1
+                  JPG/JPEG, tối đa 5 MB
                 </span>
               </div>
             )}
@@ -149,7 +203,7 @@ export const AddProductMedia: React.FC<AddProductMediaProps> = ({
               type="file"
               ref={detailFileInputRef}
               onChange={handleDetailUpload}
-              accept="image/*"
+              accept=".jpg,.jpeg,image/jpeg"
               multiple
               className="hidden"
             />
@@ -213,7 +267,7 @@ export const AddProductMedia: React.FC<AddProductMediaProps> = ({
                 <div className="font-body-sm text-body-sm text-outline">
                   {formData.videoUrl
                     ? "Đã chọn video giới thiệu sản phẩm"
-                    : "Định dạng MP4/MOV, dung lượng dưới 50MB, tỷ lệ 1:1 hoặc 9:16"}
+                    : "MP4/MOV/WebM, tối đa 20 MB. Bạn có thể rời trang trong lúc tải."}
                 </div>
               </div>
             </div>
@@ -222,7 +276,7 @@ export const AddProductMedia: React.FC<AddProductMediaProps> = ({
               type="file"
               ref={videoFileInputRef}
               onChange={handleVideoUpload}
-              accept="video/mp4,video/quicktime"
+              accept=".mp4,.mov,.webm,video/mp4,video/quicktime,video/webm"
               className="hidden"
             />
 

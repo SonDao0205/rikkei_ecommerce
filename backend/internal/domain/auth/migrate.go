@@ -35,6 +35,16 @@ func Migrate(ctx context.Context, db *sql.DB) error {
 			return err
 		}
 	}
+	var avatarColumnExists int
+	if err = db.QueryRowContext(ctx, `SELECT COUNT(*) FROM information_schema.columns
+		WHERE table_schema=DATABASE() AND table_name='users' AND column_name='avatar_url'`).Scan(&avatarColumnExists); err != nil {
+		return err
+	}
+	if avatarColumnExists == 0 {
+		if _, err = db.ExecContext(ctx, `ALTER TABLE users ADD COLUMN avatar_url VARCHAR(500) NULL AFTER full_name`); err != nil {
+			return err
+		}
+	}
 	if _, err = db.ExecContext(ctx, `DELETE FROM refresh_tokens WHERE expires_at<=UTC_TIMESTAMP() OR (revoked=1 AND created_at<DATE_SUB(UTC_TIMESTAMP(),INTERVAL 30 DAY))`); err != nil {
 		return err
 	}
