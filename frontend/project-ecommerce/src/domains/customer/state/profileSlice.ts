@@ -90,7 +90,7 @@ export const profileSlice = createSlice({
       state.passwordError = null;
       state.passwordSuccessMessage = null;
     },
-    setLocalAvatarPreview: (state, action: PayloadAction<string>) => {
+    setLocalAvatarPreview: (state, action: PayloadAction<string | null>) => {
       if (state.profile) {
         state.profile.avatar_url = action.payload;
       }

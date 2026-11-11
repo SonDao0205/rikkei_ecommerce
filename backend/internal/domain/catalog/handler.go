@@ -50,6 +50,7 @@ type product struct {
 	Slug         string  `json:"slug"`
 	Description  *string `json:"description"`
 	ThumbnailURL *string `json:"thumbnail_url"`
+	VideoURL     *string `json:"video_url"`
 	Price        float64 `json:"price"`
 	SoldCount    int64   `json:"sold_count"`
 	RatingAvg    float64 `json:"rating_avg"`

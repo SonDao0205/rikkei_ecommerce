@@ -1,6 +1,7 @@
 import React, { useRef } from "react";
 import type { ShopStoreData } from "@/shared/types";
 import { toSlug } from "@/shared/utils/slug";
+import { uploadMedia } from "@/shared/api/mediaUpload";
 
 interface Step2StoreBrandingProps {
   data: ShopStoreData;
@@ -23,38 +24,24 @@ export const Step2StoreBranding: React.FC<Step2StoreBrandingProps> = ({
   const logoInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (!file.type.startsWith("image/")) {
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const result = event.target?.result as string;
-        if (result) {
-          onChange({ logoUrl: result });
-        }
-      };
-      reader.readAsDataURL(file);
-    }
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const result = await uploadMedia(file, "shop-image");
+      onChange({ logoUrl: result.url });
+    } catch { /* the global upload status displays the failure */ }
   };
 
-  const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (!file.type.startsWith("image/")) {
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const result = event.target?.result as string;
-        if (result) {
-          onChange({ bannerUrl: result, bannerName: file.name });
-        }
-      };
-      reader.readAsDataURL(file);
-    }
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const result = await uploadMedia(file, "shop-image");
+      onChange({ bannerUrl: result.url, bannerName: file.name });
+    } catch { /* the global upload status displays the failure */ }
   };
 
   const handleRemoveLogo = () => {
@@ -177,7 +164,7 @@ export const Step2StoreBranding: React.FC<Step2StoreBrandingProps> = ({
           <input
             type="file"
             ref={logoInputRef}
-            accept="image/png,image/jpeg,image/jpg,image/webp"
+            accept=".jpg,.jpeg,image/jpeg"
             className="hidden"
             onChange={handleLogoUpload}
           />
@@ -248,7 +235,7 @@ export const Step2StoreBranding: React.FC<Step2StoreBrandingProps> = ({
           <input
             type="file"
             ref={bannerInputRef}
-            accept="image/png,image/jpeg,image/jpg,image/webp"
+            accept=".jpg,.jpeg,image/jpeg"
             className="hidden"
             onChange={handleBannerUpload}
           />

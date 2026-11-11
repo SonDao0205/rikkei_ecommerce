@@ -86,3 +86,7 @@ Backend currently supports auth/RBAC, catalog/categories, shop onboarding, selle
 Order status transitions are persisted as `PENDING -> CONFIRMED -> PACKING -> SHIPPING -> COMPLETED`, with controlled cancellation/return paths. The customer-facing processing tab groups `CONFIRMED` and `PACKING`; the seller's preparation tab uses `status=PREPARING` for those same persisted states. Details still show the exact status. Seller endpoints enforce shop ownership and valid transitions. `ship` requires carrier and tracking code. `POST /api/v1/seller/orders/bulk-confirm` validates 1–50 distinct IDs and confirms all selected pending orders atomically.
 
 See [Backend README](backend/README.md#order-workflow-customer-and-seller) for API/filter contracts and [Frontend README](frontend/project-ecommerce/README.md#order-workflow-api-integration) for UI integration and current mock-data boundaries.
+
+### Media uploads
+
+Avatar, shop branding, product images, and product video files use the authenticated Cloudinary upload API. Configure Cloudinary values in ignored local `.env` files only; the API secret is backend-only. JPEG-only images are capped at 5 MiB and product videos at 20 MiB. See [Backend media API documentation](backend/README.md#media-uploads-cloudinary) and [Frontend integration](frontend/project-ecommerce/README.md#media-upload-integration).

@@ -149,6 +149,7 @@ export interface BackendProductRaw {
   slug?: string;
   description?: string | null;
   thumbnail_url?: string | null;
+  video_url?: string | null;
   price?: number | string;
   sold_count?: number;
   rating_avg?: number;
@@ -221,6 +222,7 @@ export const mapBackendProductToProductItem = (raw: BackendProductRaw): ProductI
     slug: raw.slug || "",
     description: raw.description ?? null,
     thumbnail_url: raw.thumbnail_url ?? null,
+    video_url: raw.video_url ?? null,
     price,
     sold_count: raw.sold_count ?? 0,
     rating_avg:

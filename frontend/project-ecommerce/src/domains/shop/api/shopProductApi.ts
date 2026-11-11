@@ -105,6 +105,7 @@ export const normalizeSellerProduct = (
     status: (product.status as ShopProductItem["status"]) || "ACTIVE",
     rawVariants: variants,
     rawImages: product.images,
+    videoUrl: product.video_url || undefined,
   };
 };
 
@@ -411,6 +412,7 @@ export const shopProductApi = {
         category_id: parsedCategoryId,
         brand_id: product.brand_id ?? null,
         price: minPrice,
+        video_url: product.videoUrl || null,
         images: imagesToSubmit,
         variants: variantsToSubmit,
       };
@@ -469,6 +471,7 @@ export const shopProductApi = {
         category_id: parsedCategoryId,
         brand_id: product.brand_id ?? null,
         price: minPrice,
+        video_url: product.videoUrl || null,
         images: imagesToSubmit,
         variants: variantsToSubmit.map((v) => ({
           sku: v.sku,

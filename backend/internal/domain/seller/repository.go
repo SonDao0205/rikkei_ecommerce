@@ -35,8 +35,9 @@ func scanSellerProduct(row scanner) (sellerProduct, error) {
 	var description, thumbnail sql.NullString
 	var brandID sql.NullInt64
 	var createdAt, updatedAt sql.NullTime
+	var videoURL sql.NullString
 	err := row.Scan(&product.ID, &product.ShopID, &product.CategoryID, &brandID, &product.Name, &product.Slug,
-		&description, &thumbnail, &product.Price, &product.Status, &createdAt, &updatedAt)
+		&description, &thumbnail, &videoURL, &product.Price, &product.Status, &createdAt, &updatedAt)
 	if err != nil {
 		return sellerProduct{}, err
 	}
@@ -48,6 +49,9 @@ func scanSellerProduct(row scanner) (sellerProduct, error) {
 	}
 	if thumbnail.Valid {
 		product.Thumbnail = &thumbnail.String
+	}
+	if videoURL.Valid {
+		product.VideoURL = &videoURL.String
 	}
 	if createdAt.Valid {
 		product.CreatedAt = createdAt.Time.UTC().Format("2006-01-02T15:04:05Z")
@@ -62,7 +66,7 @@ func scanSellerProduct(row scanner) (sellerProduct, error) {
 
 func (a *Handler) sellerProductForOwner(r *http.Request, shopID, productID int64) (sellerProduct, error) {
 	return scanSellerProduct(a.db.QueryRowContext(r.Context(), `SELECT id,shop_id,category_id,brand_id,name,slug,
-		description,thumbnail_url,price,status,created_at,updated_at FROM products
+		description,thumbnail_url,video_url,price,status,created_at,updated_at FROM products
 		WHERE id=? AND shop_id=? AND is_deleted=0`, productID, shopID))
 }
 
