@@ -364,7 +364,7 @@ export const userOrderApi = {
       reason: string;
       refund_amount?: number;
     }
-  ): Promise<any> => {
+  ): Promise<{ success: boolean; message?: string; data?: unknown }> => {
     const res = await axiosClient.post(`/api/v1/orders/${orderId}/returns`, payload);
     return res.data;
   },

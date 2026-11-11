@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 
 export interface OrderToastProps {
@@ -19,45 +19,56 @@ export const OrderToast: React.FC<OrderToastProps> = ({
   onClose,
 }) => {
   const [isVisible, setIsVisible] = useState(false);
-  const [shouldRender, setShouldRender] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    if (isOpen) {
-      setShouldRender(true);
-      // Kích hoạt animation lướt mượt mà từ phải sang trái
-      const enterTimer = setTimeout(() => {
-        setIsVisible(true);
-      }, 30);
-
-      if (duration > 0) {
-        timerRef.current = setTimeout(() => {
-          handleClose();
-        }, duration);
-      }
-
-      return () => {
-        clearTimeout(enterTimer);
-        if (timerRef.current) clearTimeout(timerRef.current);
-      };
-    } else {
-      setIsVisible(false);
-      const exitTimer = setTimeout(() => {
-        setShouldRender(false);
-      }, 400);
-      return () => clearTimeout(exitTimer);
-    }
-  }, [isOpen, duration]);
-
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setIsVisible(false);
-    if (timerRef.current) clearTimeout(timerRef.current);
-    setTimeout(() => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+    }
+    closeTimerRef.current = setTimeout(() => {
+      setIsMounted(false);
       onClose();
     }, 400);
-  };
+  }, [onClose]);
 
-  if (!shouldRender || typeof document === "undefined") return null;
+  useEffect(() => {
+    if (!isOpen) {
+      const exitTimer = setTimeout(() => {
+        setIsVisible(false);
+        setIsMounted(false);
+      }, 0);
+      return () => clearTimeout(exitTimer);
+    }
+
+    const enterTimer = setTimeout(() => {
+      setIsMounted(true);
+      setIsVisible(true);
+    }, 20);
+
+    const autoCloseTimer =
+      duration > 0
+        ? setTimeout(() => {
+            handleClose();
+          }, duration)
+        : null;
+
+    return () => {
+      clearTimeout(enterTimer);
+      if (autoCloseTimer) clearTimeout(autoCloseTimer);
+    };
+  }, [isOpen, duration, handleClose]);
+
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current);
+      }
+    };
+  }, []);
+
+  if ((!isMounted && !isOpen) || typeof document === "undefined") return null;
 
   const isError = type === "error";
 
