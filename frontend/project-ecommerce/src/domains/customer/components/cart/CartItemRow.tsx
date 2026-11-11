@@ -1,4 +1,5 @@
 import React from "react";
+import { Link, useNavigate } from "react-router-dom";
 import type { CartItem } from "@/domains/customer/types/cart.types";
 import { formatCurrencyVND } from "@/shared/utils/currency";
 
@@ -17,6 +18,7 @@ export const CartItemRow: React.FC<CartItemRowProps> = ({
   onRemove,
   onSaveForLater,
 }) => {
+  const navigate = useNavigate();
   const price = item.price ?? item.unit_price ?? 0;
   const originalPrice = item.original_price ?? price;
   const maxStock = item.max_stock ?? item.available_stock ?? 99;
@@ -25,10 +27,20 @@ export const CartItemRow: React.FC<CartItemRowProps> = ({
   const isMinQuantity = item.quantity <= 1;
   const isMaxQuantity = item.quantity >= maxStock;
   const lineTotal = price * item.quantity;
+  const productTargetUrl = `/product/${item.product_id || item.id}`;
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest("button") || target.closest("a") || target.closest("input")) {
+      return;
+    }
+    navigate(productTargetUrl);
+  };
 
   return (
     <div
-      className={`group relative p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-xl transition-all duration-300 ease-out will-change-transform ${
+      onClick={handleCardClick}
+      className={`group relative p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-xl transition-all duration-300 ease-out will-change-transform cursor-pointer ${
         isAvailable
           ? "bg-surface-container-lowest hover:bg-surface-container-low/40 hover:shadow-md hover:-translate-y-0.5"
           : "bg-surface-container-low/50 opacity-75 border border-dashed border-outline-variant/60"
@@ -41,12 +53,17 @@ export const CartItemRow: React.FC<CartItemRowProps> = ({
           checked={(item.selected ?? true) && isAvailable}
           disabled={!isAvailable}
           onChange={() => isAvailable && onToggleSelect(item.id)}
+          onClick={(e) => e.stopPropagation()}
           className={`w-5 h-5 mt-2.5 rounded text-primary-container accent-primary-container shrink-0 ${
             isAvailable ? "cursor-pointer" : "cursor-not-allowed opacity-40"
           }`}
         />
 
-        <div className="w-20 h-20 rounded-xl overflow-hidden bg-surface-container-low shrink-0 relative border border-outline-variant/40">
+        <Link
+          to={productTargetUrl}
+          onClick={(e) => e.stopPropagation()}
+          className="w-20 h-20 rounded-xl overflow-hidden bg-surface-container-low shrink-0 relative border border-outline-variant/40 block cursor-pointer"
+        >
           <img
             src={item.image_url || item.product_thumbnail_url || ""}
             alt={item.alt_text || item.name || item.product_name}
@@ -61,18 +78,24 @@ export const CartItemRow: React.FC<CartItemRowProps> = ({
               </span>
             </div>
           )}
-        </div>
+        </Link>
 
         <div className="flex flex-col gap-1 min-w-0 flex-1">
-          <h3
-            className={`font-label-lg text-sm sm:text-base font-bold line-clamp-2 transition-colors duration-200 ${
-              isAvailable
-                ? "text-on-surface group-hover:text-primary"
-                : "text-on-surface/60 line-through"
-            }`}
+          <Link
+            to={productTargetUrl}
+            onClick={(e) => e.stopPropagation()}
+            className="cursor-pointer"
           >
-            {item.name || item.product_name}
-          </h3>
+            <h3
+              className={`font-label-lg text-sm sm:text-base font-bold line-clamp-2 transition-colors duration-200 cursor-pointer ${
+                isAvailable
+                  ? "text-on-surface group-hover:text-primary"
+                  : "text-on-surface/60 line-through"
+              }`}
+            >
+              {item.name || item.product_name}
+            </h3>
+          </Link>
 
           <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-surface-container-low text-on-surface-variant text-xs w-fit">
             <span>{item.variant_label || item.variant_name || item.variant_sku}</span>
@@ -120,7 +143,10 @@ export const CartItemRow: React.FC<CartItemRowProps> = ({
         </div>
 
         {/* Quantity Stepper */}
-        <div className="flex items-center bg-surface-container-low rounded-lg p-0.5 border border-outline-variant/40">
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="flex items-center bg-surface-container-low rounded-lg p-0.5 border border-outline-variant/40"
+        >
           <button
             type="button"
             disabled={!isAvailable || isMinQuantity}
@@ -163,7 +189,10 @@ export const CartItemRow: React.FC<CartItemRowProps> = ({
           </span>
           <button
             type="button"
-            onClick={() => onRemove(item.id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove(item.id);
+            }}
             title="Xóa sản phẩm"
             className="p-1 text-outline hover:text-error transition-colors cursor-pointer"
           >
@@ -172,7 +201,10 @@ export const CartItemRow: React.FC<CartItemRowProps> = ({
           {onSaveForLater && (
             <button
               type="button"
-              onClick={() => onSaveForLater(item)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSaveForLater(item);
+              }}
               title="Lưu vào yêu thích"
               className="p-1 text-outline hover:text-tertiary-container transition-colors cursor-pointer"
             >

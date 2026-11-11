@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import type { CartItem, ShopVoucher } from "@/domains/customer/types/cart.types";
 import CartItemRow from "./CartItemRow";
 import { formatCurrencyVND } from "@/shared/utils/currency";
@@ -88,12 +89,17 @@ export const CartShopGroup: React.FC<CartShopGroupProps> = ({
             onChange={(e) => onToggleShopSelect(shopId, e.target.checked)}
             className="w-5 h-5 rounded text-primary-container accent-primary-container cursor-pointer"
           />
-          <div className="w-7 h-7 rounded-lg bg-surface-container flex items-center justify-center font-bold text-primary text-xs shadow-xs">
-            {shopAvatarText}
-          </div>
-          <span className="font-label-lg text-sm sm:text-base text-on-surface font-bold">
-            {shopName}
-          </span>
+          <Link
+            to={`/shop/${shopId}`}
+            className="flex items-center gap-2 group/shop cursor-pointer"
+          >
+            <div className="w-7 h-7 rounded-lg bg-surface-container flex items-center justify-center font-bold text-primary text-xs shadow-xs group-hover/shop:bg-primary-container group-hover/shop:text-on-primary transition-colors cursor-pointer">
+              {shopAvatarText}
+            </div>
+            <span className="font-label-lg text-sm sm:text-base text-on-surface font-bold group-hover/shop:text-primary transition-colors cursor-pointer">
+              {shopName}
+            </span>
+          </Link>
 
           <span
             className={`px-2 py-0.5 rounded-full text-xs flex items-center gap-1 font-semibold ${
