@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { isValidEmail, isValidVietnamesePhone } from "@/shared/utils/validation";
 import type {
   AdminUserItem,
   AdminUserRole,
@@ -73,14 +74,14 @@ const FormContent: React.FC<FormContentProps> = ({
 
     if (!formData.email.trim()) {
       errors.email = "Email không được để trống";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      errors.email = "Định dạng email không hợp lệ";
+    } else if (!isValidEmail(formData.email)) {
+      errors.email = "Định dạng email không hợp lệ (VD: user@example.com)";
     }
 
     if (!formData.phone.trim()) {
       errors.phone = "Số điện thoại không được để trống";
-    } else if (!/^[0-9]{9,11}$/.test(formData.phone.replace(/\s+/g, ""))) {
-      errors.phone = "Số điện thoại phải từ 9 - 11 chữ số";
+    } else if (!isValidVietnamesePhone(formData.phone)) {
+      errors.phone = "Số điện thoại Việt Nam không hợp lệ (VD: 0912 345 678)";
     }
 
     if (!editingUser && !formData.password.trim()) {

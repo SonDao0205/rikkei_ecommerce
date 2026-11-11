@@ -7,6 +7,7 @@ import {
   clearProfileStatus,
 } from "@/domains/customer/state/profileSlice";
 import { getDefaultAvatar } from "@/shared/utils/avatar";
+import { isValidVietnamesePhone } from "@/shared/utils/validation";
 import type { UserProfileDetails } from "@/shared/types";
 
 interface ProfileInfoFormProps {
@@ -110,6 +111,12 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
     }
 
     if (!fullName.trim()) return;
+
+    if (phone.trim() && !isValidVietnamesePhone(phone)) {
+      dispatch(clearProfileStatus());
+      setLocalError("Số điện thoại không đúng định dạng số di động Việt Nam (VD: 0912 345 678)");
+      return;
+    }
 
     dispatch(
       updateUserProfile({

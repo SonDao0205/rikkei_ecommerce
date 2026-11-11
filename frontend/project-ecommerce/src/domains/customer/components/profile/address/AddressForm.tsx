@@ -6,6 +6,7 @@ import {
   closeForm,
 } from "@/domains/customer/state/addressSlice";
 import type { AddressType } from "@/shared/types";
+import { isValidVietnamesePhone } from "@/shared/utils/validation";
 
 // Suggestions only; users can enter administrative areas missing from this sample.
 const VIETNAM_LOCATIONS: Record<
@@ -115,8 +116,8 @@ export const AddressForm: React.FC = () => {
       return;
     }
     const cleanPhone = phone.trim().replace(/[\s().-]/g, "");
-    if (!/^\+?\d{9,15}$/.test(cleanPhone)) {
-      setValidationError("Vui lòng nhập số điện thoại hợp lệ (9-15 chữ số)");
+    if (!isValidVietnamesePhone(cleanPhone)) {
+      setValidationError("Vui lòng nhập số điện thoại Việt Nam hợp lệ (VD: 0912 345 678)");
       return;
     }
     if (!province.trim() || !district.trim() || !ward.trim()) {

@@ -27,6 +27,7 @@ export interface AddProductFormData {
   categoryId: number;
   categoryPath: string[];
   brand: string;
+  brandId?: number | null;
   isBrandVerified: boolean;
   origin: string;
   description: string;

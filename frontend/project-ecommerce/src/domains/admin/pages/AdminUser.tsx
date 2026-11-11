@@ -79,6 +79,10 @@ export const AdminUser: React.FC = () => {
   };
 
   useEffect(() => {
+    dispatch(clearFilters());
+  }, [dispatch]);
+
+  useEffect(() => {
     dispatch(fetchAdminUserStats());
     dispatch(fetchAdminUserList(filters));
   }, [dispatch, filters]);

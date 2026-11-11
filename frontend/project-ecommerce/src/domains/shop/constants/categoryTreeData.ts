@@ -14,7 +14,7 @@ export const CATEGORY_TREE_DATA: AddProductCategoryOption[] = [
     ],
   },
   {
-    id: 930012,
+    id: 930011,
     name: "Giày Sneakers Cổ Cao",
     parentPath: ["Thời trang nam", "Giày dép & Phụ kiện"],
     suggestedSizes: ["39", "40", "41", "42", "43"],
@@ -75,6 +75,46 @@ export const CATEGORY_TREE_DATA: AddProductCategoryOption[] = [
     suggestedColors: [
       { id: "c1", name: "Gốm Mộc Men Hoả Biến", hex: "#b45309" },
       { id: "c2", name: "Men Trắng Ngà", hex: "#fef3c7" },
+    ],
+  },
+  {
+    id: 930007,
+    name: "Máy tính & Laptop",
+    parentPath: ["Điện thoại & Điện tử", "Máy tính & Laptop"],
+    suggestedSizes: ["14 inch", "15.6 inch"],
+    suggestedColors: [
+      { id: "c1", name: "Xám Bạc", hex: "#94a3b8" },
+      { id: "c2", name: "Đen", hex: "#18181b" },
+    ],
+  },
+  {
+    id: 930012,
+    name: "Phụ kiện máy tính & Bàn phím",
+    parentPath: ["Điện thoại & Điện tử", "Phụ kiện máy tính"],
+    suggestedSizes: ["Tiêu chuẩn", "Fullsize", "Tenkeyless"],
+    suggestedColors: [
+      { id: "c1", name: "Đen", hex: "#18181b" },
+      { id: "c2", name: "Trắng", hex: "#f4f4f5" },
+    ],
+  },
+  {
+    id: 930008,
+    name: "Đồ bếp & Bàn ăn",
+    parentPath: ["Nhà cửa & Đời sống", "Đồ bếp"],
+    suggestedSizes: ["Bộ 4 món", "Bộ 6 món", "Tiêu chuẩn"],
+    suggestedColors: [
+      { id: "c1", name: "Inox Bạc", hex: "#cbd5e1" },
+      { id: "c2", name: "Gỗ Tự Nhiên", hex: "#92400e" },
+    ],
+  },
+  {
+    id: 930009,
+    name: "Cà phê & Trà đặc sản",
+    parentPath: ["Thực phẩm & Đồ uống", "Cà phê & Trà"],
+    suggestedSizes: ["250g", "500g", "1kg"],
+    suggestedColors: [
+      { id: "c1", name: "Rang Mộc", hex: "#451a03" },
+      { id: "c2", name: "Rang Đậm", hex: "#1c1917" },
     ],
   },
 ];

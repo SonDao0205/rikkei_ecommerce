@@ -1,4 +1,4 @@
-import axiosClient from "@/shared/api/axiosClient";
+import axiosClient, { shouldFallbackToMock } from "@/shared/api/axiosClient";
 import type {
   ShopProductItem,
   ShopProductStats,
@@ -13,10 +13,17 @@ import type {
 
 const CATEGORY_NAMES: Record<number, string> = {
   930001: "Thời trang",
-  930002: "Áo và phụ kiện",
+  930002: "Áo và quần",
   930003: "Nhà cửa & Đời sống",
   930004: "Thực phẩm & Đồ uống",
-  930005: "Điện thoại & Phụ kiện",
+  930005: "Điện thoại & Điện tử",
+  930006: "Áo khoác",
+  930007: "Máy tính & Laptop",
+  930008: "Đồ bếp & Bàn ăn",
+  930009: "Cà phê & Trà",
+  930010: "Balo & Túi xách",
+  930011: "Giày dép",
+  930012: "Phụ kiện máy tính",
 };
 
 export const DEFAULT_PRODUCT_IMAGE =
@@ -60,6 +67,22 @@ export const normalizeSellerProduct = (
     .filter(Boolean)
     .join(", ");
 
+  let costPrice = Math.round(product.price * 0.6);
+  try {
+    const storedCosts = JSON.parse(
+      localStorage.getItem("marketpulse_product_cost_prices") || "{}"
+    );
+    if (storedCosts[product.id] !== undefined) {
+      costPrice = Number(storedCosts[product.id]);
+    } else if (storedCosts[primarySku] !== undefined) {
+      costPrice = Number(storedCosts[primarySku]);
+    } else if (primarySku.includes("GN-ENT")) {
+      costPrice = 12000;
+    }
+  } catch {
+    // ignore
+  }
+
   return {
     id: String(product.id),
     name: product.name,
@@ -74,6 +97,8 @@ export const normalizeSellerProduct = (
     variationSubtitle: variationNames || "Tiêu chuẩn",
     price: product.price,
     formattedPrice: new Intl.NumberFormat("vi-VN").format(product.price) + " ₫",
+    costPrice,
+    formattedCostPrice: new Intl.NumberFormat("vi-VN").format(costPrice) + " ₫",
     stock: totalStock,
     stockStatus,
     stockStatusLabel,
@@ -392,7 +417,10 @@ export const shopProductApi = {
 
       try {
         return await shopProductApi.updateProduct(product.id, updatePayload);
-      } catch {
+      } catch (err) {
+        if (!shouldFallbackToMock(err)) {
+          throw err;
+        }
         // Resilient fallback if backend server is offline
         return {
           id: String(product.id),
@@ -454,7 +482,10 @@ export const shopProductApi = {
 
       try {
         return await shopProductApi.createProduct(createPayload);
-      } catch {
+      } catch (err) {
+        if (!shouldFallbackToMock(err)) {
+          throw err;
+        }
         // Resilient fallback for newly created product if backend offline
         const newId = String(Date.now());
         return {

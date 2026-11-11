@@ -16,6 +16,13 @@ export const ShopLayout: React.FC<ShopLayoutProps> = ({ children }) => {
     (state) => state.auth
   );
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [quickSearch, setQuickSearch] = useState("");
+  const [prevPathname, setPrevPathname] = useState(location.pathname);
+
+  if (location.pathname !== prevPathname) {
+    setPrevPathname(location.pathname);
+    setQuickSearch("");
+  }
 
   // Seller Center requires both an assigned SELLER role and an ACTIVE shop.
   if (isInitialized) {
@@ -229,6 +236,8 @@ export const ShopLayout: React.FC<ShopLayoutProps> = ({ children }) => {
               <input
                 type="text"
                 placeholder="Tìm kiếm đơn hàng, SKU..."
+                value={quickSearch}
+                onChange={(e) => setQuickSearch(e.target.value)}
                 className="w-full h-10 pl-9 pr-14 bg-surface-container-lowest rounded-xl font-body-sm text-body-sm text-on-surface placeholder:text-outline focus:outline-none shadow-[0_1px_3px_0_rgba(15,23,42,0.04)] border border-outline-variant/30 focus:border-primary"
               />
               <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm font-mono">

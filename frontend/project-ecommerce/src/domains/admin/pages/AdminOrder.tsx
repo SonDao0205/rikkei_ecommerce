@@ -43,8 +43,9 @@ const AdminOrder: React.FC = () => {
   } = useAppSelector((state) => state.adminOrder);
 
   useEffect(() => {
+    dispatch(clearAllFilters());
     dispatch(getOrderStatusCounts());
-    dispatch(getAdminOrders());
+    dispatch(getAdminOrders({ search: "" }));
   }, [dispatch]);
 
   const handleTabChange = (

@@ -101,21 +101,18 @@ export const Step2WarehouseLogistics: React.FC<Step2WarehouseLogisticsProps> = (
         <div className="md:col-span-6 flex flex-col gap-1.5">
           <label className="font-label-md text-label-md text-on-surface flex items-center justify-between font-semibold">
             <span className="flex items-center gap-1">
-              Số điện thoại lấy hàng <span className="text-error font-bold">*</span>
+              Số điện thoại kho <span className="text-error font-bold">*</span>
             </span>
           </label>
           <div className="relative">
             <input
               className="w-full h-12 px-4 rounded-lg bg-surface-container-lowest text-on-surface font-body-md text-body-md shadow-sm outline-none placeholder:text-outline border border-outline-variant/30 focus:shadow-[0_0_0_3px_rgba(67,56,202,0.18)] focus:border-primary font-mono"
-              placeholder="Nhập số điện thoại lấy hàng (VD: 0909 123 456)"
+              placeholder="Nhập số điện thoại kho (VD: 0909 123 456)"
               type="text"
               value={data.warehousePhone}
               onChange={(e) => onChange({ warehousePhone: e.target.value })}
             />
           </div>
-          <span className="font-body-sm text-body-sm text-on-surface-variant">
-            Tài xế sẽ gọi đến số này trước khi tới lấy hàng 10-15 phút
-          </span>
         </div>
 
         {/* Cascading Dropdowns: 3 Cấp */}

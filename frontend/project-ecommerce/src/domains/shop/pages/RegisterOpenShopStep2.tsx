@@ -1,11 +1,14 @@
-import React, { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useRef } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "@/app/state/store";
 import {
   setStep,
   updateStore,
+  resetStore,
   saveDraftShopRegistration,
 } from "@/domains/shop/state/shopRegisterSlice";
+import { shopRegisterApi } from "@/domains/shop/api/shopRegisterApi";
+import { isValidVietnamesePhone } from "@/shared/utils/validation";
 import {
   OnboardingHeader,
   OnboardingFooter,
@@ -20,16 +23,77 @@ import {
 export const RegisterOpenShopStep2: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isEditingPendingShop = Boolean(
+    (location.state as { editPendingShop?: boolean } | null)?.editPendingShop
+  );
   const [toastMessage, setToastMessage] = React.useState<string | null>(null);
   const { formData, isSavingDraft, lastSavedAt } = useAppSelector(
     (state) => state.shopRegister
   );
+  const hasInitializedRef = useRef(false);
 
   useEffect(() => {
+    if (hasInitializedRef.current) return;
+    hasInitializedRef.current = true;
+
     // Ensure Redux step state is set to 2 when mounting this page
     dispatch(setStep(2));
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [dispatch]);
+
+    if (isEditingPendingShop) {
+      if (!formData.store.shopName) {
+        void shopRegisterApi
+          .getMyShop()
+          .then((shop) => {
+            if (!shop || shop.status !== "PENDING") {
+              dispatch(resetStore());
+              return;
+            }
+            const addressParts = (shop.warehouse_address || "")
+              .split(",")
+              .map((part) => part.trim())
+              .filter(Boolean);
+            const addressDetail =
+              addressParts.length > 3
+                ? addressParts.slice(0, -3).join(", ")
+                : addressParts[0] || "";
+            const ward =
+              addressParts.length > 3
+                ? addressParts[addressParts.length - 3]
+                : "";
+            const district =
+              addressParts.length > 2
+                ? addressParts[addressParts.length - 2]
+                : "";
+            const province =
+              addressParts.length > 1
+                ? addressParts[addressParts.length - 1]
+                : "";
+
+            dispatch(
+              updateStore({
+                shopName: shop.name || "",
+                bio: shop.description || "",
+                logoUrl: shop.logo_url || "",
+                bannerUrl: shop.banner_url || "",
+                warehousePhone: shop.phone || "",
+                addressDetail,
+                ward: ward || "Phường Bến Nghé",
+                district: district || "Quận 1",
+                province: province || "TP. Hồ Chí Minh",
+              })
+            );
+          })
+          .catch(() => {
+            // Non-blocking
+          });
+      }
+    } else {
+      // Normal flow: reset store inputs to empty when entering Step 2
+      dispatch(resetStore());
+    }
+  }, [dispatch, isEditingPendingShop, formData.store.shopName]);
 
   const handleStepClick = (targetStep: number) => {
     if (targetStep === 1) {
@@ -39,13 +103,21 @@ export const RegisterOpenShopStep2: React.FC = () => {
   };
 
   const handleNextStep = async () => {
+    const warehousePhone = formData.store.warehousePhone.trim();
+    if (warehousePhone && !isValidVietnamesePhone(warehousePhone)) {
+      setToastMessage("Số điện thoại kho không hợp lệ theo định dạng Việt Nam (VD: 0909 123 456).");
+      return;
+    }
+
     dispatch(setStep(3));
     try {
       await dispatch(saveDraftShopRegistration(formData)).unwrap();
     } catch {
       // Non-blocking draft save, proceed to Step 3
     }
-    navigate("/register-open-shop/step3");
+    navigate("/register-open-shop/step3", {
+      state: isEditingPendingShop ? { editPendingShop: true } : undefined,
+    });
   };
 
   const handleSaveDraft = async () => {

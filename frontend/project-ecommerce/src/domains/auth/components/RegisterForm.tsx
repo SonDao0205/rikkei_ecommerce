@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "@/app/state/store";
 import { registerUser, clearAuthError } from "@/domains/auth/state/authSlice";
 import { BrandIcon } from "@/shared/components/common/BrandLogo";
+import { isValidEmail, isValidVietnamesePhone } from "@/shared/utils/validation";
 
 // ─── Sub-components ─────────────────────────────────────────────────────────────
 
@@ -85,14 +86,14 @@ const validate = (data: RegisterFormData): FormErrors => {
 
   if (!data.email.trim()) {
     errors.email = "Email address is required.";
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+  } else if (!isValidEmail(data.email)) {
     errors.email = "Please enter a valid email address.";
   }
 
   if (!data.phone.trim()) {
     errors.phone = "Phone number is required.";
-  } else if (!/^[0-9\s\-+()]{9,15}$/.test(data.phone.trim())) {
-    errors.phone = "Please enter a valid phone number (9–15 digits).";
+  } else if (!isValidVietnamesePhone(data.phone)) {
+    errors.phone = "Please enter a valid Vietnamese phone number (e.g. 0912 345 678).";
   }
 
   if (!data.password) {

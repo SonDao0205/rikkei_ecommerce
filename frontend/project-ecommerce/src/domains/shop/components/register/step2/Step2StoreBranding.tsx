@@ -1,5 +1,6 @@
 import React, { useRef } from "react";
 import type { ShopStoreData } from "@/shared/types";
+import { toSlug } from "@/shared/utils/slug";
 
 interface Step2StoreBrandingProps {
   data: ShopStoreData;
@@ -107,7 +108,14 @@ export const Step2StoreBranding: React.FC<Step2StoreBrandingProps> = ({
               type="text"
               maxLength={50}
               value={data.shopName}
-              onChange={(e) => onChange({ shopName: e.target.value })}
+              onChange={(e) => {
+                const name = e.target.value;
+                onChange({
+                  shopName: name,
+                  slug: toSlug(name),
+                  customStoreUrl: toSlug(name),
+                });
+              }}
             />
             {data.shopName && (
               <span className="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-secondary text-[22px]">

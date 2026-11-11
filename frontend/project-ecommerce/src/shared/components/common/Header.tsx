@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "@/app/state/store";
 import { openLogoutModal } from "@/domains/auth/state/authSlice";
 import { getDefaultAvatar } from "@/shared/utils/avatar";
@@ -22,6 +22,15 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [prevPathname, setPrevPathname] = useState(location.pathname);
+
+  // Reset search input whenever entering any page
+  if (location.pathname !== prevPathname) {
+    setPrevPathname(location.pathname);
+    setSearchQuery("");
+  }
   const { user, isAuthenticated } = useAppSelector((state) => state.auth);
   const { profile } = useAppSelector((state) => state.profile);
   const cartState = useAppSelector((state) => state.cart);
@@ -197,6 +206,8 @@ const Header: React.FC<HeaderProps> = ({
                 className="w-full bg-transparent text-on-surface placeholder:text-outline text-body-sm font-body-sm focus:outline-none"
                 placeholder="Search 12,000+ artisan stores & products..."
                 type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
           </div>
@@ -233,6 +244,8 @@ const Header: React.FC<HeaderProps> = ({
                     className="w-full bg-transparent text-on-surface placeholder:text-outline text-body-md font-body-md focus:outline-none"
                     placeholder="Search 12,000+ verified artisan stores & products..."
                     type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
                 <div className="pr-2 shrink-0 flex items-center gap-space-sm">

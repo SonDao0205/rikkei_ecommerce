@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "@/app/state/store";
 import {
   setStep,
@@ -16,6 +16,10 @@ import {
 export const RegisterOpenShopStep3: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isEditingPendingShop = Boolean(
+    (location.state as { editPendingShop?: boolean } | null)?.editPendingShop
+  );
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const { formData, isSavingDraft, lastSavedAt } = useAppSelector(
     (state) => state.shopRegister
@@ -33,7 +37,9 @@ export const RegisterOpenShopStep3: React.FC = () => {
       navigate("/register-open-shop");
     } else if (targetStep === 2) {
       dispatch(setStep(2));
-      navigate("/register-open-shop/step2");
+      navigate("/register-open-shop/step2", {
+        state: isEditingPendingShop ? { editPendingShop: true } : undefined,
+      });
     }
   };
 
@@ -44,7 +50,9 @@ export const RegisterOpenShopStep3: React.FC = () => {
     } catch {
       // Non-blocking draft save, proceed to Step 4
     }
-    navigate("/register-open-shop/step4");
+    navigate("/register-open-shop/step4", {
+      state: isEditingPendingShop ? { editPendingShop: true } : undefined,
+    });
   };
 
   const handleSaveDraft = async () => {

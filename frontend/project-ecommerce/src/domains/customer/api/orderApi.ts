@@ -1,503 +1,251 @@
+import axiosClient from "@/shared/api/axiosClient";
 import type {
   UserOrder,
   UserOrderStatusCounts,
   UserOrderFilterParams,
+  UserOrderStatusTab,
+  UserOrderItem,
+  UserOrderShop,
+  UserOrderTimelineLog,
 } from "@/domains/order/types";
 
-export const mockUserOrders: UserOrder[] = [
-  {
-    id: 1,
-    orderCode: "#ORD-9821",
-    userId: 1,
-    status: "shipping",
-    statusLabel: "ĐANG VẬN CHUYỂN",
-    subtotal: 1600000,
-    shippingFee: 30000,
-    shippingDiscount: 25000,
-    shopDiscount: 50000,
-    totalAmount: 1555000,
-    paymentMethod: "COD",
-    paymentStatusText: "COD - Thanh toán khi nhận hàng (Chưa thanh toán)",
-    shippingInfoText: "Đang vận chuyển • GHN Express - Dự kiến giao 28/10/2026",
-    estimatedDeliveryDate: "28/10/2026",
-    courierName: "Giao Hàng Nhanh (GHN Express)",
-    trackingCode: "GHN88391204VN",
-    createdAt: "14:20, 26/10/2026",
-    updatedAtText: "Cập nhật cách đây 12 phút",
-    recipient: {
-      name: "Nguyễn Văn A",
-      phone: "(+84) 909 123 456",
-      address: "Số 142/8 Ung Văn Khiêm, Phường 25, Quận Bình Thạnh, TP. Hồ Chí Minh",
-      addressType: "Nhà riêng",
-      note: "Giao giờ hành chính, gọi trước 15 phút. Cho kiểm tra hàng (Đồng kiểm COD).",
-    },
-    timeline: [
-      {
-        id: "log-1",
-        time: "27/10 08:15",
-        title: "Đang vận chuyển",
-        subtitle: "Bưu tá phụ trách: Trần Minh Quân - Dự kiến giao hôm nay",
-        isLatest: true,
-      },
-      {
-        id: "log-2",
-        time: "26/10 18:30",
-        title: "Đơn hàng đã được lấy",
-      },
-      {
-        id: "log-3",
-        time: "26/10 14:45",
-        title: "Chờ người vận chuyển lấy đơn hàng",
-      },
-      {
-        id: "log-4",
-        time: "26/10 14:20",
-        title: "Đơn hàng đã được xác nhận",
-      },
-    ],
-    shops: [
-      {
-        shopId: 1,
-        shopName: "UrbanStep Official Store",
-        shopBadge: "MALL",
-        logoUrl:
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuDLIVMTD3tN9t8DW2gRLuII8RtcJ1WtIBdCkzmYhY6-TYcHJOFc2giilqAtkBiRQIscRbEURiDZa67g61nobIRK_J_qGFR3Jku_Zens3U5GbUrDOnsyiDRMbBiWd6n6shGFvEr_QoMhconplZMQTAS06QeTNavQOeeTtaN2CWYxs_SwfMPIaEhBVzGqNRDhCs6MN81eLFF5g9jmKUkcV7zDmVaZS9BLftM_6JfcS1A",
-      },
-      {
-        shopId: 4,
-        shopName: "Indochine Studio",
-        shopBadge: "ARTISAN",
-      },
-    ],
-    items: [
-      {
-        id: 101,
-        shopId: 1,
-        shopName: "UrbanStep Official Store",
-        shopBadge: "MALL",
-        productId: 1,
-        productName: "Sneaker Retro Runner V2 Cổ Thấp Da Lộn Thủ Công",
-        variantName: "Size 42 • Màu: Đen Tuyền",
-        sku: "SKU-SNK-042",
-        imageUrl:
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuD_vsXgoRSZm5MzGXlOHy2-wZU4GIhBwAfm4CdRzn5GDmCWYIqnCXLBm3BkjUjzP4EjPMhAK9y5YUN5ymFYdIwt0Sue0CPn6-To6Qjn2LxmjOvJoAE7oLCuEFnSMOcVg8mOjP2jjJAt0BGSdlYdLH0Wx32WBcJQypII2uDZRrbS2z2wB-Ew1ezCm9c0GKWfeWnhWak02r1R8gkPujWaa7pey2iT5tASP-4k0w_-ajMZTV1zdz-KhtNS",
-        quantity: 1,
-        unitPrice: 850000,
-      },
-      {
-        id: 102,
-        shopId: 1,
-        shopName: "UrbanStep Official Store",
-        shopBadge: "MALL",
-        productId: 2,
-        productName: "Vớ Cổ Ngắn Bamboo Athletic Socks",
-        variantName: "Size L • Combo 3 Đôi Trắng/Xám",
-        sku: "SKU-SOX-001",
-        imageUrl:
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuD1fbtg3f7ZFidlp8MojgksmWMV6gEOuKq8x1FcIJ6Jw6V6b6Rm6bBG7irf8zsAIzPo44mRTuYDeKZ2woOW3zKnFTjdum-oh1hzkAJIU1QtxmSBdxi95gkrvul1j-a7utQ8o7T3wfie-o2cP8a8zwwfOvrOTyGr-DreOdTF81kD0BRuM27pSsXh10dTgLZeVYVWN9-7KiRe27RKlXzDLu1eZ_XdUutsc8AriL1thZZEt-AS6NdbU30B",
-        quantity: 2,
-        unitPrice: 350000,
-        discountVoucherText: "-15% Shop Voucher",
-      },
-      {
-        id: 103,
-        shopId: 4,
-        shopName: "Indochine Studio",
-        shopBadge: "ARTISAN",
-        productId: 10,
-        productName: "Túi Tote Canvas vải mộc quai da thật",
-        variantName: "Mộc Tự Nhiên • Khóa bấm đồng",
-        sku: "SKU-TOT-010",
-        imageUrl:
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuA9VeCyicOMYH_OrsudraV7bjzFX21LVv3tDHOtQb5kXvl51QcE9ZXPwcsvgPUEzzP5X6CQdmqpl4WXI-fQ3C1yoyHyGS-tyciPOV8dhOIrj3xWRMSZ3jgiI1OfmHRWFAvhoLiWqlx-KOqNaFFcPCHeXF8qwewj5UMMPfKbSOw1WGRofT5EXdmQn5tnzSnUrHnLTYhvQlhKvOxxg6ixfMyXc_yewwRf87ViAg14T4rYFguWoFMr0ZZY",
-        quantity: 1,
-        unitPrice: 420000,
-      },
-    ],
-  },
-  {
-    id: 2,
-    orderCode: "#ORD-9752",
-    userId: 1,
-    status: "completed",
-    statusLabel: "HOÀN THÀNH",
-    subtotal: 1880000,
-    shippingFee: 0,
-    totalAmount: 1880000,
-    paymentMethod: "MOMO",
-    paymentStatusText: "Đã thanh toán qua MoMo E-Wallet",
-    shippingInfoText: "Giao hàng thành công ngày 20/10/2026",
-    courierName: "GHTK Express",
-    createdAt: "09:15 - 18/10/2026",
-    shops: [
-      {
-        shopId: 2,
-        shopName: "Gốm Bát Tràng Di Sản",
-        shopBadge: "ARTISAN",
-      },
-      {
-        shopId: 5,
-        shopName: "Mộc Di Sản Đồng Kỵ",
-        shopBadge: "ARTISAN",
-      },
-    ],
-    items: [
-      {
-        id: 201,
-        shopId: 2,
-        shopName: "Gốm Bát Tràng Di Sản",
-        shopBadge: "ARTISAN",
-        productId: 3,
-        productName: "Bình gốm mộc hoả biến vân rêu cổ trang trí phòng khách",
-        variantName: "Kích thước L (Cao 32cm) • Men rêu thạch",
-        sku: "SKU-VASE-001",
-        imageUrl:
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuByYpTLVSa4bNqICOMNSb8OQDws5YF60QfP9TjzRoHSe7fnhvyc9hwVeZsLaGxeo_slddXyxeJsDWYrhifFo-CQhnsOd52Bga70j2R3nHS5Tl1XGM9KRfsaA9HpufT-zAT7tp1FY6QVGT1oZ3C2OSeYaCs4860bso1MCDJdaMggxc9upe8mkrWEGpDj45Ss_P8bpqDNSjAB2SUMPJGlI1w4OQBbUfNvWWy4vVUaMw9b1x97CpNDSofR",
-        quantity: 1,
-        unitPrice: 1150000,
-      },
-      {
-        id: 202,
-        shopId: 2,
-        shopName: "Gốm Bát Tràng Di Sản",
-        shopBadge: "ARTISAN",
-        productId: 12,
-        productName: "Bộ 6 Ly Gốm Nung Tráng Men Tro Mộc",
-        variantName: "Combo 6 ly • Dung tích 150ml",
-        sku: "SKU-CUP-006",
-        imageUrl:
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuA_lUHQFUIemftdU5or3cXphetJcZ383ap0u9O9zBjHp373bbT25SwI1fQIJH0fB6bvKYoZDnpDW4Cn9taa20Rf7bNQFsvjiHK8qOzQR8m5Lgd_ygw3adOmT-6Rc4dMSq-UhQq7g2GfRD8xiSzGgPcVy5GS5SP7oWgkmQraW6QsCrCp8vIPEyL1cUW1Ix6abCS_A9tIbLiTpeyieozNz1PxSce2mnogeixselK_Y8KM4klrbeFvPdIk",
-        quantity: 1,
-        unitPrice: 280000,
-      },
-      {
-        id: 203,
-        shopId: 5,
-        shopName: "Mộc Di Sản Đồng Kỵ",
-        shopBadge: "ARTISAN",
-        productId: 15,
-        productName: "Khay Trà Gỗ Hương Khắc Chìm Hoa Sen",
-        variantName: "Gỗ Hương Đỏ • 35x25cm",
-        sku: "SKU-TRAY-015",
-        imageUrl:
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuCiK1ACxrAqhJiusftQGXjV28yO9xncYI8nmoNuSVCRN-Gzmth_r5wrAv4KrBl3FNt0heMuUEh_PkfyoD4mcPOXcsRzwDkv50guWn5pRUdW9kAWPyX-xH8QUpMog04jCpi3AKzigHRFYGaOYYMXviB5xYglRb7qqtjd6gMvFsxP92i13gQ6obpzW4SEvpYZOE73GP6Hf1UjjOJAEOx9gpv3NfAfFsO7YyddWczovXZS7YtCAQqPDerH",
-        quantity: 1,
-        unitPrice: 450000,
-      },
-    ],
-  },
-  {
-    id: 3,
-    orderCode: "#ORD-9840",
-    userId: 1,
-    status: "pending",
-    statusLabel: "CHỜ XÁC NHẬN",
-    subtotal: 860000,
-    shippingFee: 0,
-    totalAmount: 860000,
-    paymentMethod: "COD",
-    paymentStatusText: "COD - Thanh toán tiền mặt khi nhận hàng",
-    shippingInfoText: "Người bán đang chuẩn bị đóng gói hàng",
-    courierName: "GHTK Express",
-    createdAt: "10:05 - 27/10/2026",
-    shops: [
-      {
-        shopId: 3,
-        shopName: "Sài Gòn Artisan Leather",
-        shopBadge: "ARTISAN",
-      },
-      {
-        shopId: 1,
-        shopName: "UrbanStep Official Store",
-        shopBadge: "MALL",
-      },
-    ],
-    items: [
-      {
-        id: 301,
-        shopId: 3,
-        shopName: "Sài Gòn Artisan Leather",
-        shopBadge: "ARTISAN",
-        productId: 4,
-        productName: "Ví Đựng Thẻ Da Bò Sáp Mộc Cardholder",
-        variantName: "Màu Vàng Bò Tan • 6 ngăn thẻ",
-        sku: "SKU-WLT-004",
-        imageUrl:
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuCMOnI5A2CoWeagc_996Qwh2OW0SyQrBKm4wzn21gX1JiLK1wFjJ06RgYGsUJwlUXnl2XbWTIm7OSNVE1m6JAfEZ3KPa04M4b7SmL5irvs9dtmW1JeIMs_oINoYnXFr1refyVj-63obhJ5sWDvDZjxFF5YDXh5elksBF0DSToxf7dU-M9KnuNae0SISz1_d0J2v_8IY8hDrJNyr8x79BNSgPHREeqkAMhKYXr1YxdWEHDseLi-xcLZF",
-        quantity: 1,
-        unitPrice: 320000,
-      },
-      {
-        id: 302,
-        shopId: 3,
-        shopName: "Sài Gòn Artisan Leather",
-        shopBadge: "ARTISAN",
-        productId: 5,
-        productName: "Dây Nịt Da Bò Khóa Đồng Đúc Cổ Điển",
-        variantName: "Bản 3.8cm • Màu Nâu Sáp",
-        sku: "SKU-BLT-005",
-        imageUrl:
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuCiK1ACxrAqhJiusftQGXjV28yO9xncYI8nmoNuSVCRN-Gzmth_r5wrAv4KrBl3FNt0heMuUEh_PkfyoD4mcPOXcsRzwDkv50guWn5pRUdW9kAWPyX-xH8QUpMog04jCpi3AKzigHRFYGaOYYMXviB5xYglRb7qqtjd6gMvFsxP92i13gQ6obpzW4SEvpYZOE73GP6Hf1UjjOJAEOx9gpv3NfAfFsO7YyddWczovXZS7YtCAQqPDerH",
-        quantity: 1,
-        unitPrice: 450000,
-      },
-      {
-        id: 303,
-        shopId: 1,
-        shopName: "UrbanStep Official Store",
-        shopBadge: "MALL",
-        productId: 6,
-        productName: "Dây Giày Streetwear Phản Quang 3M",
-        variantName: "Màu Neon Cam • Dài 120cm",
-        sku: "SKU-LCE-006",
-        imageUrl:
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuAt9NXGtazFu_8LS8Fd2OiK8Zu1kPbxmnKljCq3vP-TrK6FJNor7g2KKv88y6QPXgpYm1KHlACBjGqfm99ww47WrdY2Pp9KxK_Zic5ix79KZTBZWM1ujyOVd8prAE5e2uMeQCm-m8ofKjgT-Hk2u23XA950INlTrJFrFxV0FQ9VNZU-6UEYqyAbpDt2tWOZ1DaBGOFfyiPzuhbGZmdcFxReeYl5MCP3HEa1XYx-bQM",
-        quantity: 2,
-        unitPrice: 45000,
-      },
-    ],
-  },
-  {
-    id: 4,
-    orderCode: "#ORD-9610",
-    userId: 1,
-    status: "cancelled",
-    statusLabel: "ĐÃ HỦY",
-    subtotal: 800000,
-    shippingFee: 0,
-    totalAmount: 800000,
-    paymentMethod: "COD",
-    paymentStatusText: "COD - Đã hủy",
-    createdAt: "11:20 - 15/10/2026",
-    cancelReason: "Đổi ý không muốn mua nữa",
-    cancelledAt: "12:40, 15/10/2026",
-    shops: [
-      {
-        shopId: 4,
-        shopName: "Indochine Studio",
-        shopBadge: "ARTISAN",
-      },
-      {
-        shopId: 1,
-        shopName: "UrbanStep Official Store",
-        shopBadge: "MALL",
-      },
-    ],
-    items: [
-      {
-        id: 401,
-        shopId: 4,
-        shopName: "Indochine Studio",
-        shopBadge: "ARTISAN",
-        productId: 10,
-        productName: "Túi Tote Canvas vải mộc quai da thật",
-        variantName: "Mộc Tự Nhiên • Khóa bấm đồng",
-        sku: "SKU-TOT-010",
-        imageUrl:
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuA9VeCyicOMYH_OrsudraV7bjzFX21LVv3tDHOtQb5kXvl51QcE9ZXPwcsvgPUEzzP5X6CQdmqpl4WXI-fQ3C1yoyHyGS-tyciPOV8dhOIrj3xWRMSZ3jgiI1OfmHRWFAvhoLiWqlx-KOqNaFFcPCHeXF8qwewj5UMMPfKbSOw1WGRofT5EXdmQn5tnzSnUrHnLTYhvQlhKvOxxg6ixfMyXc_yewwRf87ViAg14T4rYFguWoFMr0ZZY",
-        quantity: 1,
-        unitPrice: 420000,
-      },
-      {
-        id: 402,
-        shopId: 1,
-        shopName: "UrbanStep Official Store",
-        shopBadge: "MALL",
-        productId: 8,
-        productName: "Áo Thun Heavyweight Vintage Washed Boxy",
-        variantName: "Màu Washed Grey • Size L",
-        sku: "SKU-TEE-008",
-        imageUrl:
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuCXGqeWsOSGJB-59Hbs43pb4fqcZNi7PwMfHt7WG66WlZqaJTtspBZAN1eObVrCPaMiEUIDs6tVXX7I63cCoQ1rUNgg2ad-0gCeHvaEGHjeaxvWO0FVxdAu6UqFZFHBzPQWzTETn48GK9ePeqeFmTX6qMUJ7HL4Nl9TXU_9s875AImYx19ZGjeX8b1Vx4uGgC-cUFZ502tD2EJiJUkjhAdjDmP0EEFZpvHO0CIWYKveDRNVvch0GZcA",
-        quantity: 1,
-        unitPrice: 380000,
-      },
-    ],
-  },
-  {
-    id: 5,
-    orderCode: "#ORD-9580",
-    userId: 1,
-    status: "packing",
-    statusLabel: "CHỜ LẤY HÀNG",
-    subtotal: 2360000,
-    shippingFee: 0,
-    totalAmount: 2360000,
-    paymentMethod: "VISA",
-    paymentStatusText: "Đã thanh toán qua Thẻ Tín dụng (Visa •••• 4242)",
-    shippingInfoText: "Người bán đang chuẩn bị đóng gói hàng • GHTK Express",
-    courierName: "GHTK Express",
-    createdAt: "16:30 - 24/10/2026",
-    shops: [
-      {
-        shopId: 6,
-        shopName: "TechPulse Vietnam",
-        shopBadge: "MALL",
-      },
-      {
-        shopId: 4,
-        shopName: "Indochine Studio",
-        shopBadge: "ARTISAN",
-      },
-    ],
-    items: [
-      {
-        id: 501,
-        shopId: 6,
-        shopName: "TechPulse Vietnam",
-        shopBadge: "MALL",
-        productId: 20,
-        productName: "Tai Nghe Chống Ồn Thiết Kế Tối Giản ANC Wireless",
-        variantName: "Màu Matte Slate Grey • Pin 40h",
-        sku: "SKU-HDP-020",
-        imageUrl:
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuDnQyZyuNWZZUPb_k3XM-ruGr3dvkO4wS5NBMkP3ogp_WLnd1ybVsfrraJt68lWuotdKeMu4egh2O7f-l4D2KfJegXS0OqNKhicRwyQ8cquxLg63AJjkFEWJh0cvs3oecyR6zREK4QCuq2e7wgnUZI_ibqEkiieTUZvSGr4gcFtbIHyy5l9UhBN7OPKUXnrSPdCNt0iKHPWH4T6LtocsXMy4sa6dVbi3BVx2IJ5iGgS8zZCM300g0wl",
-        quantity: 1,
-        unitPrice: 1890000,
-      },
-      {
-        id: 502,
-        shopId: 4,
-        shopName: "Indochine Studio",
-        shopBadge: "ARTISAN",
-        productId: 21,
-        productName: "Giá Treo Tai Nghe Gỗ Óc Chó Walnut Stand",
-        variantName: "Gỗ Tự Nhiên Bắc Mỹ",
-        sku: "SKU-WOD-021",
-        imageUrl:
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuDEgHtCqlhutCLIQeAPrUQ6z8T4LNYDhol_IwHnzx6VC4SbLlCcHCyKqLxuAbMlXEE77KGZNel8F9aP3JOlxy6tHFZqo_mZrzew2bVZXC6rzMPwS17MLVfEM1mH5lxT9rfH_llb3BxdFFfASPWLmWSj38wI35RXkm2lawjFjpUTCepwPoS3myFo_ikMbGhwfk5xyY-g8xodJdXrwJDtIfm0TbhtqIMjAJsf9S49z2LYmMc9DJig6Ezw",
-        quantity: 1,
-        unitPrice: 320000,
-      },
-      {
-        id: 503,
-        shopId: 6,
-        shopName: "TechPulse Vietnam",
-        shopBadge: "MALL",
-        productId: 22,
-        productName: "Cáp Sạc Nhanh Bọc Dù Type-C to Type-C 100W",
-        variantName: "Dài 1.5m • Màu Xám Đen",
-        sku: "SKU-CBL-022",
-        imageUrl:
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuCh7c9Wmqd9Mqq0BWHRpqJm9nMvOg70gi72thfKkzxkU_WkEx7G1rjNCSrFK2LhFUF33Zv2uXj51ECEmiHWgJ5i81EBwdtBWQUNyBQNj-NTWoyG49OmeTzZrZnEtRxWrMqW86pdvD5CD0n5lr4DmswW5lAK9koTBo09YVvVV02RxKBl3MWL8rpI4qqgoc-TNsVOAEZm1edBLKzVZZF5cJfoMuzCMska0UdSI8VQS08mTvvbWGbqOFgT",
-        quantity: 1,
-        unitPrice: 150000,
-      },
-    ],
-  },
-  {
-    id: 6,
-    orderCode: "#ORD-9502",
-    userId: 1,
-    status: "shipping",
-    statusLabel: "ĐANG VẬN CHUYỂN",
-    subtotal: 1115000,
-    shippingFee: 0,
-    totalAmount: 1115000,
-    paymentMethod: "COD",
-    paymentStatusText: "COD - Nhận hàng trả tiền (Chưa thanh toán)",
-    shippingInfoText: "Đang vận chuyển • Viettel Post - Dự kiến giao 29/10/2026",
-    courierName: "Viettel Post",
-    createdAt: "08:10 - 26/10/2026",
-    shops: [
-      {
-        shopId: 7,
-        shopName: "SilverCraft Hà Nội",
-        shopBadge: "ARTISAN",
-      },
-      {
-        shopId: 5,
-        shopName: "Mộc Di Sản Đồng Kỵ",
-        shopBadge: "ARTISAN",
-      },
-    ],
-    items: [
-      {
-        id: 601,
-        shopId: 7,
-        shopName: "SilverCraft Hà Nội",
-        shopBadge: "ARTISAN",
-        productId: 25,
-        productName: "Nhẫn Bạc 925 Hoa Văn La Bàn Khắc Tay",
-        variantName: "Bạc S925 • Size 18",
-        sku: "SKU-RNG-025",
-        imageUrl:
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuDnrCOmzIYBDKjjhCBpOIg2ppWNzdmO_Kxm-AcWniec5TKz9zawLSjlIhqBmCMZao2O0FdxA1yFqgYs3hvL1g3fXAciA5qfJFdDwSnWKgzxoqD-SgzMwNN7AqDkY6zFXPa5WAlPtZDC94EgScnW8XxPGlvP2jwVHUgKtuJBqZgmcIdQg_WpPoy4Xpj4ZKXOl8SxD-7aar7h4c5p9LumBpT7PmOEvEBdb7Lj2ftRjIM58egp9DBMWKCV",
-        quantity: 1,
-        unitPrice: 890000,
-      },
-      {
-        id: 602,
-        shopId: 7,
-        shopName: "SilverCraft Hà Nội",
-        shopBadge: "ARTISAN",
-        productId: 26,
-        productName: "Khăn Lau Sáng Bạc Chuyên Dụng Cao Cấp",
-        variantName: "Set 3 Khăn • Cotton 100%",
-        sku: "SKU-CLT-026",
-        imageUrl:
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuAv8pR4zCIsUyVYGZt2-fJC6qdClbMdRcNjkTw1jvWiVmsKcXi_oDwvRKxRF21YqQ6ssyJDdqoFNtn6maP79Uc6_zRQyrfve8tazbChfGQNso8gVMbo-HKfGtKWfflBxY90hfqpj1G_AH4o_CinZmwAi9Yia8zuw--RFP7vYEy9GrwpxsBF7u5J0bGgwcv7xxx0l52C2Mn95HOzbN_bdipc3mCucqOHmwmdV-B2GCexz78SXketW-kf",
-        quantity: 1,
-        unitPrice: 45000,
-      },
-      {
-        id: 603,
-        shopId: 5,
-        shopName: "Mộc Di Sản Đồng Kỵ",
-        shopBadge: "ARTISAN",
-        productId: 27,
-        productName: "Hộp Quà Gỗ Sơn Mài Đựng Trang Sức",
-        variantName: "Gỗ Hương • Lót Nhung Đỏ",
-        sku: "SKU-BOX-027",
-        imageUrl:
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuCiK1ACxrAqhJiusftQGXjV28yO9xncYI8nmoNuSVCRN-Gzmth_r5wrAv4KrBl3FNt0heMuUEh_PkfyoD4mcPOXcsRzwDkv50guWn5pRUdW9kAWPyX-xH8QUpMog04jCpi3AKzigHRFYGaOYYMXviB5xYglRb7qqtjd6gMvFsxP92i13gQ6obpzW4SEvpYZOE73GP6Hf1UjjOJAEOx9gpv3NfAfFsO7YyddWczovXZS7YtCAQqPDerH",
-        quantity: 1,
-        unitPrice: 180000,
-      },
-    ],
-  },
-  {
-    id: 7,
-    orderCode: "#ORD-9411",
-    userId: 1,
-    status: "returned",
-    statusLabel: "TRẢ HÀNG / HOÀN TIỀN",
-    subtotal: 650000,
-    shippingFee: 0,
-    totalAmount: 650000,
-    paymentMethod: "MOMO",
-    paymentStatusText: "Đã hoàn tiền qua Ví MoMo lúc 14:00, 12/10/2026",
-    shippingInfoText: "Đã hoàn tất trả hàng và kiểm định chất lượng tại kho sàn",
-    createdAt: "14:15 - 08/10/2026",
-    cancelReason: "Không vừa kích cỡ chân, sản phẩm còn nguyên tem mác",
-    cancelledAt: "12/10/2026",
-    shops: [
-      {
-        shopId: 3,
-        shopName: "Sài Gòn Artisan Leather",
-        shopBadge: "ARTISAN",
-      },
-    ],
-    items: [
-      {
-        id: 701,
-        shopId: 3,
-        shopName: "Sài Gòn Artisan Leather",
-        shopBadge: "ARTISAN",
-        productId: 30,
-        productName: "Giày Lười Loafer Da Bò Dập Vân Cá Sấu",
-        variantName: "Size 41 • Màu Đen Bóng",
-        sku: "SKU-LFR-030",
-        imageUrl:
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuCK4UarBaVhWmPtmjQNS1A4cjK61SFDsLw8jf7QOH1K1oTQ5V3Tnv6efkTB8q6E130NVUfw4tAPT8sDen7ndaZg271GgyGR6-SPnjrnXy1amf2Y5rhzXU5ZZzRg1Y5hewc-PymTEYnByi-nZIsi-iomAcDK8bpsHIeXHR6TC6WhR9OD7K7T3Gn33WHdkIwcH4W99D4P_2ubXt6KirDq2axOwC8PebCgc9IQCoHry0sKfMkWSkfJpyyk",
-        quantity: 1,
-        unitPrice: 650000,
-      },
-    ],
-  },
-];
+export interface BackendOrderItem {
+  id: number;
+  product_id: number;
+  variant_id: number;
+  product_name: string;
+  variant_name?: string;
+  sku: string;
+  image_url?: string;
+  unit_price: number;
+  quantity: number;
+  line_total: number;
+}
 
-// User order endpoints are not implemented by the backend; keep this client mock-only.
+export interface BackendShopOrder {
+  id: number;
+  order_id: number;
+  shop_id: number;
+  shop_name: string;
+  shop_order_code: string;
+  status: string;
+  status_label: string;
+  subtotal: number;
+  shipping_fee: number;
+  shop_discount: number;
+  platform_discount: number;
+  total_amount: number;
+  carrier?: string;
+  tracking_code?: string;
+  cancel_reason?: string;
+  confirmed_at?: string;
+  packed_at?: string;
+  shipped_at?: string;
+  completed_at?: string;
+  cancelled_at?: string;
+  created_at: string;
+  updated_at: string;
+  items: BackendOrderItem[];
+}
+
+export interface BackendCustomerOrderSummary {
+  id: number;
+  order_code: string;
+  status: string;
+  status_label: string;
+  subtotal: number;
+  shipping_fee: number;
+  platform_discount: number;
+  shop_discount_total: number;
+  total_amount: number;
+  recipient_name: string;
+  recipient_phone: string;
+  shipping_address: string;
+  payment_method_code: string;
+  payment_method_name: string;
+  payment_status: string;
+  created_at: string;
+  shops: BackendShopOrder[];
+}
+
+export interface BackendCustomerOrderDetail extends BackendCustomerOrderSummary {
+  note?: string;
+  updated_at: string;
+  payment: {
+    id: number;
+    payment_method_code: string;
+    payment_method_name: string;
+    amount: number;
+    status: string;
+    transaction_ref?: string;
+    paid_at?: string;
+  };
+  refund_info?: {
+    refund_status: string;
+    refund_message: string;
+    refund_amount?: number;
+  };
+  timeline: Array<{
+    id: number;
+    time: string;
+    title: string;
+    subtitle?: string;
+    note?: string;
+    created_at: string;
+  }>;
+  return_requests?: Array<{
+    id: number;
+    shop_order_id: number;
+    shop_order_code?: string;
+    user_id: number;
+    user_name?: string;
+    user_phone?: string;
+    type: string;
+    reason: string;
+    status: string;
+    refund_amount?: number;
+    created_at: string;
+    updated_at: string;
+  }>;
+}
+
+interface BackendListOrdersResponse {
+  success: boolean;
+  data: {
+    orders: BackendCustomerOrderSummary[];
+    counts: {
+      all: number;
+      pending: number;
+      confirmed: number;
+      packing: number;
+      shipping: number;
+      completed: number;
+      cancelled: number;
+      returned: number;
+    };
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      total_pages: number;
+    };
+  };
+}
+
+export function mapBackendToUserOrder(
+  backendOrder: BackendCustomerOrderSummary | BackendCustomerOrderDetail
+): UserOrder {
+  const statusStr = (backendOrder.status || "").toUpperCase();
+  let mappedStatus: UserOrderStatusTab = "pending";
+  if (statusStr === "CONFIRMED" || statusStr === "PENDING") {
+    mappedStatus = "pending";
+  } else if (statusStr === "PACKING") {
+    mappedStatus = "packing";
+  } else if (statusStr === "SHIPPING") {
+    mappedStatus = "shipping";
+  } else if (statusStr === "COMPLETED") {
+    mappedStatus = "completed";
+  } else if (statusStr === "CANCELLED") {
+    mappedStatus = "cancelled";
+  } else if (statusStr === "RETURNED") {
+    mappedStatus = "returned";
+  }
+
+  const shops: UserOrderShop[] = (backendOrder.shops || []).map((s) => ({
+    shopId: s.shop_id,
+    shopName: s.shop_name,
+    shopBadge: "MALL",
+  }));
+
+  const items: UserOrderItem[] = (backendOrder.shops || []).flatMap((s) =>
+    (s.items || []).map((it) => ({
+      id: it.id,
+      shopId: s.shop_id,
+      shopName: s.shop_name,
+      shopBadge: "MALL",
+      productId: it.product_id,
+      productName: it.product_name,
+      variantName: it.variant_name || "Mặc định",
+      sku: it.sku,
+      imageUrl: it.image_url || "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600",
+      quantity: it.quantity,
+      unitPrice: it.unit_price,
+    }))
+  );
+
+  const firstShop = (backendOrder.shops || [])[0];
+  const carrier = firstShop?.carrier || "Giao Hàng Nhanh (GHN Express)";
+  const trackingCode = firstShop?.tracking_code || undefined;
+
+  const pmCode = (
+    backendOrder.payment_method_code ||
+    (backendOrder as BackendCustomerOrderDetail).payment?.payment_method_code ||
+    "COD"
+  ).toUpperCase();
+  let paymentMethod: "COD" | "MOMO" | "VISA" | "ZALOPAY" = "COD";
+  if (pmCode === "MOMO") paymentMethod = "MOMO";
+  else if (pmCode === "VISA" || pmCode === "CARD") paymentMethod = "VISA";
+  else if (pmCode === "ZALOPAY") paymentMethod = "ZALOPAY";
+
+  const pmName =
+    backendOrder.payment_method_name ||
+    (backendOrder as BackendCustomerOrderDetail).payment?.payment_method_name ||
+    pmCode;
+  const payStatus =
+    backendOrder.payment_status ||
+    (backendOrder as BackendCustomerOrderDetail).payment?.status;
+  const paymentStatusText = `${pmName} (${payStatus === "PAID" ? "Đã thanh toán" : "Chưa thanh toán"})`;
+
+  const timelineLogs: UserOrderTimelineLog[] = (
+    (backendOrder as BackendCustomerOrderDetail).timeline || []
+  ).map((t, idx) => ({
+    id: String(t.id || idx),
+    time: t.time || (t.created_at ? new Date(t.created_at).toLocaleString("vi-VN") : ""),
+    title: t.title,
+    subtitle: t.subtitle || t.note || undefined,
+    isLatest: idx === 0,
+  }));
+
+  const note = (backendOrder as BackendCustomerOrderDetail).note || undefined;
+
+  return {
+    id: backendOrder.id,
+    orderCode: backendOrder.order_code,
+    userId: 0,
+    status: mappedStatus,
+    statusLabel: backendOrder.status_label || statusStr,
+    subtotal: backendOrder.subtotal,
+    shippingFee: backendOrder.shipping_fee,
+    shippingDiscount: backendOrder.platform_discount,
+    shopDiscount: backendOrder.shop_discount_total,
+    totalAmount: backendOrder.total_amount,
+    shippingCarrier: carrier,
+    paymentMethod,
+    paymentStatusText,
+    shippingInfoText: `${backendOrder.status_label || statusStr} • ${carrier}`,
+    courierName: carrier,
+    trackingCode,
+    createdAt: backendOrder.created_at
+      ? new Date(backendOrder.created_at).toLocaleString("vi-VN")
+      : "",
+    note,
+    cancelReason: firstShop?.cancel_reason,
+    items,
+    shops,
+    recipient: {
+      name: backendOrder.recipient_name,
+      phone: backendOrder.recipient_phone,
+      address: backendOrder.shipping_address,
+      addressType: "Địa chỉ giao hàng",
+      note,
+      notes: note,
+    },
+    timeline: timelineLogs.length > 0 ? timelineLogs : undefined,
+  };
+}
+
+export const mockUserOrders: UserOrder[] = [];
+
 export const userOrderApi = {
   /**
    * Lấy danh sách đơn hàng của người dùng hiện tại (lọc theo tab, tìm kiếm, phân trang)
@@ -505,32 +253,28 @@ export const userOrderApi = {
   fetchUserOrders: async (
     params?: UserOrderFilterParams
   ): Promise<{ orders: UserOrder[]; total: number }> => {
-    let filtered = [...mockUserOrders];
+    const queryParams: Record<string, string | number> = {
+      page: params?.page || 1,
+      limit: params?.pageSize || 6,
+    };
 
-    // Lọc theo tab
     if (params?.tab && params.tab !== "all") {
-      filtered = filtered.filter((order) => order.status === params.tab);
+      queryParams.tab = params.tab;
     }
 
-    // Lọc theo tìm kiếm (mã đơn, tên sản phẩm, tên shop)
     if (params?.search && params.search.trim()) {
-      const q = params.search.trim().toLowerCase();
-      filtered = filtered.filter(
-        (order) =>
-          order.orderCode.toLowerCase().includes(q) ||
-          order.items.some((item) => item.productName.toLowerCase().includes(q)) ||
-          order.shops.some((shop) => shop.shopName.toLowerCase().includes(q))
-      );
+      queryParams.search = params.search.trim();
     }
 
-    const total = filtered.length;
-    const page = params?.page || 1;
-    const pageSize = params?.pageSize || 6;
-    const start = (page - 1) * pageSize;
-    const paginated = filtered.slice(start, start + pageSize);
+    const res = await axiosClient.get<BackendListOrdersResponse>("/api/v1/orders", {
+      params: queryParams,
+    });
+
+    const ordersData = res.data?.data?.orders || [];
+    const total = res.data?.data?.pagination?.total ?? ordersData.length;
 
     return {
-      orders: paginated,
+      orders: ordersData.map(mapBackendToUserOrder),
       total,
     };
   },
@@ -539,165 +283,89 @@ export const userOrderApi = {
    * Lấy số lượng đơn hàng theo từng trạng thái (để hiển thị badge đếm trên tab)
    */
   fetchUserOrderStatusCounts: async (): Promise<UserOrderStatusCounts> => {
-    const counts: UserOrderStatusCounts = {
-      all: mockUserOrders.length,
-      pending: mockUserOrders.filter((o) => o.status === "pending").length,
-      packing: mockUserOrders.filter((o) => o.status === "packing").length,
-      shipping: mockUserOrders.filter((o) => o.status === "shipping").length,
-      completed: mockUserOrders.filter((o) => o.status === "completed").length,
-      cancelled: mockUserOrders.filter((o) => o.status === "cancelled").length,
-      returned: mockUserOrders.filter((o) => o.status === "returned").length,
-    };
+    const res = await axiosClient.get<BackendListOrdersResponse>("/api/v1/orders", {
+      params: { tab: "all", limit: 1 },
+    });
 
-    return counts;
+    const counts = res.data?.data?.counts;
+    if (!counts) {
+      return {
+        all: 0,
+        pending: 0,
+        packing: 0,
+        shipping: 0,
+        completed: 0,
+        cancelled: 0,
+        returned: 0,
+      };
+    }
+
+    return {
+      all: counts.all ?? 0,
+      pending: (counts.pending ?? 0) + (counts.confirmed ?? 0),
+      packing: counts.packing ?? 0,
+      shipping: counts.shipping ?? 0,
+      completed: counts.completed ?? 0,
+      cancelled: counts.cancelled ?? 0,
+      returned: counts.returned ?? 0,
+    };
   },
 
   /**
    * Người mua yêu cầu hủy đơn hàng (khi đơn còn ở trạng thái Chờ xác nhận)
    */
   cancelUserOrder: async (
-    orderId: number,
+    orderId: number | string,
     cancelReason: string
   ): Promise<UserOrder> => {
-    const order = mockUserOrders.find((o) => o.id === orderId);
-    if (order) {
-      if (order.status !== "pending") {
-        throw new Error("Chỉ có thể hủy đơn hàng đang chờ xác nhận");
-      }
-      order.status = "cancelled";
-      order.statusLabel = "ĐÃ HỦY";
-      order.cancelReason = cancelReason;
-      order.cancelledAt = new Date().toLocaleString("vi-VN");
-      return { ...order };
-    }
-    throw new Error("Không tìm thấy đơn hàng để hủy");
+    const cleanId = String(orderId).replace(/^#/, "").trim();
+    await axiosClient.post(`/api/v1/orders/${cleanId}/cancel`, {
+      reason: cancelReason,
+    });
+
+    return await userOrderApi.fetchUserOrderDetail(cleanId);
   },
 
   /**
    * Xác nhận đã nhận được hàng (khi đơn đang vận chuyển)
    */
-  confirmOrderReceived: async (orderId: number): Promise<UserOrder> => {
-    const order = mockUserOrders.find((o) => o.id === orderId);
-    if (order) {
-      if (order.status !== "shipping") {
-        throw new Error("Chỉ có thể xác nhận đơn hàng đang vận chuyển");
-      }
-      order.status = "completed";
-      order.statusLabel = "HOÀN THÀNH";
-      order.shippingInfoText = "Giao hàng thành công (Đã xác nhận nhận hàng)";
-      return { ...order };
-    }
-    throw new Error("Không tìm thấy đơn hàng");
+  confirmOrderReceived: async (orderId: number | string): Promise<UserOrder> => {
+    const cleanId = String(orderId).replace(/^#/, "").trim();
+    await axiosClient.post(`/api/v1/orders/${cleanId}/received`);
+    return await userOrderApi.fetchUserOrderDetail(cleanId);
   },
 
   /**
-   * Lấy chi tiết đơn hàng theo ID hoặc Mã đơn (hỗ trợ cả multi-shop order)
+   * Lấy chi tiết đơn hàng theo ID hoặc Mã đơn
    */
   fetchUserOrderDetail: async (
     orderIdOrCode: string | number
   ): Promise<UserOrder> => {
-    const cleanCode = String(orderIdOrCode).replace(/^#/, "").toLowerCase().trim();
-    const order = mockUserOrders.find(
-      (o) =>
-        String(o.id) === String(orderIdOrCode).trim() ||
-        o.orderCode.toLowerCase().replace(/^#/, "").trim() === cleanCode
+    const cleanParam = String(orderIdOrCode).replace(/^#/, "").trim();
+    const res = await axiosClient.get<{ success: boolean; data: BackendCustomerOrderDetail }>(
+      `/api/v1/orders/${cleanParam}`
     );
 
-    if (order) {
-      // Ensure recipient exists
-      const defaultRecipient = {
-        name: "Nguyễn Văn A",
-        phone: "(+84) 909 123 456",
-        address: "Số 142/8 Ung Văn Khiêm, Phường 25, Quận Bình Thạnh, TP. Hồ Chí Minh",
-        addressType: "Nhà riêng",
-        tag: "Nhà riêng",
-        note: "Giao giờ hành chính, gọi trước 15 phút. Cho kiểm tra hàng (Đồng kiểm COD).",
-        notes: "Giao giờ hành chính, gọi trước 15 phút. Cho kiểm tra hàng (Đồng kiểm COD).",
-      };
-
-      // Contextual timeline depending on status
-      const defaultTimeline =
-        order.status === "completed"
-          ? [
-              {
-                id: "log-1",
-                time: "28/10 14:30",
-                title: "Giao hàng thành công",
-                subtitle: "Người nhận đã ký nhận kiện hàng",
-                isLatest: true,
-              },
-              {
-                id: "log-2",
-                time: "27/10 08:15",
-                title: "Đang vận chuyển",
-                subtitle: "Bưu tá phụ trách: Trần Minh Quân",
-              },
-              {
-                id: "log-3",
-                time: "26/10 18:30",
-                title: "Đơn hàng đã được lấy",
-              },
-              {
-                id: "log-4",
-                time: "26/10 14:45",
-                title: "Chờ người vận chuyển lấy đơn hàng",
-              },
-              {
-                id: "log-5",
-                time: "26/10 14:20",
-                title: "Đơn hàng đã được xác nhận",
-              },
-            ]
-          : order.status === "cancelled"
-          ? [
-              {
-                id: "log-1",
-                time: order.cancelledAt || "15/10 12:40",
-                title: "Đơn hàng đã được hủy",
-                subtitle: `Lý do: ${order.cancelReason || "Đổi ý không muốn mua nữa"}`,
-                isLatest: true,
-              },
-              {
-                id: "log-2",
-                time: order.createdAt || "15/10 11:20",
-                title: "Đơn hàng đã được xác nhận",
-              },
-            ]
-          : [
-              {
-                id: "log-1",
-                time: "27/10 08:15",
-                title: "Đang vận chuyển",
-                subtitle: "Bưu tá phụ trách: Trần Minh Quân - Dự kiến giao hôm nay",
-                isLatest: true,
-              },
-              {
-                id: "log-2",
-                time: "26/10 18:30",
-                title: "Đơn hàng đã được lấy",
-              },
-              {
-                id: "log-3",
-                time: "26/10 14:45",
-                title: "Chờ người vận chuyển lấy đơn hàng",
-              },
-              {
-                id: "log-4",
-                time: "26/10 14:20",
-                title: "Đơn hàng đã được xác nhận",
-              },
-            ];
-
-      return {
-        ...order,
-        recipient: order.recipient || defaultRecipient,
-        timeline: order.timeline || defaultTimeline,
-        trackingCode: order.trackingCode || "GHN88391204VN",
-        courierName: order.courierName || "Giao Hàng Nhanh (GHN Express)",
-        estimatedDeliveryDate: order.estimatedDeliveryDate || "28/10/2026",
-      };
+    if (!res.data?.data) {
+      throw new Error("Không tìm thấy đơn hàng");
     }
 
-    throw new Error("Không tìm thấy đơn hàng");
+    return mapBackendToUserOrder(res.data.data);
+  },
+
+  /**
+   * Yêu cầu đổi/trả/hoàn tiền
+   */
+  createReturnRequest: async (
+    orderId: number,
+    payload: {
+      shop_order_id: number;
+      type: "RETURN" | "EXCHANGE" | "REFUND";
+      reason: string;
+      refund_amount?: number;
+    }
+  ): Promise<{ success: boolean; message?: string; data?: unknown }> => {
+    const res = await axiosClient.post(`/api/v1/orders/${orderId}/returns`, payload);
+    return res.data;
   },
 };

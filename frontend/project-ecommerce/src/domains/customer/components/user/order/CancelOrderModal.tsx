@@ -5,7 +5,7 @@ interface CancelOrderModalProps {
   order: UserOrder | null;
   isOpen: boolean;
   onClose: () => void;
-  onConfirmCancel: (orderId: number, reason: string) => void;
+  onConfirmCancel: (orderId: number | string, reason: string) => void;
   loading?: boolean;
 }
 
@@ -30,8 +30,11 @@ export const CancelOrderModal: React.FC<CancelOrderModalProps> = ({
 
   if (!isOpen || !order) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (e?: React.FormEvent | React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+    }
+    if (loading) return;
     const finalReason =
       selectedReason === "Lý do khác" && customReason.trim()
         ? customReason.trim()
@@ -126,13 +129,14 @@ export const CancelOrderModal: React.FC<CancelOrderModalProps> = ({
             </button>
             <button
               type="submit"
+              onClick={handleSubmit}
               disabled={loading}
               className="px-5 py-2.5 rounded-xl bg-error hover:bg-error/90 text-on-error font-label-md text-label-md font-bold transition-all shadow-sm disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
             >
               {loading && (
                 <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               )}
-              <span>Xác nhận hủy</span>
+              <span>{loading ? "Đang hủy..." : "Xác nhận hủy"}</span>
             </button>
           </div>
         </form>

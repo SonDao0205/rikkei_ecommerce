@@ -50,6 +50,10 @@ export const ShopProductManagement: React.FC = () => {
   } = useAppSelector((state) => state.shopProduct);
 
   useEffect(() => {
+    dispatch(resetFilters());
+  }, [dispatch]);
+
+  useEffect(() => {
     dispatch(fetchShopProductList());
   }, [dispatch, filters.statusTab, filters.category, filters.priceRange, filters.stockLevel]);
 

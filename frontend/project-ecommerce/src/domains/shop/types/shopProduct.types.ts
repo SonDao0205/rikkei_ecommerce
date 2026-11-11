@@ -95,6 +95,8 @@ export interface ShopProductItem {
   variationSubtitle: string;
   price: number;
   formattedPrice: string;
+  costPrice?: number;
+  formattedCostPrice?: string;
   originalPrice?: number;
   formattedOriginalPrice?: string;
   priceNote?: string;

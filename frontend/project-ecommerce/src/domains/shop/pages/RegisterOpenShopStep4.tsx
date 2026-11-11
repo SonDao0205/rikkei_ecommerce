@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "@/app/state/store";
 import { SELLER_TERMS_VERSION } from "@/domains/shop/types/registerShop.types";
 import {
   setStep,
+  updateStore,
   submitShopRegistration,
   saveDraftShopRegistration,
   setSuccessModalOpen,
 } from "@/domains/shop/state/shopRegisterSlice";
+import { shopRegisterApi } from "@/domains/shop/api/shopRegisterApi";
 import {
   OnboardingHeader,
   OnboardingFooter,
@@ -25,6 +27,10 @@ import {
 export const RegisterOpenShopStep4: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isEditingPendingShop = Boolean(
+    (location.state as { editPendingShop?: boolean } | null)?.editPendingShop
+  );
 
   const {
     formData,
@@ -47,7 +53,37 @@ export const RegisterOpenShopStep4: React.FC = () => {
     // Ensure Redux step state is set to 4 when mounting this page
     dispatch(setStep(4));
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [dispatch]);
+
+    if (isEditingPendingShop && !formData.store.shopName) {
+      void shopRegisterApi
+        .getMyShop()
+        .then((shop) => {
+          if (!shop || shop.status !== "PENDING") return;
+          const address = (shop.warehouse_address || "")
+            .split(",")
+            .map((part) => part.trim());
+          dispatch(
+            updateStore({
+              shopName: shop.name || "",
+              bio: shop.description || "",
+              logoUrl: shop.logo_url || "",
+              bannerUrl: shop.banner_url || "",
+              warehousePhone: shop.phone || "",
+              addressDetail:
+                address.length > 3
+                  ? address.slice(0, -3).join(", ")
+                  : address[0] || "",
+              ward: address.length > 3 ? address[address.length - 3] : "",
+              district: address.length > 2 ? address[address.length - 2] : "",
+              province: address.length > 1 ? address[address.length - 1] : "",
+            })
+          );
+        })
+        .catch(() => {
+          // Non-blocking
+        });
+    }
+  }, [dispatch, isEditingPendingShop, formData.store.shopName]);
 
   const handleStepClick = (targetStep: number) => {
     if (targetStep === 1) {
@@ -55,10 +91,14 @@ export const RegisterOpenShopStep4: React.FC = () => {
       navigate("/register-open-shop");
     } else if (targetStep === 2) {
       dispatch(setStep(2));
-      navigate("/register-open-shop/step2");
+      navigate("/register-open-shop/step2", {
+        state: isEditingPendingShop ? { editPendingShop: true } : undefined,
+      });
     } else if (targetStep === 3) {
       dispatch(setStep(3));
-      navigate("/register-open-shop/step3");
+      navigate("/register-open-shop/step3", {
+        state: isEditingPendingShop ? { editPendingShop: true } : undefined,
+      });
     }
   };
 
