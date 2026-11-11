@@ -4,6 +4,118 @@ import type {
   ShopOrderFilterParams,
 } from "@/domains/shop/types/shopOrder.types";
 
+export type BackendShopOrder = {
+  id: number;
+  shop_order_id: number;
+  shop_order_code: string;
+  parent_order_code: string;
+  status: string;
+  status_label: string;
+  subtotal: number;
+  shipping_fee: number;
+  shop_discount: number;
+  platform_discount: number;
+  total_amount: number;
+  commission_rate: number;
+  commission_amount: number;
+  seller_payout: number;
+  carrier?: string;
+  tracking_code?: string;
+  cancel_reason?: string;
+  recipient_name: string;
+  recipient_phone: string;
+  shipping_address: string;
+  payment_method_code: string;
+  payment_method_name: string;
+  payment_status: string;
+  created_at: string;
+  updated_at: string;
+  items?: Array<{ id: number; product_id: number; variant_id: number; product_name: string; variant_name?: string; sku: string; image_url?: string; unit_price: number; quantity: number; line_total: number }>;
+  timeline?: Array<{ id: number; time: string; title: string; subtitle?: string; note?: string; created_at: string }>;
+};
+
+function mapBackendStatus(status: string): ShopOrderItem["status"] {
+  switch (status.toUpperCase()) {
+    case "PENDING": return "pending";
+    case "CONFIRMED":
+    case "PACKING": return "packing";
+    case "SHIPPING": return "shipping";
+    case "COMPLETED": return "delivered";
+    case "CANCELLED": return "cancelled";
+    case "RETURNED": return "returned";
+    default: return "pending";
+  }
+}
+
+export function mapBackendShopOrder(row: BackendShopOrder): ShopOrderItem {
+  const status = mapBackendStatus(row.status);
+  const date = new Date(row.created_at);
+  const items = (row.items ?? []).map((item) => ({
+    id: item.id,
+    productId: item.product_id,
+    name: item.product_name,
+    variant: item.variant_name || "Mặc định",
+    sku: item.sku,
+    imageUrl: item.image_url || "",
+    price: item.unit_price,
+    formattedPrice: new Intl.NumberFormat("vi-VN").format(item.unit_price) + " ₫",
+    quantity: item.quantity,
+    total: item.line_total,
+    formattedTotal: new Intl.NumberFormat("vi-VN").format(item.line_total) + " ₫",
+  }));
+  const paymentMethod = row.payment_method_code === "BANK_TRANSFER" ? "BANKING" : row.payment_method_code;
+  const courierLabel = row.carrier || "Chưa bàn giao đơn vị vận chuyển";
+  return {
+    id: String(row.shop_order_id || row.id),
+    orderCode: row.shop_order_code,
+    createdAt: Number.isNaN(date.getTime()) ? row.created_at : date.toLocaleDateString("vi-VN"),
+    createdAtTime: Number.isNaN(date.getTime()) ? "" : date.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }),
+    timeAgo: "",
+    status,
+    workflowStatus: row.status.toUpperCase() as NonNullable<ShopOrderItem["workflowStatus"]>,
+    statusLabel: row.status_label,
+    isUrgent: status === "pending",
+    customer: { name: row.recipient_name, phone: row.recipient_phone, address: row.shipping_address },
+    items,
+    productSummary: items.map((item) => `${item.name} × ${item.quantity}`).join(", "),
+    totalQuantity: items.reduce((sum, item) => sum + item.quantity, 0),
+    financial: {
+      subtotal: row.subtotal,
+      shopDiscount: row.shop_discount,
+      shippingFee: row.shipping_fee,
+      platformDiscount: row.platform_discount,
+      grandTotal: row.total_amount,
+      platformFee: row.commission_amount,
+      shopPayout: row.seller_payout,
+      formattedShopPayout: new Intl.NumberFormat("vi-VN").format(row.seller_payout) + " ₫",
+      paymentMethod: paymentMethod as ShopOrderItem["financial"]["paymentMethod"],
+      paymentStatus: row.payment_status === "PAID" ? "paid" : "unpaid",
+      paymentStatusLabel: row.payment_status === "PAID" ? "Đã thanh toán" : "Chưa thanh toán",
+    },
+    shipping: {
+      courier: (row.carrier || "GHN") as ShopOrderItem["shipping"]["courier"],
+      courierLabel,
+      trackingCode: row.tracking_code || "",
+      servicePackage: "",
+      estimatedDeliveryDate: "",
+      weightGram: 0,
+      dimensionsText: "",
+      timeline: (row.timeline ?? []).map((entry, index) => ({
+        step: index + 1,
+        title: entry.title,
+        time: entry.time,
+        description: entry.note || entry.subtitle || "",
+        status: "completed" as const,
+      })),
+    },
+    cancelReason: row.cancel_reason,
+  };
+}
+
+export function orderResourceID(id: string): string {
+  return id.replace(/^#/, "").trim();
+}
+
 export let mockShopOrdersState: ShopOrderItem[] = [
   {
     id: "#ORD-9821",
@@ -486,7 +598,7 @@ export let mockShopOrdersState: ShopOrderItem[] = [
   },
 ];
 
-export const shopOrderApi = {
+export const mockShopOrderApi = {
   fetchShopOrders: async (
     params?: ShopOrderFilterParams
   ): Promise<{ orders: ShopOrderItem[]; total: number }> => {

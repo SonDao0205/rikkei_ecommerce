@@ -165,7 +165,7 @@ export const ShopUrgentOrdersTable: React.FC<ShopUrgentOrdersTableProps> = ({
                           onClick={() => onPrintLabel(order.id)}
                           className="px-3.5 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md font-semibold transition-colors border border-outline-variant/30 cursor-pointer"
                         >
-                          In vận đơn
+                          {order.workflowStatus === "CONFIRMED" ? "Bắt đầu đóng gói" : "Bàn giao vận chuyển"}
                         </button>
                       )}
 

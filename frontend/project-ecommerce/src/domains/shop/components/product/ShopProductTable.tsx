@@ -51,6 +51,66 @@ export const ShopProductTable: React.FC<ShopProductTableProps> = ({
     }
   };
 
+  const getProductStatusBadge = (status: ShopProductItem["status"]) => {
+    switch (status) {
+      case "PENDING":
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/30 whitespace-nowrap">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+            Chờ duyệt
+          </span>
+        );
+      case "ACTIVE":
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 whitespace-nowrap">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            Đang bán
+          </span>
+        );
+      case "HIDDEN":
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-surface-container-high text-on-surface-variant border border-outline-variant/40 whitespace-nowrap">
+            <span className="material-symbols-outlined text-[13px]">visibility_off</span>
+            Đã ẩn
+          </span>
+        );
+      case "DRAFT":
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-surface-container text-outline border border-outline-variant/30 whitespace-nowrap">
+            <span className="material-symbols-outlined text-[13px]">edit_note</span>
+            Bản nháp
+          </span>
+        );
+      case "REJECTED":
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-error/10 text-error border border-error/30 whitespace-nowrap">
+            <span className="material-symbols-outlined text-[13px]">cancel</span>
+            Bị từ chối
+          </span>
+        );
+      case "OUT_OF_STOCK":
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-surface-container-highest text-on-surface-variant whitespace-nowrap">
+            <span className="w-1.5 h-1.5 rounded-full bg-outline" />
+            Hết hàng
+          </span>
+        );
+      case "LOW_STOCK":
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-600 whitespace-nowrap">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+            Sắp hết hàng
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-surface-container text-on-surface-variant whitespace-nowrap">
+            {status}
+          </span>
+        );
+    }
+  };
+
   return (
     <div className="overflow-x-auto w-full bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/40 mt-6">
       <table className="w-full text-left border-collapse">
@@ -65,19 +125,25 @@ export const ShopProductTable: React.FC<ShopProductTableProps> = ({
                 aria-label="Chọn tất cả sản phẩm"
               />
             </th>
-            <th className="py-3.5 px-3 min-w-[320px]" scope="col">
+            <th className="py-3.5 px-3 min-w-[280px]" scope="col">
               Sản phẩm &amp; Mã SKU
             </th>
-            <th className="py-3.5 px-3 min-w-[190px]" scope="col">
+            <th className="py-3.5 px-3 min-w-[170px]" scope="col">
               Phân loại hàng
             </th>
-            <th className="py-3.5 px-3 min-w-[160px]" scope="col">
-              Giá niêm yết &amp; Bán
+            <th className="py-3.5 px-3 min-w-[140px]" scope="col">
+              Giá vốn nhập vào
             </th>
-            <th className="py-3.5 px-3 min-w-[150px]" scope="col">
+            <th className="py-3.5 px-3 min-w-[160px]" scope="col">
+              Giá bán ra thị trường
+            </th>
+            <th className="py-3.5 px-3 min-w-[140px]" scope="col">
               Tồn kho khả dụng
             </th>
-            <th className="py-3.5 px-4 min-w-[130px] text-right" scope="col">
+            <th className="py-3.5 px-3 min-w-[130px]" scope="col">
+              Trạng thái
+            </th>
+            <th className="py-3.5 px-4 min-w-[120px] text-right" scope="col">
               Thao tác
             </th>
           </tr>
@@ -85,7 +151,7 @@ export const ShopProductTable: React.FC<ShopProductTableProps> = ({
         <tbody className="divide-y divide-outline-variant/20 font-body-sm text-body-sm text-on-surface">
           {products.length === 0 ? (
             <tr>
-              <td colSpan={6} className="py-12 text-center text-on-surface-variant">
+              <td colSpan={8} className="py-12 text-center text-on-surface-variant">
                 Không tìm thấy sản phẩm nào phù hợp với bộ lọc.
               </td>
             </tr>
@@ -168,10 +234,25 @@ export const ShopProductTable: React.FC<ShopProductTableProps> = ({
                     </div>
                   </td>
 
-                  {/* Price */}
+                  {/* Cost Price */}
                   <td className="py-3.5 px-3">
                     <div className="flex flex-col">
-                      <span className="font-label-lg text-label-lg font-bold text-on-surface font-mono">
+                      <span className="font-label-md text-label-md font-semibold text-on-surface font-mono">
+                        {item.formattedCostPrice ||
+                          (item.costPrice
+                            ? new Intl.NumberFormat("vi-VN").format(item.costPrice) + " ₫"
+                            : new Intl.NumberFormat("vi-VN").format(Math.round(item.price * 0.6)) + " ₫")}
+                      </span>
+                      <span className="font-body-sm text-[11px] text-outline">
+                        Giá vốn nhập
+                      </span>
+                    </div>
+                  </td>
+
+                  {/* Selling Price */}
+                  <td className="py-3.5 px-3">
+                    <div className="flex flex-col">
+                      <span className="font-label-lg text-label-lg font-bold text-primary font-mono">
                         {item.formattedPrice}
                       </span>
                       {item.formattedOriginalPrice ? (
@@ -205,6 +286,11 @@ export const ShopProductTable: React.FC<ShopProductTableProps> = ({
                         {item.stockStatusLabel}
                       </span>
                     </div>
+                  </td>
+
+                  {/* Product Status */}
+                  <td className="py-3.5 px-3">
+                    {getProductStatusBadge(item.status)}
                   </td>
 
                   {/* Actions */}

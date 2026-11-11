@@ -7,6 +7,9 @@ import {
   clearProfileStatus,
 } from "@/domains/customer/state/profileSlice";
 import { getDefaultAvatar } from "@/shared/utils/avatar";
+import { isValidVietnamesePhone } from "@/shared/utils/validation";
+import { uploadMedia } from "@/shared/api/mediaUpload";
+import { profileApi } from "@/domains/customer/api/profileApi";
 import type { UserProfileDetails } from "@/shared/types";
 
 interface ProfileInfoFormProps {
@@ -21,6 +24,7 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   const [fullName, setFullName] = useState(profile?.full_name || "");
   const defaultAvatar = useMemo(() => getDefaultAvatar(profile?.full_name), [profile?.full_name]);
@@ -67,16 +71,26 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 70 }, (_, i) => String(currentYear - 14 - i));
 
-  const handleAvatarFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (typeof reader.result === "string") {
-          dispatch(setLocalAvatarPreview(reader.result));
-        }
-      };
-      reader.readAsDataURL(file);
+    e.target.value = "";
+    if (!file) return;
+    const previousAvatar = profile?.avatar_url || null;
+    let previewURL: string | null = null;
+    try {
+      previewURL = URL.createObjectURL(file);
+      dispatch(setLocalAvatarPreview(previewURL));
+      setLocalError(null);
+      setIsUploadingAvatar(true);
+      const upload = await uploadMedia(file, "avatar");
+      const updatedProfile = await profileApi.setAvatar(upload.url);
+      dispatch(setLocalAvatarPreview(updatedProfile.avatar_url || upload.url));
+    } catch (uploadError) {
+      dispatch(setLocalAvatarPreview(previousAvatar));
+      setLocalError(uploadError instanceof Error ? uploadError.message : "Không thể tải ảnh đại diện lên.");
+    } finally {
+      if (previewURL) URL.revokeObjectURL(previewURL);
+      setIsUploadingAvatar(false);
     }
   };
 
@@ -111,6 +125,12 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
 
     if (!fullName.trim()) return;
 
+    if (phone.trim() && !isValidVietnamesePhone(phone)) {
+      dispatch(clearProfileStatus());
+      setLocalError("Số điện thoại không đúng định dạng số di động Việt Nam (VD: 0912 345 678)");
+      return;
+    }
+
     dispatch(
       updateUserProfile({
         full_name: fullName.trim(),
@@ -142,7 +162,7 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/png, image/jpeg, image/gif"
+        accept=".jpg,.jpeg,image/jpeg"
         className="hidden"
         onChange={handleAvatarFileSelect}
       />
@@ -235,7 +255,7 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
             Profile Avatar
           </h3>
           <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
-            PNG, JPG or GIF allowed. Maximum size 2MB (High resolution recommended).
+              Chỉ nhận JPG/JPEG, tối đa 5 MB. Ảnh được tải nền nên bạn có thể tiếp tục sử dụng hệ thống.
           </p>
           <div className="mt-3 flex flex-wrap items-center gap-2.5">
             <button
@@ -244,7 +264,7 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
               type="button"
             >
               <span className="material-symbols-outlined text-[16px]">upload</span>
-              <span>Upload New Photo</span>
+              <span>{isUploadingAvatar ? "Đang tải ảnh..." : "Tải ảnh mới"}</span>
             </button>
             <button
               onClick={handleRemovePhoto}

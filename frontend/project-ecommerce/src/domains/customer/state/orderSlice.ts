@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from "@reduxjs/toolkit";
-import { userOrderApi } from "@/domains/customer/api/orderApi";
+import { userOrderApi } from "@/domains/customer/api/orderApiLive";
 import type {
   UserOrder,
   UserOrderStatusCounts,
@@ -73,7 +73,7 @@ export const getUserOrderCounts = createAsyncThunk<UserOrderStatusCounts>(
 
 export const cancelOrderAction = createAsyncThunk<
   UserOrder,
-  { orderId: number; cancelReason: string }
+  { orderId: number | string; cancelReason: string }
 >("userOrder/cancelOrder", async ({ orderId, cancelReason }, { rejectWithValue }) => {
   try {
     return await userOrderApi.cancelUserOrder(orderId, cancelReason);
@@ -84,7 +84,7 @@ export const cancelOrderAction = createAsyncThunk<
   }
 });
 
-export const confirmReceivedAction = createAsyncThunk<UserOrder, number>(
+export const confirmReceivedAction = createAsyncThunk<UserOrder, number | string>(
   "userOrder/confirmReceived",
   async (orderId, { rejectWithValue }) => {
     try {

@@ -20,7 +20,8 @@ const INITIAL_FORM_DATA: AddProductFormData = {
   name: "",
   categoryId: 0,
   categoryPath: [],
-  brand: "",
+  brand: "No Brand",
+  brandId: null,
   isBrandVerified: false,
   origin: "",
   description: "",
@@ -48,6 +49,7 @@ export const ShopAddProduct: React.FC = () => {
   const [formData, setFormData] = useState<AddProductFormData>(INITIAL_FORM_DATA);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isMediaUploading, setIsMediaUploading] = useState(false);
   const [toast, setToast] = useState<{ message: string; isError?: boolean } | null>(null);
   const [showSeoGuide, setShowSeoGuide] = useState(false);
 
@@ -135,6 +137,10 @@ export const ShopAddProduct: React.FC = () => {
 
   // Submit product creation
   const handleSubmitProduct = async () => {
+    if (isMediaUploading) {
+      showToast("Vui lòng chờ ảnh/video tải xong trước khi lưu sản phẩm. Bạn vẫn có thể rời trang, upload sẽ tiếp tục nền.", true);
+      return;
+    }
     if (!formData.name.trim()) {
       showToast("Vui lòng nhập tên sản phẩm", true);
       return;
@@ -143,12 +149,12 @@ export const ShopAddProduct: React.FC = () => {
       showToast("Tên sản phẩm không được vượt quá 120 ký tự", true);
       return;
     }
-    if (formData.categoryPath.length === 0) {
+    if (!formData.categoryId || formData.categoryPath.length === 0) {
       showToast("Vui lòng chọn ngành hàng & danh mục sản phẩm", true);
       return;
     }
     if (!formData.brand.trim()) {
-      showToast("Vui lòng nhập thương hiệu sản phẩm", true);
+      showToast("Vui lòng chọn thương hiệu sản phẩm", true);
       return;
     }
     if (!formData.origin.trim()) {
@@ -217,7 +223,9 @@ export const ShopAddProduct: React.FC = () => {
         categoryId: formData.categoryId,
         categoryLabel: formData.categoryPath[formData.categoryPath.length - 1] || "Sản phẩm",
         imageUrl: formData.coverImage || DEFAULT_COVER_IMAGE,
+        videoUrl: formData.videoUrl || undefined,
         description: formData.description,
+        brand_id: formData.brandId ?? null,
         rawVariants,
         rawImages,
       };
@@ -225,6 +233,22 @@ export const ShopAddProduct: React.FC = () => {
       const result = await dispatch(saveShopProductItem(payload));
 
       if (saveShopProductItem.fulfilled.match(result)) {
+        const primaryCostPrice = formData.hasVariants
+          ? formData.variants[0]?.costPrice || Math.round(primaryPrice * 0.6)
+          : formData.singleCostPrice || Math.round(primaryPrice * 0.6);
+        try {
+          const storedCosts = JSON.parse(
+            localStorage.getItem("marketpulse_product_cost_prices") || "{}"
+          );
+          storedCosts[result.payload.id] = primaryCostPrice;
+          storedCosts[primarySku] = primaryCostPrice;
+          localStorage.setItem(
+            "marketpulse_product_cost_prices",
+            JSON.stringify(storedCosts)
+          );
+        } catch {
+          // ignore
+        }
         showToast("Thêm sản phẩm thành công! Đang chuyển hướng...");
         dispatch(fetchShopProductList());
         setTimeout(() => {
@@ -381,7 +405,7 @@ export const ShopAddProduct: React.FC = () => {
           />
 
           {/* 2. Media Management */}
-          <AddProductMedia formData={formData} onChange={handleFormChange} />
+          <AddProductMedia formData={formData} onChange={handleFormChange} onUploadingChange={setIsMediaUploading} />
 
           {/* 3. Variants & SKU Matrix */}
           <AddProductVariants formData={formData} onChange={handleFormChange} />

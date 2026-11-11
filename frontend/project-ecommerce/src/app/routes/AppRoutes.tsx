@@ -16,6 +16,7 @@ import ShopAddProduct from "@/domains/shop/pages/ShopAddProduct";
 import ShopOrderManagement from "@/domains/shop/pages/ShopOrderManagement";
 import ShopOrderDetail from "@/domains/shop/pages/ShopOrderDetail";
 import ShopVoucherManagement from "@/domains/shop/pages/ShopVoucherManagement";
+import ShopSettings from "@/domains/shop/pages/ShopSettings";
 import AdminProduct from "@/domains/admin/pages/AdminProduct";
 import AdminCategory from "@/domains/admin/pages/AdminCategory";
 import AdminDashBoard from "@/domains/admin/pages/AdminDashBoard";
@@ -398,6 +399,30 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute allowedRoles={["seller", "SELLER"]}>
         <ShopVoucherManagement />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/shop/settings",
+    element: (
+      <ProtectedRoute allowedRoles={["seller", "SELLER"]}>
+        <ShopSettings />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/shop/setting",
+    element: (
+      <ProtectedRoute allowedRoles={["seller", "SELLER"]}>
+        <ShopSettings />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/seller/settings",
+    element: (
+      <ProtectedRoute allowedRoles={["seller", "SELLER"]}>
+        <ShopSettings />
       </ProtectedRoute>
     ),
   },

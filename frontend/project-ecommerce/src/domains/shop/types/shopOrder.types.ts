@@ -76,6 +76,8 @@ export interface ShopOrderItem {
   createdAtTime: string;
   timeAgo: string;
   status: ShopOrderStatus;
+  /** Persisted backend lifecycle state (e.g. CONFIRMED vs PACKING), retained inside the shared preparing tab. */
+  workflowStatus?: "PENDING" | "CONFIRMED" | "PACKING" | "SHIPPING" | "COMPLETED" | "CANCELLED" | "RETURNED";
   statusLabel: string;
   customer: ShopOrderCustomerInfo;
   items: ShopOrderProductItem[];

@@ -1,13 +1,16 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "@/app/state/store";
 import { fetchMyShop, updateMyShop, resubmitMyShop, clearMyShopMessages } from "@/domains/shop/state/myShopSlice";
+import { setStep, updateStore } from "@/domains/shop/state/shopRegisterSlice";
 import type { ShopProfilePayload } from "@/shared/types";
 import { SELLER_TERMS_VERSION, type ShopTermsAcceptance } from "@/domains/shop/types/registerShop.types";
 import { refreshAccessToken } from "@/domains/auth/state/authSlice";
+import { isValidVietnamesePhone } from "@/shared/utils/validation";
 
 export const MyShopStatusCard: React.FC = () => {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const { shop, loading, updating, error, successMessage } = useAppSelector(
     (state) => state.myShop
   );
@@ -60,6 +63,49 @@ export const MyShopStatusCard: React.FC = () => {
     setIsModalOpen(true);
   };
 
+  const handleEditPendingShop = () => {
+    if (shop && shop.status === "PENDING") {
+      const addressParts = (shop.warehouse_address || "")
+        .split(",")
+        .map((part) => part.trim())
+        .filter(Boolean);
+      const addressDetail =
+        addressParts.length > 3
+          ? addressParts.slice(0, -3).join(", ")
+          : addressParts[0] || "";
+      const ward =
+        addressParts.length > 3
+          ? addressParts[addressParts.length - 3]
+          : "";
+      const district =
+        addressParts.length > 2
+          ? addressParts[addressParts.length - 2]
+          : "";
+      const province =
+        addressParts.length > 1
+          ? addressParts[addressParts.length - 1]
+          : "";
+
+      dispatch(
+        updateStore({
+          shopName: shop.name || "",
+          bio: shop.description || "",
+          logoUrl: shop.logo_url || "",
+          bannerUrl: shop.banner_url || "",
+          warehousePhone: shop.phone || "",
+          addressDetail,
+          ward: ward || "Phường Bến Nghé",
+          district: district || "Quận 1",
+          province: province || "TP. Hồ Chí Minh",
+        })
+      );
+      dispatch(setStep(2));
+      navigate("/register-open-shop/step2", {
+        state: { editPendingShop: true },
+      });
+    }
+  };
+
   const handleCloseModal = () => {
     setIsModalOpen(false);
     dispatch(clearMyShopMessages());
@@ -76,6 +122,10 @@ export const MyShopStatusCard: React.FC = () => {
 
     if (name.length < 2 || name.length > 150) {
       setFormError("Tên gian hàng phải từ 2 đến 150 ký tự");
+      return;
+    }
+    if (!phone || !isValidVietnamesePhone(phone)) {
+      setFormError("Số điện thoại không hợp lệ theo định dạng Việt Nam (VD: 0912 345 678)");
       return;
     }
     if (warehouse.length < 5 || warehouse.length > 500) {
@@ -202,7 +252,7 @@ export const MyShopStatusCard: React.FC = () => {
           </div>
           <button
             type="button"
-            onClick={handleOpenEdit}
+            onClick={handleEditPendingShop}
             className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl border border-amber-500/40 text-amber-800 hover:bg-amber-500/20 text-sm font-semibold transition-all shrink-0 cursor-pointer"
           >
             <span className="material-symbols-outlined text-[18px]">edit</span>
@@ -212,21 +262,43 @@ export const MyShopStatusCard: React.FC = () => {
       )}
 
       {/* 3. Shop bị từ chối (REJECTED) */}
-      {shop && (shop.status === "REJECTED" || shop.status === "NEEDS_INFO") && (
-        <div className="mb-6 p-4 sm:p-5 rounded-2xl bg-error-container/40 border border-error/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {shop && shop.status === "REJECTED" && (
+        <div className="mb-6 p-4 sm:p-5 rounded-2xl bg-red-500/10 border border-red-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-start sm:items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-error/20 text-error flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-red-500/20 text-red-600 flex items-center justify-center shrink-0">
               <span className="material-symbols-outlined text-[24px]">cancel</span>
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2 mb-0.5">
                 <h4 className="font-bold text-on-surface text-base">{shop.name}</h4>
-                <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-error text-on-error">
-                  {shop.status === "REJECTED" ? "Hồ sơ bị từ chối" : "Cần bổ sung thông tin"}
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-500/20 text-red-700">
+                  Hồ sơ bị từ chối
                 </span>
               </div>
-              <p className="text-sm text-error font-medium">
-                {shop.status === "REJECTED" ? "Lý do từ chối" : "Yêu cầu cập nhật"}: {shop.reject_reason || "Vui lòng bổ sung thông tin hồ sơ theo yêu cầu."}
+              <p className="text-sm text-red-700 font-medium">
+                Mã: <strong className="font-mono text-on-surface">#SHOP-{String(shop.id).padStart(4, "0")}</strong> • Lý do từ chối: {shop.reject_reason || "Hồ sơ chưa đạt tiêu chuẩn phê duyệt của sàn MarketPulse."}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3b. Shop cần bổ sung thông tin (NEEDS_INFO) */}
+      {shop && shop.status === "NEEDS_INFO" && (
+        <div className="mb-6 p-4 sm:p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start sm:items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-700 flex items-center justify-center shrink-0">
+              <span className="material-symbols-outlined text-[24px]">info</span>
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2 mb-0.5">
+                <h4 className="font-bold text-on-surface text-base">{shop.name}</h4>
+                <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-800">
+                  Cần bổ sung thông tin
+                </span>
+              </div>
+              <p className="text-sm text-amber-800 font-medium">
+                Yêu cầu cập nhật: {shop.reject_reason || "Vui lòng bổ sung thông tin hồ sơ theo yêu cầu."}
               </p>
             </div>
           </div>
@@ -236,7 +308,7 @@ export const MyShopStatusCard: React.FC = () => {
             className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-on-primary font-bold text-sm hover:opacity-90 transition-all shrink-0 shadow-xs cursor-pointer"
           >
             <span className="material-symbols-outlined text-[18px]">replay</span>
-            <span>Sửa & Nộp lại</span>
+            <span>Bổ sung thông tin</span>
           </button>
         </div>
       )}
@@ -261,13 +333,6 @@ export const MyShopStatusCard: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={handleOpenEdit}
-              className="px-3.5 py-2 rounded-xl border border-outline-variant hover:bg-surface-container text-sm font-semibold transition-all cursor-pointer"
-            >
-              Cập nhật hồ sơ
-            </button>
             <a
               href="/shop/dashboard"
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-on-primary font-bold text-sm hover:opacity-90 transition-all shadow-xs"

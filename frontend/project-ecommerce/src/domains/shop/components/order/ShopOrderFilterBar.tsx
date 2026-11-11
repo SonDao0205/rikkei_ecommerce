@@ -76,8 +76,7 @@ export const ShopOrderFilterBar: React.FC<ShopOrderFilterBarProps> = ({
         >
           <option value="all">Mọi phương thức</option>
           <option value="COD">Thanh toán COD</option>
-          <option value="MOMO">Ví MoMo</option>
-          <option value="VISA">Thẻ Quốc tế (Visa)</option>
+          <option value="BANK_TRANSFER">Chuyển khoản ngân hàng</option>
         </select>
 
         {/* Courier */}

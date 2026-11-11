@@ -27,7 +27,7 @@ export const ShopOrderStatusTabs: React.FC<ShopOrderStatusTabsProps> = ({
     },
     {
       id: "packing",
-      label: "Đang chuẩn bị hàng",
+      label: "Chuẩn bị hàng",
       count: counts.packing,
       badgeColor: counts.packing > 0 ? "bg-amber-100 text-amber-800 font-bold" : undefined,
     },

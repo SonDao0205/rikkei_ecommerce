@@ -1,5 +1,6 @@
 import React, { useRef } from "react";
 import type { ShopStoreData } from "@/shared/types";
+import { toSlug } from "@/shared/utils/slug";
 
 interface Step2StorePanelProps {
   data: ShopStoreData;
@@ -242,7 +243,14 @@ export const Step2StorePanel: React.FC<Step2StorePanelProps> = ({
                 className="w-full px-4 py-3 rounded-lg bg-surface-container-lowest text-on-surface font-body-md pr-10 focus:outline-none focus:ring-2 focus:ring-primary font-semibold"
                 type="text"
                 value={data.shopName}
-                onChange={(e) => onChange({ shopName: e.target.value })}
+                onChange={(e) => {
+                  const name = e.target.value;
+                  onChange({
+                    shopName: name,
+                    slug: toSlug(name),
+                    customStoreUrl: toSlug(name),
+                  });
+                }}
                 placeholder="VD: UrbanStep Sneaker Hub"
               />
               {data.shopName && (

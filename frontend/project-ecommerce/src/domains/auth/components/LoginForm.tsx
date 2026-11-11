@@ -4,6 +4,7 @@ import { useAppDispatch, useAppSelector } from "@/app/state/store";
 import { loginUser, clearAuthError } from "@/domains/auth/state/authSlice";
 import { APP_CONFIG } from "@/shared/config/appConfig";
 import { BrandIcon } from "@/shared/components/common/BrandLogo";
+import { isValidEmail, isValidVietnamesePhone } from "@/shared/utils/validation";
 
 // ─── Icons ──────────────────────────────────────────────────────────────────────
 
@@ -52,8 +53,8 @@ const validate = (data: LoginFormData): FormErrors => {
   if (!data.identifier.trim()) {
     errors.identifier = "Vui lòng nhập email hoặc số điện thoại.";
   } else {
-    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.identifier.trim());
-    const isPhone = /^[0-9\s\-+()]{9,15}$/.test(data.identifier.trim());
+    const isEmail = isValidEmail(data.identifier.trim());
+    const isPhone = isValidVietnamesePhone(data.identifier.trim());
     if (!isEmail && !isPhone) {
       errors.identifier = "Vui lòng nhập email hoặc số điện thoại hợp lệ.";
     }

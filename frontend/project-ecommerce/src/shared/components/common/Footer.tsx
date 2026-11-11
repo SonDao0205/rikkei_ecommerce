@@ -1,8 +1,16 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { BrandIcon } from "@/shared/components/common/BrandLogo";
 
 const Footer: React.FC = () => {
+  const location = useLocation();
+  const [email, setEmail] = useState("");
+  const [prevPathname, setPrevPathname] = useState(location.pathname);
+
+  if (location.pathname !== prevPathname) {
+    setPrevPathname(location.pathname);
+    setEmail("");
+  }
   return (
     <footer className="w-full bg-surface-container-low border-t border-outline-variant mt-margin-lg">
       <div className="max-w-[1440px] mx-auto px-margin-lg pt-space-xl pb-space-lg">
@@ -104,6 +112,8 @@ const Footer: React.FC = () => {
                 className="w-full h-10 px-3 rounded-lg bg-surface-container-lowest border border-outline-variant text-body-sm font-body-sm focus:outline-none focus:border-primary"
                 placeholder="Enter your email address"
                 type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
               <button
                 type="submit"

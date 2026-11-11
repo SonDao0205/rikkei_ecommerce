@@ -54,6 +54,9 @@ export const ShopVoucherManagement: React.FC = () => {
   };
 
   useEffect(() => {
+    dispatch(setSearchQuery(""));
+    dispatch(setTypeFilter("all"));
+    dispatch(setStatusTab("all"));
     dispatch(fetchShopVoucherStatsThunk());
     dispatch(fetchShopVoucherList());
   }, [dispatch]);

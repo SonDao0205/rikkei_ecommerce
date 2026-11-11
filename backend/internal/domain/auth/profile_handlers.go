@@ -4,13 +4,14 @@ import (
 	"database/sql"
 	"errors"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
 func (a *App) me(w http.ResponseWriter, r *http.Request) {
 	u := current(r)
 	var v User
-	e := a.db.QueryRowContext(r.Context(), `SELECT id,email,full_name,phone,role,status,email_verified,created_at FROM users WHERE id=?`, u.ID).Scan(&v.ID, &v.Email, &v.FullName, &v.Phone, &v.Role, &v.Status, &v.EmailVerified, &v.CreatedAt)
+	e := a.db.QueryRowContext(r.Context(), `SELECT id,email,full_name,phone,avatar_url,role,status,email_verified,created_at FROM users WHERE id=?`, u.ID).Scan(&v.ID, &v.Email, &v.FullName, &v.Phone, &v.AvatarURL, &v.Role, &v.Status, &v.EmailVerified, &v.CreatedAt)
 	if errors.Is(e, sql.ErrNoRows) {
 		writeError(w, 401, "invalid_session", "Session is invalid")
 		return
@@ -67,7 +68,7 @@ func (a *App) updateProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var updated User
-	err := a.db.QueryRowContext(r.Context(), `SELECT id,email,full_name,phone,role,status,email_verified,created_at FROM users WHERE id=?`, u.ID).Scan(&updated.ID, &updated.Email, &updated.FullName, &updated.Phone, &updated.Role, &updated.Status, &updated.EmailVerified, &updated.CreatedAt)
+	err := a.db.QueryRowContext(r.Context(), `SELECT id,email,full_name,phone,avatar_url,role,status,email_verified,created_at FROM users WHERE id=?`, u.ID).Scan(&updated.ID, &updated.Email, &updated.FullName, &updated.Phone, &updated.AvatarURL, &updated.Role, &updated.Status, &updated.EmailVerified, &updated.CreatedAt)
 	if err != nil {
 		a.serverError(w, r, err)
 		return
@@ -84,6 +85,65 @@ func (a *App) updateProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, 200, map[string]any{"success": true, "data": updated, "message": "Profile updated"})
+}
+
+func (a *App) updateAvatar(w http.ResponseWriter, r *http.Request) {
+	var request struct {
+		AvatarURL string `json:"avatar_url"`
+	}
+	if !decode(w, r, &request) {
+		return
+	}
+	request.AvatarURL = strings.TrimSpace(request.AvatarURL)
+	if !validCloudinaryAvatarURL(request.AvatarURL, a.cfg.CloudinaryCloudName) {
+		writeError(w, http.StatusBadRequest, "invalid_avatar_url", "Avatar URL must be a secure URL hosted by the configured Cloudinary account")
+		return
+	}
+	user := current(r)
+	if _, err := a.db.ExecContext(r.Context(), `UPDATE users SET avatar_url=? WHERE id=?`, request.AvatarURL, user.ID); err != nil {
+		a.serverError(w, r, err)
+		return
+	}
+	a.writeProfileWithAvatar(w, r, user.ID)
+}
+
+func (a *App) removeAvatar(w http.ResponseWriter, r *http.Request) {
+	user := current(r)
+	if _, err := a.db.ExecContext(r.Context(), `UPDATE users SET avatar_url=NULL WHERE id=?`, user.ID); err != nil {
+		a.serverError(w, r, err)
+		return
+	}
+	a.writeProfileWithAvatar(w, r, user.ID)
+}
+
+func (a *App) writeProfileWithAvatar(w http.ResponseWriter, r *http.Request, userID string) {
+	var user User
+	err := a.db.QueryRowContext(r.Context(), `SELECT id,email,full_name,phone,avatar_url,role,status,email_verified,created_at FROM users WHERE id=?`, userID).
+		Scan(&user.ID, &user.Email, &user.FullName, &user.Phone, &user.AvatarURL, &user.Role, &user.Status, &user.EmailVerified, &user.CreatedAt)
+	if err != nil {
+		a.serverError(w, r, err)
+		return
+	}
+	user.Roles, err = loadUserRoles(r.Context(), a.db, userID)
+	if err != nil {
+		a.serverError(w, r, err)
+		return
+	}
+	user.Role = primaryRole(user.Roles)
+	user.ShopStatus, err = loadUserShopStatus(r.Context(), a.db, userID)
+	if err != nil {
+		a.serverError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"success": true, "data": user, "message": "Avatar updated"})
+}
+
+func validCloudinaryAvatarURL(value, cloudName string) bool {
+	parsed, err := url.Parse(value)
+	if err != nil || cloudName == "" || parsed.Scheme != "https" || parsed.User != nil || parsed.RawQuery != "" || parsed.Fragment != "" || parsed.Host == "" {
+		return false
+	}
+	return strings.EqualFold(parsed.Host, "res.cloudinary.com") && strings.HasPrefix(parsed.Path, "/"+cloudName+"/") && len(value) <= 500
 }
 
 func (a *App) listUsers(w http.ResponseWriter, r *http.Request) {

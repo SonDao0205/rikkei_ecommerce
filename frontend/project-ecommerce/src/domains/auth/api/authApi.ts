@@ -23,6 +23,7 @@ export interface BackendUser {
   email: string;
   full_name: string;
   phone: string;
+  avatar_url?: string | null;
   role: string;
   roles?: string[];
   shop_status?: string;

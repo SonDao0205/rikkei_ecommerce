@@ -190,6 +190,15 @@ export const ProductDetail: React.FC = () => {
                   discountPercent={product.discount_percent}
                   badgeInfo={product.badge_info || "Chính hãng • MarketPulse Store"}
                 />
+                {product.video_url && (
+                  <video
+                    className="w-full max-h-[32rem] rounded-2xl bg-black object-contain"
+                    src={product.video_url}
+                    controls
+                    preload="metadata"
+                    aria-label={`Video giới thiệu ${product.name}`}
+                  />
+                )}
 
                 {/* Product Reviews Section (Input, 5 Latest Reviews, All Reviews Modal) */}
                 <ProductReviewsSection

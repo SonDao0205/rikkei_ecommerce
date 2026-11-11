@@ -12,6 +12,7 @@ type sellerProductRequest struct {
 	CategoryID  int64                  `json:"category_id"`
 	BrandID     *int64                 `json:"brand_id"`
 	Price       float64                `json:"price"`
+	VideoURL    *string                `json:"video_url"`
 	Images      []sellerProductImage   `json:"images"`
 	Variants    []sellerProductVariant `json:"variants"`
 }
@@ -40,6 +41,7 @@ type sellerProduct struct {
 	Slug        string                 `json:"slug"`
 	Description *string                `json:"description"`
 	Thumbnail   *string                `json:"thumbnail_url"`
+	VideoURL    *string                `json:"video_url"`
 	Price       float64                `json:"price"`
 	Status      string                 `json:"status"`
 	Images      []sellerProductImage   `json:"images"`

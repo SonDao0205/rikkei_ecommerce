@@ -59,6 +59,7 @@ const AdminProduct: React.FC = () => {
   const [rejectingProduct, setRejectingProduct] = useState<AdminProductItem | null>(null);
 
   useEffect(() => {
+    dispatch(clearAllFilters());
     dispatch(getInventoryStats());
     dispatch(getCategories());
   }, [dispatch]);

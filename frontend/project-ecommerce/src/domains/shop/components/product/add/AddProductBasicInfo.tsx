@@ -1,5 +1,6 @@
 import React from "react";
 import type { AddProductFormData } from "@/domains/shop/types/shopAddProduct.types";
+import { AVAILABLE_BRANDS } from "@/domains/shop/constants/brandData";
 
 interface AddProductBasicInfoProps {
   formData: AddProductFormData;
@@ -149,24 +150,49 @@ export const AddProductBasicInfo: React.FC<AddProductBasicInfoProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Brand */}
         <div className="flex flex-col gap-2">
-          <label className="font-label-md text-label-md text-on-surface flex items-center gap-1">
-            <span>Thương hiệu (Brand)</span>
-            <span className="text-error font-label-sm">*</span>
-          </label>
-          <div className="relative">
-            <input
-              type="text"
-              value={formData.brand}
-              onChange={(e) => onChange({ brand: e.target.value })}
-              placeholder="Nhập tên thương hiệu hoặc No Brand"
-              className="w-full bg-surface-container-low focus:bg-surface-container-lowest text-on-surface font-body-md text-body-md px-4 py-2.5 rounded-xl outline-none ring-1 ring-outline-variant/40 focus:ring-2 focus:ring-primary transition-all pr-24"
-            />
+          <label className="font-label-md text-label-md text-on-surface flex items-center justify-between">
+            <span className="flex items-center gap-1">
+              <span>Thương hiệu (Brand)</span>
+              <span className="text-error font-label-sm">*</span>
+            </span>
             {formData.isBrandVerified && (
-              <span className="absolute right-3 top-2.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-secondary-fixed text-on-secondary-fixed font-label-sm text-[11px] font-semibold">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-secondary-fixed text-on-secondary-fixed font-label-sm text-[11px] font-semibold">
                 <span className="material-symbols-outlined text-[13px]">verified</span>
                 Đã xác minh
               </span>
             )}
+          </label>
+          <div className="relative">
+            <select
+              value={formData.brandId !== undefined && formData.brandId !== null ? String(formData.brandId) : "no-brand"}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val === "no-brand") {
+                  onChange({ brand: "No Brand", brandId: null, isBrandVerified: false });
+                } else {
+                  const bId = Number(val);
+                  const matchedBrand = AVAILABLE_BRANDS.find((b) => b.id === bId);
+                  onChange({
+                    brand: matchedBrand?.name || "No Brand",
+                    brandId: bId,
+                    isBrandVerified: !!matchedBrand?.isVerified,
+                  });
+                }
+              }}
+              className="w-full bg-surface-container-low focus:bg-surface-container-lowest text-on-surface font-body-md text-body-md px-4 py-2.5 rounded-xl outline-none ring-1 ring-outline-variant/40 focus:ring-2 focus:ring-primary transition-all cursor-pointer appearance-none pr-10"
+            >
+              {AVAILABLE_BRANDS.map((brand) => (
+                <option
+                  key={brand.id === null ? "no-brand" : brand.id}
+                  value={brand.id === null ? "no-brand" : String(brand.id)}
+                >
+                  {brand.name}
+                </option>
+              ))}
+            </select>
+            <span className="material-symbols-outlined absolute right-3 top-2.5 text-[20px] text-outline pointer-events-none">
+              expand_more
+            </span>
           </div>
         </div>
 

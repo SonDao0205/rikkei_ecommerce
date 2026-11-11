@@ -201,6 +201,7 @@ export const ShopTable: React.FC<ShopTableProps> = ({
               shops.map((shop) => {
                 const isSelected = selectedIds.includes(shop.id);
                 const isSuspended = shop.status === "SUSPENDED";
+                const isRejected = shop.status === "REJECTED";
 
                 return (
                   <tr
@@ -334,29 +335,33 @@ export const ShopTable: React.FC<ShopTableProps> = ({
 
                     {/* Account Switch Toggle */}
                     <td className="py-4 px-4 text-center">
-                      <button
-                        type="button"
-                        onClick={() => onToggleLive(shop.id, !shop.is_live)}
-                        disabled={isSuspended}
-                        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full transition-colors focus:outline-none ${
-                          Boolean(shop.is_live) && !isSuspended
-                            ? "bg-secondary"
-                            : "bg-surface-variant"
-                        } ${isSuspended ? "opacity-50 cursor-not-allowed" : ""}`}
-                        title={
-                          isSuspended
-                            ? "Account Status: Frozen"
-                            : shop.is_live
-                            ? "Account Status: Online (Live)"
-                            : "Account Status: Offline"
-                        }
-                      >
-                        <span
-                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-surface-container-lowest shadow-sm transition-transform translate-y-0.5 ${
-                            Boolean(shop.is_live) && !isSuspended ? "translate-x-4" : "translate-x-0.5"
-                          }`}
-                        />
-                      </button>
+                      {isRejected ? (
+                        <span className="text-on-surface-variant text-xs">—</span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => onToggleLive(shop.id, !shop.is_live)}
+                          disabled={isSuspended}
+                          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full transition-colors focus:outline-none ${
+                            Boolean(shop.is_live) && !isSuspended
+                              ? "bg-secondary"
+                              : "bg-surface-variant"
+                          } ${isSuspended ? "opacity-50 cursor-not-allowed" : ""}`}
+                          title={
+                            isSuspended
+                              ? "Account Status: Frozen"
+                              : shop.is_live
+                              ? "Account Status: Online (Live)"
+                              : "Account Status: Offline"
+                          }
+                        >
+                          <span
+                            className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-surface-container-lowest shadow-sm transition-transform translate-y-0.5 ${
+                              Boolean(shop.is_live) && !isSuspended ? "translate-x-4" : "translate-x-0.5"
+                            }`}
+                          />
+                        </button>
+                      )}
                     </td>
 
                     {/* Actions */}
@@ -385,7 +390,14 @@ export const ShopTable: React.FC<ShopTableProps> = ({
                         </button>
 
                         {/* Lock / Unlock */}
-                        {isSuspended ? (
+                        {isRejected ? (
+                          <div
+                            className="p-1.5 inline-flex items-center justify-center invisible select-none pointer-events-none"
+                            aria-hidden="true"
+                          >
+                            <span className="material-symbols-outlined text-[18px]">lock</span>
+                          </div>
+                        ) : isSuspended ? (
                           <button
                             type="button"
                             onClick={() => onUnlockShop(shop.id)}

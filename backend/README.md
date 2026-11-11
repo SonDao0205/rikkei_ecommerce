@@ -2,7 +2,7 @@
 
 Backend REST API cho MVP Rikkei E-Commerce, viết bằng Go 1.24+, `net/http` và MySQL `database/sql`. Tài liệu này hướng dẫn DevOps chạy/vận hành BE và FE tích hợp các API **đang có**.
 
-> Backend implements auth/RBAC, catalog, shop management, seller products, addresses, cart, wishlist, categories, and checkout quote APIs. Order creation, stock reservation, and payment processing are not implemented.
+> Backend implements auth/RBAC, catalog, shop management, seller products, addresses, cart, wishlist, categories, checkout creation with atomic inventory deduction & multi-shop splitting, and comprehensive order tracking/seller processing with return/refund workflows. Direct 3rd-party payment gateway callbacks (Momo/VNPAY) and automated AI shop integrations are planned for future phases.
 
 ## Cấu trúc mã nguồn
 
@@ -578,6 +578,96 @@ Manual/API QA matrix:
 - Try another user's address/cart ID, duplicate/non-positive IDs, an unavailable product/variant/category/shop, insufficient stock, and inactive or `MOCK_CARD` methods. These must fail with a client error and no mutation.
 - Change the price after loading the cart, then quote again; the returned amount must use the new DB price. Deactivate the product/method or reduce stock below cart quantity; the quote must return a client error instead of trusting FE state.
 
-The Postman folder currently verifies auth, option response shape, and invalid requests. A successful seeded quote is still a manual integration check because the disposable auth flow does not create a guaranteed address/cart fixture.
+The Postman collection verifies auth, option response shapes, order checkout, order tracking, and seller order management.
 
-Next implementation work is order creation: repeat quote validations within a DB transaction, lock/recheck stock, increment voucher usage atomically, persist order snapshots and clear only purchased cart items. Payment gateway callbacks/verification and cancellation/refund rules must be added before claiming online payment is supported.
+---
+
+## 5. Theo dõi và xử lý đơn hàng (Order Tracking and Seller Processing)
+
+Hệ thống cung cấp đầy đủ các API phục vụ luồng theo dõi đơn hàng của Khách hàng (`CLIENT`) và luồng xử lý đơn hàng của Chủ gian hàng (`SELLER`):
+
+### 5.1. Dành cho Khách hàng (`CLIENT`)
+
+1. **Lịch sử đơn hàng (`GET /api/v1/orders`):**
+   - Hỗ trợ phân trang: `page` (mặc định 1), `limit` (mặc định 10, tối đa 50).
+   - Lọc theo trạng thái/tab: `tab` (`all`, `pending`, `confirmed`, `packing`, `shipping`, `completed`, `cancelled`, `returned`).
+   - Tìm kiếm theo mã đơn hàng: `search`.
+   - Trả về danh sách đơn cha, chi tiết các đơn con theo shop (`shop_orders`), danh sách sản phẩm, trạng thái thanh toán, và tổng số lượng đơn hàng theo từng tab trạng thái (`counts`) để FE hiển thị badge trực quan.
+
+2. **Chi tiết đơn hàng (`GET /api/v1/orders/{id}`):**
+   - Hỗ trợ tra cứu theo ID (`id`) hoặc Mã đơn hàng (`order_code`).
+   - Kiểm tra chặt chẽ quyền sở hữu (`user_id = auth.CurrentUser.ID`).
+   - Trả về đầy đủ: thông tin người nhận, địa chỉ giao hàng, chi tiết tài chính (tiền hàng, phí ship, voucher sàn/shop), thông tin thanh toán (`payments`), lịch sử timeline trạng thái chi tiết theo thời gian từ `order_status_history`, và thông tin hoàn tiền (`refund_info`) nếu có.
+
+3. **Hủy đơn hàng (`POST /api/v1/orders/{id}/cancel`):**
+   - Body: `{"reason": "Lý do hủy đơn", "shop_order_id": 123 (tùy chọn nếu hủy đơn shop cụ thể)}`.
+   - **Quy tắc trạng thái:** Khách chỉ được hủy khi đơn ở trạng thái `PENDING` hoặc `CONFIRMED`. Nếu đơn đã chuyển sang `PACKING`, `SHIPPING`, `COMPLETED` hoặc `RETURNED`, hệ thống trả về lỗi `422 order_cannot_be_cancelled` để tránh hủy khi hàng đã gửi đi.
+   - **Bảo toàn tồn kho:** Hoàn trả số lượng tồn kho nguyên tử (`product_variants.stock += quantity`) và giảm số lượng đã bán (`products.sold_count = GREATEST(sold_count - quantity, 0)`) trong cùng 1 transaction DB.
+   - **Chính sách hoàn tiền:**
+     - Đơn thanh toán khi nhận hàng (`COD`): Không phát sinh hoàn tiền (`refund_status: "NOT_APPLICABLE"`). Thông báo: *"Đơn hàng thanh toán khi nhận hàng (COD) đã được hủy thành công. Không phát sinh hoàn tiền."*
+     - Đơn thanh toán chuyển khoản / QR / đã thanh toán (`payments.status = 'PAID'` hoặc phương thức online): Tự động cập nhật `payments.status = 'REFUNDED'`, thiết lập `refund_status: "REFUND_PROCESSING"`. Thông báo: *"Đã hủy đơn hàng thành công. Yêu cầu hoàn tiền đã được ghi nhận và tiền sẽ được hoàn lại vào tài khoản của quý khách trong vòng 3 ngày làm việc."*
+
+4. **Xác nhận nhận hàng thành công (`POST /api/v1/orders/{id}/received`):**
+   - Cho phép khách hàng chủ động xác nhận đã nhận được kiện hàng khi đơn đang ở trạng thái `SHIPPING`.
+   - Chuyển trạng thái đơn con sang `COMPLETED`, ghi log lịch sử `order_status_history`, và tự động cập nhật thanh toán COD sang `PAID`.
+
+5. **Yêu cầu đổi/trả/hoàn tiền (`POST /api/v1/orders/{id}/returns`):**
+   - Body: `{"shop_order_id": 123, "type": "RETURN", "reason": "Lý do đổi trả...", "refund_amount": 500000}`.
+   - **Điều kiện:** Đơn con phải ở trạng thái `COMPLETED` (đã nhận hàng thành công). Chặn tạo trùng lặp nếu đang có yêu cầu chờ xử lý.
+   - Lưu vào bảng `return_requests` với trạng thái `REQUESTED` để chờ chủ shop tiếp nhận và giải quyết.
+
+---
+
+### 5.2. Dành cho Chủ gian hàng (`SELLER`)
+
+1. **Nguyên tắc cô lập dữ liệu tuyệt đối:**
+   - Hệ thống xác định `shop_id` của chủ gian hàng đang đăng nhập từ token `SELLER`.
+   - **Mọi truy vấn và cập nhật đều bị khóa chặt bởi điều kiện `WHERE shop_id = current_seller_shop_id`**. Chủ shop hoàn toàn không thể xem hoặc sửa đổi đơn của shop khác.
+
+2. **Danh sách đơn hàng của Shop (`GET /api/v1/seller/orders`):**
+   - Lọc theo `status`, tìm kiếm theo mã đơn, tên/sđt khách hàng hoặc mã vận đơn `tracking_code`.
+   - Tự động tính toán số tiền thực nhận của gian hàng: `seller_payout = total_amount - commission_amount`.
+   - Trả về danh sách đơn con kèm `counts` theo từng tab.
+
+3. **Chi tiết đơn hàng gian hàng (`GET /api/v1/seller/orders/{id}`):**
+   - Hiển thị đầy đủ thông tin khách hàng, sản phẩm, doanh thu/hoa hồng, thông tin giao vận và lịch sử timeline trạng thái.
+
+4. **Cập nhật tiến trình đơn hàng tuần tự:**
+   - `PATCH /api/v1/seller/orders/{id}/confirm`: Chuyển `PENDING` $\to$ `CONFIRMED`.
+   - `PATCH /api/v1/seller/orders/{id}/pack`: Chuyển `CONFIRMED` $\to$ `PACKING`.
+   - `PATCH /api/v1/seller/orders/{id}/ship`: Chuyển `PACKING` $\to$ `SHIPPING`. Yêu cầu body `carrier` (đơn vị vận chuyển) và `tracking_code` (mã vận đơn).
+   - `PATCH /api/v1/seller/orders/{id}/complete`: Chuyển `SHIPPING` $\to$ `COMPLETED` (giao thành công). Cập nhật thanh toán COD thành `PAID`.
+   - `PATCH /api/v1/seller/orders/{id}/cancel`: Chủ shop hủy đơn khi hết hàng. Tự động hoàn lại tồn kho cho shop và xử lý hoàn tiền online nếu có.
+
+5. **Xử lý yêu cầu đổi trả (`return_requests`):**
+   - `GET /api/v1/seller/returns`: Danh sách các yêu cầu đổi trả từ khách hàng đối với sản phẩm của shop.
+   - `PATCH /api/v1/seller/returns/{id}/approve`: Chủ shop chấp thuận yêu cầu đổi trả. Hệ thống tự động chuyển đơn sang `RETURNED`, hoàn lại tồn kho cho biến thể sản phẩm, cập nhật hoàn tiền và thông báo hoàn tiền trong 3 ngày làm việc.
+   - `PATCH /api/v1/seller/returns/{id}/reject`: Chủ shop từ chối yêu cầu đổi trả kèm lý do giải thích cho khách hàng (bắt buộc nhập `note`).
+
+## Order workflow: customer and seller
+
+The database keeps the operational states `PENDING`, `CONFIRMED`, `PACKING`, `SHIPPING`, `COMPLETED`, `CANCELLED`, and `RETURNED`. The API does not rewrite a persisted status just to fit a screen tab.
+
+- Customer list `GET /api/v1/orders?tab=packing` groups `CONFIRMED` and `PACKING` as the customer-facing "shop is processing" tab. `counts.preparing` mirrors this grouped count; `counts.packing` is retained for compatibility. Individual order/detail records still expose their actual status.
+- Seller list `GET /api/v1/seller/orders?status=PREPARING` groups `CONFIRMED` and `PACKING`, and `counts.preparing` is their sum. Exact filters such as `CONFIRMED` and `PACKING` still select one state.
+- Seller filters also accept `payment_method`, `courier`, and `date_range=all|today|7days|30days`. Invalid values are rejected with HTTP 400.
+- Seller workflow is strictly `PENDING -> CONFIRMED -> PACKING -> SHIPPING -> COMPLETED`. Confirm, pack, ship, complete, and cancel handlers validate state in a transaction and scope the order to the authenticated seller's shop. `ship` requires non-empty `carrier` and `tracking_code`.
+- Seller bulk confirm: `POST /api/v1/seller/orders/bulk-confirm`, JSON `{ "shop_order_ids": [123, 124] }`. The request accepts 1–50 distinct positive IDs. All orders must belong to the seller and be `PENDING`; otherwise the transaction makes no changes. IDs are locked in sorted order to reduce deadlock risk.
+
+The customer and seller order pages use the live APIs. The UI retains the raw status as `workflowStatus` while mapping `CONFIRMED` and `PACKING` to the shared preparation tab. From `CONFIRMED`, the seller starts packing; from `PACKING`, the seller enters carrier/tracking details and hands the parcel to shipping. Dashboard order actions use the same API transitions. Dashboard analytics outside its urgent-order list are still mock data.
+
+Run `go test ./...`, `go vet ./...`, and from `frontend/project-ecommerce`, `npm run lint` and `npm run build`. For database-backed verification, start the local MySQL service and API, then use the Postman "Order Tracking and Seller Processing" folder with disposable buyer/seller fixtures. Do not reuse live orders for state-changing requests.
+
+## Media uploads (Cloudinary)
+
+Configure `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` in the local environment. For Docker Compose, set them in the repository-root `.env`; for running the Go API directly, set them in `backend/.env`. Templates are in both `.env.example` files. The API secret must stay in the backend environment and must never use a `VITE_` prefix. `.env` files are ignored by Git. The upload API returns `503 media_storage_unavailable` when these settings are missing; production startup requires them.
+
+`POST /api/v1/media` accepts authenticated `multipart/form-data` fields `purpose` and `file`. Supported purposes are `avatar`, `shop-image`, `product-image`, and `product-video`. Image requests accept only `.jpg`/`.jpeg` files whose bytes decode as JPEG, up to 5 MiB. PNG, WebP, GIF, SVG, renamed non-JPEG files, and larger images are rejected. Product videos accept MP4/MOV/WebM up to 20 MiB. The handler checks file extension and content signature, caps the HTTP body, limits concurrent Cloudinary transfers, and sends only validated files to Cloudinary. Image purposes are available to CLIENT/SELLER roles; product media requires SELLER. The Cloudinary secret and signature are never sent to the browser.
+
+Success returns HTTP 201 with `data.url`, `data.public_id`, `data.resource_type`, `data.format`, and `data.bytes`. Common errors include `400 invalid_multipart_upload`, `400 invalid_upload_purpose`, `403 upload_forbidden`, `413 file_size_exceeded`, `415 unsupported_media_type`, `502 media_storage_failed`, and `503 media_storage_unavailable`.
+
+Avatar workflow: upload media, then save the returned URL using `PUT /api/v1/auth/profile/avatar` with `{ "avatar_url": "https://res.cloudinary.com/..." }`. `DELETE /api/v1/auth/profile/avatar` removes the stored avatar. `GET /api/v1/auth/me` and profile responses now include `avatar_url`. The upload itself does not update the user's profile until the URL save call succeeds.
+
+Product create/update accepts optional `video_url` in addition to the existing `images` array. The seller migration adds `products.video_url` idempotently; the public product-detail response returns that URL so the storefront can play the video. Ensure the migration is run before deploying with `AUTO_MIGRATE=false` (`go run ./cmd/migrate` from `backend`). Existing product image URLs remain in `product_images` and continue to be validated by the seller API.
+
+The FE uses JPEG-only file pickers and validates type/size before sending; the backend repeats validation and is authoritative. Uploads run independently of React route components and show progress/status in the global upload panel, so in-app navigation does not abort a transfer. Reloading or closing the browser still ends an in-flight browser request; start that upload again if it did not complete.
