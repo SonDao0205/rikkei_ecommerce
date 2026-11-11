@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -47,10 +48,23 @@ func (h *SellerHandler) listSellerOrders(w http.ResponseWriter, r *http.Request)
 	}
 
 	statusFilter := strings.TrimSpace(strings.ToUpper(r.URL.Query().Get("status")))
-	if statusFilter == "ALL" {
-		statusFilter = ""
+	statusFilter, validStatus := sellerStatusFilter(statusFilter)
+	if !validStatus {
+		writeError(w, http.StatusBadRequest, "invalid_status_filter", "Unsupported order status filter")
+		return
 	}
 	search := strings.TrimSpace(r.URL.Query().Get("search"))
+	dateRange := strings.TrimSpace(strings.ToLower(r.URL.Query().Get("date_range")))
+	if dateRange != "" && dateRange != "all" && dateRange != "today" && dateRange != "7days" && dateRange != "30days" {
+		writeError(w, http.StatusBadRequest, "invalid_date_range", "date_range must be all, today, 7days, or 30days")
+		return
+	}
+	paymentMethod := strings.TrimSpace(strings.ToUpper(r.URL.Query().Get("payment_method")))
+	courier := strings.TrimSpace(r.URL.Query().Get("courier"))
+	if len(paymentMethod) > 30 || len(courier) > 50 {
+		writeError(w, http.StatusBadRequest, "invalid_order_filter", "payment_method or courier filter is too long")
+		return
+	}
 
 	// 1. Calculate status counts for seller tabs in a single query
 	countsQuery := `SELECT status, COUNT(*) FROM shop_orders WHERE shop_id = ? GROUP BY status`
@@ -91,6 +105,7 @@ func (h *SellerHandler) listSellerOrders(w http.ResponseWriter, r *http.Request)
 		serverError(w, h.logger, err)
 		return
 	}
+	counts.Preparing = counts.Confirmed + counts.Packing
 
 	// 2. Query shop orders strictly for this shop_id
 	var whereClauses []string
@@ -100,8 +115,8 @@ func (h *SellerHandler) listSellerOrders(w http.ResponseWriter, r *http.Request)
 	args = append(args, shopID)
 
 	if statusFilter != "" {
-		if statusFilter == "PACKING" {
-			whereClauses = append(whereClauses, "so.status IN ('PACKING', 'CONFIRMED')")
+		if statusFilter == "PREPARING" {
+			whereClauses = append(whereClauses, "so.status IN ('CONFIRMED','PACKING')")
 		} else {
 			whereClauses = append(whereClauses, "so.status = ?")
 			args = append(args, statusFilter)
@@ -113,12 +128,29 @@ func (h *SellerHandler) listSellerOrders(w http.ResponseWriter, r *http.Request)
 		whereClauses = append(whereClauses, "(so.shop_order_code LIKE ? OR o.order_code LIKE ? OR o.recipient_name LIKE ? OR o.recipient_phone LIKE ? OR so.tracking_code LIKE ?)")
 		args = append(args, likePattern, likePattern, likePattern, likePattern, likePattern)
 	}
+	if paymentMethod != "" && paymentMethod != "ALL" {
+		whereClauses = append(whereClauses, "pm.code = ?")
+		args = append(args, paymentMethod)
+	}
+	if courier != "" && !strings.EqualFold(courier, "all") {
+		whereClauses = append(whereClauses, "so.carrier LIKE ?")
+		args = append(args, "%"+courier+"%")
+	}
+	switch dateRange {
+	case "today":
+		whereClauses = append(whereClauses, "so.created_at >= UTC_DATE()")
+	case "7days":
+		whereClauses = append(whereClauses, "so.created_at >= DATE_SUB(UTC_DATE(), INTERVAL 6 DAY)")
+	case "30days":
+		whereClauses = append(whereClauses, "so.created_at >= DATE_SUB(UTC_DATE(), INTERVAL 29 DAY)")
+	}
 
 	whereSQL := strings.Join(whereClauses, " AND ")
 
 	// Total count for current filter
 	var total int64
-	countQuery := fmt.Sprintf(`SELECT COUNT(*) FROM shop_orders so JOIN orders o ON so.order_id = o.id WHERE %s`, whereSQL)
+	countQuery := fmt.Sprintf(`SELECT COUNT(*) FROM shop_orders so JOIN orders o ON so.order_id = o.id
+		JOIN payments p ON p.order_id = o.id JOIN payment_methods pm ON p.payment_method_id = pm.id WHERE %s`, whereSQL)
 	if err := h.db.QueryRowContext(r.Context(), countQuery, args...).Scan(&total); err != nil {
 		serverError(w, h.logger, err)
 		return
@@ -483,6 +515,77 @@ func (h *SellerHandler) confirmSellerOrder(w http.ResponseWriter, r *http.Reques
 	})
 }
 
+func (h *SellerHandler) bulkConfirmSellerOrders(w http.ResponseWriter, r *http.Request) {
+	uidStr := auth.CurrentUser(r).ID
+	uid, err := strconv.ParseInt(uidStr, 10, 64)
+	if err != nil || uid < 1 {
+		writeError(w, http.StatusUnauthorized, "unauthorized", "Authenticated user is invalid")
+		return
+	}
+	shopID, _, err := activeSellerShop(r.Context(), h.db, uidStr)
+	if errors.Is(err, sql.ErrNoRows) {
+		writeError(w, http.StatusForbidden, "active_shop_required", "An active shop is required")
+		return
+	}
+	if err != nil {
+		serverError(w, h.logger, err)
+		return
+	}
+	var req BulkConfirmOrdersRequest
+	if !httpx.Decode(w, r, &req) {
+		return
+	}
+	if len(req.ShopOrderIDs) == 0 || len(req.ShopOrderIDs) > 50 {
+		writeError(w, http.StatusBadRequest, "invalid_bulk_confirm_request", "Provide between 1 and 50 shop order IDs")
+		return
+	}
+	ids := append([]int64(nil), req.ShopOrderIDs...)
+	sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
+	for i, id := range ids {
+		if id < 1 || (i > 0 && ids[i-1] == id) {
+			writeError(w, http.StatusBadRequest, "invalid_bulk_confirm_request", "Order IDs must be positive and unique")
+			return
+		}
+	}
+	tx, err := h.db.BeginTx(r.Context(), nil)
+	if err != nil {
+		serverError(w, h.logger, err)
+		return
+	}
+	defer tx.Rollback()
+	for _, id := range ids {
+		var status string
+		err = tx.QueryRowContext(r.Context(), `SELECT status FROM shop_orders WHERE id=? AND shop_id=? FOR UPDATE`, id, shopID).Scan(&status)
+		if errors.Is(err, sql.ErrNoRows) {
+			writeError(w, http.StatusNotFound, "order_not_found", "One or more orders do not belong to this shop")
+			return
+		}
+		if err != nil {
+			serverError(w, h.logger, err)
+			return
+		}
+		if !strings.EqualFold(status, "PENDING") {
+			writeError(w, http.StatusUnprocessableEntity, "invalid_status", "All selected orders must be PENDING")
+			return
+		}
+	}
+	for _, id := range ids {
+		if _, err = tx.ExecContext(r.Context(), `UPDATE shop_orders SET status='CONFIRMED',confirmed_at=UTC_TIMESTAMP(),updated_at=UTC_TIMESTAMP() WHERE id=? AND shop_id=? AND status='PENDING'`, id, shopID); err != nil {
+			serverError(w, h.logger, err)
+			return
+		}
+		if err = recordStatusHistory(r.Context(), tx, id, "PENDING", "CONFIRMED", &uid, "Seller confirmed order"); err != nil {
+			serverError(w, h.logger, err)
+			return
+		}
+	}
+	if err = tx.Commit(); err != nil {
+		serverError(w, h.logger, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"success": true, "data": map[string]any{"confirmed_shop_order_ids": ids, "status": "CONFIRMED"}})
+}
+
 func (h *SellerHandler) packSellerOrder(w http.ResponseWriter, r *http.Request) {
 	uidStr := auth.CurrentUser(r).ID
 	uid, _ := strconv.ParseInt(uidStr, 10, 64)
@@ -521,8 +624,7 @@ func (h *SellerHandler) packSellerOrder(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	st := strings.ToUpper(status)
-	if st != "CONFIRMED" && st != "PENDING" {
+	if !canStartPacking(status) {
 		writeError(w, http.StatusUnprocessableEntity, "invalid_status",
 			fmt.Sprintf("Chỉ có thể chuẩn bị đóng gói đơn hàng ở trạng thái Chờ xác nhận hoặc Đã xác nhận. Trạng thái hiện tại: %s", statusLabel(status)))
 		return
@@ -621,8 +723,7 @@ func (h *SellerHandler) shipSellerOrder(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	st := strings.ToUpper(status)
-	if st != "PACKING" && st != "CONFIRMED" {
+	if !canShipOrder(status) {
 		writeError(w, http.StatusUnprocessableEntity, "invalid_status",
 			fmt.Sprintf("Chỉ có thể bàn giao vận chuyển đơn hàng đang đóng gói hoặc đã xác nhận. Trạng thái hiện tại: %s", statusLabel(status)))
 		return

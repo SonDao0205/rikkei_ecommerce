@@ -87,6 +87,59 @@ func TestDeriveParentStatus(t *testing.T) {
 	}
 }
 
+func TestOrderStatusGroupingAndSellerTransitions(t *testing.T) {
+	for _, tc := range []struct {
+		tab, status string
+		want        bool
+	}{
+		{"all", "pending", true},
+		{"pending", "pending", true},
+		{"pending", "confirmed", false},
+		{"packing", "confirmed", true},
+		{"packing", "packing", true},
+		{"shipping", "confirmed", false},
+	} {
+		if got := customerOrderTabMatches(tc.tab, tc.status); got != tc.want {
+			t.Errorf("customerOrderTabMatches(%q,%q)=%v, want %v", tc.tab, tc.status, got, tc.want)
+		}
+	}
+
+	for _, tc := range []struct {
+		status string
+		want   string
+		valid  bool
+	}{
+		{"all", "", true},
+		{"pending", "PENDING", true},
+		{"preparing", "PREPARING", true},
+		{"packing", "PACKING", true},
+		{"SHIPPED", "", false},
+	} {
+		got, valid := sellerStatusFilter(tc.status)
+		if got != tc.want || valid != tc.valid {
+			t.Errorf("sellerStatusFilter(%q)=(%q,%v), want (%q,%v)", tc.status, got, valid, tc.want, tc.valid)
+		}
+	}
+
+	for _, tc := range []struct {
+		status  string
+		canPack bool
+		canShip bool
+	}{
+		{"PENDING", false, false},
+		{"CONFIRMED", true, false},
+		{"PACKING", false, true},
+		{"SHIPPING", false, false},
+	} {
+		if got := canStartPacking(tc.status); got != tc.canPack {
+			t.Errorf("canStartPacking(%q)=%v, want %v", tc.status, got, tc.canPack)
+		}
+		if got := canShipOrder(tc.status); got != tc.canShip {
+			t.Errorf("canShipOrder(%q)=%v, want %v", tc.status, got, tc.canShip)
+		}
+	}
+}
+
 func TestStatusLabel(t *testing.T) {
 	cases := map[string]string{
 		"PENDING":   "Chờ xác nhận",

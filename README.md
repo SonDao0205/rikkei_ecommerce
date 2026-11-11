@@ -80,3 +80,9 @@ Backend CI chạy gofmt check, unit tests, vet và build. Frontend CI chạy lin
 ## Trạng thái phạm vi sản phẩm
 
 Backend currently supports auth/RBAC, catalog/categories, shop onboarding, seller products, addresses, cart, wishlist, voucher validation, checkout quote, and order creation APIs (multi-shop order splitting, atomic stock reservation with oversell prevention, COD and bank transfer payments). Online payment gateway callbacks and product reviews remain to be integrated. Some admin FE screens still use mock fallbacks; see [Backend README](backend/README.md#order-creation-post-apiv1checkoutorders) for API contracts and details.
+
+### Order status workflow (customer and seller)
+
+Order status transitions are persisted as `PENDING -> CONFIRMED -> PACKING -> SHIPPING -> COMPLETED`, with controlled cancellation/return paths. The customer-facing processing tab groups `CONFIRMED` and `PACKING`; the seller's preparation tab uses `status=PREPARING` for those same persisted states. Details still show the exact status. Seller endpoints enforce shop ownership and valid transitions. `ship` requires carrier and tracking code. `POST /api/v1/seller/orders/bulk-confirm` validates 1–50 distinct IDs and confirms all selected pending orders atomically.
+
+See [Backend README](backend/README.md#order-workflow-customer-and-seller) for API/filter contracts and [Frontend README](frontend/project-ecommerce/README.md#order-workflow-api-integration) for UI integration and current mock-data boundaries.

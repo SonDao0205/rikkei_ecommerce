@@ -643,3 +643,17 @@ Hệ thống cung cấp đầy đủ các API phục vụ luồng theo dõi đơ
    - `GET /api/v1/seller/returns`: Danh sách các yêu cầu đổi trả từ khách hàng đối với sản phẩm của shop.
    - `PATCH /api/v1/seller/returns/{id}/approve`: Chủ shop chấp thuận yêu cầu đổi trả. Hệ thống tự động chuyển đơn sang `RETURNED`, hoàn lại tồn kho cho biến thể sản phẩm, cập nhật hoàn tiền và thông báo hoàn tiền trong 3 ngày làm việc.
    - `PATCH /api/v1/seller/returns/{id}/reject`: Chủ shop từ chối yêu cầu đổi trả kèm lý do giải thích cho khách hàng (bắt buộc nhập `note`).
+
+## Order workflow: customer and seller
+
+The database keeps the operational states `PENDING`, `CONFIRMED`, `PACKING`, `SHIPPING`, `COMPLETED`, `CANCELLED`, and `RETURNED`. The API does not rewrite a persisted status just to fit a screen tab.
+
+- Customer list `GET /api/v1/orders?tab=packing` groups `CONFIRMED` and `PACKING` as the customer-facing "shop is processing" tab. `counts.preparing` mirrors this grouped count; `counts.packing` is retained for compatibility. Individual order/detail records still expose their actual status.
+- Seller list `GET /api/v1/seller/orders?status=PREPARING` groups `CONFIRMED` and `PACKING`, and `counts.preparing` is their sum. Exact filters such as `CONFIRMED` and `PACKING` still select one state.
+- Seller filters also accept `payment_method`, `courier`, and `date_range=all|today|7days|30days`. Invalid values are rejected with HTTP 400.
+- Seller workflow is strictly `PENDING -> CONFIRMED -> PACKING -> SHIPPING -> COMPLETED`. Confirm, pack, ship, complete, and cancel handlers validate state in a transaction and scope the order to the authenticated seller's shop. `ship` requires non-empty `carrier` and `tracking_code`.
+- Seller bulk confirm: `POST /api/v1/seller/orders/bulk-confirm`, JSON `{ "shop_order_ids": [123, 124] }`. The request accepts 1–50 distinct positive IDs. All orders must belong to the seller and be `PENDING`; otherwise the transaction makes no changes. IDs are locked in sorted order to reduce deadlock risk.
+
+The customer and seller order pages use the live APIs. The UI retains the raw status as `workflowStatus` while mapping `CONFIRMED` and `PACKING` to the shared preparation tab. From `CONFIRMED`, the seller starts packing; from `PACKING`, the seller enters carrier/tracking details and hands the parcel to shipping. Dashboard order actions use the same API transitions. Dashboard analytics outside its urgent-order list are still mock data.
+
+Run `go test ./...`, `go vet ./...`, and from `frontend/project-ecommerce`, `npm run lint` and `npm run build`. For database-backed verification, start the local MySQL service and API, then use the Postman "Order Tracking and Seller Processing" folder with disposable buyer/seller fixtures. Do not reuse live orders for state-changing requests.

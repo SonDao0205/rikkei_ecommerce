@@ -115,6 +115,7 @@ func (h *CustomerHandler) listCustomerOrders(w http.ResponseWriter, r *http.Requ
 			counts.Pending++
 		case "confirmed":
 			counts.Confirmed++
+			counts.Packing++ // customer-facing tab groups confirmed and packing orders
 		case "packing":
 			counts.Packing++
 		case "shipping":
@@ -128,14 +129,7 @@ func (h *CustomerHandler) listCustomerOrders(w http.ResponseWriter, r *http.Requ
 		}
 
 		// Check filter
-		matchTab := false
-		if tab == "all" {
-			matchTab = true
-		} else if tab == derivedLower {
-			matchTab = true
-		} else if tab == "pending" && derivedLower == "confirmed" {
-			matchTab = true
-		}
+		matchTab := customerOrderTabMatches(tab, derivedLower)
 
 		matchSearch := true
 		if search != "" {
@@ -148,6 +142,7 @@ func (h *CustomerHandler) listCustomerOrders(w http.ResponseWriter, r *http.Requ
 			matchedOrderIDs = append(matchedOrderIDs, oID)
 		}
 	}
+	counts.Preparing = counts.Packing
 
 	total := len(matchedOrderIDs)
 	totalPages := 0

@@ -177,6 +177,7 @@ type OrderStatusCounts struct {
 	Pending   int64 `json:"pending"`
 	Confirmed int64 `json:"confirmed"`
 	Packing   int64 `json:"packing"`
+	Preparing int64 `json:"preparing"`
 	Shipping  int64 `json:"shipping"`
 	Completed int64 `json:"completed"`
 	Cancelled int64 `json:"cancelled"`
@@ -192,6 +193,10 @@ type CancelOrderRequest struct {
 type ShipOrderRequest struct {
 	Carrier      string `json:"carrier"`
 	TrackingCode string `json:"tracking_code"`
+}
+
+type BulkConfirmOrdersRequest struct {
+	ShopOrderIDs []int64 `json:"shop_order_ids"`
 }
 
 type CreateReturnRequest struct {

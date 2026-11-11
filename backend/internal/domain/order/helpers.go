@@ -100,10 +100,39 @@ func deriveParentStatus(statuses []string) (string, string) {
 	return "PENDING", statusLabel("PENDING")
 }
 
+// customerOrderTabMatches groups CONFIRMED and PACKING child orders under the
+// customer-facing packing tab without changing their persisted lifecycle state.
+func customerOrderTabMatches(tab, status string) bool {
+	tab = strings.ToLower(strings.TrimSpace(tab))
+	status = strings.ToLower(strings.TrimSpace(status))
+	if tab == "all" || tab == status {
+		return true
+	}
+	return tab == "packing" && status == "confirmed"
+}
+
+func sellerStatusFilter(status string) (string, bool) {
+	status = strings.ToUpper(strings.TrimSpace(status))
+	switch status {
+	case "", "ALL":
+		return "", true
+	case "PENDING", "CONFIRMED", "PACKING", "SHIPPING", "COMPLETED", "CANCELLED", "RETURNED", "PREPARING":
+		return status, true
+	default:
+		return "", false
+	}
+}
+
+func canStartPacking(status string) bool {
+	return strings.EqualFold(strings.TrimSpace(status), "CONFIRMED")
+}
+
+func canShipOrder(status string) bool { return strings.EqualFold(strings.TrimSpace(status), "PACKING") }
+
 func activeSellerShop(ctx context.Context, db *sql.DB, userID string) (int64, string, error) {
 	var shopID int64
 	var shopName string
-	err := db.QueryRowContext(ctx, `SELECT s.id, s.name FROM shops s 
+	err := db.QueryRowContext(ctx, `SELECT s.id, s.name FROM shops s
 		JOIN users u ON u.id = s.owner_id
 		JOIN user_roles ur ON ur.user_id = u.id AND ur.role_code = 'SELLER'
 		WHERE s.owner_id = ? AND s.status = 'ACTIVE' AND u.status = 'ACTIVE'`, userID).Scan(&shopID, &shopName)

@@ -5,6 +5,7 @@ import {
   fetchShopOrderList,
   fetchShopOrderCountsThunk,
   confirmShopOrderThunk,
+  startPackingShopOrderThunk,
   dispatchShopOrderThunk,
   cancelShopOrderThunk,
   bulkConfirmShopOrdersThunk,
@@ -121,7 +122,20 @@ export const ShopOrderManagement: React.FC = () => {
 
   const handleDispatchOrder = useCallback(
     async (id: string) => {
-      const res = await dispatch(dispatchShopOrderThunk(id));
+      const order = orders.find((item) => item.id === id);
+      if (order?.workflowStatus === "CONFIRMED") {
+        const res = await dispatch(startPackingShopOrderThunk(id));
+        if (startPackingShopOrderThunk.fulfilled.match(res)) {
+          showToast(`Đơn ${order.orderCode} đã chuyển sang đóng gói.`);
+          dispatch(fetchShopOrderList());
+        } else showToast("Không thể bắt đầu đóng gói đơn hàng", true);
+        return;
+      }
+      const carrier = window.prompt("Nhập mã đơn vị vận chuyển (GHN, GHTK, SPX, VIETTEL_POST):", order?.shipping.courier || "GHN");
+      if (!carrier) return;
+      const trackingCode = window.prompt("Nhập mã vận đơn:", order?.shipping.trackingCode || "");
+      if (!trackingCode) return;
+      const res = await dispatch(dispatchShopOrderThunk({ orderId: id, carrier: carrier.trim(), trackingCode: trackingCode.trim() }));
       if (dispatchShopOrderThunk.fulfilled.match(res)) {
         showToast(`Đã chuyển đơn hàng ${id} sang trạng thái Giao cho ĐVVC thành công!`);
         dispatch(fetchShopOrderList());
@@ -129,7 +143,7 @@ export const ShopOrderManagement: React.FC = () => {
         showToast("Lỗi chuyển trạng thái giao hàng", true);
       }
     },
-    [dispatch]
+    [dispatch, orders]
   );
 
   const handleCancelOrder = useCallback(
