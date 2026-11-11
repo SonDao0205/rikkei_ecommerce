@@ -80,6 +80,15 @@ async function getOrder(id: string | number): Promise<UserOrder> {
   return mapOrder(response.data.data);
 }
 
+function orderID(value: string | number): string {
+  const rawID = String(value).trim().replace(/^#/, "");
+  const numericID = Number(rawID);
+  if (!Number.isSafeInteger(numericID) || numericID < 1) {
+    throw new Error("Mã đơn hàng không hợp lệ.");
+  }
+  return String(numericID);
+}
+
 export const userOrderApi = {
   async fetchUserOrders(params?: UserOrderFilterParams): Promise<{ orders: UserOrder[]; total: number }> {
     const response = await axiosClient.get<APIEnvelope<BackendOrderList>>("/api/v1/orders", {
@@ -93,14 +102,16 @@ export const userOrderApi = {
     return response.data.data.counts;
   },
 
-  async cancelUserOrder(orderId: number, cancelReason: string): Promise<UserOrder> {
-    await axiosClient.post(`/api/v1/orders/${orderId}/cancel`, { reason: cancelReason });
-    return getOrder(orderId);
+  async cancelUserOrder(orderId: string | number, cancelReason: string): Promise<UserOrder> {
+    const id = orderID(orderId);
+    await axiosClient.post(`/api/v1/orders/${id}/cancel`, { reason: cancelReason });
+    return getOrder(id);
   },
 
-  async confirmOrderReceived(orderId: number): Promise<UserOrder> {
-    await axiosClient.post(`/api/v1/orders/${orderId}/received`);
-    return getOrder(orderId);
+  async confirmOrderReceived(orderId: string | number): Promise<UserOrder> {
+    const id = orderID(orderId);
+    await axiosClient.post(`/api/v1/orders/${id}/received`);
+    return getOrder(id);
   },
 
   fetchUserOrderDetail: getOrder,

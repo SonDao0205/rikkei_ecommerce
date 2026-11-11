@@ -57,6 +57,7 @@ export const ShopOrderManagement: React.FC = () => {
   };
 
   useEffect(() => {
+    dispatch(clearAllFilters());
     dispatch(fetchShopOrderCountsThunk());
     dispatch(fetchShopOrderList());
   }, [dispatch]);

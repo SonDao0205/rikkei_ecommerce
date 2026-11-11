@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import type { SellerAccountData } from "@/domains/shop/types/registerShop.types";
 import type { User } from "@/domains/auth/types/auth.types";
+import { isValidEmail, isValidVietnamesePhone } from "@/shared/utils/validation";
 
 export interface Step1AccountPanelProps {
   data: SellerAccountData;
@@ -226,7 +227,7 @@ export const Step1AccountPanel: React.FC<Step1AccountPanelProps> = ({
                     placeholder="0909 123 456"
                     className="w-full h-12 px-3.5 pr-10 rounded-r-xl bg-surface-container-lowest text-on-surface font-mono text-sm border border-outline-variant/40 outline-none transition-all placeholder:text-outline focus:border-primary focus:shadow-[0_0_0_3px_rgba(67,56,202,0.18)]"
                   />
-                  {data.phone.trim().length >= 9 && (
+                  {isValidVietnamesePhone(data.phone) && (
                     <span className="absolute right-3.5 top-1/2 -translate-y-1/2 material-symbols-outlined text-secondary text-[20px]">
                       check_circle
                     </span>
@@ -256,7 +257,7 @@ export const Step1AccountPanel: React.FC<Step1AccountPanelProps> = ({
                     placeholder="seller@example.com"
                     className="w-full h-12 pl-11 pr-10 rounded-xl bg-surface-container-lowest text-on-surface font-body-md text-sm border border-outline-variant/40 outline-none transition-all placeholder:text-outline focus:border-primary focus:shadow-[0_0_0_3px_rgba(67,56,202,0.18)]"
                   />
-                  {data.email.includes("@") && data.email.includes(".") && (
+                  {isValidEmail(data.email) && (
                     <span className="absolute right-3.5 top-1/2 -translate-y-1/2 material-symbols-outlined text-secondary text-[20px]">
                       check_circle
                     </span>

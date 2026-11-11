@@ -10,6 +10,7 @@ import type {
   ShopTermsAcceptance,
 } from "@/shared/types";
 import { shopRegisterApi, initialShopRegistrationData } from "@/domains/shop/api/shopRegisterApi";
+import { toSlug } from "@/shared/utils/slug";
 
 const initialState: ShopRegisterState = {
   currentStep: 1,
@@ -75,9 +76,14 @@ export const shopRegisterSlice = createSlice({
       };
     },
     updateStore: (state, action: PayloadAction<Partial<ShopStoreData>>) => {
+      const payload = { ...action.payload };
+      if (payload.shopName !== undefined && payload.slug === undefined) {
+        payload.slug = toSlug(payload.shopName);
+        payload.customStoreUrl = toSlug(payload.shopName);
+      }
       state.formData.store = {
         ...state.formData.store,
-        ...action.payload,
+        ...payload,
       };
     },
     updateKyc: (state, action: PayloadAction<Partial<ShopKycData>>) => {
@@ -90,6 +96,15 @@ export const shopRegisterSlice = createSlice({
       state.formData.agreements = {
         ...state.formData.agreements,
         ...action.payload,
+      };
+    },
+    resetStore: (state) => {
+      state.formData.store = {
+        ...initialShopRegistrationData.store,
+        bannerUrl: "",
+        bannerName: "",
+        slug: "",
+        description: "",
       };
     },
     setSuccessModalOpen: (state, action: PayloadAction<boolean>) => {
@@ -141,6 +156,7 @@ export const {
   updateStore,
   updateKyc,
   updateAgreements,
+  resetStore,
   setSuccessModalOpen,
   resetForm,
 } = shopRegisterSlice.actions;
