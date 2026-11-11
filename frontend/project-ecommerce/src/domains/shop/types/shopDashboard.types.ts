@@ -102,6 +102,7 @@ export interface ShopUrgentOrder {
     | "COMPLETED"
     | "CANCELLED";
   statusLabel: string;
+  workflowStatus?: "PENDING" | "CONFIRMED" | "PACKING" | "SHIPPING" | "COMPLETED" | "CANCELLED" | "RETURNED";
   statusBadgeType: OrderStatusBadgeType;
   actionType: "confirm" | "print" | "track";
   actionLabel: string;

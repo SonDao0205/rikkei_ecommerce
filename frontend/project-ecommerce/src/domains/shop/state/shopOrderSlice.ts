@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from "@reduxjs/toolkit";
-import { shopOrderApi } from "@/domains/shop/api/shopOrderApi";
+import { shopOrderApi } from "@/domains/shop/api/shopOrderApiLive";
 import type {
   ShopOrderItem,
   ShopOrderStatus,
@@ -129,13 +129,27 @@ export const confirmShopOrderThunk = createAsyncThunk<
   }
 });
 
+export const startPackingShopOrderThunk = createAsyncThunk<ShopOrderItem, string, { rejectValue: string }>(
+  "shopOrder/startPacking",
+  async (orderId, { dispatch, rejectWithValue }) => {
+    try {
+      const order = await shopOrderApi.startPacking(orderId);
+      dispatch(fetchShopOrderCountsThunk());
+      dispatch(fetchShopOrderList());
+      return order;
+    } catch (err) {
+      return rejectWithValue(err instanceof Error ? err.message : "Không thể bắt đầu đóng gói đơn hàng");
+    }
+  },
+);
+
 export const dispatchShopOrderThunk = createAsyncThunk<
   ShopOrderItem,
-  string,
+  { orderId: string; carrier: string; trackingCode: string },
   { rejectValue: string }
->("shopOrder/dispatchOrder", async (orderId, { dispatch, rejectWithValue }) => {
+ >("shopOrder/dispatchOrder", async ({ orderId, carrier, trackingCode }, { dispatch, rejectWithValue }) => {
   try {
-    const res = await shopOrderApi.dispatchOrder(orderId);
+    const res = await shopOrderApi.dispatchOrder(orderId, carrier, trackingCode);
     dispatch(fetchShopOrderCountsThunk());
     return res;
   } catch (err) {
@@ -301,6 +315,13 @@ export const shopOrderSlice = createSlice({
       if (state.selectedOrderForDetail?.id === updated.id) {
         state.selectedOrderForDetail = updated;
       }
+    });
+
+    builder.addCase(startPackingShopOrderThunk.fulfilled, (state, action) => {
+      const updated = action.payload;
+      state.orders = state.orders.map((order) => (order.id === updated.id ? updated : order));
+      if (state.currentOrderDetail?.id === updated.id) state.currentOrderDetail = updated;
+      if (state.selectedOrderForDetail?.id === updated.id) state.selectedOrderForDetail = updated;
     });
 
     // Dispatch

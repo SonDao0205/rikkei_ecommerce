@@ -5,6 +5,7 @@ import { useAppDispatch, useAppSelector } from "@/app/state/store";
 import {
   fetchShopOrderDetailThunk,
   confirmShopOrderThunk,
+  startPackingShopOrderThunk,
   dispatchShopOrderThunk,
   cancelShopOrderThunk,
 } from "@/domains/shop/state/shopOrderSlice";
@@ -48,7 +49,17 @@ export const ShopOrderDetail: React.FC = () => {
 
   const handleDispatch = async () => {
     if (!currentOrderDetail) return;
-    const res = await dispatch(dispatchShopOrderThunk(currentOrderDetail.id));
+    if (currentOrderDetail.workflowStatus === "CONFIRMED") {
+      const res = await dispatch(startPackingShopOrderThunk(currentOrderDetail.id));
+      if (startPackingShopOrderThunk.fulfilled.match(res)) showToast("Đơn hàng đã chuyển sang đóng gói.");
+      else showToast("Không thể bắt đầu đóng gói đơn hàng.", true);
+      return;
+    }
+    const carrier = window.prompt("Nhập mã đơn vị vận chuyển (GHN, GHTK, SPX, VIETTEL_POST):", currentOrderDetail.shipping.courier || "GHN");
+    if (!carrier) return;
+    const trackingCode = window.prompt("Nhập mã vận đơn:", currentOrderDetail.shipping.trackingCode || "");
+    if (!trackingCode) return;
+    const res = await dispatch(dispatchShopOrderThunk({ orderId: currentOrderDetail.id, carrier: carrier.trim(), trackingCode: trackingCode.trim() }));
     if (dispatchShopOrderThunk.fulfilled.match(res)) {
       showToast(`Đã giao kiện hàng cho ${currentOrderDetail.shipping.courierLabel}!`);
     } else {

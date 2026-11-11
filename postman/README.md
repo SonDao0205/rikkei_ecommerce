@@ -120,3 +120,17 @@ Folder **Order Tracking and Seller Processing** bao phủ 18 requests kiểm th�
    - Quản lý đổi trả: Xem danh sách yêu cầu `GET /api/v1/seller/returns`, Duyệt trả hàng `PATCH .../approve` (hoàn tồn kho và hoàn tiền trong 3 ngày), Từ chối trả hàng `PATCH .../reject` kèm lý do giải thích.
 
 Nạp lại seed local (`.\database\seed-local.ps1`) trước khi chạy để đảm bảo fixture giỏ hàng và voucher của `seed-buyer@local.test` luôn sẵn sàng.
+
+### Order workflow verification checklist
+
+Use disposable local accounts/data. These checks change order state; do not replay them against shared or production orders.
+
+1. As CLIENT, request `GET /api/v1/orders?tab=packing`; verify both `CONFIRMED` and `PACKING` appear and the returned record keeps its exact status. Check `counts.preparing` equals their grouped total.
+2. As SELLER, request `GET /api/v1/seller/orders?status=PREPARING`; verify both statuses appear only for the authenticated seller's shop. Check exact filters `CONFIRMED` and `PACKING`, pagination, search, `payment_method`, `courier`, and all supported `date_range` values. Invalid filters should return HTTP 400.
+3. Confirm a `PENDING` order, then pack it, then ship it with carrier and tracking code, then complete it. Check status history/timeline after each action.
+4. Attempt pack from `PENDING`, ship from `CONFIRMED`, ship without carrier/tracking, and repeat a successful transition. Verify these are rejected and status/history do not change.
+5. Attempt every seller operation with an order from another shop. Verify it cannot be read or mutated.
+6. Bulk confirm 1 and multiple pending orders. Verify empty, duplicate, over-50, invalid, foreign-shop, or non-pending selections fail atomically (no selected order is changed).
+7. As CLIENT, cancel a cancellable order and confirm receipt of a shipped order. Verify unauthorized or invalid-state requests are rejected.
+
+Automated checks for this change: `go test ./...`, `go vet ./...`, frontend `npm run lint`, and frontend `npm run build`. Record database-backed Postman results separately because those require a running local MySQL/API and disposable fixtures.

@@ -32,7 +32,7 @@ const TABS: TabConfig[] = [
   },
   {
     key: "packing",
-    label: "Chờ lấy hàng",
+    label: "Shop đang xử lý",
     countKey: "packing",
     badgeColorClass: "bg-blue-100 text-blue-900",
   },

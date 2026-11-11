@@ -65,3 +65,15 @@ Thêm hoặc sửa nghiệp vụ trong domain tương ứng; chỉ đặt mã �
 Verify with a CLIENT account that has a saved address and selected cart items. Exercise no-voucher quote, valid platform and shop voucher, invalid/expired/used voucher, a shop voucher for a shop absent from selected items, stale stock/product status, inactive payment/shipping method, and an address/cart item owned by another account. Errors should be displayed to the user; the cart and voucher usage must remain unchanged because quote/validation are read-only.
 
 The quote is not order submission. Do not show a payment-success state, clear cart items, or promise stock reservation. The next FE integration depends on the backend order-creation and payment APIs, which must revalidate and transact the quote data.
+
+## Order workflow API integration
+
+The customer order history and seller order management pages are connected to the backend APIs. Customer list/detail/cancel/received use `/api/v1/orders`; seller list/detail/confirm/pack/ship/cancel use `/api/v1/seller/orders`. Seller authorization and shop ownership are enforced by the backend.
+
+The UI groups persisted `CONFIRMED` and `PACKING` under a preparation tab, while preserving the real status as `workflowStatus`. A seller confirms a pending order, starts packing a confirmed order, then supplies carrier and tracking code to hand a packed order to shipping. The customer sees these states as one "shop is processing" section. The backend remains the source of truth; refresh the list after every successful transition and surface API errors without optimistic success messages.
+
+Seller list filters map to `status=PREPARING`, `payment_method`, `courier`, and `date_range`. Bulk confirmation is available through the API adapter (`POST /api/v1/seller/orders/bulk-confirm`) for 1–50 selected order IDs; only expose it in a screen when selection, all-or-nothing failure feedback, and refresh behavior are implemented.
+
+The seller dashboard's urgent-order list and its order actions use live APIs. Other dashboard summary/analytics values still come from the existing mock source and should not be treated as production metrics.
+
+Validation from the frontend directory: `npm run lint` and `npm run build`. The current build completes; Vite/Rolldown reports a 2.2 MB minified JS bundle warning, which is a performance/code-splitting concern rather than an order API correctness failure.

@@ -115,6 +115,7 @@ func (h *CustomerHandler) listCustomerOrders(w http.ResponseWriter, r *http.Requ
 			counts.Pending++
 		case "confirmed":
 			counts.Confirmed++
+			counts.Packing++ // customer-facing tab groups confirmed and packing orders
 		case "packing":
 			counts.Packing++
 		case "shipping":
@@ -128,12 +129,7 @@ func (h *CustomerHandler) listCustomerOrders(w http.ResponseWriter, r *http.Requ
 		}
 
 		// Check filter
-		matchTab := false
-		if tab == "all" {
-			matchTab = true
-		} else if tab == derivedLower {
-			matchTab = true
-		}
+		matchTab := customerOrderTabMatches(tab, derivedLower)
 
 		matchSearch := true
 		if search != "" {
@@ -146,6 +142,7 @@ func (h *CustomerHandler) listCustomerOrders(w http.ResponseWriter, r *http.Requ
 			matchedOrderIDs = append(matchedOrderIDs, oID)
 		}
 	}
+	counts.Preparing = counts.Packing
 
 	total := len(matchedOrderIDs)
 	totalPages := 0
@@ -854,7 +851,7 @@ func (h *CustomerHandler) createCustomerReturnRequest(w http.ResponseWriter, r *
 
 func (h *CustomerHandler) loadShopOrdersForOrder(ctx context.Context, orderID int64) ([]ShopOrderView, []string, error) {
 	rows, err := h.db.QueryContext(ctx,
-		`SELECT so.id, so.order_id, so.shop_id, s.shop_name, so.shop_order_code, so.status,
+		`SELECT so.id, so.order_id, so.shop_id, s.name, so.shop_order_code, so.status,
 			so.subtotal, so.shipping_fee, so.shop_discount, so.platform_discount, so.total_amount,
 			so.carrier, so.tracking_code, so.cancel_reason,
 			so.confirmed_at, so.packed_at, so.shipped_at, so.completed_at, so.cancelled_at,

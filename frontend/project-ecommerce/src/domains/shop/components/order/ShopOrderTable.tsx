@@ -262,8 +262,8 @@ export const ShopOrderTable: React.FC<ShopOrderTableProps> = ({
                         onClick={() => onDispatchOrder(order.id)}
                         className="w-full px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white font-label-sm text-xs font-semibold shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-1"
                       >
-                        <span className="material-symbols-outlined text-[14px]">local_shipping</span>
-                        Giao cho ĐVVC
+                        <span className="material-symbols-outlined text-[14px]">{order.workflowStatus === "CONFIRMED" ? "inventory_2" : "local_shipping"}</span>
+                        {order.workflowStatus === "CONFIRMED" ? "Bắt đầu đóng gói" : "Bàn giao vận chuyển"}
                       </button>
                     )}
 

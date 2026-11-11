@@ -153,8 +153,8 @@ export const ShopOrderDetailDrawer: React.FC<ShopOrderDetailDrawerProps> = ({
                 }}
                 className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-label-md text-xs font-bold shadow-xs cursor-pointer flex items-center gap-1"
               >
-                <span className="material-symbols-outlined text-[16px]">local_shipping</span>
-                Giao cho ĐVVC
+                <span className="material-symbols-outlined text-[16px]">{order.workflowStatus === "CONFIRMED" ? "inventory_2" : "local_shipping"}</span>
+                {order.workflowStatus === "CONFIRMED" ? "Bắt đầu đóng gói" : "Bàn giao vận chuyển"}
               </button>
             )}
           </div>
