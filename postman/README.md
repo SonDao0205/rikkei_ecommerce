@@ -100,4 +100,23 @@ Folder **Checkout and Voucher** bao phủ toàn bộ luồng tính phí, áp mã
      - Xác nhận bản ghi thanh toán `payments` có `transaction_ref = {order_code}` dùng làm cú pháp chuyển khoản.
    - Thử đặt lại sản phẩm đã được mua/xóa khỏi giỏ để kiểm tra chốt chặn `422 cart_selection_changed`.
 
+## Order Tracking and Seller Processing coverage
+
+Folder **Order Tracking and Seller Processing** bao phủ 18 requests kiểm thử toàn diện luồng theo dõi đơn của khách và xử lý đơn của chủ shop:
+
+1. **Khách hàng (`CLIENT`):**
+   - Xem danh sách đơn hàng `GET /api/v1/orders` kèm cấu trúc phân trang và bộ đếm tab `counts`.
+   - Lọc đơn hàng theo tab trạng thái `GET /api/v1/orders?tab=pending`.
+   - Xem chi tiết đơn hàng `GET /api/v1/orders/{id}` kèm thông tin thanh toán, đơn con theo shop và lịch sử trạng thái `timeline`.
+   - Hủy đơn hàng `POST /api/v1/orders/{id}/cancel` có phân biệt phản hồi hoàn tiền giữa COD (`NOT_APPLICABLE`) và Online/QR/Paid (`REFUND_PROCESSING` thông báo hoàn tiền trong 3 ngày làm việc).
+   - Chặn hủy đơn đã hủy trước đó `422 order_already_cancelled` hoặc đơn đã chuyển sang vận chuyển `422 order_cannot_be_cancelled`.
+   - Xác nhận nhận hàng thành công `POST /api/v1/orders/{id}/received`.
+   - Gửi yêu cầu đổi/trả/hoàn tiền `POST /api/v1/orders/{id}/returns` khi đơn hàng hoàn thành (`COMPLETED`).
+2. **Chủ gian hàng (`SELLER`):**
+   - Xem danh sách đơn hàng thuộc shop `GET /api/v1/seller/orders` (đảm bảo cô lập dữ liệu theo `shop_id`).
+   - Xem chi tiết đơn hàng con `GET /api/v1/seller/orders/{id}` kèm doanh thu thực nhận `seller_payout`.
+   - Các bước chuyển trạng thái: Xác nhận đơn (`PATCH .../confirm`), Đóng gói (`PATCH .../pack`), Giao hàng (`PATCH .../ship` kèm đơn vị vận chuyển và mã vận đơn), Hoàn thành (`PATCH .../complete`).
+   - Chủ shop hủy đơn `PATCH .../cancel` khi hết hàng kèm tự động hoàn trả tồn kho.
+   - Quản lý đổi trả: Xem danh sách yêu cầu `GET /api/v1/seller/returns`, Duyệt trả hàng `PATCH .../approve` (hoàn tồn kho và hoàn tiền trong 3 ngày), Từ chối trả hàng `PATCH .../reject` kèm lý do giải thích.
+
 Nạp lại seed local (`.\database\seed-local.ps1`) trước khi chạy để đảm bảo fixture giỏ hàng và voucher của `seed-buyer@local.test` luôn sẵn sàng.
