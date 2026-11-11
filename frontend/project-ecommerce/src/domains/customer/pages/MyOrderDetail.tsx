@@ -18,6 +18,7 @@ import {
   ConfirmReceiveModal,
 } from '@/domains/customer/components/user/order/detail';
 import { CancelOrderModal } from '@/domains/customer/components/user/order/CancelOrderModal';
+import OrderToast from '@/domains/customer/components/user/order/OrderToast';
 
 export const MyOrderDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -31,14 +32,25 @@ export const MyOrderDetail: React.FC = () => {
   // Local state for modals and notifications
   const [isReceiveModalOpen, setIsReceiveModalOpen] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastConfig, setToastConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: "success" | "error" | "info";
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "success",
+  });
 
-  const showToast = useCallback((msg: string) => {
-    setToastMessage(msg);
-    const timer = setTimeout(() => {
-      setToastMessage(null);
-    }, 3000);
-    return () => clearTimeout(timer);
+  const showToast = useCallback((msg: string, title: string = "Thông báo", type: "success" | "error" | "info" = "info") => {
+    setToastConfig({
+      isOpen: true,
+      title,
+      message: msg,
+      type,
+    });
   }, []);
 
   useEffect(() => {
@@ -69,13 +81,13 @@ export const MyOrderDetail: React.FC = () => {
     }
   };
 
-  const handleConfirmCancel = async (orderId: number, reason: string) => {
+  const handleConfirmCancel = async (orderId: number | string, reason: string) => {
     try {
       await dispatch(cancelOrderAction({ orderId, cancelReason: reason })).unwrap();
       setIsCancelModalOpen(false);
-      showToast('Đã hủy đơn hàng thành công.');
+      showToast(`Đơn hàng ${order?.orderCode || orderId} đã được hủy thành công.`, 'Đã hủy đơn hàng', 'success');
     } catch {
-      showToast('Có lỗi xảy ra khi hủy đơn hàng.');
+      showToast('Có lỗi xảy ra khi hủy đơn hàng.', 'Hủy đơn hàng thất bại', 'error');
     }
   };
 
@@ -90,16 +102,6 @@ export const MyOrderDetail: React.FC = () => {
   return (
     <CustomerLayout>
       <div className="flex flex-col w-full bg-surface min-h-[calc(100vh-20rem)] py-6">
-        {/* Floating Toast Notification */}
-        {toastMessage && (
-          <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 bg-inverse-surface text-inverse-on-surface rounded-xl shadow-xl animate-bounce-in">
-            <span className="material-symbols-outlined text-[20px] text-secondary-fixed">
-              check_circle
-            </span>
-            <span className="font-body-md text-body-md font-medium">{toastMessage}</span>
-          </div>
-        )}
-
         <div className="max-w-[1440px] w-full mx-auto px-4 sm:px-6 lg:px-8 flex flex-col gap-6">
           {/* Loading Skeleton */}
           {loading && !order && (
@@ -188,6 +190,15 @@ export const MyOrderDetail: React.FC = () => {
                 onClose={() => setIsCancelModalOpen(false)}
                 onConfirmCancel={handleConfirmCancel}
                 loading={actionLoading}
+              />
+
+              {/* Slide-in Compact Order Toast */}
+              <OrderToast
+                isOpen={toastConfig.isOpen}
+                title={toastConfig.title}
+                message={toastConfig.message}
+                type={toastConfig.type}
+                onClose={() => setToastConfig((prev) => ({ ...prev, isOpen: false }))}
               />
             </>
           )}

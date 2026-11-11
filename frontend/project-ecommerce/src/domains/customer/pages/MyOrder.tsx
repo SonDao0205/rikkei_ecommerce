@@ -6,6 +6,7 @@ import OrderSearchBar from "@/domains/customer/components/user/order/OrderSearch
 import OrderTabs from "@/domains/customer/components/user/order/OrderTabs";
 import OrderCard from "@/domains/customer/components/user/order/OrderCard";
 import CancelOrderModal from "@/domains/customer/components/user/order/CancelOrderModal";
+import OrderToast from "@/domains/customer/components/user/order/OrderToast";
 import { useAppDispatch, useAppSelector } from "@/app/state/store";
 import {
   getUserOrders,
@@ -42,6 +43,17 @@ export const MyOrder: React.FC = () => {
   const { user } = useAppSelector((state) => state.auth);
 
   const [localSearch, setLocalSearch] = useState("");
+  const [toastConfig, setToastConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: "success" | "error";
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "success",
+  });
 
   // Fetch profile and order counts once & reset search on enter
   useEffect(() => {
@@ -74,11 +86,26 @@ export const MyOrder: React.FC = () => {
     dispatch(openCancelModal(order));
   };
 
-  const handleConfirmCancel = async (orderId: number, reason: string) => {
+  const handleConfirmCancel = async (orderId: number | string, reason: string) => {
+    const cancelledCode = selectedOrderForCancel?.orderCode || String(orderId);
     try {
       await dispatch(cancelOrderAction({ orderId, cancelReason: reason })).unwrap();
-    } catch {
-      // Error handled in slice
+      dispatch(closeCancelModal());
+      dispatch(getUserOrderCounts());
+      setToastConfig({
+        isOpen: true,
+        title: "Đã hủy đơn hàng thành công",
+        message: `Đơn hàng ${cancelledCode} đã được hủy theo yêu cầu của bạn.`,
+        type: "success",
+      });
+    } catch (err: unknown) {
+      const msg = typeof err === "string" ? err : (err as Error)?.message || "Không thể hủy đơn hàng này.";
+      setToastConfig({
+        isOpen: true,
+        title: "Hủy đơn hàng thất bại",
+        message: msg,
+        type: "error",
+      });
     }
   };
 
@@ -86,8 +113,11 @@ export const MyOrder: React.FC = () => {
     if (window.confirm("Bạn xác nhận đã nhận được đầy đủ hàng và hài lòng với kiện hàng?")) {
       try {
         await dispatch(confirmReceivedAction(orderId)).unwrap();
-      } catch {
-        // Error handled in slice
+        dispatch(getUserOrderCounts());
+        alert("Xác nhận đã nhận hàng thành công!");
+      } catch (err: unknown) {
+        const msg = typeof err === "string" ? err : (err as Error)?.message || "Không thể xác nhận nhận hàng.";
+        alert(msg);
       }
     }
   };
@@ -290,6 +320,15 @@ export const MyOrder: React.FC = () => {
           onClose={() => dispatch(closeCancelModal())}
           onConfirmCancel={handleConfirmCancel}
           loading={actionLoading}
+        />
+
+        {/* Slide-in Compact Order Toast */}
+        <OrderToast
+          isOpen={toastConfig.isOpen}
+          title={toastConfig.title}
+          message={toastConfig.message}
+          type={toastConfig.type}
+          onClose={() => setToastConfig((prev) => ({ ...prev, isOpen: false }))}
         />
       </main>
     </CustomerLayout>
