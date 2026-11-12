@@ -17,21 +17,30 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"rikkei-ecommerce/internal/domain/auth"
 )
 
 const (
-	maxImageBytes = 5 << 20
-	maxVideoBytes = 20 << 20
-	maxRequestPad = 1 << 20
+	maxImageBytes       = 5 << 20
+	maxVideoBytes       = 20 << 20
+	maxRequestPad       = 1 << 20
+	maxUploadsPerMinute = 30
 )
 
 type Handler struct {
 	config      auth.Config
 	httpClient  *http.Client
 	uploadSlots chan struct{}
+	rateMu      sync.Mutex
+	rates       map[string]uploadRateWindow
+}
+
+type uploadRateWindow struct {
+	started time.Time
+	count   int
 }
 
 type uploadResult struct {
@@ -54,12 +63,22 @@ type cloudinaryResponse struct {
 }
 
 func NewHandler(config auth.Config) *Handler {
-	return &Handler{config: config, httpClient: &http.Client{Timeout: 120 * time.Second}, uploadSlots: make(chan struct{}, 3)}
+	return &Handler{config: config, httpClient: &http.Client{Timeout: 120 * time.Second}, uploadSlots: make(chan struct{}, 3), rates: make(map[string]uploadRateWindow)}
 }
 
 func (h *Handler) upload(w http.ResponseWriter, r *http.Request) {
 	if h.config.CloudinaryCloudName == "" || h.config.CloudinaryAPIKey == "" || h.config.CloudinaryAPISecret == "" {
 		writeError(w, http.StatusServiceUnavailable, "media_storage_unavailable", "Media storage is not configured")
+		return
+	}
+	identity := auth.CurrentUser(r)
+	if identity.ID == "" || strings.ContainsAny(identity.ID, `/\\`) {
+		writeError(w, http.StatusUnauthorized, "invalid_session", "Authenticated user is invalid")
+		return
+	}
+	if !h.allowUpload(identity.ID, time.Now()) {
+		w.Header().Set("Retry-After", "60")
+		writeError(w, http.StatusTooManyRequests, "upload_rate_limited", "Upload limit reached. Please try again in a minute")
 		return
 	}
 	select {
@@ -116,6 +135,32 @@ func (h *Handler) upload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusCreated, map[string]any{"success": true, "data": result})
+}
+
+func (h *Handler) allowUpload(userID string, now time.Time) bool {
+	h.rateMu.Lock()
+	defer h.rateMu.Unlock()
+	if h.rates == nil {
+		h.rates = make(map[string]uploadRateWindow)
+	}
+	if len(h.rates) > 5000 {
+		for id, window := range h.rates {
+			if now.Sub(window.started) >= time.Minute {
+				delete(h.rates, id)
+			}
+		}
+	}
+	window := h.rates[userID]
+	if now.Sub(window.started) >= time.Minute || window.started.IsZero() {
+		window = uploadRateWindow{started: now}
+	}
+	if window.count >= maxUploadsPerMinute {
+		h.rates[userID] = window
+		return false
+	}
+	window.count++
+	h.rates[userID] = window
+	return true
 }
 
 func (h *Handler) uploadPolicy(w http.ResponseWriter, r *http.Request, purpose string) (resourceType string, maxBytes int64, folder string, ok bool) {

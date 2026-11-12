@@ -13,6 +13,8 @@ CREATE TABLE users (
   password_hash  VARCHAR(100) NOT NULL,
   full_name      VARCHAR(120) NOT NULL,
   avatar_url     VARCHAR(500) NULL,
+  lock_reason    VARCHAR(500) NULL,
+  locked_at      DATETIME NULL,
   email_verified TINYINT(1)   NOT NULL DEFAULT 0,
   status         VARCHAR(20)  NOT NULL DEFAULT 'ACTIVE',
   created_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
