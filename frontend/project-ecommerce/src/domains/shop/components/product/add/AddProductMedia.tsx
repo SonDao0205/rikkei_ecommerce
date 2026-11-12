@@ -6,12 +6,14 @@ interface AddProductMediaProps {
   formData: AddProductFormData;
   onChange: (fields: Partial<AddProductFormData>) => void;
   onUploadingChange?: (uploading: boolean) => void;
+  onUploadError?: (message: string) => void;
 }
 
 export const AddProductMedia: React.FC<AddProductMediaProps> = ({
   formData,
   onChange,
   onUploadingChange,
+  onUploadError,
 }) => {
   const coverFileInputRef = useRef<HTMLInputElement>(null);
   const detailFileInputRef = useRef<HTMLInputElement>(null);
@@ -38,13 +40,14 @@ export const AddProductMedia: React.FC<AddProductMediaProps> = ({
     if (!file) return;
     const selection = ++coverSelection.current;
     const preview = URL.createObjectURL(file);
-    const previous = formData.coverImage;
+    const previous = formData.coverImage.startsWith("blob:") ? "" : formData.coverImage;
     onChange({ coverImage: preview });
     beginUpload();
     try {
       const result = await uploadMedia(file, "product-image");
       if (selection === coverSelection.current) onChange({ coverImage: result.url });
-    } catch {
+    } catch (error) {
+      onUploadError?.(error instanceof Error ? error.message : "Không thể tải ảnh bìa lên.");
       if (selection === coverSelection.current) onChange({ coverImage: previous });
     } finally {
       URL.revokeObjectURL(preview);
@@ -66,7 +69,8 @@ export const AddProductMedia: React.FC<AddProductMediaProps> = ({
         const result = await uploadMedia(file, "product-image");
         detailImagesRef.current = detailImagesRef.current.map((image) => image.id === id ? { ...image, url: result.url } : image);
         onChange({ detailImages: detailImagesRef.current });
-      } catch {
+      } catch (error) {
+        onUploadError?.(error instanceof Error ? error.message : `Không thể tải ảnh ${file.name} lên.`);
         detailImagesRef.current = detailImagesRef.current.filter((image) => image.id !== id);
         onChange({ detailImages: detailImagesRef.current });
       } finally {
@@ -88,14 +92,15 @@ export const AddProductMedia: React.FC<AddProductMediaProps> = ({
     e.target.value = "";
     if (!file) return;
     const selection = ++videoSelection.current;
-    const previous = formData.videoUrl;
+    const previous = formData.videoUrl?.startsWith("blob:") ? undefined : formData.videoUrl;
     const preview = URL.createObjectURL(file);
     onChange({ videoUrl: preview });
     beginUpload();
     try {
       const result = await uploadMedia(file, "product-video");
       if (selection === videoSelection.current) onChange({ videoUrl: result.url });
-    } catch {
+    } catch (error) {
+      onUploadError?.(error instanceof Error ? error.message : "Không thể tải video lên.");
       if (selection === videoSelection.current) onChange({ videoUrl: previous });
     } finally {
       URL.revokeObjectURL(preview);
