@@ -139,7 +139,7 @@ export const ShopAddProduct: React.FC = () => {
       return;
     }
     if (!formData.coverImage || formData.coverImage.startsWith("blob:")) {
-      showToast("Vui lòng tải ảnh bìa JPG/JPEG lên trước khi lưu sản phẩm.", true);
+      showToast("Vui lòng tải ảnh bìa JPG/JPEG/PNG lên trước khi lưu sản phẩm.", true);
       return;
     }
     if (!formData.name.trim()) {

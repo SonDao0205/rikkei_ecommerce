@@ -10,6 +10,7 @@ import {
 import { isValidVietnamesePhone } from "@/shared/utils/validation";
 import type { Shop, ShopProfilePayload } from "@/shared/types";
 import { getShopDefaultLogo, DEFAULT_SHOP_BANNER } from "@/shared/utils/avatar";
+import { uploadMedia } from "@/shared/api/mediaUpload";
 
 const PROVINCES = [
   "TP. Hồ Chí Minh",
@@ -140,43 +141,29 @@ const ShopSettingsForm: React.FC<ShopSettingsFormProps> = ({ shop }) => {
   }, [shop, shopName, shopPhone, description, logoUrl, bannerUrl, computedWarehouseAddress]);
 
   // File upload handlers
-  const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (!file.type.startsWith("image/")) {
-        setToast({ type: "error", text: "Vui lòng chọn định dạng ảnh hợp lệ (PNG, JPG, WEBP)." });
-        return;
-      }
-      if (file.size > 5 * 1024 * 1024) {
-        setToast({ type: "error", text: "Dung lượng ảnh đại diện không được vượt quá 5MB." });
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const result = event.target?.result as string;
-        if (result) setLogoUrl(result);
-      };
-      reader.readAsDataURL(file);
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const uploaded = await uploadMedia(file, "shop-image");
+      setLogoUrl(uploaded.url);
+      setToast({ type: "success", text: "Đã tải ảnh đại diện lên." });
+    } catch (error) {
+      setToast({ type: "error", text: error instanceof Error ? error.message : "Không thể tải ảnh lên." });
     }
   };
 
-  const handleBannerFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBannerFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (!file.type.startsWith("image/")) {
-        setToast({ type: "error", text: "Vui lòng chọn định dạng ảnh hợp lệ (PNG, JPG, WEBP)." });
-        return;
-      }
-      if (file.size > 8 * 1024 * 1024) {
-        setToast({ type: "error", text: "Dung lượng ảnh bìa không được vượt quá 8MB." });
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const result = event.target?.result as string;
-        if (result) setBannerUrl(result);
-      };
-      reader.readAsDataURL(file);
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const uploaded = await uploadMedia(file, "shop-image");
+      setBannerUrl(uploaded.url);
+      setToast({ type: "success", text: "Đã tải ảnh bìa lên." });
+    } catch (error) {
+      setToast({ type: "error", text: error instanceof Error ? error.message : "Không thể tải ảnh lên." });
     }
   };
 
@@ -393,14 +380,14 @@ const ShopSettingsForm: React.FC<ShopSettingsFormProps> = ({ shop }) => {
         <input
           ref={logoInputRef}
           type="file"
-          accept="image/png,image/jpeg,image/jpg,image/webp"
+          accept=".jpg,.jpeg,.png,image/jpeg,image/png"
           className="hidden"
           onChange={handleLogoFileChange}
         />
         <input
           ref={bannerInputRef}
           type="file"
-          accept="image/png,image/jpeg,image/jpg,image/webp"
+          accept=".jpg,.jpeg,.png,image/jpeg,image/png"
           className="hidden"
           onChange={handleBannerFileChange}
         />

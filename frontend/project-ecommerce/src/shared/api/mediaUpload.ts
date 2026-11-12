@@ -46,7 +46,7 @@ function validateMedia(file: File, purpose: MediaPurpose) {
   const ext = file.name.toLowerCase().split(".").pop() || "";
   const isVideo = purpose === "product-video";
   if (file.size === 0 || file.size > (isVideo ? maxVideoBytes : maxImageBytes)) {
-    throw new Error(isVideo ? "Video tối đa 20 MB." : "Ảnh JPG/JPEG tối đa 5 MB.");
+    throw new Error(isVideo ? "Video tối đa 20 MB." : "Ảnh JPG/JPEG/PNG tối đa 5 MB.");
   }
   if (isVideo) {
     if (!["mp4", "mov", "webm"].includes(ext) || (file.type && !file.type.startsWith("video/") && file.type !== "application/octet-stream")) {
@@ -54,8 +54,11 @@ function validateMedia(file: File, purpose: MediaPurpose) {
     }
     return;
   }
-  if (!["jpg", "jpeg"].includes(ext) || (file.type && file.type !== "image/jpeg")) {
-    throw new Error("Chỉ chấp nhận ảnh JPG/JPEG; PNG và định dạng ảnh khác không được hỗ trợ.");
+  const validImageType = ext === "png"
+    ? !file.type || file.type === "image/png"
+    : ["jpg", "jpeg"].includes(ext) && (!file.type || file.type === "image/jpeg" || file.type === "image/jpg");
+  if (!validImageType) {
+    throw new Error("Chỉ chấp nhận ảnh JPG/JPEG/PNG hợp lệ.");
   }
 }
 

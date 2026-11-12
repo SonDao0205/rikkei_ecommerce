@@ -162,7 +162,7 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
       <input
         ref={fileInputRef}
         type="file"
-        accept=".jpg,.jpeg,image/jpeg"
+        accept=".jpg,.jpeg,.png,image/jpeg,image/png"
         className="hidden"
         onChange={handleAvatarFileSelect}
       />
@@ -255,7 +255,7 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
             Profile Avatar
           </h3>
           <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
-              Chỉ nhận JPG/JPEG, tối đa 5 MB. Ảnh được tải nền nên bạn có thể tiếp tục sử dụng hệ thống.
+              Chỉ nhận JPG/JPEG/PNG, tối đa 5 MB. Ảnh được tải nền nên bạn có thể tiếp tục sử dụng hệ thống.
           </p>
           <div className="mt-3 flex flex-wrap items-center gap-2.5">
             <button

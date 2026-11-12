@@ -147,7 +147,7 @@ export const AddProductMedia: React.FC<AddProductMediaProps> = ({
             type="file"
             ref={coverFileInputRef}
             onChange={handleCoverUpload}
-            accept=".jpg,.jpeg,image/jpeg"
+            accept=".jpg,.jpeg,.png,image/jpeg,image/png"
             className="hidden"
           />
 
@@ -184,7 +184,7 @@ export const AddProductMedia: React.FC<AddProductMediaProps> = ({
                   Tải lên ảnh bìa
                 </span>
                 <span className="font-body-sm text-body-sm">
-                  JPG/JPEG, tối đa 5 MB
+                  JPG/JPEG/PNG, tối đa 5 MB
                 </span>
               </div>
             )}
@@ -208,7 +208,7 @@ export const AddProductMedia: React.FC<AddProductMediaProps> = ({
               type="file"
               ref={detailFileInputRef}
               onChange={handleDetailUpload}
-              accept=".jpg,.jpeg,image/jpeg"
+              accept=".jpg,.jpeg,.png,image/jpeg,image/png"
               multiple
               className="hidden"
             />
