@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"image/jpeg"
+	"image/png"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -112,7 +113,7 @@ func (h *Handler) upload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer file.Close()
-	if header.Size <= 0 || header.Size > maxBytes {
+	if !validUploadSize(header.Size, maxBytes) {
 		writeError(w, http.StatusRequestEntityTooLarge, "file_size_exceeded", fmt.Sprintf("File must be between 1 byte and %d MB", maxBytes>>20))
 		return
 	}
@@ -121,7 +122,7 @@ func (h *Handler) upload(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "file_read_failed", "Could not read uploaded file")
 		return
 	}
-	if int64(len(data)) == 0 || int64(len(data)) > maxBytes {
+	if !validUploadSize(int64(len(data)), maxBytes) {
 		writeError(w, http.StatusRequestEntityTooLarge, "file_size_exceeded", fmt.Sprintf("File must be between 1 byte and %d MB", maxBytes>>20))
 		return
 	}
@@ -136,6 +137,8 @@ func (h *Handler) upload(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusCreated, map[string]any{"success": true, "data": result})
 }
+
+func validUploadSize(size, maxBytes int64) bool { return size > 0 && size <= maxBytes }
 
 func (h *Handler) allowUpload(userID string, now time.Time) bool {
 	h.rateMu.Lock()
@@ -209,16 +212,26 @@ func validateFile(filename, resourceType string, data []byte) (string, error) {
 	extension := strings.ToLower(filepath.Ext(filename))
 	sniffed := http.DetectContentType(data[:min(len(data), 512)])
 	if resourceType == "image" {
-		if extension != ".jpg" && extension != ".jpeg" {
-			return "", errors.New("Only JPG/JPEG images are allowed; PNG and other image types are not supported")
+		switch extension {
+		case ".jpg", ".jpeg":
+			if sniffed != "image/jpeg" {
+				return "", errors.New("File content does not match a JPEG image")
+			}
+			if _, err := jpeg.DecodeConfig(bytes.NewReader(data)); err != nil {
+				return "", errors.New("JPEG image data is malformed")
+			}
+			return "jpg", nil
+		case ".png":
+			if sniffed != "image/png" {
+				return "", errors.New("File content does not match a PNG image")
+			}
+			if _, err := png.DecodeConfig(bytes.NewReader(data)); err != nil {
+				return "", errors.New("PNG image data is malformed")
+			}
+			return "png", nil
+		default:
+			return "", errors.New("Image format must be JPG, JPEG, or PNG")
 		}
-		if sniffed != "image/jpeg" {
-			return "", errors.New("File content is not a valid JPEG image")
-		}
-		if _, err := jpeg.DecodeConfig(bytes.NewReader(data)); err != nil {
-			return "", errors.New("JPEG image data is malformed")
-		}
-		return "jpg", nil
 	}
 	switch extension {
 	case ".mp4", ".mov":
