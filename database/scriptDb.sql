@@ -1,4 +1,4 @@
-DROP DATABASE IF EXISTS rikkei_ecommerce;
+-- Safe bootstrap: never drop an existing database. Run against a new/empty local DB.
 CREATE DATABASE IF NOT EXISTS rikkei_ecommerce;
 USE rikkei_ecommerce;
 

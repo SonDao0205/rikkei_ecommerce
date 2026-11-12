@@ -37,7 +37,7 @@ docker compose up --build -d
 docker compose ps
 ```
 
-FE ở `http://localhost:5173`; API thường ở `http://localhost:8080` hoặc `http://localhost:18080`; MySQL host port `3307`. Compose khởi tạo schema khi volume DB rỗng. **Không chạy `database/scriptDb.sql` trên DB đã có dữ liệu vì file này tạo lại database.** Seed chỉ dùng cho local/test:
+FE ở `http://localhost:5173`; API thường ở `http://localhost:8080` hoặc `http://localhost:18080`; MySQL host port `3307`. Compose khởi tạo schema khi volume DB rỗng. `database/scriptDb.sql` không xóa database, nhưng chỉ dùng để bootstrap DB mới/rỗng vì chạy lại sẽ gặp bảng đã tồn tại. Seed chỉ dùng cho local/test, xác nhận đúng môi trường/database và yêu cầu nhập `SEED LOCAL`:
 
 ```powershell
 .\database\seed-local.ps1

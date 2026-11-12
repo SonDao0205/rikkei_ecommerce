@@ -54,7 +54,7 @@ docker compose ps
 Invoke-WebRequest http://localhost:5173/healthz
 ```
 
-Compose nạp schema qua `database/scriptDb.sql` khi khởi tạo database rỗng. **Không chạy lại file này trên database đã có dữ liệu**: script có `DROP DATABASE IF EXISTS`. Để nạp fixtures local có thể chạy lại an toàn:
+Compose nạp schema qua `database/scriptDb.sql` khi khởi tạo database rỗng. File schema không xóa database; nếu chạy trên DB đã có bảng, lệnh tạo bảng sẽ báo trùng và dừng, vì vậy chỉ dùng để bootstrap DB local rỗng. Để nạp lại fixtures local:
 
 ```powershell
 .\database\seed-local.ps1
@@ -105,7 +105,7 @@ Không commit `.env`, DSN/password DB, SMTP credentials hoặc JWT secret. Dùng
 
 ### Migration và production
 
-`AUTO_MIGRATE=true` chạy migration của các domain khi API khởi động. Migration security nằm tại `internal/domain/auth/migrations/001_security.sql`; migration address/shop bổ sung các cột/constraint cần thiết, và auth migration dọn refresh token/OTP hết hạn. Migration **không tạo database và không thay thế schema commerce** trong `database/scriptDb.sql`.
+`AUTO_MIGRATE=true` chạy migration của các domain khi API khởi động. Migration security nằm tại `internal/domain/auth/migrations/001_security.sql`; migration address/shop bổ sung các cột/constraint cần thiết, và auth migration dọn refresh token/OTP hết hạn. Migration **không tạo database và không thay thế schema commerce** trong `database/scriptDb.sql`. Seed script xác nhận `APP_ENV=development`, `DB_NAME=rikkei_ecommerce` và yêu cầu gõ `SEED LOCAL` để tránh chạy nhầm vào DB khác.
 
 Production nên triển khai migration riêng bằng tài khoản có DDL, sau khi xác nhận schema và backup:
 
