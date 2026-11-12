@@ -12,13 +12,14 @@ import (
 )
 
 type Config struct {
-	AppEnv, HTTPAddr, DatabaseDSN, JWTSecret   string
-	LogLevel                                   string
-	SMTPHost, SMTPUser, SMTPPassword, SMTPFrom string
-	SMTPPort                                   int
-	AccessTTL, RefreshTTL, OTPTTL              time.Duration
-	Origins, TrustedProxyCIDRs                 []string
-	CookieSecure, AutoMigrate                  bool
+	AppEnv, HTTPAddr, DatabaseDSN, JWTSecret                   string
+	LogLevel                                                   string
+	SMTPHost, SMTPUser, SMTPPassword, SMTPFrom                 string
+	CloudinaryCloudName, CloudinaryAPIKey, CloudinaryAPISecret string
+	SMTPPort                                                   int
+	AccessTTL, RefreshTTL, OTPTTL                              time.Duration
+	Origins, TrustedProxyCIDRs                                 []string
+	CookieSecure, AutoMigrate                                  bool
 }
 
 func LoadConfig() (Config, error) {
@@ -37,7 +38,23 @@ func LoadConfig() (Config, error) {
 	if autoValue != "true" && autoValue != "false" {
 		return Config{}, fmt.Errorf("AUTO_MIGRATE must be true or false")
 	}
-	c := Config{AppEnv: appEnv, HTTPAddr: env("HTTP_ADDR", ":8080"), DatabaseDSN: os.Getenv("DATABASE_DSN"), JWTSecret: os.Getenv("JWT_SECRET"), LogLevel: strings.ToLower(env("LOG_LEVEL", "info")), SMTPHost: os.Getenv("SMTP_HOST"), SMTPUser: os.Getenv("SMTP_USER"), SMTPPassword: os.Getenv("SMTP_PASSWORD"), SMTPFrom: os.Getenv("SMTP_FROM"), SMTPPort: port("SMTP_PORT", 587), AccessTTL: duration("ACCESS_TOKEN_TTL", 15*time.Minute), RefreshTTL: duration("REFRESH_TOKEN_TTL", 7*24*time.Hour), OTPTTL: duration("OTP_TTL", 10*time.Minute), Origins: split(os.Getenv("CORS_ALLOWED_ORIGINS")), TrustedProxyCIDRs: split(os.Getenv("TRUSTED_PROXY_CIDRS")), CookieSecure: os.Getenv("COOKIE_SECURE") == "true", AutoMigrate: autoValue == "true"}
+	c := Config{AppEnv: appEnv, HTTPAddr: env("HTTP_ADDR", ":8080"), DatabaseDSN: os.Getenv("DATABASE_DSN"), JWTSecret: os.Getenv("JWT_SECRET"), LogLevel: strings.ToLower(env("LOG_LEVEL", "info")), SMTPHost: os.Getenv("SMTP_HOST"), SMTPUser: os.Getenv("SMTP_USER"), SMTPPassword: os.Getenv("SMTP_PASSWORD"), SMTPFrom: os.Getenv("SMTP_FROM"), CloudinaryCloudName: strings.TrimSpace(os.Getenv("CLOUDINARY_CLOUD_NAME")), CloudinaryAPIKey: strings.TrimSpace(os.Getenv("CLOUDINARY_API_KEY")), CloudinaryAPISecret: strings.TrimSpace(os.Getenv("CLOUDINARY_API_SECRET")), SMTPPort: port("SMTP_PORT", 587), AccessTTL: duration("ACCESS_TOKEN_TTL", 15*time.Minute), RefreshTTL: duration("REFRESH_TOKEN_TTL", 7*24*time.Hour), OTPTTL: duration("OTP_TTL", 10*time.Minute), Origins: split(os.Getenv("CORS_ALLOWED_ORIGINS")), TrustedProxyCIDRs: split(os.Getenv("TRUSTED_PROXY_CIDRS")), CookieSecure: os.Getenv("COOKIE_SECURE") == "true", AutoMigrate: autoValue == "true"}
+	cloudinarySet := 0
+	for _, value := range []string{c.CloudinaryCloudName, c.CloudinaryAPIKey, c.CloudinaryAPISecret} {
+		if value != "" {
+			cloudinarySet++
+		}
+	}
+	if cloudinarySet != 0 && cloudinarySet != 3 {
+		return Config{}, fmt.Errorf("CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET must be configured together")
+	}
+	if c.CloudinaryCloudName != "" {
+		for _, char := range c.CloudinaryCloudName {
+			if !(char >= 'a' && char <= 'z') && !(char >= 'A' && char <= 'Z') && !(char >= '0' && char <= '9') && char != '-' && char != '_' {
+				return Config{}, fmt.Errorf("CLOUDINARY_CLOUD_NAME contains unsupported characters")
+			}
+		}
+	}
 	if c.LogLevel != "debug" && c.LogLevel != "info" && c.LogLevel != "warn" && c.LogLevel != "error" {
 		return Config{}, fmt.Errorf("LOG_LEVEL must be debug, info, warn, or error")
 	}
@@ -53,6 +70,9 @@ func LoadConfig() (Config, error) {
 		}
 	}
 	if c.AppEnv == "production" {
+		if c.CloudinaryCloudName == "" {
+			return Config{}, fmt.Errorf("CLOUDINARY_* settings are required in production")
+		}
 		if c.AutoMigrate {
 			return c, fmt.Errorf("AUTO_MIGRATE must be false in production; run the migration command before deployment")
 		}

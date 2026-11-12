@@ -11,7 +11,18 @@ type routeAuthorizer func(http.HandlerFunc) http.HandlerFunc
 func RegisterRoutes(mux *http.ServeMux, db *sql.DB, requireAdmin, requireClient routeAuthorizer, userID func(*http.Request) string) {
 	h := handler{db: db, userID: userID}
 	mux.HandleFunc("GET /api/v1/categories", h.categories)
+	mux.HandleFunc("GET /api/v1/brands", h.publicBrands)
 	mux.HandleFunc("GET /api/v1/categories/{id}/attributes", h.categoryAttributes)
+	mux.Handle("GET /api/v1/admin/brands", requireAdmin(h.adminBrands))
+	mux.Handle("POST /api/v1/admin/brands", requireAdmin(h.createBrand))
+	mux.Handle("PUT /api/v1/admin/brands/{id}", requireAdmin(h.updateBrand))
+	mux.Handle("PATCH /api/v1/admin/brands/{id}/status", requireAdmin(h.setBrandStatus))
+	mux.Handle("GET /api/v1/admin/attributes", requireAdmin(h.adminAttributes))
+	mux.Handle("POST /api/v1/admin/attributes", requireAdmin(h.createAttribute))
+	mux.Handle("PUT /api/v1/admin/attributes/{id}", requireAdmin(h.updateAttribute))
+	mux.Handle("POST /api/v1/admin/attributes/{id}/values", requireAdmin(h.addAttributeValues))
+	mux.Handle("DELETE /api/v1/admin/attributes/{id}/values/{valueId}", requireAdmin(h.deleteAttributeValue))
+	mux.Handle("DELETE /api/v1/admin/attributes/{id}", requireAdmin(h.deleteAttribute))
 	mux.Handle("GET /api/v1/admin/categories", requireAdmin(h.adminCategories))
 	mux.Handle("POST /api/v1/admin/categories", requireAdmin(h.createCategory))
 	mux.Handle("PUT /api/v1/admin/categories/{id}", requireAdmin(h.updateCategory))

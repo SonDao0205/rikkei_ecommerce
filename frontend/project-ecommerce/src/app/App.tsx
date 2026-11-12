@@ -3,6 +3,7 @@ import { RouterProvider } from "react-router-dom";
 import router from "@/app/routes/AppRoutes";
 import LoginSuccessToast from "@/shared/components/common/LoginSuccessToast";
 import LogoutConfirmModal from "@/shared/components/common/LogoutConfirmModal";
+import MediaUploadStatus from "@/shared/components/common/MediaUploadStatus";
 import { useAppDispatch } from "@/app/state/store";
 import { refreshAccessToken, sessionExpired } from "@/domains/auth/state/authSlice";
 
@@ -35,6 +36,7 @@ function App() {
       <RouterProvider router={router} />
       <LoginSuccessToast />
       <LogoutConfirmModal />
+      <MediaUploadStatus />
     </>
   );
 }

@@ -51,11 +51,11 @@ func (h handler) productDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var item product
-	err := h.db.QueryRowContext(r.Context(), `SELECT p.id,p.shop_id,p.category_id,p.brand_id,p.name,p.slug,p.description,p.thumbnail_url,p.price,p.sold_count,p.rating_avg,p.rating_count,p.status,NULL,p.is_deleted,s.name,c.name,
+	err := h.db.QueryRowContext(r.Context(), `SELECT p.id,p.shop_id,p.category_id,p.brand_id,p.name,p.slug,p.description,p.thumbnail_url,p.video_url,p.price,p.sold_count,p.rating_avg,p.rating_count,p.status,NULL,p.is_deleted,s.name,c.name,
 		(SELECT COALESCE(SUM(v.stock),0) FROM product_variants v WHERE v.product_id=p.id AND v.status='ACTIVE')
 		FROM products p JOIN shops s ON s.id=p.shop_id JOIN categories c ON c.id=p.category_id
 		WHERE p.id=? AND p.status='ACTIVE' AND p.is_deleted=0 AND s.status='ACTIVE' AND c.is_active=1`, id).
-		Scan(&item.ID, &item.ShopID, &item.CategoryID, &item.BrandID, &item.Name, &item.Slug, &item.Description, &item.ThumbnailURL, &item.Price, &item.SoldCount, &item.RatingAvg, &item.RatingCount, &item.Status, &item.RejectReason, &item.IsDeleted, &item.ShopName, &item.CategoryName, &item.Stock)
+		Scan(&item.ID, &item.ShopID, &item.CategoryID, &item.BrandID, &item.Name, &item.Slug, &item.Description, &item.ThumbnailURL, &item.VideoURL, &item.Price, &item.SoldCount, &item.RatingAvg, &item.RatingCount, &item.Status, &item.RejectReason, &item.IsDeleted, &item.ShopName, &item.CategoryName, &item.Stock)
 	if errors.Is(err, sql.ErrNoRows) {
 		writeError(w, http.StatusNotFound, "product_not_found", "Product was not found")
 		return

@@ -21,6 +21,9 @@ export interface BackendUserItem {
   status: string;
   email_verified: boolean | number;
   created_at: string;
+  avatar_url?: string | null;
+  lock_reason?: string | null;
+  locked_at?: string | null;
 }
 
 interface ApiResponse<T> {
@@ -58,7 +61,7 @@ export const normalizeBackendUser = (bu: BackendUserItem): AdminUserItem => {
     fullName: bu.full_name || "Chưa đặt tên",
     email: bu.email || "",
     phone: bu.phone || "",
-    avatarUrl: null,
+    avatarUrl: bu.avatar_url ?? null,
     roles,
     primaryRole,
     status,
@@ -70,6 +73,8 @@ export const normalizeBackendUser = (bu: BackendUserItem): AdminUserItem => {
     totalSpent: 0,
     shopName: bu.shop_status ? "Gian hàng đối tác" : undefined,
     shopStatus: bu.shop_status || undefined,
+    lockReason: bu.lock_reason || undefined,
+    lockedAt: bu.locked_at || undefined,
   };
 };
 

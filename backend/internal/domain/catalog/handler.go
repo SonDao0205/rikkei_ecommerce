@@ -50,6 +50,7 @@ type product struct {
 	Slug         string  `json:"slug"`
 	Description  *string `json:"description"`
 	ThumbnailURL *string `json:"thumbnail_url"`
+	VideoURL     *string `json:"video_url"`
 	Price        float64 `json:"price"`
 	SoldCount    int64   `json:"sold_count"`
 	RatingAvg    float64 `json:"rating_avg"`
@@ -74,6 +75,7 @@ type adminProduct struct {
 	Price        float64 `json:"price"`
 	Stock        int64   `json:"stock"`
 	Status       string  `json:"status"`
+	RejectReason *string `json:"reject_reason"`
 	IsActive     bool    `json:"is_active"`
 }
 
@@ -127,6 +129,7 @@ func (h handler) adminProducts(w http.ResponseWriter, r *http.Request) {
 	vendorPattern := "%" + escapeLike(vendor) + "%"
 	query := `SELECT p.id,p.name,COALESCE(v.sku,''),p.thumbnail_url,s.name,IF(s.status='ACTIVE','VERIFIED','ARTISAN'),c.name,p.price,
 		(SELECT COALESCE(SUM(v2.stock),0) FROM product_variants v2 WHERE v2.product_id=p.id AND v2.status='ACTIVE') AS total_stock,p.status
+		,p.reject_reason
 		FROM products p JOIN shops s ON s.id=p.shop_id JOIN categories c ON c.id=p.category_id
 		LEFT JOIN product_variants v ON v.id=(SELECT MIN(v1.id) FROM product_variants v1 WHERE v1.product_id=p.id AND v1.status='ACTIVE')
 		WHERE p.is_deleted=0 AND (?='' OR p.name LIKE ? ESCAPE '!' OR v.sku LIKE ? ESCAPE '!' OR s.name LIKE ? ESCAPE '!')
@@ -144,14 +147,11 @@ func (h handler) adminProducts(w http.ResponseWriter, r *http.Request) {
 	items := []adminProduct{}
 	for rows.Next() {
 		var item adminProduct
-		if err = rows.Scan(&item.ID, &item.Name, &item.SKU, &item.ThumbnailURL, &item.ShopName, &item.ShopBadge, &item.CategoryName, &item.Price, &item.Stock, &item.Status); err != nil {
+		if err = rows.Scan(&item.ID, &item.Name, &item.SKU, &item.ThumbnailURL, &item.ShopName, &item.ShopBadge, &item.CategoryName, &item.Price, &item.Stock, &item.Status, &item.RejectReason); err != nil {
 			writeError(w, http.StatusInternalServerError, "internal_error", "Could not load inventory")
 			return
 		}
 		item.IsActive = item.Status == "ACTIVE"
-		if !item.IsActive {
-			item.Status = "INACTIVE"
-		}
 		items = append(items, item)
 	}
 	if err = rows.Err(); err != nil {
@@ -197,10 +197,33 @@ func (h handler) updateProductStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var request struct {
-		IsActive *bool `json:"is_active"`
+		IsActive *bool  `json:"is_active"`
+		Status   string `json:"status"`
+		Reason   string `json:"reason"`
 	}
-	if !decodeJSON(w, r, &request, 4096) || request.IsActive == nil {
-		writeError(w, http.StatusBadRequest, "invalid_request", "is_active is required")
+	if !decodeJSON(w, r, &request, 4096) {
+		writeError(w, http.StatusBadRequest, "invalid_request", "Request body must be valid JSON")
+		return
+	}
+	request.Status = strings.ToUpper(strings.TrimSpace(request.Status))
+	request.Reason = strings.TrimSpace(request.Reason)
+	if request.Status == "" {
+		if request.IsActive == nil {
+			writeError(w, http.StatusBadRequest, "invalid_request", "Provide status or is_active")
+			return
+		}
+		if *request.IsActive {
+			request.Status = "ACTIVE"
+		} else {
+			request.Status = "HIDDEN"
+		}
+	}
+	if request.Status != "ACTIVE" && request.Status != "HIDDEN" && request.Status != "REJECTED" {
+		writeError(w, http.StatusBadRequest, "invalid_product_status", "status must be ACTIVE, HIDDEN, or REJECTED")
+		return
+	}
+	if request.Status == "REJECTED" && (request.Reason == "" || len(request.Reason) > 500) {
+		writeError(w, http.StatusBadRequest, "invalid_reject_reason", "A rejection reason up to 500 characters is required")
 		return
 	}
 	tx, err := h.db.BeginTx(r.Context(), nil)
@@ -209,8 +232,9 @@ func (h handler) updateProductStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tx.Rollback()
-	var currentStatus string
-	if err := tx.QueryRowContext(r.Context(), `SELECT status FROM products WHERE id=? AND is_deleted=0 FOR UPDATE`, id).Scan(&currentStatus); err != nil {
+	var currentStatus, shopStatus, ownerStatus string
+	var categoryID int64
+	if err := tx.QueryRowContext(r.Context(), `SELECT p.status,s.status,u.status,p.category_id FROM products p JOIN shops s ON s.id=p.shop_id JOIN users u ON u.id=s.owner_id WHERE p.id=? AND p.is_deleted=0 FOR UPDATE`, id).Scan(&currentStatus, &shopStatus, &ownerStatus, &categoryID); err != nil {
 		if err == sql.ErrNoRows {
 			writeError(w, http.StatusNotFound, "product_not_found", "Product was not found")
 			return
@@ -218,15 +242,22 @@ func (h handler) updateProductStatus(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "internal_error", "Could not read product status")
 		return
 	}
-	if currentStatus != "ACTIVE" && currentStatus != "HIDDEN" {
-		writeError(w, http.StatusConflict, "product_status_not_toggleable", "Only approved products can be activated or hidden")
+	if currentStatus == request.Status {
+		writeJSON(w, http.StatusOK, apiResponse{Success: true, Data: map[string]any{"id": id, "is_active": request.Status == "ACTIVE", "status": request.Status}})
 		return
 	}
-	status := "HIDDEN"
-	if *request.IsActive {
-		status = "ACTIVE"
+	var categoryActive bool
+	if request.Status == "ACTIVE" {
+		if err = tx.QueryRowContext(r.Context(), `SELECT is_active FROM categories WHERE id=?`, categoryID).Scan(&categoryActive); err != nil {
+			writeError(w, http.StatusConflict, "inactive_product_category", "Product category must be active before activation")
+			return
+		}
 	}
-	result, err := tx.ExecContext(r.Context(), `UPDATE products SET status=? WHERE id=? AND is_deleted=0 AND status IN ('ACTIVE','HIDDEN')`, status, id)
+	if code, message := validateAdminProductTransition(currentStatus, request.Status, shopStatus, ownerStatus, categoryActive); code != "" {
+		writeError(w, http.StatusConflict, code, message)
+		return
+	}
+	result, err := tx.ExecContext(r.Context(), `UPDATE products SET status=?,reject_reason=? WHERE id=? AND is_deleted=0`, request.Status, nullableProductReason(request.Status, request.Reason), id)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal_error", "Could not update product status")
 		return
@@ -241,7 +272,7 @@ func (h handler) updateProductStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err = auditlog.Record(r.Context(), tx, h.userID(r), "PRODUCT_STATUS_CHANGED", "product", id,
-		map[string]any{"status": currentStatus}, map[string]any{"status": status}); err != nil {
+		map[string]any{"status": currentStatus}, map[string]any{"status": request.Status, "reason": request.Reason}); err != nil {
 		writeError(w, http.StatusInternalServerError, "internal_error", "Could not record product audit event")
 		return
 	}
@@ -249,7 +280,40 @@ func (h handler) updateProductStatus(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "internal_error", "Could not update product status")
 		return
 	}
-	writeJSON(w, http.StatusOK, apiResponse{Success: true, Data: map[string]any{"id": id, "is_active": *request.IsActive, "status": status}})
+	writeJSON(w, http.StatusOK, apiResponse{Success: true, Data: map[string]any{"id": id, "is_active": request.Status == "ACTIVE", "status": request.Status, "reject_reason": nullableProductReason(request.Status, request.Reason)}})
+}
+
+func nullableProductReason(status, reason string) any {
+	if status != "REJECTED" {
+		return nil
+	}
+	return reason
+}
+
+func validateAdminProductTransition(current, target, shopStatus, ownerStatus string, categoryActive bool) (string, string) {
+	switch target {
+	case "ACTIVE":
+		if current != "PENDING" && current != "HIDDEN" {
+			return "product_status_not_activatable", "Only pending or hidden products can be activated"
+		}
+		if shopStatus != "ACTIVE" || ownerStatus != "ACTIVE" {
+			return "active_shop_required", "Product cannot be approved while its shop or owner is inactive"
+		}
+		if !categoryActive {
+			return "inactive_product_category", "Product category must be active before approval"
+		}
+	case "HIDDEN":
+		if current != "ACTIVE" {
+			return "product_status_not_toggleable", "Only active products can be hidden"
+		}
+	case "REJECTED":
+		if current != "PENDING" {
+			return "product_not_pending", "Only pending products can be rejected"
+		}
+	default:
+		return "invalid_product_status", "Unsupported product status"
+	}
+	return "", ""
 }
 
 func (h handler) deleteProduct(w http.ResponseWriter, r *http.Request) {

@@ -13,9 +13,6 @@ import {
   AddProductCategoryModal,
 } from "@/domains/shop/components/product/add";
 
-const DEFAULT_COVER_IMAGE =
-  "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800";
-
 const INITIAL_FORM_DATA: AddProductFormData = {
   name: "",
   categoryId: 0,
@@ -49,6 +46,7 @@ export const ShopAddProduct: React.FC = () => {
   const [formData, setFormData] = useState<AddProductFormData>(INITIAL_FORM_DATA);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isMediaUploading, setIsMediaUploading] = useState(false);
   const [toast, setToast] = useState<{ message: string; isError?: boolean } | null>(null);
   const [showSeoGuide, setShowSeoGuide] = useState(false);
 
@@ -136,6 +134,14 @@ export const ShopAddProduct: React.FC = () => {
 
   // Submit product creation
   const handleSubmitProduct = async () => {
+    if (isMediaUploading) {
+      showToast("Vui lòng chờ ảnh/video tải xong trước khi lưu sản phẩm. Bạn vẫn có thể rời trang, upload sẽ tiếp tục nền.", true);
+      return;
+    }
+    if (!formData.coverImage || formData.coverImage.startsWith("blob:")) {
+      showToast("Vui lòng tải ảnh bìa JPG/JPEG lên trước khi lưu sản phẩm.", true);
+      return;
+    }
     if (!formData.name.trim()) {
       showToast("Vui lòng nhập tên sản phẩm", true);
       return;
@@ -202,7 +208,7 @@ export const ShopAddProduct: React.FC = () => {
           ];
 
       const rawImages = [
-        { url: formData.coverImage || DEFAULT_COVER_IMAGE, is_primary: true },
+        { url: formData.coverImage, is_primary: true },
         ...formData.detailImages.map((img) => ({
           url: img.url,
           is_primary: false,
@@ -217,7 +223,8 @@ export const ShopAddProduct: React.FC = () => {
         category: String(formData.categoryId),
         categoryId: formData.categoryId,
         categoryLabel: formData.categoryPath[formData.categoryPath.length - 1] || "Sản phẩm",
-        imageUrl: formData.coverImage || DEFAULT_COVER_IMAGE,
+        imageUrl: formData.coverImage,
+        videoUrl: formData.videoUrl || undefined,
         description: formData.description,
         brand_id: formData.brandId ?? null,
         rawVariants,
@@ -399,7 +406,12 @@ export const ShopAddProduct: React.FC = () => {
           />
 
           {/* 2. Media Management */}
-          <AddProductMedia formData={formData} onChange={handleFormChange} />
+          <AddProductMedia
+            formData={formData}
+            onChange={handleFormChange}
+            onUploadingChange={setIsMediaUploading}
+            onUploadError={(message) => showToast(message, true)}
+          />
 
           {/* 3. Variants & SKU Matrix */}
           <AddProductVariants formData={formData} onChange={handleFormChange} />
