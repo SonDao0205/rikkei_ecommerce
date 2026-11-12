@@ -17,4 +17,8 @@ func RegisterRoutes(a *App) {
 	a.mux.HandleFunc("POST /api/v1/auth/verify-reset-otp", a.verifyResetOTP)
 	a.mux.HandleFunc("POST /api/v1/auth/reset-password", a.resetPassword)
 	a.mux.Handle("GET /api/v1/admin/users", a.requireRole("ADMIN", a.listUsers))
+	a.mux.Handle("GET /api/v1/admin/users/{id}", a.requireRole("ADMIN", a.getAdminUser))
+	a.mux.Handle("POST /api/v1/admin/users", a.requireRole("ADMIN", a.createAdminUser))
+	a.mux.Handle("PUT /api/v1/admin/users/{id}", a.requireRole("ADMIN", a.updateAdminUser))
+	a.mux.Handle("PATCH /api/v1/admin/users/{id}/status", a.requireRole("ADMIN", a.updateAdminUserStatus))
 }

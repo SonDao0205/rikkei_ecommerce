@@ -195,16 +195,10 @@ export const productApi = {
   approveAdminProduct: async (
     productId: number
   ): Promise<{ id: number; is_active: boolean; status: string }> => {
-    try {
-      const response = await axiosClient.patch<
-        ApiResponse<{ id: number; is_active: boolean; status: string }>
-      >(`/api/v1/admin/products/${productId}/status`, {
-        is_active: true,
-      });
-      return response.data?.data || { id: productId, is_active: true, status: "ACTIVE" };
-    } catch {
-      return { id: productId, is_active: true, status: "ACTIVE" };
-    }
+    const response = await axiosClient.patch<
+      ApiResponse<{ id: number; is_active: boolean; status: string }>
+    >(`/api/v1/admin/products/${productId}/status`, { status: "ACTIVE" });
+    return response.data.data;
   },
 
   /**
@@ -214,22 +208,13 @@ export const productApi = {
     productId: number,
     reason: string
   ): Promise<{ id: number; is_active: boolean; status: string; reject_reason: string }> => {
-    try {
-      const response = await axiosClient.patch<
-        ApiResponse<{ id: number; is_active: boolean; status: string; reject_reason: string }>
-      >(`/api/v1/admin/products/${productId}/status`, {
-        is_active: false,
-      });
-      const data = response.data?.data;
-      return {
-        id: data?.id ?? productId,
-        is_active: false,
-        status: "REJECTED",
-        reject_reason: data?.reject_reason ?? reason,
-      };
-    } catch {
-      return { id: productId, is_active: false, status: "REJECTED", reject_reason: reason };
-    }
+    const response = await axiosClient.patch<
+      ApiResponse<{ id: number; is_active: boolean; status: string; reject_reason: string }>
+    >(`/api/v1/admin/products/${productId}/status`, {
+      status: "REJECTED",
+      reason,
+    });
+    return response.data.data;
   },
 
   /**
