@@ -12,39 +12,49 @@ export const ShopOrderStatusTabs: React.FC<ShopOrderStatusTabsProps> = ({
   counts,
   onTabChange,
 }) => {
+  const safeCounts = counts ?? {
+    all: 0,
+    pending: 0,
+    packing: 0,
+    shipping: 0,
+    delivered: 0,
+    cancelled: 0,
+    returned: 0,
+  };
+
   const tabs: Array<{
     id: ShopOrderStatus;
     label: string;
     count: number;
     badgeColor?: string;
   }> = [
-    { id: "all", label: "Tất cả", count: counts.all },
+    { id: "all", label: "Tất cả", count: safeCounts.all ?? 0 },
     {
       id: "pending",
       label: "Chờ xác nhận",
-      count: counts.pending,
-      badgeColor: counts.pending > 0 ? "bg-error text-white font-bold" : undefined,
+      count: safeCounts.pending ?? 0,
+      badgeColor: (safeCounts.pending ?? 0) > 0 ? "bg-error text-white font-bold" : undefined,
     },
     {
       id: "packing",
       label: "Chuẩn bị hàng",
-      count: counts.packing,
-      badgeColor: counts.packing > 0 ? "bg-amber-100 text-amber-800 font-bold" : undefined,
+      count: safeCounts.packing ?? 0,
+      badgeColor: (safeCounts.packing ?? 0) > 0 ? "bg-amber-100 text-amber-800 font-bold" : undefined,
     },
     {
       id: "shipping",
       label: "Đang giao",
-      count: counts.shipping,
-      badgeColor: counts.shipping > 0 ? "bg-sky-100 text-sky-800" : undefined,
+      count: safeCounts.shipping ?? 0,
+      badgeColor: (safeCounts.shipping ?? 0) > 0 ? "bg-sky-100 text-sky-800" : undefined,
     },
     {
       id: "delivered",
       label: "Đã giao",
-      count: counts.delivered,
-      badgeColor: counts.delivered > 0 ? "bg-emerald-100 text-emerald-800" : undefined,
+      count: safeCounts.delivered ?? 0,
+      badgeColor: (safeCounts.delivered ?? 0) > 0 ? "bg-emerald-100 text-emerald-800" : undefined,
     },
-    { id: "cancelled", label: "Đã huỷ", count: counts.cancelled },
-    { id: "returned", label: "Trả hàng/Hoàn tiền", count: counts.returned },
+    { id: "cancelled", label: "Đã huỷ", count: safeCounts.cancelled ?? 0 },
+    { id: "returned", label: "Trả hàng/Hoàn tiền", count: safeCounts.returned ?? 0 },
   ];
 
   return (

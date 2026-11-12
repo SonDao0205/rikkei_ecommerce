@@ -1,5 +1,5 @@
-﻿import React from "react";
-import { Link } from "react-router-dom";
+import React from "react";
+import { Link, useNavigate } from "react-router-dom";
 import type { WishlistRecommendation } from "@/domains/customer/types/wishlist.types";
 import { formatCurrencyVND } from "@/shared/utils/currency";
 
@@ -12,6 +12,8 @@ export const WishlistRecommendations: React.FC<WishlistRecommendationsProps> = (
   recommendations,
   onAddToWishlist,
 }) => {
+  const navigate = useNavigate();
+
   return (
     <div className="flex flex-col gap-4 pt-6 border-t border-surface-container">
       <div className="flex items-center justify-between">
@@ -23,7 +25,7 @@ export const WishlistRecommendations: React.FC<WishlistRecommendationsProps> = (
         </div>
         <Link
           to="/"
-          className="text-xs sm:text-sm text-primary font-bold hover:underline flex items-center gap-1"
+          className="text-xs sm:text-sm text-primary font-bold hover:underline flex items-center gap-1 cursor-pointer"
         >
           <span>Xem tất cả gợi ý</span>
           <span className="material-symbols-outlined text-[16px]">chevron_right</span>
@@ -34,9 +36,14 @@ export const WishlistRecommendations: React.FC<WishlistRecommendationsProps> = (
         {recommendations.map((reco) => (
           <div
             key={reco.id}
-            className="group relative flex flex-col rounded-xl bg-surface-container-lowest p-3 shadow-sm hover:shadow-2xl hover:-translate-y-2 border border-outline-variant/30 hover:border-primary/40 transition-all duration-300 ease-out overflow-hidden will-change-transform"
+            onClick={(e) => {
+              const target = e.target as HTMLElement;
+              if (target.closest("button") || target.closest("a") || target.closest("input")) return;
+              navigate(`/product/${reco.product_id || reco.id}`);
+            }}
+            className="group relative flex flex-col rounded-xl bg-surface-container-lowest p-3 shadow-sm hover:shadow-2xl hover:-translate-y-2 border border-outline-variant/30 hover:border-primary/40 transition-all duration-300 ease-out overflow-hidden will-change-transform cursor-pointer"
           >
-            <div className="relative aspect-square w-full rounded-lg overflow-hidden bg-surface-container-low mb-3">
+            <div className="relative aspect-square w-full rounded-lg overflow-hidden bg-surface-container-low mb-3 cursor-pointer">
               <img
                 src={reco.image_url}
                 alt={reco.alt_text || reco.name}
@@ -59,9 +66,12 @@ export const WishlistRecommendations: React.FC<WishlistRecommendationsProps> = (
               <span className="truncate">{reco.shop_name}</span>
             </div>
 
-            <h4 className="text-xs sm:text-sm font-bold text-on-surface line-clamp-1 mb-1 group-hover:text-primary transition-colors">
+            <Link
+              to={`/product/${reco.product_id || reco.id}`}
+              className="text-xs sm:text-sm font-bold text-on-surface line-clamp-1 mb-1 group-hover:text-primary transition-colors cursor-pointer"
+            >
               {reco.name}
-            </h4>
+            </Link>
 
             <div className="flex items-center justify-between mt-auto pt-2 border-t border-surface-container/60">
               <span className="text-sm sm:text-base font-bold text-on-surface">
@@ -69,7 +79,10 @@ export const WishlistRecommendations: React.FC<WishlistRecommendationsProps> = (
               </span>
               <button
                 type="button"
-                onClick={() => onAddToWishlist(reco)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAddToWishlist(reco);
+                }}
                 title="Lưu vào yêu thích"
                 aria-label="Add recommendation to wishlist"
                 className="w-8 h-8 rounded-full bg-surface-container hover:bg-primary-fixed hover:text-primary text-on-surface-variant flex items-center justify-center transition-colors cursor-pointer"

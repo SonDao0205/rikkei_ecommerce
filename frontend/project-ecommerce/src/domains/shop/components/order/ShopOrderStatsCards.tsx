@@ -12,9 +12,20 @@ export const ShopOrderStatsCards: React.FC<ShopOrderStatsCardsProps> = ({
   orders,
   onSelectTab,
 }) => {
-  const totalRevenue = orders
-    .filter((o) => o.status !== "cancelled")
-    .reduce((sum, o) => sum + o.financial.shopPayout, 0);
+  const safeOrders = orders ?? [];
+  const safeCounts = counts ?? {
+    all: 0,
+    pending: 0,
+    packing: 0,
+    shipping: 0,
+    delivered: 0,
+    cancelled: 0,
+    returned: 0,
+  };
+
+  const totalRevenue = safeOrders
+    .filter((o) => o && o.status !== "cancelled")
+    .reduce((sum, o) => sum + (o.financial?.shopPayout ?? 0), 0);
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 py-4">
@@ -33,7 +44,7 @@ export const ShopOrderStatsCards: React.FC<ShopOrderStatsCardsProps> = ({
         </div>
         <div className="mt-2">
           <div className="text-2xl font-bold font-headline-lg text-on-surface">
-            {counts.pending}
+            {safeCounts.pending ?? 0}
           </div>
           <div className="text-xs text-error font-medium mt-0.5 flex items-center gap-1">
             <span className="material-symbols-outlined text-[13px]">alarm</span>
@@ -57,7 +68,7 @@ export const ShopOrderStatsCards: React.FC<ShopOrderStatsCardsProps> = ({
         </div>
         <div className="mt-2">
           <div className="text-2xl font-bold font-headline-lg text-on-surface">
-            {counts.packing}
+            {safeCounts.packing ?? 0}
           </div>
           <div className="text-xs text-amber-700 font-medium mt-0.5 flex items-center gap-1">
             <span className="material-symbols-outlined text-[13px]">schedule</span>
@@ -81,7 +92,7 @@ export const ShopOrderStatsCards: React.FC<ShopOrderStatsCardsProps> = ({
         </div>
         <div className="mt-2">
           <div className="text-2xl font-bold font-headline-lg text-on-surface">
-            {counts.shipping}
+            {safeCounts.shipping ?? 0}
           </div>
           <div className="text-xs text-sky-700 font-medium mt-0.5 flex items-center gap-1">
             <span className="material-symbols-outlined text-[13px]">near_me</span>

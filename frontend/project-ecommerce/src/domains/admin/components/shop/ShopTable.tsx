@@ -1,5 +1,6 @@
 import React from "react";
 import type { AdminShopItem } from "@/shared/types";
+import { getShopDefaultLogo } from "@/shared/utils/avatar";
 
 interface ShopTableProps {
   shops: AdminShopItem[];
@@ -229,12 +230,11 @@ export const ShopTable: React.FC<ShopTableProps> = ({
                       <div className="flex items-center gap-3">
                         <div className="relative w-11 h-11 rounded-full overflow-hidden flex-shrink-0 bg-primary-fixed shadow-sm">
                           <img
-                            src={shop.logo_url || undefined}
+                            src={shop.logo_url || getShopDefaultLogo(shop.name)}
                             alt={shop.name}
                             className="w-full h-full object-cover"
                             onError={(e) => {
-                              (e.target as HTMLImageElement).src =
-                                "https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=100&h=100&fit=crop";
+                              (e.target as HTMLImageElement).src = getShopDefaultLogo(shop.name);
                             }}
                           />
                         </div>

@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import { Link } from "react-router-dom";
 
 export interface WishlistBreadcrumbProps {
@@ -13,7 +13,7 @@ export const WishlistBreadcrumb: React.FC<WishlistBreadcrumbProps> = () => {
         <nav className="flex items-center gap-2 text-xs sm:text-sm text-on-surface-variant">
           <Link
             to="/"
-            className="hover:text-primary transition-colors flex items-center gap-1"
+            className="hover:text-primary transition-colors flex items-center gap-1 cursor-pointer"
           >
             <span className="material-symbols-outlined text-[16px]">home</span>
             <span>Trang chủ</span>
@@ -21,7 +21,7 @@ export const WishlistBreadcrumb: React.FC<WishlistBreadcrumbProps> = () => {
           <span className="material-symbols-outlined text-[14px] text-outline">
             chevron_right
           </span>
-          <Link to="/profile" className="hover:text-primary transition-colors">
+          <Link to="/profile" className="hover:text-primary transition-colors cursor-pointer">
             Tài khoản của tôi
           </Link>
           <span className="material-symbols-outlined text-[14px] text-outline">

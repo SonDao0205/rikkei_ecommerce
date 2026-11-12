@@ -32,13 +32,24 @@ async function loadDetail(id: string): Promise<ShopOrderItem> {
 export const shopOrderApi = {
   async fetchShopOrders(params?: ShopOrderFilterParams): Promise<{ orders: ShopOrderItem[]; total: number }> {
     const response = await axiosClient.get<APIEnvelope<SellerOrderList>>("/api/v1/seller/orders", { params: queryParams(params) });
-    return { orders: response.data.data.orders.map(mapBackendShopOrder), total: response.data.data.pagination.total };
+    const rawOrders = response.data?.data?.orders;
+    const total = response.data?.data?.pagination?.total ?? 0;
+    const orders = Array.isArray(rawOrders) ? rawOrders.map(mapBackendShopOrder) : [];
+    return { orders, total };
   },
 
   async fetchShopOrderCounts(): Promise<ShopOrderStatusCounts> {
     const response = await axiosClient.get<APIEnvelope<SellerOrderList>>("/api/v1/seller/orders", { params: { limit: 1 } });
-    const counts = response.data.data.counts;
-    return { all: counts.all, pending: counts.pending, packing: counts.preparing, shipping: counts.shipping, delivered: counts.completed, cancelled: counts.cancelled, returned: counts.returned };
+    const counts = response.data?.data?.counts;
+    return {
+      all: counts?.all ?? 0,
+      pending: counts?.pending ?? 0,
+      packing: counts?.preparing ?? 0,
+      shipping: counts?.shipping ?? 0,
+      delivered: counts?.completed ?? 0,
+      cancelled: counts?.cancelled ?? 0,
+      returned: counts?.returned ?? 0,
+    };
   },
 
   async getShopOrderDetail(id: string): Promise<ShopOrderItem> {
@@ -69,15 +80,21 @@ export const shopOrderApi = {
     const numericIDs = ids.map((id) => Number(orderResourceID(id)));
     if (numericIDs.some((id) => !Number.isSafeInteger(id) || id < 1)) throw new Error("Đơn được chọn không có mã hợp lệ.");
     const response = await axiosClient.post<APIEnvelope<{ confirmed_shop_order_ids: number[] }>>("/api/v1/seller/orders/bulk-confirm", { shop_order_ids: numericIDs });
-    return response.data.data.confirmed_shop_order_ids.map(String);
+    const confirmedIds = response.data?.data?.confirmed_shop_order_ids;
+    return Array.isArray(confirmedIds) ? confirmedIds.map(String) : [];
   },
 
   async exportOrdersCsv(): Promise<string> {
     const first = await axiosClient.get<APIEnvelope<SellerOrderList>>("/api/v1/seller/orders", { params: { page: 1, limit: 100 } });
-    const all = [...first.data.data.orders];
-    for (let page = 2; page <= first.data.data.pagination.total_pages; page += 1) {
+    const rawFirst = first.data?.data?.orders;
+    const all: BackendShopOrder[] = Array.isArray(rawFirst) ? [...rawFirst] : [];
+    const totalPages = first.data?.data?.pagination?.total_pages ?? 1;
+    for (let page = 2; page <= totalPages; page += 1) {
       const next = await axiosClient.get<APIEnvelope<SellerOrderList>>("/api/v1/seller/orders", { params: { page, limit: 100 } });
-      all.push(...next.data.data.orders);
+      const rawNext = next.data?.data?.orders;
+      if (Array.isArray(rawNext)) {
+        all.push(...rawNext);
+      }
     }
     const quote = (value: unknown) => `"${String(value ?? "").replaceAll('"', '""')}"`;
     return [

@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import { Link } from "react-router-dom";
 
 export interface WishlistEmptyStateProps {
@@ -27,7 +27,7 @@ export const WishlistEmptyState: React.FC<WishlistEmptyStateProps> = ({
       <div className="flex flex-wrap items-center justify-center gap-3">
         <Link
           to="/"
-          className="h-12 px-6 sm:px-8 rounded-xl bg-primary-container text-on-primary text-xs sm:text-sm font-bold hover:bg-primary transition-colors flex items-center gap-2 shadow-sm"
+          className="h-12 px-6 sm:px-8 rounded-xl bg-primary-container text-on-primary text-xs sm:text-sm font-bold hover:bg-primary transition-colors flex items-center gap-2 shadow-sm cursor-pointer"
         >
           <span className="material-symbols-outlined text-[20px]">explore</span>
           <span>Khám phá sản phẩm hot hôm nay</span>

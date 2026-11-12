@@ -68,7 +68,8 @@ export const ShopOrderTable: React.FC<ShopOrderTableProps> = ({
   onCancelOrder,
   onOpenQuickDetail,
 }) => {
-  const isAllSelected = orders.length > 0 && selectedIds.length === orders.length;
+  const safeOrders = orders ?? [];
+  const isAllSelected = safeOrders.length > 0 && selectedIds.length === safeOrders.length;
 
   const handleCopy = (e: React.MouseEvent, text: string) => {
     e.stopPropagation();
@@ -76,7 +77,7 @@ export const ShopOrderTable: React.FC<ShopOrderTableProps> = ({
     alert(`Đã sao chép: ${text}`);
   };
 
-  if (orders.length === 0) {
+  if (safeOrders.length === 0) {
     return (
       <div className="py-16 flex flex-col items-center justify-center text-center bg-surface-container-lowest rounded-2xl border border-outline-variant/30">
         <span className="material-symbols-outlined text-[48px] text-outline mb-2">
@@ -115,9 +116,10 @@ export const ShopOrderTable: React.FC<ShopOrderTableProps> = ({
           </tr>
         </thead>
         <tbody className="divide-y divide-outline-variant/10 text-on-surface">
-          {orders.map((order) => {
+          {safeOrders.map((order) => {
             const isSelected = selectedIds.includes(order.id);
-            const firstItem = order.items[0];
+            const items = order.items ?? [];
+            const firstItem = items[0];
 
             return (
               <tr
@@ -194,7 +196,7 @@ export const ShopOrderTable: React.FC<ShopOrderTableProps> = ({
                         Phân loại: {firstItem?.variant}
                       </span>
                       <span className="text-xs font-mono text-outline">
-                        x{firstItem?.quantity} {order.items.length > 1 && `(+${order.items.length - 1} món khác)`}
+                        x{firstItem?.quantity} {items.length > 1 && `(+${items.length - 1} món khác)`}
                       </span>
                     </div>
                   </div>
