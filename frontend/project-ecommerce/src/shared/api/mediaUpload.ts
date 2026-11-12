@@ -78,7 +78,6 @@ export async function uploadMedia(file: File, purpose: MediaPurpose): Promise<Up
     body.append("purpose", purpose);
     body.append("file", file, file.name);
     const response = await axiosClient.post<MediaUploadEnvelope>("/api/v1/media", body, {
-      headers: { "Content-Type": "multipart/form-data" },
       timeout: 120000,
       onUploadProgress: (event) => {
         const progress = event.total ? Math.min(99, Math.round((event.loaded / event.total) * 100)) : 0;
