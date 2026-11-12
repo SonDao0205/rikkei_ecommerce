@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import type { UserOrder, ShopOrderGroup, OrderItem } from '@/domains/order/types';
+import { getShopDefaultLogo } from '@/shared/utils/avatar';
 
 interface OrderDetailShopSectionProps {
   order: UserOrder;
@@ -74,14 +75,6 @@ export const OrderDetailShopSection: React.FC<OrderDetailShopSectionProps> = ({
   return (
     <div className="flex flex-col gap-6">
       {shopGroups.map((shop, sIdx) => {
-        const shopInitials = shop.shopName
-          ? shop.shopName
-              .split(' ')
-              .map((w: string) => w[0])
-              .join('')
-              .slice(0, 2)
-              .toUpperCase()
-          : 'MP';
 
         return (
           <section
@@ -91,17 +84,18 @@ export const OrderDetailShopSection: React.FC<OrderDetailShopSectionProps> = ({
             {/* Shop Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 gap-4 border-b border-surface-container">
               <div className="flex items-center gap-3">
-                {shop.shopAvatar ? (
-                  <img
-                    src={shop.shopAvatar}
-                    alt={shop.shopName}
-                    className="w-12 h-12 rounded-xl object-cover shadow-sm bg-surface-container"
-                  />
-                ) : (
-                  <div className="w-12 h-12 rounded-xl bg-primary-container text-on-primary flex items-center justify-center font-headline-md text-headline-md font-bold shadow-sm">
-                    {shopInitials}
-                  </div>
-                )}
+                <img
+                  src={shop.shopAvatar || getShopDefaultLogo(shop.shopName)}
+                  alt={shop.shopName}
+                  className="w-12 h-12 rounded-xl object-cover shadow-sm bg-surface-container"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    const fallback = getShopDefaultLogo(shop.shopName);
+                    if (target.src !== fallback) {
+                      target.src = fallback;
+                    }
+                  }}
+                />
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <Link

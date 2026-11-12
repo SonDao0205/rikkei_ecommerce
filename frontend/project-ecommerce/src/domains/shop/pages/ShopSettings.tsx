@@ -9,6 +9,7 @@ import {
 } from "@/domains/shop/state/myShopSlice";
 import { isValidVietnamesePhone } from "@/shared/utils/validation";
 import type { Shop, ShopProfilePayload } from "@/shared/types";
+import { getShopDefaultLogo, DEFAULT_SHOP_BANNER } from "@/shared/utils/avatar";
 
 const PROVINCES = [
   "TP. Hồ Chí Minh",
@@ -280,17 +281,11 @@ const ShopSettingsForm: React.FC<ShopSettingsFormProps> = ({ shop }) => {
       <div className="relative w-full rounded-2xl overflow-hidden bg-surface-container-lowest border border-outline-variant/30 shadow-sm flex flex-col">
         {/* Cover Banner Area */}
         <div className="relative w-full h-44 sm:h-56 bg-gradient-to-r from-primary/30 via-secondary/20 to-primary-container overflow-hidden">
-          {bannerUrl ? (
-            <img
-              src={bannerUrl}
-              alt="Shop Banner"
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-primary/40">
-              <span className="material-symbols-outlined text-[72px]">panorama</span>
-            </div>
-          )}
+          <img
+            src={bannerUrl || DEFAULT_SHOP_BANNER}
+            alt="Shop Banner"
+            className="w-full h-full object-cover"
+          />
           {/* Banner overlay button */}
           <div className="absolute right-4 bottom-4 flex items-center gap-2">
             <button
@@ -319,17 +314,18 @@ const ShopSettingsForm: React.FC<ShopSettingsFormProps> = ({ shop }) => {
           <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-16 sm:-mt-20">
             {/* Shop Avatar */}
             <div className="relative group w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-surface-container-lowest border-4 border-surface-container-lowest shadow-lg overflow-hidden shrink-0">
-              {logoUrl ? (
-                <img
-                  src={logoUrl}
-                  alt="Logo gian hàng"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center bg-primary/10 text-primary">
-                  <span className="material-symbols-outlined text-[36px]">storefront</span>
-                </div>
-              )}
+              <img
+                src={logoUrl || getShopDefaultLogo(shopName || shop.name)}
+                alt="Logo gian hàng"
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  const target = e.currentTarget;
+                  const fallback = getShopDefaultLogo(shopName || shop.name);
+                  if (target.src !== fallback) {
+                    target.src = fallback;
+                  }
+                }}
+              />
               <button
                 type="button"
                 onClick={() => logoInputRef.current?.click()}

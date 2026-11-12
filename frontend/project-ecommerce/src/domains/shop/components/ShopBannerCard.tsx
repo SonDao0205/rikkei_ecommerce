@@ -4,14 +4,12 @@ import { useAppDispatch, useAppSelector } from "@/app/state/store";
 import { toggleFollowShop } from "@/domains/shop/state/publicShopSlice";
 import WishlistToast from "@/domains/customer/components/wishlist/WishlistToast";
 import type { PublicShop } from "@/shared/types";
+import { getShopDefaultLogo, DEFAULT_SHOP_BANNER } from "@/shared/utils/avatar";
 
 interface ShopBannerCardProps {
   shop: PublicShop;
   totalProducts?: number;
 }
-
-const DEFAULT_BANNER =
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuCWStVA70OCRI-vo76GhJ6KLk3Esn2fiZQIfuypPvpWVmh5ZnLbEus2_RHDQDE_6g2ordJI2a3eeZFx8xynJsbHbAQEhHWzCIlTQ1Kwvr7dGhAjHiBLnW1Oaz4hTJxMzUcClG79RadMfdEc8yF4qxf7qT8ZKz-GiCHd45Hv52Wo9WrU4zKQx4u1hbLVPQN4HsmF-HA2Sk0lp3_MpflPuwvmM4cfpWX0u-YitoJ6mWE";
 
 export const ShopBannerCard: React.FC<ShopBannerCardProps> = ({
   shop,
@@ -101,7 +99,7 @@ export const ShopBannerCard: React.FC<ShopBannerCardProps> = ({
     alert(`Bắt đầu kết nối trò chuyện với gian hàng ${shop.name}`);
   };
 
-  const bannerBg = shop.banner_url || DEFAULT_BANNER;
+  const bannerBg = shop.banner_url || DEFAULT_SHOP_BANNER;
   const followerDisplay = followState.follower_count ?? shop.follower_count ?? 0;
 
   const formattedFollowers =
@@ -186,17 +184,14 @@ export const ShopBannerCard: React.FC<ShopBannerCardProps> = ({
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-1 min-w-0">
             <div className="relative shrink-0">
               <div className="w-20 h-20 rounded-full overflow-hidden shadow-md bg-surface-container-low flex items-center justify-center ring-3 ring-surface-container-lowest">
-                {shop.logo_url ? (
-                  <img
-                    className="w-full h-full object-cover"
-                    src={shop.logo_url}
-                    alt={shop.name}
-                  />
-                ) : (
-                  <div className="w-full h-full bg-primary/10 flex items-center justify-center text-primary font-bold text-2xl">
-                    {shop.name.charAt(0).toUpperCase()}
-                  </div>
-                )}
+                <img
+                  className="w-full h-full object-cover"
+                  src={shop.logo_url || getShopDefaultLogo(shop.name)}
+                  alt={shop.name}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = getShopDefaultLogo(shop.name);
+                  }}
+                />
               </div>
               <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-primary-container text-on-primary flex items-center justify-center shadow-md">
                 <span className="material-symbols-outlined text-[17px]">verified</span>

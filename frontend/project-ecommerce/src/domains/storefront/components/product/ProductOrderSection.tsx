@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import type { ProductItem, ProductVariant } from "@/domains/storefront/types";
 import { useAppDispatch, useAppSelector } from "@/app/state/store";
-import { addCartItem } from "@/domains/customer/state/cartSlice";
+import { addCartItem, selectVariantForCheckout } from "@/domains/customer/state/cartSlice";
 import { toggleWishlistItem } from "@/domains/customer/state/wishlistSlice";
 import WishlistToast from "@/domains/customer/components/wishlist/WishlistToast";
+import { cleanCategoryName } from "@/domains/storefront/utils/categoryUtils";
+import { productApi, type CategoryVariantAttribute } from "@/domains/storefront/api/productApi";
 
 interface ProductOrderSectionProps {
   product: ProductItem;
@@ -12,6 +14,30 @@ interface ProductOrderSectionProps {
   selectedVariant: ProductVariant | null;
   onSelectVariant: (variant: ProductVariant) => void;
 }
+
+interface AttributeOption {
+  value: string;
+  hex?: string;
+  badge?: string;
+  isAvailable: boolean;
+}
+
+interface AttributeTier {
+  name: string;
+  options: AttributeOption[];
+}
+
+const COLOR_HEX_MAP: Record<string, string> = {
+  "đen": "#18181b",
+  "trắng": "#ffffff",
+  "xám": "#64748b",
+  "đỏ": "#dc2626",
+  "xanh": "#2563eb",
+  "vàng": "#fbbf24",
+  "hồng": "#f472b6",
+  "cam": "#f97316",
+  "nâu": "#78350f",
+};
 
 export const ProductOrderSection: React.FC<ProductOrderSectionProps> = ({
   product,
@@ -23,6 +49,10 @@ export const ProductOrderSection: React.FC<ProductOrderSectionProps> = ({
   const [cartToastMessage, setCartToastMessage] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
+  const [isBuyingNow, setIsBuyingNow] = useState(false);
+  const [categoryAttributes, setCategoryAttributes] = useState<CategoryVariantAttribute[]>([]);
+  const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>({});
+
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
@@ -32,6 +62,7 @@ export const ProductOrderSection: React.FC<ProductOrderSectionProps> = ({
   const isWishlisted = useAppSelector((state) => state.wishlist.items.some((item) => item.product_id === product.id));
   const isWishlistPending = useAppSelector((state) => state.wishlist.mutatingIds.includes(product.id));
   const isCartUpdating = useAppSelector((state) => state.cart.updating);
+
   const [toastState, setToastState] = useState<{
     isOpen: boolean;
     title: string;
@@ -56,6 +87,160 @@ export const ProductOrderSection: React.FC<ProductOrderSectionProps> = ({
       return () => clearTimeout(timer);
     }
   }, [toastState.isOpen]);
+
+  // Fetch real category attributes from API
+  useEffect(() => {
+    let isMounted = true;
+    if (product.category_id && product.category_id > 0) {
+      productApi
+        .fetchCategoryAttributes(product.category_id)
+        .then((res) => {
+          if (isMounted) {
+            setCategoryAttributes(res?.attributes || []);
+          }
+        })
+        .catch(() => {
+          if (isMounted) {
+            setCategoryAttributes([]);
+          }
+        });
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [product.category_id]);
+
+  // Build dynamic attribute tiers purely from API (variant.attributes or categoryAttributes)
+  const { attributeTiers, isRealApiData } = useMemo(() => {
+    // 1. Kiểm tra attributes thực tế từ các biến thể (variants)
+    const attrMap = new Map<string, Set<string>>();
+    for (const v of variants) {
+      if (v.attributes && Array.isArray(v.attributes)) {
+        for (const attr of v.attributes) {
+          if (attr.name && attr.value) {
+            if (!attrMap.has(attr.name)) {
+              attrMap.set(attr.name, new Set());
+            }
+            attrMap.get(attr.name)!.add(attr.value);
+          }
+        }
+      }
+    }
+
+    if (attrMap.size > 0) {
+      const tiers: AttributeTier[] = Array.from(attrMap.entries()).map(([name, valSet]) => {
+        const isColorAttr = name.toLowerCase().includes("màu") || name.toLowerCase().includes("color");
+        const options: AttributeOption[] = Array.from(valSet).map((val) => {
+          const matchedVariant = variants.find((v) =>
+            v.attributes?.some((a) => a.name === name && a.value === val)
+          );
+          return {
+            value: val,
+            hex: isColorAttr ? COLOR_HEX_MAP[val.toLowerCase()] : undefined,
+            isAvailable: (matchedVariant?.stock ?? 1) > 0,
+            badge: matchedVariant ? `${matchedVariant.stock} sẵn` : undefined,
+          };
+        });
+
+        return {
+          name,
+          options,
+        };
+      });
+
+      return { attributeTiers: tiers, isRealApiData: true };
+    }
+
+    // 2. Kiểm tra thuộc tính từ API danh mục (categoryAttributes)
+    if (categoryAttributes && categoryAttributes.length > 0) {
+      const validAttrs = categoryAttributes.filter(
+        (cat) => cat.name && cat.values && cat.values.length > 0
+      );
+
+      if (validAttrs.length > 0) {
+        const tiers: AttributeTier[] = validAttrs.map((cat) => {
+          const isColorAttr =
+            cat.name.toLowerCase().includes("màu") || cat.name.toLowerCase().includes("color");
+          const options: AttributeOption[] = (cat.values || []).map((v) => ({
+            value: v.value,
+            hex: isColorAttr ? COLOR_HEX_MAP[v.value.toLowerCase()] : undefined,
+            isAvailable: true,
+          }));
+
+          return {
+            name: cat.name,
+            options,
+          };
+        });
+
+        return { attributeTiers: tiers, isRealApiData: true };
+      }
+    }
+
+    // 3. Nếu không có cấu hình phân nhóm thuộc tính nào từ API:
+    // Trả về danh sách rỗng để hiển thị trực tiếp danh sách biến thể thực tế
+    return { attributeTiers: [], isRealApiData: false };
+  }, [variants, categoryAttributes]);
+
+  // Xác định giá trị thuộc tính đang chọn tương ứng với selectedVariant hoặc lựa chọn người dùng
+  const currentSelectedAttributes = useMemo(() => {
+    const map: Record<string, string> = { ...selectedAttributes };
+    if (selectedVariant?.attributes && selectedVariant.attributes.length > 0) {
+      for (const attr of selectedVariant.attributes) {
+        if (attr.name && attr.value && !selectedAttributes[attr.name]) {
+          map[attr.name] = attr.value;
+        }
+      }
+    }
+    // Gán giá trị mặc định nếu chưa chọn
+    for (const tier of attributeTiers) {
+      if (!map[tier.name] && tier.options.length > 0) {
+        map[tier.name] = tier.options[0].value;
+      }
+    }
+    return map;
+  }, [selectedAttributes, selectedVariant, attributeTiers]);
+
+  const handleSelectAttribute = (attrName: string, attrVal: string) => {
+    const nextAttributes = {
+      ...currentSelectedAttributes,
+      [attrName]: attrVal,
+    };
+    setSelectedAttributes(nextAttributes);
+
+    if (variants.length === 0) return;
+
+    // 1. Tìm biến thể khớp với tất cả thuộc tính đang chọn
+    let matched = variants.find((v) => {
+      if (!v.attributes || v.attributes.length === 0) return false;
+      return Object.entries(nextAttributes).every(([name, val]) =>
+        v.attributes?.some(
+          (a) => a.name.toLowerCase() === name.toLowerCase() && a.value.toLowerCase() === val.toLowerCase()
+        )
+      );
+    });
+
+    // 2. Nếu không khớp tất cả, tìm biến thể khớp với thuộc tính vừa click
+    if (!matched) {
+      matched = variants.find((v) =>
+        v.attributes?.some(
+          (a) => a.name.toLowerCase() === attrName.toLowerCase() && a.value.toLowerCase() === attrVal.toLowerCase()
+        )
+      );
+    }
+
+    // 3. Nếu variant không có mảng attributes cấu trúc, tìm theo tên variant
+    if (!matched) {
+      matched = variants.find((v) =>
+        (v.name || "").toLowerCase().includes(attrVal.toLowerCase())
+      );
+    }
+
+    if (matched) {
+      onSelectVariant(matched);
+    }
+  };
 
   const currentPrice = selectedVariant?.price ?? product.price ?? 0;
   const currentStock = selectedVariant?.stock ?? product.stock ?? 0;
@@ -119,6 +304,40 @@ export const ProductOrderSection: React.FC<ProductOrderSectionProps> = ({
     }
   };
 
+  const handleBuyNow = async () => {
+    if (!isAuthenticated) {
+      navigate("/login", { state: { from: location } });
+      return;
+    }
+    if (!canUseCustomerFeatures) {
+      setActionError("Tính năng mua hàng chỉ dành cho tài khoản người mua.");
+      return;
+    }
+    const variantId = selectedVariant?.id || (variants.length > 0 ? variants[0].id : null);
+    if (!variantId || currentStock < 1) {
+      setActionError("Vui lòng chọn phiên bản còn hàng trước khi mua ngay.");
+      return;
+    }
+    setActionError(null);
+    setIsBuyingNow(true);
+    try {
+      await dispatch(addCartItem({ variantId, quantity })).unwrap();
+      dispatch(selectVariantForCheckout(variantId));
+      navigate("/checkout");
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "Không thể tiến hành mua ngay.";
+      setActionError(msg);
+      setToastState({
+        isOpen: true,
+        title: "Không thể mua ngay",
+        message: msg,
+        type: "error",
+      });
+    } finally {
+      setIsBuyingNow(false);
+    }
+  };
+
   const handleToggleWishlist = async () => {
     if (!isAuthenticated) {
       navigate("/login", { state: { from: location } });
@@ -153,24 +372,32 @@ export const ProductOrderSection: React.FC<ProductOrderSectionProps> = ({
       });
     }
   };
+
   const handleShare = () => {
     if (navigator.clipboard) {
       void navigator.clipboard.writeText(window.location.href).then(
         () => setCartToastMessage("Đã sao chép liên kết sản phẩm."),
-        () => setActionError("Không thể sao chép liên kết sản phẩm."),
+        () => setActionError("Không thể sao chép liên kết sản phẩm.")
       );
     } else {
       setActionError("Trình duyệt không hỗ trợ sao chép liên kết.");
     }
   };
 
+  const displayCategory = cleanCategoryName(product.category_name, product.category_id);
+
   return (
     <div className="flex flex-col gap-4">
       {/* Product Identity, Ratings & Micro-Engagement */}
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between gap-4">
-          <span className="text-label-md font-label-md text-secondary font-bold uppercase tracking-wider text-xs">
-            {product.category_name ? `${product.category_name} • Season 2025` : "Marketplace Verified • Official"}
+          <span className="text-label-md font-label-md text-secondary font-bold uppercase tracking-wider text-xs flex items-center gap-1.5">
+            <span>{displayCategory ? `${displayCategory} • Season 2025` : "Marketplace Verified • Official"}</span>
+            {isRealApiData && (
+              <span className="px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-200">
+                Live Data
+              </span>
+            )}
           </span>
 
           <div className="flex items-center gap-2">
@@ -241,7 +468,7 @@ export const ProductOrderSection: React.FC<ProductOrderSectionProps> = ({
         </div>
       </div>
 
-      {/* Dynamic Pricing & Flash Voucher Box */}
+      {/* Dynamic Pricing Box */}
       <div className="rounded-2xl bg-surface-container-lowest p-5 shadow-sm flex flex-col gap-2.5 border border-outline-variant/30">
         <div className="flex items-baseline gap-3 flex-wrap">
           <span className="text-3xl md:text-4xl font-bold tracking-tight text-primary leading-none">
@@ -260,126 +487,199 @@ export const ProductOrderSection: React.FC<ProductOrderSectionProps> = ({
             </span>
           )}
         </div>
-
       </div>
 
-      {/* Variant Selector */}
-      {variants.length > 0 && (
-        <div className="flex flex-col gap-2.5">
-          <div className="flex items-center justify-between">
-            <span className="font-label-lg font-bold text-on-surface text-sm">
-              Phiên bản / Phân loại ({variants.length} lựa chọn):
-            </span>
-            {selectedVariant && (
-              <span className="text-xs text-primary font-semibold font-mono">
-                {selectedVariant.name || selectedVariant.sku}
+      {/* Dynamic Variant Selector hoàn toàn từ API thực tế */}
+      <div className="flex flex-col gap-4">
+        {/* Render các tầng thuộc tính thực tế (nếu có từ API) */}
+        {attributeTiers.map((tier, index) => {
+          const activeValue = currentSelectedAttributes[tier.name] || tier.options[0]?.value || "";
+
+          return (
+            <div key={tier.name} className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <span className="font-label-lg font-bold text-on-surface text-sm">
+                  {index + 1}. Chọn {tier.name}:
+                </span>
+                {activeValue && (
+                  <span className="text-xs text-primary font-semibold">
+                    {activeValue}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {tier.options.map((opt) => {
+                  const isSelected = activeValue.toLowerCase() === opt.value.toLowerCase();
+
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => handleSelectAttribute(tier.name, opt.value)}
+                      className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 border cursor-pointer ${
+                        isSelected
+                          ? "bg-primary text-on-primary border-primary shadow-sm ring-2 ring-primary/20"
+                          : "bg-surface-container-lowest text-on-surface hover:bg-surface-container border-outline-variant/40"
+                      }`}
+                    >
+                      {opt.hex && (
+                        <span
+                          className="w-3.5 h-3.5 rounded-full border border-black/15 shrink-0 shadow-xs"
+                          style={{ backgroundColor: opt.hex }}
+                        />
+                      )}
+                      <span>{opt.value}</span>
+                      {opt.badge && (
+                        <span
+                          className={`text-[10px] font-normal ${
+                            isSelected ? "text-on-primary/80" : "text-outline"
+                          }`}
+                        >
+                          ({opt.badge})
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Khi không có thuộc tính phân nhóm theo tier, hiển thị trực tiếp danh sách biến thể thực tế từ API */}
+        {attributeTiers.length === 0 && variants.length > 0 && (
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <span className="font-label-lg font-bold text-on-surface text-sm">
+                Phiên bản ({variants.length} lựa chọn):
+              </span>
+              {selectedVariant && (
+                <span className="text-xs text-primary font-semibold font-mono">
+                  {selectedVariant.name || selectedVariant.sku}
+                </span>
+              )}
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {variants.map((v) => {
+                const isSelected = selectedVariant?.id === v.id;
+                const isOutOfStock = v.stock <= 0;
+
+                return (
+                  <button
+                    key={v.id}
+                    type="button"
+                    onClick={() => !isOutOfStock && onSelectVariant(v)}
+                    disabled={isOutOfStock}
+                    className={`px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 border cursor-pointer ${
+                      isSelected
+                        ? "bg-primary text-on-primary border-primary shadow-sm ring-2 ring-primary/20"
+                        : isOutOfStock
+                        ? "bg-surface-container-low text-outline opacity-50 cursor-not-allowed border-transparent line-through"
+                        : "bg-surface-container-lowest text-on-surface hover:bg-surface-container border-outline-variant/40"
+                    }`}
+                  >
+                    <span>{v.name || v.sku}</span>
+                    <span
+                      className={`text-[11px] font-normal ${
+                        isSelected ? "text-on-primary/80" : "text-outline"
+                      }`}
+                    >
+                      ({v.stock > 0 ? `${v.stock} sẵn` : "Hết hàng"})
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Quantity Stepper & Stock status */}
+        <div className="flex items-center justify-between pt-1 flex-wrap gap-2">
+          <div className="flex items-center gap-3">
+            <span className="font-label-lg font-bold text-on-surface text-sm">Số lượng:</span>
+            <div className="inline-flex items-center rounded-xl bg-surface-container-lowest p-1 shadow-sm border border-outline-variant/30">
+              <button
+                type="button"
+                onClick={handleQtyMinus}
+                disabled={quantity <= 1}
+                className="w-8 h-8 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface flex items-center justify-center font-bold transition-all disabled:opacity-40 cursor-pointer"
+                title="Giảm số lượng"
+              >
+                <span className="material-symbols-outlined text-[18px]">remove</span>
+              </button>
+
+              <input
+                type="text"
+                readOnly
+                value={quantity}
+                className="w-12 text-center bg-transparent font-label-lg font-bold text-on-surface focus:outline-none"
+              />
+
+              <button
+                type="button"
+                onClick={handleQtyPlus}
+                disabled={quantity >= currentStock}
+                className="w-8 h-8 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface flex items-center justify-center font-bold transition-all disabled:opacity-40 cursor-pointer"
+                title="Tăng số lượng"
+              >
+                <span className="material-symbols-outlined text-[18px]">add</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5 text-xs font-semibold">
+            {currentStock <= 5 && currentStock > 0 ? (
+              <span className="text-amber-600 flex items-center gap-1 animate-pulse font-bold">
+                <span className="material-symbols-outlined text-[18px]">emergency</span>
+                Chỉ còn {currentStock} sản phẩm trong kho!
+              </span>
+            ) : currentStock <= 0 ? (
+              <span className="text-error font-bold flex items-center gap-1">
+                <span className="material-symbols-outlined text-[18px]">block</span>
+                Tạm thời hết hàng
+              </span>
+            ) : (
+              <span className="text-secondary flex items-center gap-1">
+                <span className="material-symbols-outlined text-[18px]">check_circle</span>
+                {currentStock} sản phẩm có sẵn
               </span>
             )}
           </div>
-
-          <div className="flex flex-wrap gap-2">
-            {variants.map((v) => {
-              const isSelected = selectedVariant?.id === v.id;
-              const isOutOfStock = v.stock <= 0;
-
-              return (
-                <button
-                  key={v.id}
-                  type="button"
-                  onClick={() => !isOutOfStock && onSelectVariant(v)}
-                  disabled={isOutOfStock}
-                  className={`px-3.5 py-2.5 rounded-xl font-label-md text-xs font-bold transition-all flex items-center gap-2 border cursor-pointer ${
-                    isSelected
-                      ? "bg-primary text-on-primary border-primary shadow-sm"
-                      : isOutOfStock
-                      ? "bg-surface-container-low text-outline opacity-50 cursor-not-allowed border-transparent line-through"
-                      : "bg-surface-container-lowest text-on-surface hover:bg-surface-container border-outline-variant/40"
-                  }`}
-                >
-                  <span>{v.name || v.sku}</span>
-                  <span
-                    className={`text-[11px] font-normal ${
-                      isSelected ? "text-on-primary/80" : "text-outline"
-                    }`}
-                  >
-                    ({v.stock > 0 ? `${v.stock} sẵn` : "Hết hàng"})
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Quantity & Real-time Scarcity Indicator */}
-      <div className="flex items-center justify-between pt-1 flex-wrap gap-2">
-        <div className="flex items-center gap-3">
-          <span className="font-label-lg font-bold text-on-surface text-sm">Số lượng:</span>
-          <div className="inline-flex items-center rounded-xl bg-surface-container-lowest p-1 shadow-sm border border-outline-variant/30">
-            <button
-              type="button"
-              onClick={handleQtyMinus}
-              disabled={quantity <= 1}
-              className="w-8 h-8 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface flex items-center justify-center font-bold transition-all disabled:opacity-40 cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-[18px]">remove</span>
-            </button>
-
-            <input
-              type="text"
-              readOnly
-              value={quantity}
-              className="w-12 text-center bg-transparent font-label-lg font-bold text-on-surface focus:outline-none"
-            />
-
-            <button
-              type="button"
-              onClick={handleQtyPlus}
-              disabled={quantity >= currentStock}
-              className="w-8 h-8 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface flex items-center justify-center font-bold transition-all disabled:opacity-40 cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-[18px]">add</span>
-            </button>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-1.5 text-xs font-semibold">
-          {currentStock <= 5 && currentStock > 0 ? (
-            <span className="text-amber-600 flex items-center gap-1 animate-pulse font-bold">
-              <span className="material-symbols-outlined text-[18px]">emergency</span>
-              Chỉ còn {currentStock} sản phẩm trong kho!
-            </span>
-          ) : currentStock <= 0 ? (
-            <span className="text-error font-bold flex items-center gap-1">
-              <span className="material-symbols-outlined text-[18px]">block</span>
-              Tạm thời hết hàng
-            </span>
-          ) : (
-            <span className="text-secondary flex items-center gap-1">
-              <span className="material-symbols-outlined text-[18px]">check_circle</span>
-              {currentStock} sản phẩm có sẵn
-            </span>
-          )}
         </div>
       </div>
 
-      {/* High-Impact Conversion Action Row */}
+      {/* High-Impact Conversion Action Row (Thêm Vào Giỏ Hàng & Mua Ngay) */}
       <div className="flex flex-col sm:flex-row items-stretch gap-3 pt-2">
         {/* Cart Secondary CTA */}
         <button
           type="button"
           onClick={() => void handleAddToCart()}
-          disabled={currentStock <= 0 || !selectedVariant || isAdding || isCartUpdating}
-          className="flex-1 py-4 px-6 rounded-xl bg-surface-container-lowest hover:bg-surface-container text-primary font-label-lg font-bold transition-all flex items-center justify-center gap-2 shadow-sm transform active:scale-[0.98] border border-primary/20 cursor-pointer disabled:opacity-50"
+          disabled={currentStock <= 0 || !selectedVariant || isAdding || isBuyingNow || isCartUpdating}
+          className="flex-1 py-4 px-6 rounded-xl bg-surface-container-lowest hover:bg-surface-container text-primary font-label-lg font-bold transition-all flex items-center justify-center gap-2 shadow-sm transform active:scale-[0.98] border border-primary/30 cursor-pointer disabled:opacity-50"
         >
           <span className="material-symbols-outlined text-[20px]">add_shopping_cart</span>
-          <span>Thêm Vào Giỏ Hàng</span>
+          <span>{isAdding ? "Đang thêm..." : "Thêm Vào Giỏ Hàng"}</span>
         </button>
 
-        <Link to="/cart" className="flex-1 py-4 px-6 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-label-lg font-bold transition-all flex items-center justify-center gap-2 shadow-md">View cart</Link>
+        {/* Buy Now Primary CTA (Replaces View cart button) */}
+        <button
+          type="button"
+          onClick={() => void handleBuyNow()}
+          disabled={currentStock <= 0 || !selectedVariant || isAdding || isBuyingNow || isCartUpdating}
+          className="flex-1 py-4 px-6 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-label-lg font-bold transition-all flex items-center justify-center gap-2 shadow-md transform active:scale-[0.98] cursor-pointer disabled:opacity-50"
+        >
+          <span className="material-symbols-outlined text-[20px]">flash_on</span>
+          <span>{isBuyingNow ? "Đang chuyển thanh toán..." : "Mua Ngay"}</span>
+        </button>
       </div>
 
-      {actionError && <p role="alert" className="rounded-xl bg-error-container p-3 text-sm text-error">{actionError}</p>}
+      {actionError && (
+        <p role="alert" className="rounded-xl bg-error-container p-3 text-sm text-error">
+          {actionError}
+        </p>
+      )}
 
       {/* Added to Cart Feedback Toast */}
       {cartToastMessage && (
@@ -390,7 +690,7 @@ export const ProductOrderSection: React.FC<ProductOrderSectionProps> = ({
           </div>
           <Link
             to="/cart"
-            className="text-secondary-fixed text-label-sm font-bold uppercase underline text-xs"
+            className="text-secondary-fixed text-label-sm font-bold uppercase underline text-xs cursor-pointer"
           >
             Xem giỏ hàng
           </Link>
@@ -407,7 +707,6 @@ export const ProductOrderSection: React.FC<ProductOrderSectionProps> = ({
         actionLink={toastState.actionLink || "/wishlist"}
         onClose={() => setToastState((prev) => ({ ...prev, isOpen: false }))}
       />
-
     </div>
   );
 };

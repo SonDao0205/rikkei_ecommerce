@@ -497,6 +497,18 @@ const cartSlice = createSlice({
     clearCartError: (state) => {
       state.error = null;
     },
+    selectVariantForCheckout(state, action: PayloadAction<number>) {
+      const variantId = action.payload;
+      state.items.forEach((it) => {
+        it.selected = it.variant_id === variantId && it.is_available !== false;
+      });
+      state.summary = computeCartSummary(
+        state.items,
+        state.platformVoucher,
+        state.shopVouchers,
+        state.freeShippingThreshold
+      );
+    },
   },
   extraReducers: (builder) => {
     // Session resets
@@ -666,6 +678,7 @@ export const {
   removeShopVoucher,
   clearCartError,
   resetCart,
+  selectVariantForCheckout,
 } = cartSlice.actions;
 
 export default cartSlice.reducer;

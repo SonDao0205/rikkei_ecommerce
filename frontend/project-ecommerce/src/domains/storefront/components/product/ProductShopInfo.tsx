@@ -4,6 +4,7 @@ import { useAppDispatch, useAppSelector } from "@/app/state/store";
 import { toggleFollowShop } from "@/domains/shop/state/publicShopSlice";
 import WishlistToast from "@/domains/customer/components/wishlist/WishlistToast";
 import type { PublicShop } from "@/shared/types";
+import { getShopDefaultLogo } from "@/shared/utils/avatar";
 
 interface ProductShopInfoProps {
   shop?: PublicShop;
@@ -94,13 +95,14 @@ export const ProductShopInfo: React.FC<ProductShopInfoProps> = ({ shop }) => {
           to={`/shop/${shop.id}`}
           className="w-12 h-12 rounded-xl bg-inverse-surface text-inverse-on-surface flex items-center justify-center font-bold text-headline-md shrink-0 shadow-sm overflow-hidden hover:opacity-90 transition-opacity"
         >
-          {shop.logo_url ? (
-            <img src={shop.logo_url} alt={shop.name} className="w-full h-full object-cover" />
-          ) : (
-            <span className="text-primary font-bold text-lg">
-              {shop.name ? shop.name.charAt(0).toUpperCase() : "S"}
-            </span>
-          )}
+          <img
+            src={shop.logo_url || getShopDefaultLogo(shop.name)}
+            alt={shop.name}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = getShopDefaultLogo(shop.name);
+            }}
+          />
         </Link>
 
         <div className="flex flex-col min-w-0">

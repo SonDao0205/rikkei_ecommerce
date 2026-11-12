@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import type { ShopStoreData } from "@/shared/types";
 import { toSlug } from "@/shared/utils/slug";
+import { getShopDefaultLogo, DEFAULT_SHOP_BANNER } from "@/shared/utils/avatar";
 
 interface Step4StoreCardProps {
   store: ShopStoreData;
@@ -19,10 +20,8 @@ export const Step4StoreCard: React.FC<Step4StoreCardProps> = ({ store }) => {
       .join(", ") ||
     "Tầng 2, Tòa nhà Bitexco Financial Tower, số 2 Hải Triều, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh";
 
-  const defaultBanner =
-    "https://images.unsplash.com/photo-1552346154-21d32810aba3?auto=format&fit=crop&w=1200&q=80";
-  const defaultLogo =
-    "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=300&q=80";
+  const defaultBanner = DEFAULT_SHOP_BANNER;
+  const defaultLogo = getShopDefaultLogo(store.shopName);
 
   const slug =
     store.slug ||

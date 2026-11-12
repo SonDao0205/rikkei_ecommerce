@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { useAppDispatch } from "@/app/state/store";
 import { setSelectedCategory } from "@/domains/storefront/state/productSlice";
+import { cleanCategoryName } from "@/domains/storefront/utils/categoryUtils";
 
 export interface ProductBreadcrumbProps {
   categoryName?: string;
@@ -12,13 +13,14 @@ export interface ProductBreadcrumbProps {
 }
 
 export const ProductBreadcrumb: React.FC<ProductBreadcrumbProps> = ({
-  categoryName = "Sản phẩm",
+  categoryName,
   categoryId,
   shopName = "Cửa hàng",
   shopId,
   productName,
 }) => {
   const dispatch = useAppDispatch();
+  const displayName = cleanCategoryName(categoryName, categoryId);
 
   return (
     <nav
@@ -28,7 +30,7 @@ export const ProductBreadcrumb: React.FC<ProductBreadcrumbProps> = ({
       <Link
         to="/"
         onClick={() => dispatch(setSelectedCategory(0))}
-        className="hover:text-primary transition-colors flex items-center gap-1"
+        className="hover:text-primary transition-colors flex items-center gap-1 cursor-pointer"
         title="Quay lại trang chủ Marketplace"
       >
         <span className="material-symbols-outlined text-[16px]">storefront</span>
@@ -42,13 +44,13 @@ export const ProductBreadcrumb: React.FC<ProductBreadcrumbProps> = ({
           to={`/?category_id=${categoryId}`}
           onClick={() => dispatch(setSelectedCategory(categoryId))}
           className="hover:text-primary transition-colors cursor-pointer"
-          title={`Xem các sản phẩm thuộc danh mục ${categoryName}`}
+          title={`Xem các sản phẩm thuộc danh mục ${displayName}`}
         >
-          {categoryName}
+          {displayName}
         </Link>
       ) : (
         <span className="hover:text-primary transition-colors cursor-default">
-          {categoryName}
+          {displayName}
         </span>
       )}
 
@@ -58,19 +60,20 @@ export const ProductBreadcrumb: React.FC<ProductBreadcrumbProps> = ({
         <Link
           to={`/shop/${shopId}`}
           className="hover:text-primary transition-colors cursor-pointer font-medium"
-          title={`Xem thông tin gian hàng ${shopName}`}
+          title={`Xem gian hàng ${shopName}`}
         >
-          {shopName}
+          <span className="text-secondary font-semibold">{shopName}</span>
         </Link>
       ) : (
-        <span className="hover:text-primary transition-colors cursor-default font-medium">
-          {shopName}
-        </span>
+        <span className="text-secondary font-semibold">{shopName}</span>
       )}
 
       <span className="material-symbols-outlined text-[14px] text-outline">chevron_right</span>
 
-      <span className="text-on-surface font-label-md font-semibold truncate max-w-sm" title={productName}>
+      <span
+        className="text-on-surface font-semibold truncate max-w-[200px] sm:max-w-xs"
+        title={productName}
+      >
         {productName}
       </span>
     </nav>
