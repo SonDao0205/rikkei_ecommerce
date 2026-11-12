@@ -164,7 +164,7 @@ export const Step2StoreBranding: React.FC<Step2StoreBrandingProps> = ({
           <input
             type="file"
             ref={logoInputRef}
-            accept=".jpg,.jpeg,image/jpeg"
+            accept=".jpg,.jpeg,.png,image/jpeg,image/png"
             className="hidden"
             onChange={handleLogoUpload}
           />
@@ -235,7 +235,7 @@ export const Step2StoreBranding: React.FC<Step2StoreBrandingProps> = ({
           <input
             type="file"
             ref={bannerInputRef}
-            accept=".jpg,.jpeg,image/jpeg"
+            accept=".jpg,.jpeg,.png,image/jpeg,image/png"
             className="hidden"
             onChange={handleBannerUpload}
           />
