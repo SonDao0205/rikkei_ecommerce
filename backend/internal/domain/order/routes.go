@@ -11,6 +11,10 @@ import (
 func RegisterRoutes(mux *http.ServeMux, security *auth.App, db *sql.DB, logger *log.Logger) {
 	customerHandler := &CustomerHandler{db: db, logger: logger}
 	sellerHandler := &SellerHandler{db: db, logger: logger}
+	adminHandler := &AdminHandler{db: db, logger: logger}
+
+	mux.Handle("GET /api/v1/admin/orders", security.RequireRole("ADMIN", adminHandler.listAdminOrders))
+	mux.Handle("GET /api/v1/admin/orders/{id}", security.RequireRole("ADMIN", adminHandler.getAdminOrderDetail))
 
 	// Customer Order APIs (Role CLIENT)
 	mux.Handle("GET /api/v1/orders", security.RequireRole("CLIENT", customerHandler.listCustomerOrders))
