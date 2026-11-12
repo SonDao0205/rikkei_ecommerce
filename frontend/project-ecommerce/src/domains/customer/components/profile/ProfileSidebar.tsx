@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { useAppDispatch } from "@/app/state/store";
 import { openLogoutModal } from "@/domains/auth/state/authSlice";
 import { setLocalAvatarPreview } from "@/domains/customer/state/profileSlice";
+import { profileApi } from "@/domains/customer/api/profileApi";
+import { uploadMedia } from "@/shared/api/mediaUpload";
 import { getDefaultAvatar } from "@/shared/utils/avatar";
 import type { UserProfileDetails } from "@/shared/types";
 
@@ -79,16 +81,21 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
     },
   ];
 
-  const handleAvatarFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (typeof reader.result === "string") {
-          dispatch(setLocalAvatarPreview(reader.result));
-        }
-      };
-      reader.readAsDataURL(file);
+    e.target.value = "";
+    if (!file) return;
+    const previous = profile?.avatar_url || null;
+    const preview = URL.createObjectURL(file);
+    dispatch(setLocalAvatarPreview(preview));
+    try {
+      const upload = await uploadMedia(file, "avatar");
+      const updated = await profileApi.setAvatar(upload.url);
+      dispatch(setLocalAvatarPreview(updated.avatar_url || upload.url));
+    } catch {
+      dispatch(setLocalAvatarPreview(previous));
+    } finally {
+      URL.revokeObjectURL(preview);
     }
   };
 
@@ -103,7 +110,7 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/png, image/jpeg, image/gif"
+        accept=".jpg,.jpeg,.png,image/jpeg,image/png"
         className="hidden"
         onChange={handleAvatarFileSelect}
       />

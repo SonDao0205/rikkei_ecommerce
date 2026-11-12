@@ -251,6 +251,47 @@ func (h *Handler) createOrder(w http.ResponseWriter, r *http.Request) {
 	}
 	variantRows.Close()
 
+	// Reserve available flash-sale quantity in the same order transaction. A
+	// campaign price is applied consistently to every variant of a product.
+	productQuantities := make(map[int64]int64)
+	for _, meta := range cartItemMap {
+		if snap, ok := variantsByID[meta.variantID]; ok {
+			productQuantities[snap.productID] += meta.quantity
+		}
+	}
+	productIDs := make([]int64, 0, len(productQuantities))
+	for productID := range productQuantities {
+		productIDs = append(productIDs, productID)
+	}
+	sort.Slice(productIDs, func(i, j int) bool { return productIDs[i] < productIDs[j] })
+	for _, productID := range productIDs {
+		quantity := productQuantities[productID]
+		var saleID int64
+		var salePrice float64
+		var remaining int64
+		saleErr := tx.QueryRowContext(r.Context(), `SELECT id,sale_price,quantity_limit-quantity_sold FROM flash_sales WHERE product_id=? AND is_active=1 AND start_at<=UTC_TIMESTAMP() AND end_at>UTC_TIMESTAMP() AND quantity_sold<quantity_limit ORDER BY sale_price,id LIMIT 1 FOR UPDATE`, productID).Scan(&saleID, &salePrice, &remaining)
+		if errors.Is(saleErr, sql.ErrNoRows) {
+			continue
+		}
+		if saleErr != nil {
+			h.serverError(w, saleErr)
+			return
+		}
+		if quantity > remaining {
+			continue
+		}
+		if _, saleErr = tx.ExecContext(r.Context(), `UPDATE flash_sales SET quantity_sold=quantity_sold+? WHERE id=? AND quantity_sold+?<=quantity_limit`, quantity, saleID, quantity); saleErr != nil {
+			h.serverError(w, saleErr)
+			return
+		}
+		for variantID, snap := range variantsByID {
+			if snap.productID == productID {
+				snap.price = salePrice
+				variantsByID[variantID] = snap
+			}
+		}
+	}
+
 	// 7. Validate availability, calculate line totals, and group items by shop
 	shopPlans := make(map[int64]*shopOrderPlan)
 	var totalSubtotalCents int64

@@ -5,6 +5,7 @@ import (
 	"image"
 	"image/color"
 	"image/jpeg"
+	"image/png"
 	"net/http/httptest"
 	"testing"
 	"time"
@@ -23,21 +24,51 @@ func testJPEG(t *testing.T) []byte {
 	return out.Bytes()
 }
 
-func TestValidateFileImagesRequireRealJPEGAndJpegExtension(t *testing.T) {
+func testPNG(t *testing.T) []byte {
+	t.Helper()
+	var out bytes.Buffer
+	img := image.NewRGBA(image.Rect(0, 0, 8, 8))
+	img.Set(0, 0, color.RGBA{R: 255, A: 255})
+	if err := png.Encode(&out, img); err != nil {
+		t.Fatal(err)
+	}
+	return out.Bytes()
+}
+
+func TestValidateFileAcceptsOnlyMatchingJpegAndPngExtensionAndBytes(t *testing.T) {
 	valid := testJPEG(t)
 	for _, name := range []string{"photo.jpg", "photo.JPEG"} {
 		if _, err := validateFile(name, "image", valid); err != nil {
 			t.Errorf("valid JPEG %q rejected: %v", name, err)
 		}
 	}
+	if format, err := validateFile("photo.png", "image", testPNG(t)); err != nil || format != "png" {
+		t.Fatalf("valid PNG rejected: format=%q err=%v", format, err)
+	}
 	for name, data := range map[string][]byte{
 		"renamed-png.jpg": append([]byte("\x89PNG\r\n\x1a\n"), bytes.Repeat([]byte{0}, 32)...),
 		"fake.jpg":        []byte("not an image"),
 		"image.png":       valid,
+		"image.webp":      valid,
 	} {
 		if _, err := validateFile(name, "image", data); err == nil {
 			t.Errorf("invalid image %q was accepted", name)
 		}
+	}
+}
+
+func TestUploadSizeBoundaries(t *testing.T) {
+	if !validUploadSize(15*1024, maxImageBytes) {
+		t.Fatal("15 KiB image should be below the 5 MiB limit")
+	}
+	if !validUploadSize(maxImageBytes, maxImageBytes) {
+		t.Fatal("file exactly at the configured limit should be accepted")
+	}
+	if validUploadSize(maxImageBytes+1, maxImageBytes) {
+		t.Fatal("image above the 5 MiB limit should be rejected")
+	}
+	if !validUploadSize(maxVideoBytes, maxVideoBytes) || validUploadSize(maxVideoBytes+1, maxVideoBytes) {
+		t.Fatal("video 20 MiB boundary is incorrect")
 	}
 }
 
