@@ -2,7 +2,7 @@
 
 Backend REST API cho MVP Rikkei E-Commerce, viết bằng Go 1.24+, `net/http` và MySQL `database/sql`. Tài liệu này hướng dẫn DevOps chạy/vận hành BE và FE tích hợp các API **đang có**.
 
-> Backend implements auth/RBAC, catalog, shop management, seller products, addresses, cart, wishlist, categories, checkout creation with atomic inventory deduction & multi-shop splitting, and comprehensive order tracking/seller processing with return/refund workflows. Direct 3rd-party payment gateway callbacks (Momo/VNPAY) and automated AI shop integrations are planned for future phases.
+> Backend implements auth/RBAC, catalog, shop management, seller products, addresses, cart, wishlist, categories, checkout creation with atomic inventory deduction and multi-shop splitting, COD and PayOS bank transfer collection with signed webhook reconciliation, and order tracking. Provider-backed refunds are not implemented; paid cancellation/return cases require manual reconciliation.
 
 ## Cấu trúc mã nguồn
 
@@ -30,7 +30,7 @@ internal/
 
 Trong domain, routes/handlers và logic riêng domain nằm cạnh nhau theo package boundary của Go; chỉ đưa helper sang platform khi có nhiều domain dùng chung. Không tạo abstraction repository/service chỉ để đủ tên thư mục: tách lớp khi nghiệp vụ hoặc query có ranh giới ổn định và cần được kiểm thử/đổi độc lập.
 
-Contract đầy đủ của catalog và inventory nằm tại [`docs/catalog-api.md`](../docs/catalog-api.md). Hướng dẫn Compose/seed local nằm tại [`docs/local-development.md`](../docs/local-development.md).
+Contract đầy đủ của catalog và inventory nằm tại [`docs/catalog-api.md`](../docs/catalog-api.md). Hướng dẫn Compose/seed local nằm tại [`docs/local-development.md`](../docs/local-development.md). Luồng COD/PayOS, API và cấu hình được mô tả trong [`docs/payment-flow.md`](../docs/payment-flow.md).
 
 ## 1. Hướng dẫn DevOps
 
@@ -480,7 +480,7 @@ Body JSON bị giới hạn kích thước, field lạ, JSON sai/nhiều JSON va
 - Protected API kiểm tra user status, tất cả role đang gán và trạng thái phiên trong DB; access JWT dùng HS256. Refresh token chỉ lưu dạng hash, xoay vòng và phát hiện replay.
 - Rate limiter hiện nằm trong memory của một process; khi scale nhiều replica cần chuyển giới hạn sang gateway hoặc shared store.
 - OTP delivery qua SMTP STARTTLS cần được kiểm thử trên môi trường tích hợp; không ghi OTP hoặc secret ra log ngoài development.
-- OAuth Google/Facebook, MFA, email/phone verification, device/session UI, order creation, and payment processing are not implemented.
+- OAuth Google/Facebook, MFA, and device/session UI are not implemented. COD and PayOS transfer collection are implemented; provider-backed refunds remain a manual operational process.
 - Role `SELLER` được cấp khi admin duyệt shop; `ADMIN` chỉ cấp qua quy trình quản trị tin cậy. Migration `002_multi_role.sql` tạo `roles`/`user_roles` và backfill các role hiện có, luôn bổ sung `CLIENT` mà không xóa role legacy.
 - Migration không xóa cột `users.role` trong giai đoạn tương thích; authorization sử dụng `user_roles`. Cột legacy được giữ để các client cũ không bị gãy.
 - Security migration không thay thế full commerce schema; migration domain bổ sung role assignments, trạng thái shop `DRAFT`/`NEEDS_INFO`, `addresses.address_type` và `shops.approval_notes`. Kiểm tra schema/backup trước migration tại database đã có dữ liệu.
@@ -564,13 +564,15 @@ Tạo đơn hàng từ giỏ hàng được bảo vệ bởi role `CLIENT`, th�
 - **Thanh toán COD & Chuyển khoản (Bank Transfer):**
   - Khởi tạo bản ghi trong bảng `payments` với trạng thái `PENDING`.
   - Phương thức `COD`: `transaction_ref = "COD-" + order_code`.
-  - Phương thức `BANK_TRANSFER`: `transaction_ref = order_code` (được dùng làm nội dung chuyển khoản để đối soát).
+  - Phương thức `BANK_TRANSFER`: checkout tạo payment `PENDING`; sau khi order được commit, FE gọi `POST /api/v1/orders/{id}/payment` để nhận PayOS link. Webhook PayOS hợp lệ mới xác nhận khoản tiền.
 - **Voucher & Giỏ hàng:**
   - Khóa voucher `FOR UPDATE`, kiểm tra hạn dùng, điều kiện tối thiểu và giới hạn `usage_limit`, `usage_per_user`.
   - Tăng số lượt dùng nguyên tử `used_count = used_count + 1`.
   - Lưu lịch sử dùng vào `voucher_usages`.
   - Xóa chính xác các sản phẩm đã mua khỏi bảng `cart_items`.
 - **Response `201 Created`:** Trả về thông tin đầy đủ đơn hàng cha, phương thức thanh toán, hướng dẫn thanh toán `payment`, và danh sách các đơn con `shop_orders`.
+
+PayOS configuration, payment endpoints, retry behavior, and webhook operation are described in `[docs/payment-flow.md](../docs/payment-flow.md)`. Configure `PAYOS_CLIENT_ID`, `PAYOS_API_KEY`, `PAYOS_CHECKSUM_KEY`, `PAYOS_RETURN_URL`, `PAYOS_CANCEL_URL`, and public HTTPS `PUBLIC_API_URL`. `GET /api/v1/orders/{id}/payment` is the authoritative state used by the FE after provider redirects or lost browser connections.
 
 ## Checkout implementation and team follow-up
 
@@ -611,7 +613,7 @@ Hệ thống cung cấp đầy đủ các API phục vụ luồng theo dõi đơ
    - **Bảo toàn tồn kho:** Hoàn trả số lượng tồn kho nguyên tử (`product_variants.stock += quantity`) và giảm số lượng đã bán (`products.sold_count = GREATEST(sold_count - quantity, 0)`) trong cùng 1 transaction DB.
    - **Chính sách hoàn tiền:**
      - Đơn thanh toán khi nhận hàng (`COD`): Không phát sinh hoàn tiền (`refund_status: "NOT_APPLICABLE"`). Thông báo: *"Đơn hàng thanh toán khi nhận hàng (COD) đã được hủy thành công. Không phát sinh hoàn tiền."*
-     - Đơn thanh toán chuyển khoản / QR / đã thanh toán (`payments.status = 'PAID'` hoặc phương thức online): Tự động cập nhật `payments.status = 'REFUNDED'`, thiết lập `refund_status: "REFUND_PROCESSING"`. Thông báo: *"Đã hủy đơn hàng thành công. Yêu cầu hoàn tiền đã được ghi nhận và tiền sẽ được hoàn lại vào tài khoản của quý khách trong vòng 3 ngày làm việc."*
+     - Khoản đã thu được giữ nguyên `payments.status`; API trả `REFUND_REQUIRES_MANUAL_REVIEW` và không khẳng định đã hoàn tiền cho đến khi có giao dịch hoàn được xác nhận. Chuyển khoản chưa thanh toán bị chuyển `FAILED` khi hủy toàn bộ đơn.
 
 4. **Xác nhận nhận hàng thành công (`POST /api/v1/orders/{id}/received`):**
    - Cho phép khách hàng chủ động xác nhận đã nhận được kiện hàng khi đơn đang ở trạng thái `SHIPPING`.
@@ -647,7 +649,7 @@ Hệ thống cung cấp đầy đủ các API phục vụ luồng theo dõi đơ
 
 5. **Xử lý yêu cầu đổi trả (`return_requests`):**
    - `GET /api/v1/seller/returns`: Danh sách các yêu cầu đổi trả từ khách hàng đối với sản phẩm của shop.
-   - `PATCH /api/v1/seller/returns/{id}/approve`: Chủ shop chấp thuận yêu cầu đổi trả. Hệ thống tự động chuyển đơn sang `RETURNED`, hoàn lại tồn kho cho biến thể sản phẩm, cập nhật hoàn tiền và thông báo hoàn tiền trong 3 ngày làm việc.
+   - `PATCH /api/v1/seller/returns/{id}/approve`: Chủ shop chấp thuận đổi trả; đơn chuyển `RETURNED` và tồn kho được cập nhật. Hoàn tiền không tự chạy; cần quản trị viên đối soát và xử lý giao dịch riêng.
    - `PATCH /api/v1/seller/returns/{id}/reject`: Chủ shop từ chối yêu cầu đổi trả kèm lý do giải thích cho khách hàng (bắt buộc nhập `note`).
 
 ## Order workflow: customer and seller

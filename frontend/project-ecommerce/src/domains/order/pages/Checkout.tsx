@@ -174,9 +174,18 @@ export const Checkout: React.FC = () => {
                 const recoveredOrder = await cartApi.createOrder(pending.request, pending.key);
                 setCreatedOrder(recoveredOrder);
                 setCreatedOrderCode(recoveredOrder.order_code);
-                setIsSuccessModalOpen(true);
                 sessionStorage.removeItem(submissionStorageKey);
                 await dispatch(fetchCart()).unwrap().catch(() => undefined);
+                if (recoveredOrder.payment_method.code === "BANK_TRANSFER") {
+                  try {
+                    const payment = await cartApi.createPaymentLink(recoveredOrder.order_id);
+                    window.location.assign(payment.checkout_url);
+                  } catch {
+                    navigate(`/payment/result?orderId=${recoveredOrder.order_id}`);
+                  }
+                } else {
+                  setIsSuccessModalOpen(true);
+                }
               }
             }
           } catch {
@@ -395,7 +404,6 @@ export const Checkout: React.FC = () => {
       const order = await cartApi.createOrder(request, key);
       setCreatedOrder(order);
       setCreatedOrderCode(order.order_code);
-      setIsSuccessModalOpen(true);
       try {
         const saved = sessionStorage.getItem(storageKey);
         if (saved && (JSON.parse(saved) as { key?: string }).key === key) {
@@ -406,6 +414,18 @@ export const Checkout: React.FC = () => {
       }
       activeSubmissionKey.current = null;
       await dispatch(fetchCart()).unwrap().catch(() => undefined);
+      if (order.payment_method.code === "BANK_TRANSFER") {
+        try {
+          const payment = await cartApi.createPaymentLink(order.order_id);
+          window.location.assign(payment.checkout_url);
+          return;
+        } catch (paymentErr: unknown) {
+          setQuoteError(`${apiErrorMessage(paymentErr, "Chưa tạo được liên kết payOS.")} Đơn hàng ${order.order_code} đã được ghi nhận; hãy mở đơn hàng để thử thanh toán lại.`);
+          navigate(`/payment/result?orderId=${order.order_id}`);
+          return;
+        }
+      }
+      setIsSuccessModalOpen(true);
     } catch (err: unknown) {
       setQuoteError(apiErrorMessage(err, "Không thể tạo đơn lúc này. Hãy thử lại; hệ thống sẽ chống tạo đơn trùng."));
     } finally {

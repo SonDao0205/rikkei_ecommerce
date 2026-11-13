@@ -192,6 +192,16 @@ export const cartApi = {
     );
     return response.data.data;
   },
+
+  async createPaymentLink(orderId: number) {
+    const response = await axiosClient.post<ApiResponse<{ status: string; checkout_url: string; qr_code: string; payment_link_id: string }>>(`/api/v1/orders/${orderId}/payment`);
+    return response.data.data;
+  },
+
+  async getPaymentStatus(orderId: number) {
+    const response = await axiosClient.get<ApiResponse<{ payment_id: number; amount: number; status: string; method: string; transaction_ref: string; checkout_url?: string; qr_code?: string }>>(`/api/v1/orders/${orderId}/payment`);
+    return response.data.data;
+  },
 };
 
 export interface CreateOrderRequest extends CheckoutQuoteRequest {

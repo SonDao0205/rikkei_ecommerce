@@ -9,6 +9,7 @@ Nền tảng thương mại điện tử gồm REST API Go, React/TypeScript fro
 - [Frontend: kiến trúc app/domain/shared, chạy và build](frontend/project-ecommerce/README.md)
 - [Postman/Newman: phạm vi test API và tác động dữ liệu](postman/README.md)
 - [Catalog API contract](docs/catalog-api.md)
+- [COD and PayOS payment flow](docs/payment-flow.md)
 
 ## Thành phần và kiến trúc
 

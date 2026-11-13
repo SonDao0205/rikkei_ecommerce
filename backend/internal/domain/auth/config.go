@@ -12,15 +12,16 @@ import (
 )
 
 type Config struct {
-	AppEnv, HTTPAddr, DatabaseDSN, JWTSecret                   string
-	LogLevel                                                   string
-	SMTPHost, SMTPUser, SMTPPassword, SMTPFrom                 string
-	CloudinaryCloudName, CloudinaryAPIKey, CloudinaryAPISecret string
-	SMTPPort                                                   int
-	SMTPSecure                                                 bool
-	AccessTTL, RefreshTTL, OTPTTL                              time.Duration
-	Origins, TrustedProxyCIDRs                                 []string
-	CookieSecure, AutoMigrate                                  bool
+	AppEnv, HTTPAddr, DatabaseDSN, JWTSecret                                                   string
+	LogLevel                                                                                   string
+	SMTPHost, SMTPUser, SMTPPassword, SMTPFrom                                                 string
+	CloudinaryCloudName, CloudinaryAPIKey, CloudinaryAPISecret                                 string
+	PayOSClientID, PayOSAPIKey, PayOSChecksumKey, PayOSReturnURL, PayOSCancelURL, PublicAPIURL string
+	SMTPPort                                                                                   int
+	SMTPSecure                                                                                 bool
+	AccessTTL, RefreshTTL, OTPTTL                                                              time.Duration
+	Origins, TrustedProxyCIDRs                                                                 []string
+	CookieSecure, AutoMigrate                                                                  bool
 }
 
 func LoadConfig() (Config, error) {
@@ -47,7 +48,34 @@ func LoadConfig() (Config, error) {
 	if smtpSecure != "" && smtpSecure != "true" && smtpSecure != "false" {
 		return Config{}, fmt.Errorf("SMTP_SECURE must be true or false")
 	}
-	c := Config{AppEnv: appEnv, HTTPAddr: env("HTTP_ADDR", ":8080"), DatabaseDSN: os.Getenv("DATABASE_DSN"), JWTSecret: os.Getenv("JWT_SECRET"), LogLevel: strings.ToLower(env("LOG_LEVEL", "info")), SMTPHost: strings.TrimSpace(os.Getenv("SMTP_HOST")), SMTPUser: strings.TrimSpace(os.Getenv("SMTP_USER")), SMTPPassword: smtpPassword, SMTPFrom: strings.TrimSpace(os.Getenv("SMTP_FROM")), CloudinaryCloudName: strings.TrimSpace(os.Getenv("CLOUDINARY_CLOUD_NAME")), CloudinaryAPIKey: strings.TrimSpace(os.Getenv("CLOUDINARY_API_KEY")), CloudinaryAPISecret: strings.TrimSpace(os.Getenv("CLOUDINARY_API_SECRET")), SMTPPort: port("SMTP_PORT", 587), SMTPSecure: smtpSecure == "true", AccessTTL: duration("ACCESS_TOKEN_TTL", 15*time.Minute), RefreshTTL: duration("REFRESH_TOKEN_TTL", 7*24*time.Hour), OTPTTL: duration("OTP_TTL", 10*time.Minute), Origins: split(os.Getenv("CORS_ALLOWED_ORIGINS")), TrustedProxyCIDRs: split(os.Getenv("TRUSTED_PROXY_CIDRS")), CookieSecure: os.Getenv("COOKIE_SECURE") == "true", AutoMigrate: autoValue == "true"}
+	c := Config{AppEnv: appEnv, HTTPAddr: env("HTTP_ADDR", ":8080"), DatabaseDSN: os.Getenv("DATABASE_DSN"), JWTSecret: os.Getenv("JWT_SECRET"), LogLevel: strings.ToLower(env("LOG_LEVEL", "info")), SMTPHost: strings.TrimSpace(os.Getenv("SMTP_HOST")), SMTPUser: strings.TrimSpace(os.Getenv("SMTP_USER")), SMTPPassword: smtpPassword, SMTPFrom: strings.TrimSpace(os.Getenv("SMTP_FROM")), CloudinaryCloudName: strings.TrimSpace(os.Getenv("CLOUDINARY_CLOUD_NAME")), CloudinaryAPIKey: strings.TrimSpace(os.Getenv("CLOUDINARY_API_KEY")), CloudinaryAPISecret: strings.TrimSpace(os.Getenv("CLOUDINARY_API_SECRET")), PayOSClientID: strings.TrimSpace(os.Getenv("PAYOS_CLIENT_ID")), PayOSAPIKey: strings.TrimSpace(os.Getenv("PAYOS_API_KEY")), PayOSChecksumKey: strings.TrimSpace(os.Getenv("PAYOS_CHECKSUM_KEY")), PayOSReturnURL: strings.TrimSpace(os.Getenv("PAYOS_RETURN_URL")), PayOSCancelURL: strings.TrimSpace(os.Getenv("PAYOS_CANCEL_URL")), PublicAPIURL: strings.TrimRight(strings.TrimSpace(os.Getenv("PUBLIC_API_URL")), "/"), SMTPPort: port("SMTP_PORT", 587), SMTPSecure: smtpSecure == "true", AccessTTL: duration("ACCESS_TOKEN_TTL", 15*time.Minute), RefreshTTL: duration("REFRESH_TOKEN_TTL", 7*24*time.Hour), OTPTTL: duration("OTP_TTL", 10*time.Minute), Origins: split(os.Getenv("CORS_ALLOWED_ORIGINS")), TrustedProxyCIDRs: split(os.Getenv("TRUSTED_PROXY_CIDRS")), CookieSecure: os.Getenv("COOKIE_SECURE") == "true", AutoMigrate: autoValue == "true"}
+	payOSSet := 0
+	for _, value := range []string{c.PayOSClientID, c.PayOSAPIKey, c.PayOSChecksumKey} {
+		if value != "" {
+			payOSSet++
+		}
+	}
+	if payOSSet != 0 && payOSSet != 3 {
+		return Config{}, fmt.Errorf("PAYOS_CLIENT_ID, PAYOS_API_KEY, and PAYOS_CHECKSUM_KEY must be configured together")
+	}
+	if payOSSet == 3 && (c.PayOSReturnURL == "" || c.PayOSCancelURL == "" || c.PublicAPIURL == "") {
+		return Config{}, fmt.Errorf("PAYOS_RETURN_URL, PAYOS_CANCEL_URL, and PUBLIC_API_URL are required when payOS is enabled")
+	}
+	if payOSSet == 3 {
+		for _, value := range []string{c.PayOSReturnURL, c.PayOSCancelURL} {
+			parsed, err := url.Parse(value)
+			if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" || parsed.User != nil || parsed.Fragment != "" {
+				return Config{}, fmt.Errorf("PAYOS_RETURN_URL and PAYOS_CANCEL_URL must be valid HTTP(S) URLs")
+			}
+		}
+		publicAPI, err := url.Parse(c.PublicAPIURL)
+		if err != nil || (publicAPI.Scheme != "http" && publicAPI.Scheme != "https") || publicAPI.Host == "" || publicAPI.User != nil || publicAPI.Path != "" || publicAPI.RawQuery != "" || publicAPI.Fragment != "" {
+			return Config{}, fmt.Errorf("PUBLIC_API_URL must be an HTTP(S) origin without path, query, or fragment")
+		}
+		if appEnv == "production" && (publicAPI.Scheme != "https" || !strings.HasPrefix(c.PayOSReturnURL, "https://") || !strings.HasPrefix(c.PayOSCancelURL, "https://")) {
+			return Config{}, fmt.Errorf("PayOS URLs and PUBLIC_API_URL must use HTTPS in production")
+		}
+	}
 	cloudinarySet := 0
 	for _, value := range []string{c.CloudinaryCloudName, c.CloudinaryAPIKey, c.CloudinaryAPISecret} {
 		if value != "" {
