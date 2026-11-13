@@ -37,7 +37,7 @@ docker compose up --build -d
 docker compose ps
 ```
 
-FE ở `http://localhost:5173`; API thường ở `http://localhost:8080` hoặc `http://localhost:18080`; MySQL host port `3307`. Compose khởi tạo schema khi volume DB rỗng. **Không chạy `database/scriptDb.sql` trên DB đã có dữ liệu vì file này tạo lại database.** Seed chỉ dùng cho local/test:
+FE ở `http://localhost:5173`; API thường ở `http://localhost:8080` hoặc `http://localhost:18080`; MySQL host port `3307`. Compose khởi tạo schema khi volume DB rỗng. `database/scriptDb.sql` không xóa database, nhưng chỉ dùng để bootstrap DB mới/rỗng vì chạy lại sẽ gặp bảng đã tồn tại. Seed chỉ dùng cho local/test, xác nhận đúng môi trường/database và yêu cầu nhập `SEED LOCAL`:
 
 ```powershell
 .\database\seed-local.ps1
@@ -89,4 +89,8 @@ See [Backend README](backend/README.md#order-workflow-customer-and-seller) for A
 
 ### Media uploads
 
-Avatar, shop branding, product images, and product video files use the authenticated Cloudinary upload API. Configure Cloudinary values in ignored local `.env` files only; the API secret is backend-only. JPEG-only images are capped at 5 MiB and product videos at 20 MiB. See [Backend media API documentation](backend/README.md#media-uploads-cloudinary) and [Frontend integration](frontend/project-ecommerce/README.md#media-upload-integration).
+Avatar, shop branding, product images, and product video files use the authenticated Cloudinary upload API. Configure Cloudinary values in ignored local `.env` files only; the API secret is backend-only. JPG/JPEG/PNG images are capped at 5 MiB and product videos at 20 MiB. See [Backend media API documentation](backend/README.md#media-uploads-cloudinary) and [Frontend integration](frontend/project-ecommerce/README.md#media-upload-integration).
+
+Checkout order creation now requires an `Idempotency-Key`. The FE retains the same key for retries of an unchanged checkout request, and the BE atomically stores the order response with inventory, voucher, payment, and cart changes. Reusing the key with changed input is rejected. Postman order creation requests use a dynamic GUID; reuse that exact key manually to verify replay behavior.
+
+Cart add (`POST /api/v1/cart/items`) and media upload (`POST /api/v1/media`) now require `Idempotency-Key` as well. The cart retries reuse a pending session key; media retries reuse a key derived from the file contents and purpose. The API persists request fingerprints and rejects reuse with changed input. CORS permits this header for configured FE origins.

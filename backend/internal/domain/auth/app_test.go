@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 )
@@ -175,6 +176,26 @@ func TestCORSRejectsUnknownOrigin(t *testing.T) {
 	a.Handler().ServeHTTP(rec, req)
 	if rec.Code != http.StatusForbidden {
 		t.Fatalf("status=%d body=%s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestCORSAllowsIdempotencyHeadersForConfiguredOrigin(t *testing.T) {
+	a := testApp()
+	a.cfg.Origins = []string{"https://shop.example"}
+	req := httptest.NewRequest(http.MethodOptions, "/api/v1/cart/items", nil)
+	req.Header.Set("Origin", "https://shop.example")
+	req.Header.Set("Access-Control-Request-Method", "POST")
+	req.Header.Set("Access-Control-Request-Headers", "authorization,content-type,idempotency-key")
+	rec := httptest.NewRecorder()
+	a.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("preflight status=%d body=%s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(strings.ToLower(rec.Header().Get("Access-Control-Allow-Headers")), "idempotency-key") {
+		t.Fatalf("preflight did not allow Idempotency-Key: %q", rec.Header().Get("Access-Control-Allow-Headers"))
+	}
+	if !strings.Contains(rec.Header().Get("Access-Control-Expose-Headers"), "Idempotency-Replayed") {
+		t.Fatalf("replay indicator is not exposed: %q", rec.Header().Get("Access-Control-Expose-Headers"))
 	}
 }
 

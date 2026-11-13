@@ -6,9 +6,11 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"rikkei-ecommerce/internal/domain/auth"
 	"rikkei-ecommerce/internal/platform/httpx"
+	"rikkei-ecommerce/internal/platform/idempotency"
 )
 
 type Handler struct {
@@ -87,10 +89,38 @@ func (h *Handler) addItem(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-
-	tx, err := h.db.BeginTx(r.Context(), nil)
+	key := strings.TrimSpace(r.Header.Get("Idempotency-Key"))
+	if !idempotency.ValidKey(key) {
+		writeError(w, http.StatusBadRequest, "idempotency_key_required", "A valid Idempotency-Key header is required")
+		return
+	}
+	requestHash, err := idempotency.Fingerprint(request)
 	if err != nil {
 		h.serverError(w, err)
+		return
+	}
+
+	tx, replay, err := beginCartAdd(r.Context(), h.db, userID, key, requestHash)
+	if errors.Is(err, errCartAddKeyReused) {
+		writeError(w, http.StatusConflict, "idempotency_key_reused", "This Idempotency-Key was already used with a different cart action")
+		return
+	}
+	if err != nil {
+		h.serverError(w, err)
+		return
+	}
+	if replay {
+		var cartID int64
+		if lookupErr := h.db.QueryRowContext(r.Context(), `SELECT id FROM carts WHERE user_id=?`, userID).Scan(&cartID); lookupErr != nil {
+			if errors.Is(lookupErr, sql.ErrNoRows) {
+				writeJSON(w, http.StatusOK, map[string]any{"success": true, "data": emptyCart()})
+				return
+			}
+			h.serverError(w, lookupErr)
+			return
+		}
+		w.Header().Set("Idempotency-Replayed", "true")
+		h.writeCart(w, r, cartID, http.StatusOK)
 		return
 	}
 	defer tx.Rollback()

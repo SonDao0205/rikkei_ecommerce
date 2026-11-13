@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha1"
+	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -22,6 +24,7 @@ import (
 	"time"
 
 	"rikkei-ecommerce/internal/domain/auth"
+	"rikkei-ecommerce/internal/platform/idempotency"
 )
 
 const (
@@ -32,6 +35,7 @@ const (
 )
 
 type Handler struct {
+	db          *sql.DB
 	config      auth.Config
 	httpClient  *http.Client
 	uploadSlots chan struct{}
@@ -63,8 +67,8 @@ type cloudinaryResponse struct {
 	} `json:"error"`
 }
 
-func NewHandler(config auth.Config) *Handler {
-	return &Handler{config: config, httpClient: &http.Client{Timeout: 120 * time.Second}, uploadSlots: make(chan struct{}, 3), rates: make(map[string]uploadRateWindow)}
+func NewHandler(db *sql.DB, config auth.Config) *Handler {
+	return &Handler{db: db, config: config, httpClient: &http.Client{Timeout: 120 * time.Second}, uploadSlots: make(chan struct{}, 3), rates: make(map[string]uploadRateWindow)}
 }
 
 func (h *Handler) upload(w http.ResponseWriter, r *http.Request) {
@@ -73,20 +77,14 @@ func (h *Handler) upload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	identity := auth.CurrentUser(r)
-	if identity.ID == "" || strings.ContainsAny(identity.ID, `/\\`) {
+	userID, userIDErr := strconv.ParseInt(identity.ID, 10, 64)
+	if userIDErr != nil || userID < 1 || strings.ContainsAny(identity.ID, `/\\`) {
 		writeError(w, http.StatusUnauthorized, "invalid_session", "Authenticated user is invalid")
 		return
 	}
-	if !h.allowUpload(identity.ID, time.Now()) {
-		w.Header().Set("Retry-After", "60")
-		writeError(w, http.StatusTooManyRequests, "upload_rate_limited", "Upload limit reached. Please try again in a minute")
-		return
-	}
-	select {
-	case h.uploadSlots <- struct{}{}:
-		defer func() { <-h.uploadSlots }()
-	case <-r.Context().Done():
-		writeError(w, http.StatusRequestTimeout, "upload_cancelled", "Upload was cancelled")
+	key := strings.TrimSpace(r.Header.Get("Idempotency-Key"))
+	if !idempotency.ValidKey(key) {
+		writeError(w, http.StatusBadRequest, "idempotency_key_required", "A valid Idempotency-Key header is required")
 		return
 	}
 	r.Body = http.MaxBytesReader(w, r.Body, maxVideoBytes+maxRequestPad)
@@ -130,15 +128,83 @@ func (h *Handler) upload(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnsupportedMediaType, "unsupported_media_type", err.Error())
 		return
 	}
-	result, err := h.uploadToCloudinary(r.Context(), data, filepath.Base(header.Filename), resourceType, folder)
+	requestHash, err := uploadFingerprint(purpose, header.Filename, data)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal_error", "The upload request could not be prepared")
+		return
+	}
+	publicID := mediaPublicID(identity.ID, purpose, key)
+	tx, replay, err := beginMediaUpload(r.Context(), h.db, userID, key, purpose, requestHash, publicID)
+	if errors.Is(err, errUploadKeyReused) {
+		writeError(w, http.StatusConflict, "idempotency_key_reused", "This Idempotency-Key was already used for a different upload")
+		return
+	}
+	if errors.Is(err, errUploadInProgress) {
+		writeError(w, http.StatusConflict, "upload_in_progress", "The original upload is still being processed; retry with the same key")
+		return
+	}
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal_error", "The upload request could not be reserved")
+		return
+	}
+	if replay != nil {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Header().Set("Idempotency-Replayed", "true")
+		w.WriteHeader(http.StatusCreated)
+		_, _ = w.Write(replay.body)
+		return
+	}
+	defer tx.Rollback()
+	if !h.allowUpload(identity.ID, time.Now()) {
+		w.Header().Set("Retry-After", "60")
+		writeError(w, http.StatusTooManyRequests, "upload_rate_limited", "Upload limit reached. Please try again in a minute")
+		return
+	}
+	select {
+	case h.uploadSlots <- struct{}{}:
+		defer func() { <-h.uploadSlots }()
+	case <-r.Context().Done():
+		writeError(w, http.StatusRequestTimeout, "upload_cancelled", "Upload was cancelled")
+		return
+	}
+	result, err := h.uploadToCloudinary(r.Context(), data, filepath.Base(header.Filename), resourceType, folder, publicID)
 	if err != nil {
 		writeError(w, http.StatusBadGateway, "media_storage_failed", "The file could not be stored. Please try again")
 		return
 	}
-	writeJSON(w, http.StatusCreated, map[string]any{"success": true, "data": result})
+	response, err := json.Marshal(map[string]any{"success": true, "data": result})
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal_error", "The upload response could not be prepared")
+		return
+	}
+	if err = persistMediaUpload(r.Context(), tx, userID, key, response); err != nil {
+		writeError(w, http.StatusInternalServerError, "internal_error", "The upload result could not be recorded")
+		return
+	}
+	if err = tx.Commit(); err != nil {
+		writeError(w, http.StatusInternalServerError, "internal_error", "The upload result could not be committed")
+		return
+	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusCreated)
+	_, _ = w.Write(response)
 }
 
 func validUploadSize(size, maxBytes int64) bool { return size > 0 && size <= maxBytes }
+
+func uploadFingerprint(purpose, filename string, data []byte) (string, error) {
+	contentDigest := sha256.Sum256(data)
+	return idempotency.Fingerprint(struct {
+		Purpose       string `json:"purpose"`
+		Filename      string `json:"filename"`
+		ContentSHA256 string `json:"content_sha256"`
+	}{purpose, filepath.Base(filename), hex.EncodeToString(contentDigest[:])})
+}
+
+func mediaPublicID(userID, purpose, key string) string {
+	digest := sha256.Sum256([]byte(userID + "|" + purpose + "|" + key))
+	return "request-" + hex.EncodeToString(digest[:16])
+}
 
 func (h *Handler) allowUpload(userID string, now time.Time) bool {
 	h.rateMu.Lock()
@@ -249,14 +315,14 @@ func validateFile(filename, resourceType string, data []byte) (string, error) {
 	}
 }
 
-func (h *Handler) uploadToCloudinary(ctx context.Context, data []byte, filename, resourceType, folder string) (uploadResult, error) {
+func (h *Handler) uploadToCloudinary(ctx context.Context, data []byte, filename, resourceType, folder, publicID string) (uploadResult, error) {
 	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
-	params := map[string]string{"folder": folder, "timestamp": timestamp}
+	params := map[string]string{"folder": folder, "overwrite": "true", "public_id": publicID, "timestamp": timestamp}
 	signature := signParams(params, h.config.CloudinaryAPISecret)
 	endpoint := fmt.Sprintf("https://api.cloudinary.com/v1_1/%s/%s/upload", url.PathEscape(h.config.CloudinaryCloudName), resourceType)
 	var body bytes.Buffer
 	writer := multipart.NewWriter(&body)
-	for key, value := range map[string]string{"api_key": h.config.CloudinaryAPIKey, "timestamp": timestamp, "folder": folder, "signature": signature} {
+	for key, value := range map[string]string{"api_key": h.config.CloudinaryAPIKey, "timestamp": timestamp, "folder": folder, "public_id": publicID, "overwrite": "true", "signature": signature} {
 		if err := writer.WriteField(key, value); err != nil {
 			return uploadResult{}, err
 		}

@@ -14,7 +14,7 @@ interface CheckoutOrderSummaryProps {
   platformVoucher: PlatformVoucher | null;
   onApplyPlatformVoucher: (code: string) => Promise<void>;
   onRemovePlatformVoucher: () => void;
-  onSubmitOrder: () => void;
+  onSubmitOrder: () => void | Promise<void>;
   isCalculating?: boolean;
   isSubmitting?: boolean;
   selectedPaymentCode?: string;
@@ -293,7 +293,7 @@ export const CheckoutOrderSummary: React.FC<CheckoutOrderSummaryProps> = ({
       <button
         type="button"
         onClick={onSubmitOrder}
-        disabled={isSubmitting || isCalculating}
+        disabled={isSubmitting || isCalculating || !quote}
         className="w-full h-13 rounded-xl bg-primary text-on-primary hover:bg-primary-container transition-all font-bold text-sm sm:text-base flex items-center justify-center gap-2 shadow-md hover:shadow-lg active:scale-[0.99] cursor-pointer disabled:opacity-60"
       >
         <span className="material-symbols-outlined text-[20px]">lock</span>

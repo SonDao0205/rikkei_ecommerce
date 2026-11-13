@@ -1,4 +1,4 @@
-DROP DATABASE IF EXISTS rikkei_ecommerce;
+-- Safe bootstrap: never drop an existing database. Run against a new/empty local DB.
 CREATE DATABASE IF NOT EXISTS rikkei_ecommerce;
 USE rikkei_ecommerce;
 
@@ -318,6 +318,16 @@ CREATE TABLE cart_items (
   CONSTRAINT chk_cart_items_qty CHECK (quantity > 0)
 );
 
+CREATE TABLE cart_add_idempotency (
+  user_id          BIGINT UNSIGNED NOT NULL,
+  idempotency_key  VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  request_hash     CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  created_at       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, idempotency_key),
+  KEY idx_cart_add_idempotency_created_at (created_at),
+  CONSTRAINT fk_cart_add_idempotency_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
 CREATE TABLE wishlists (
   user_id    BIGINT UNSIGNED NOT NULL,
   product_id BIGINT UNSIGNED NOT NULL,
@@ -466,6 +476,32 @@ CREATE TABLE orders (
   CONSTRAINT fk_orders_voucher  FOREIGN KEY (platform_voucher_id) REFERENCES vouchers (id),
   CONSTRAINT chk_orders_total CHECK (total_amount >= 0)
 );
+
+-- Idempotency keys protect checkout retries from creating duplicate orders.
+CREATE TABLE checkout_idempotency (
+  user_id          BIGINT UNSIGNED NOT NULL,
+  idempotency_key  VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  request_hash     CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  response_body    MEDIUMBLOB NULL,
+  http_status      SMALLINT UNSIGNED NULL,
+  created_at       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, idempotency_key),
+  KEY idx_checkout_idempotency_created_at (created_at),
+  CONSTRAINT fk_checkout_idempotency_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE media_upload_idempotency (
+  user_id          BIGINT UNSIGNED NOT NULL,
+  idempotency_key  VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  purpose          VARCHAR(32) NOT NULL,
+  request_hash     CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  public_id        VARCHAR(255) NOT NULL,
+  response_body    MEDIUMBLOB NULL,
+  created_at       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, idempotency_key),
+  KEY idx_media_upload_idempotency_created_at (created_at),
+  CONSTRAINT fk_media_upload_idempotency_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB;
 
 CREATE TABLE shop_orders (
   id                BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

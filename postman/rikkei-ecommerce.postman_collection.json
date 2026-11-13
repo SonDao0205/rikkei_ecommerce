@@ -949,6 +949,10 @@
               {
                 "key": "Authorization",
                 "value": "Bearer {{clientToken}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
               }
             ],
             "body": {
@@ -984,6 +988,10 @@
               {
                 "key": "Authorization",
                 "value": "Bearer {{clientToken}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
               }
             ],
             "body": {
@@ -1026,6 +1034,10 @@
               {
                 "key": "Authorization",
                 "value": "Bearer {{clientToken}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
               }
             ],
             "body": {
@@ -1098,6 +1110,10 @@
               {
                 "key": "Authorization",
                 "value": "Bearer {{clientToken}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
               }
             ],
             "body": {
@@ -1133,6 +1149,10 @@
               {
                 "key": "Authorization",
                 "value": "Bearer {{clientToken}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
               }
             ],
             "body": {
@@ -1195,6 +1215,10 @@
               {
                 "key": "Authorization",
                 "value": "Bearer {{clientToken}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
               }
             ],
             "body": {
@@ -3948,6 +3972,10 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
               }
             ],
             "body": {
@@ -3980,6 +4008,10 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
               }
             ],
             "body": {
@@ -4012,6 +4044,10 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
               }
             ],
             "body": {
@@ -4044,6 +4080,10 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
               }
             ],
             "body": {
@@ -4076,6 +4116,10 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
               }
             ],
             "body": {
@@ -4108,6 +4152,10 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
               }
             ],
             "body": {
@@ -4243,6 +4291,10 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
               }
             ],
             "body": {
@@ -4318,6 +4370,10 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
               }
             ],
             "body": {
@@ -4355,6 +4411,10 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
               }
             ],
             "body": {
@@ -4396,6 +4456,10 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
               }
             ],
             "body": {

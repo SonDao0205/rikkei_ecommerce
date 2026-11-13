@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import CustomerLayout from "@/app/layout/CustomerLayout";
@@ -25,6 +25,7 @@ import {
   type CheckoutAddress,
   type CheckoutMethod,
   type CheckoutQuote,
+  type CreatedOrder,
 } from "@/domains/customer/api/cartApi";
 import type { CartItem } from "@/domains/customer/types/cart.types";
 import { formatCurrencyVND } from "@/shared/utils/currency";
@@ -32,7 +33,7 @@ import { formatCurrencyVND } from "@/shared/utils/currency";
 export const Checkout: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const { isAuthenticated, user } = useAppSelector((state) => state.auth);
   const { items, shopVouchers, platformVoucher, summary } = useAppSelector(
     (state) => state.cart
   );
@@ -55,6 +56,10 @@ export const Checkout: React.FC = () => {
   const [isSubmittingOrder, setIsSubmittingOrder] = useState<boolean>(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState<boolean>(false);
   const [createdOrderCode, setCreatedOrderCode] = useState<string>("");
+  const [createdOrder, setCreatedOrder] = useState<CreatedOrder | null>(null);
+  const submissionInFlight = useRef(false);
+  const activeSubmissionKey = useRef<{ fingerprint: string; key: string } | null>(null);
+  const submissionStorageKey = `checkout.idempotency.v1:${user?.id ?? "anonymous"}`;
 
   const handleGoBack = () => {
     if (window.history.state && window.history.state.idx > 0) {
@@ -150,6 +155,35 @@ export const Checkout: React.FC = () => {
         setShippingMethods(options.shipping_methods);
         setPaymentMethods(options.payment_methods);
 
+        // If the browser closed after the server committed but before the response arrived,
+        // replay the stored request once to recover the authoritative order response.
+        if (user?.id) {
+          try {
+            const rawPending = sessionStorage.getItem(submissionStorageKey);
+            if (rawPending) {
+              const pending = JSON.parse(rawPending) as {
+                fingerprint?: string;
+                key?: string;
+                request?: Parameters<typeof cartApi.createOrder>[0];
+              };
+              if (
+                pending.key &&
+                pending.request &&
+                pending.fingerprint === JSON.stringify(pending.request)
+              ) {
+                const recoveredOrder = await cartApi.createOrder(pending.request, pending.key);
+                setCreatedOrder(recoveredOrder);
+                setCreatedOrderCode(recoveredOrder.order_code);
+                setIsSuccessModalOpen(true);
+                sessionStorage.removeItem(submissionStorageKey);
+                await dispatch(fetchCart()).unwrap().catch(() => undefined);
+              }
+            }
+          } catch {
+            // Leave the saved key/body in place so a later retry can safely resolve the outcome.
+          }
+        }
+
         // Pick default address or first
         const defaultAddr =
           loadedAddresses.find((a) => a.is_default) || loadedAddresses[0];
@@ -177,7 +211,7 @@ export const Checkout: React.FC = () => {
     };
 
     loadData();
-  }, [isAuthenticated, dispatch, navigate]);
+  }, [isAuthenticated, dispatch, navigate, user?.id, submissionStorageKey]);
 
   // Recalculate quote with Backend API
   const calculateServerQuote = useCallback(async () => {
@@ -297,7 +331,8 @@ export const Checkout: React.FC = () => {
   };
 
   // Submit Order Handler
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
+    if (submissionInFlight.current) return;
     if (selectedItems.length === 0) {
       setQuoteError("Không có sản phẩm nào trong giỏ hàng để thanh toán.");
       return;
@@ -308,16 +343,75 @@ export const Checkout: React.FC = () => {
       return;
     }
 
+    if (!checkoutQuote || isCalculatingQuote || quoteError) {
+      setQuoteError("Chưa có báo giá hợp lệ từ hệ thống. Vui lòng kiểm tra lựa chọn và thử lại.");
+      return;
+    }
+
+    const shopCodes: Record<string, string> = {};
+    for (const [idStr, voucher] of Object.entries(shopVouchers)) {
+      if (voucher.is_applied && voucher.code) shopCodes[idStr] = voucher.code;
+    }
+    const request = {
+      address_id: selectedAddressId,
+      shipping_method_id: selectedShippingId,
+      payment_method_id: selectedPaymentId,
+      cart_item_ids: selectedItems.map((item) => item.id),
+      ...(platformVoucher?.is_applied ? { platform_voucher: platformVoucher.code } : {}),
+      ...(Object.keys(shopCodes).length ? { shop_vouchers: shopCodes } : {}),
+    };
+    const fingerprint = JSON.stringify(request);
+    const storageKey = submissionStorageKey;
+    let key = activeSubmissionKey.current?.fingerprint === fingerprint
+      ? activeSubmissionKey.current.key
+      : "";
+    if (!key) {
+      try {
+        const saved = sessionStorage.getItem(storageKey);
+        if (saved) {
+          const parsed = JSON.parse(saved) as { fingerprint?: string; key?: string };
+          if (parsed.fingerprint === fingerprint && parsed.key) key = parsed.key;
+        }
+      } catch {
+        // sessionStorage may be unavailable in private browsing.
+      }
+    }
+    if (!key) {
+      key = typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+    }
+    activeSubmissionKey.current = { fingerprint, key };
+    try {
+      sessionStorage.setItem(storageKey, JSON.stringify({ fingerprint, key, request }));
+    } catch {
+      // The in-memory key still protects retries until leaving this page.
+    }
+
+    submissionInFlight.current = true;
     setIsSubmittingOrder(true);
     setQuoteError(null);
-
-    // Backend does not implement order creation endpoint yet, generate an advisory code
-    setTimeout(() => {
-      const randomCode = `#MP-VN${Math.floor(100000 + Math.random() * 900000)}`;
-      setCreatedOrderCode(randomCode);
-      setIsSubmittingOrder(false);
+    try {
+      const order = await cartApi.createOrder(request, key);
+      setCreatedOrder(order);
+      setCreatedOrderCode(order.order_code);
       setIsSuccessModalOpen(true);
-    }, 800);
+      try {
+        const saved = sessionStorage.getItem(storageKey);
+        if (saved && (JSON.parse(saved) as { key?: string }).key === key) {
+          sessionStorage.removeItem(storageKey);
+        }
+      } catch {
+        // The server response is already committed.
+      }
+      activeSubmissionKey.current = null;
+      await dispatch(fetchCart()).unwrap().catch(() => undefined);
+    } catch (err: unknown) {
+      setQuoteError(apiErrorMessage(err, "Không thể tạo đơn lúc này. Hãy thử lại; hệ thống sẽ chống tạo đơn trùng."));
+    } finally {
+      submissionInFlight.current = false;
+      setIsSubmittingOrder(false);
+    }
   };
 
   // Fallback financial calculations in case server quote is loading/failed
@@ -472,10 +566,13 @@ export const Checkout: React.FC = () => {
       <CheckoutSuccessModal
         isOpen={isSuccessModalOpen}
         orderCode={createdOrderCode}
-        totalAmount={checkoutQuote ? checkoutQuote.total : fallbackTotal}
-        shopNames={shopNames}
+        totalAmount={createdOrder?.total_amount ?? checkoutQuote?.total ?? fallbackTotal}
+        shopNames={createdOrder?.shop_orders.map((shopOrder) => shopOrder.shop_name) ?? shopNames}
         shippingCarrier={selectedShippingMethod?.name}
+        paymentMethodCode={createdOrder?.payment_method.code}
+        paymentReference={createdOrder?.payment.transaction_ref}
         onViewOrders={() => {
+          if (!createdOrder) return;
           const selectedAddr = addresses.find((a) => a.id === selectedAddressId);
           const fullAddress = selectedAddr
             ? [selectedAddr.street_detail, selectedAddr.ward, selectedAddr.district, selectedAddr.province]
@@ -485,19 +582,20 @@ export const Checkout: React.FC = () => {
 
           navigate("/order/complete", {
             state: {
-              orderCode: createdOrderCode,
+              orderCode: createdOrder.order_code,
               customerName: selectedAddr?.recipient_name || "Quý khách",
               customerPhone: selectedAddr?.phone || "",
-              deliveryAddress: fullAddress,
+              deliveryAddress: createdOrder.shipping_address || fullAddress,
               carrierName: selectedShippingMethod?.name || "GHN Express",
               estimatedDeliveryDate: selectedShippingMethod?.estimated_days || "2-4 ngày tới",
               paymentMethodName: selectedPaymentMethod?.name || "Thu hộ COD",
               paymentMethodCode: selectedPaymentCode,
-              itemsSubtotal: checkoutQuote ? checkoutQuote.subtotal : fallbackSubtotal,
-              shippingFee: checkoutQuote ? checkoutQuote.shipping_fee : fallbackShippingFee,
-              shopDiscount: checkoutQuote ? checkoutQuote.shop_discount : fallbackShopDiscount,
-              platformDiscount: checkoutQuote ? checkoutQuote.platform_discount : fallbackPlatformDiscount,
-              totalAmount: checkoutQuote ? checkoutQuote.total : fallbackTotal,
+              itemsSubtotal: createdOrder.subtotal,
+              shippingFee: createdOrder.shipping_fee,
+              shopDiscount: createdOrder.shop_discount_total,
+              platformDiscount: createdOrder.platform_discount,
+              totalAmount: createdOrder.total_amount,
+              transactionReference: createdOrder.payment.transaction_ref,
               shopGroups: groupedShopItems.map((g) => ({
                 shopId: g.shopId,
                 shopName: g.shopName,

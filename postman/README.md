@@ -140,3 +140,9 @@ Automated checks for this change: `go test ./...`, `go vet ./...`, frontend `npm
 The media API is `POST /api/v1/media` (`Authorization: Bearer ...`, multipart fields `purpose` and `file`). It accepts JPEG images only up to 5 MiB and MP4/MOV/WebM product videos up to 20 MiB. Verify JPEG success; reject PNG renamed as JPG; reject oversized files; test unauthenticated access, CLIENT vs SELLER purpose permissions, malformed multipart, and Cloudinary unavailable responses. Then save a returned avatar URL with `PUT /api/v1/auth/profile/avatar` and check `GET /api/v1/auth/me`; use `DELETE /api/v1/auth/profile/avatar` to remove it. Product create/update should persist `video_url` and product detail should return it.
 
 Uploads continue while navigating between SPA routes and report progress in the global upload panel. A browser reload/close interrupts an in-flight transfer. Use local test files and a local Cloudinary account; do not commit `.env` files or Postman secrets.
+
+## Checkout retry/idempotency
+
+Every `POST /api/v1/checkout/orders` request in the collection sends Postman's `{{$guid}}` dynamic value as `Idempotency-Key`. The API requires a key (16–128 allowed ASCII characters) and scopes it to the authenticated user. Replaying the same request with the same key returns the original `201` response; reusing the key with a changed body returns `409`. For an explicit replay check, copy the same key and body into a second request; do not let the dynamic GUID resolve to a new value between the two calls.
+
+Cart add and media upload requests use a Postman dynamic `{{$guid}}` idempotency key. If manually replaying one request to verify deduplication, reuse the exact key and body. The key is required for successful cart-add and upload flows.

@@ -32,7 +32,7 @@ func NewHandler(config auth.Config, db *sql.DB, logger *log.Logger) http.Handler
 	promotion.RegisterRoutes(mux, security, db, logger)
 	review.RegisterRoutes(mux, security, db, logger)
 	wishlist.RegisterRoutes(mux, security, db, logger)
-	media.RegisterRoutes(mux, security, config)
+	media.RegisterRoutes(mux, security, db, config)
 	catalog.RegisterRoutes(
 		mux,
 		db,

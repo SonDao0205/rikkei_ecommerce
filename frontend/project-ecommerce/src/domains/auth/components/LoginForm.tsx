@@ -141,6 +141,25 @@ const LoginForm = () => {
         location.state as { from?: { pathname?: string } } | null
       )?.from?.pathname;
 
+      const allowedRequestedPath =
+        requestedPath?.startsWith("/") &&
+        !requestedPath.startsWith("//") &&
+        ((requestedPath.startsWith("/admin") && isAdmin) ||
+          (requestedPath.startsWith("/shop") && isSeller && user.shop_status === "ACTIVE") ||
+          (!requestedPath.startsWith("/admin") &&
+            !requestedPath.startsWith("/shop") &&
+            isCustomer));
+      if (allowedRequestedPath) {
+        navigate(requestedPath!, { replace: true });
+        return;
+      }
+
+      const workspaceCount = [isAdmin, isSeller, isCustomer].filter(Boolean).length;
+      if (workspaceCount > 1) {
+        navigate("/select-role", { replace: true });
+        return;
+      }
+
       // 1. Tài khoản Quản trị viên -> Chuyển hướng thẳng vào /admin/dashboard
       if (isAdmin) {
         if (requestedPath?.startsWith("/admin")) {
@@ -179,7 +198,9 @@ const LoginForm = () => {
       // 4. Mặc định chuyển hướng về trang chủ
       navigate("/home", { replace: true });
     } else if (loginUser.rejected.match(resultAction)) {
-      const errorMsg = "Tài khoản hoặc mật khẩu không chính xác.";
+      const errorMsg = typeof resultAction.payload === "string"
+        ? resultAction.payload
+        : "Không thể đăng nhập lúc này. Vui lòng thử lại.";
       setLoginErrorMessage(errorMsg);
     }
   };
