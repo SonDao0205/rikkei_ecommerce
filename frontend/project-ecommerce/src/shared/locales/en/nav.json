@@ -1,0 +1,29 @@
+{
+  "shop": {
+    "title": "Seller Channel",
+    "overview": "Overview",
+    "products": "Product Management",
+    "orders": "Orders & Shipping",
+    "vouchers": "Vouchers",
+    "finance": "Wallet & Revenue",
+    "customer_care": "Customer Support",
+    "settings": "Shop Settings",
+    "active_merchant": "Active Merchant",
+    "level": "Tier {{level}}",
+    "new_badge": "new",
+    "search_placeholder": "Search orders, SKU...",
+    "store_open": "Store: Open"
+  },
+  "customer": {
+    "home": "Home",
+    "cart": "Cart",
+    "notifications": "Notifications",
+    "profile": "My Profile",
+    "orders": "My Purchases",
+    "open_shop": "Seller Center",
+    "logout": "Logout",
+    "login": "Login",
+    "register": "Register"
+  }
+}
+

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import ShopLayout from "@/app/layout/ShopLayout";
 import { useAppDispatch, useAppSelector } from "@/app/state/store";
 import {
@@ -23,6 +24,7 @@ import {
 } from "@/domains/shop/components/dashboard";
 
 export const ShopDashboard: React.FC = () => {
+  const { t } = useTranslation('shop');
   const dispatch = useAppDispatch();
   const {
     data,
@@ -125,7 +127,7 @@ export const ShopDashboard: React.FC = () => {
             error_outline
           </span>
           <h2 className="font-headline-md text-headline-md font-bold text-on-surface">
-            Không thể tải dữ liệu Bảng điều khiển
+            {t("dashboard.error.cannot_load")}
           </h2>
           <p className="font-body-md text-body-md text-on-surface-variant max-w-md mt-1 mb-5">
             {error}
@@ -135,7 +137,7 @@ export const ShopDashboard: React.FC = () => {
             onClick={handleRefresh}
             className="px-5 py-2.5 rounded-xl bg-primary text-white font-label-md text-label-md font-semibold shadow-sm hover:bg-primary/90 transition-all cursor-pointer"
           >
-            Thử tải lại
+            {t("dashboard.error.retry")}
           </button>
         </div>
       )}

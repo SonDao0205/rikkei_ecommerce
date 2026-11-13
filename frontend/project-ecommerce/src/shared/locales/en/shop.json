@@ -1,0 +1,87 @@
+{
+  "dashboard": {
+    "welcome": {
+      "tier": "Tier",
+      "code": "Shop Code: {{code}}",
+      "synced_at": "Synced at: {{time}}",
+      "greeting": "Welcome back, {{name}}",
+      "operational_status": "System operational health:",
+      "refresh": "Refresh data",
+      "filters": {
+        "today": "Today",
+        "yesterday": "Yesterday",
+        "7days": "Last 7 days",
+        "this_month": "This month"
+      }
+    },
+    "metrics": {
+      "today_revenue": "Today's Revenue",
+      "revenue_target": "Target: 20M ₫",
+      "new_orders": "New Orders",
+      "orders_unit": "{{count}} Orders",
+      "payment_ratio": "Payment Ratio",
+      "conversion_rate": "Conversion Rate",
+      "industry_top": "Top 15% in category",
+      "wallet_balance": "Seller Wallet Balance",
+      "pending_settlement": "Pending Settlement:",
+      "fast_withdraw": "Express Payout",
+      "settlement_cycle": "Cycle T+2",
+      "unit_orders": "orders"
+    },
+    "urgent": {
+      "pending_orders": "Pending Approval",
+      "pending_orders_sub": "Approve before 12:00 for noon shipping pickup",
+      "packing_orders": "Packing",
+      "packing_orders_sub": "Carrier courier arriving at 14:30 today",
+      "low_stock": "Low Stock Warning",
+      "low_stock_sub": "SKU stock below safe threshold (<= 5)",
+      "complaints": "Claims / Refunds",
+      "complaints_sub": "Return requests must be resolved within 24h",
+      "btn_confirm": "Approve Now",
+      "btn_pack": "Print Shipping Label",
+      "btn_restock": "Restock Now",
+      "btn_resolve": "Review Claim"
+    },
+    "chart": {
+      "title": "Sales Trend Chart",
+      "subtitle": "Real-time revenue throughput and volume velocity",
+      "tag_7days": "Last 7 Days",
+      "revenue_tab": "Revenue (₫)",
+      "volume_tab": "Volume (Units)",
+      "highlight": "Highlight Peak:"
+    },
+    "top_products": {
+      "title": "Top 5 Best Sellers",
+      "subtitle": "Statistics from the last 30 days",
+      "detail": "Details",
+      "sold": "{{count}} sold",
+      "low_stock_alert": "Low Stock",
+      "revenue_label": "Sales: {{amount}}"
+    },
+    "urgent_orders": {
+      "title": "Urgent Orders Requiring Immediate Action",
+      "subtitle": "Orders that must be confirmed or handed over before carrier cutoff time",
+      "filter_status": "Filter by status",
+      "filter_label": "Filter: {{status}}",
+      "view_all": "View all orders ({{count}})",
+      "th_code": "Order Code",
+      "th_customer": "Customer",
+      "th_product": "Product & Qty",
+      "th_total": "Total & Payment",
+      "th_status": "Status",
+      "th_actions": "Actions",
+      "empty": "No urgent orders requiring attention right now.",
+      "btn_confirm": "Confirm Order",
+      "btn_print": "Print Label",
+      "status_pending": "Pending",
+      "status_packing": "Packing",
+      "status_handed_over": "Handed Over",
+      "sla_prefix": "Handover before"
+    },
+    "error": {
+      "cannot_load": "Unable to load Dashboard data",
+      "retry": "Try reloading"
+    }
+  }
+}
+

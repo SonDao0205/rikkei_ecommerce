@@ -1,0 +1,37 @@
+{
+  "brand_desc": "Vietnam's premier multi-store commerce collective. Connecting discerning buyers with certified local artisans, curated brands, and independent designers.",
+  "guarantee_title": "100% Genuine Guarantee",
+  "guarantee_desc": "Strict vendor onboarding audit",
+  "buyer_protection": {
+    "title": "Buyer Protection",
+    "track_package": "Track Package",
+    "refund_policy": "Refund & Return Policy",
+    "escrow_protection": "Escrow Escort Protection",
+    "dispute_resolution": "Dispute Resolution",
+    "consumer_rights": "Consumer Rights VN"
+  },
+  "merchant_ecosystem": {
+    "title": "Merchant Ecosystem",
+    "register_shop_label": "Open a shop:",
+    "register_now": "Register now",
+    "sell_on_mp": "Sell on MarketPulse",
+    "seller_standards": "Seller Standards & Policy",
+    "warehouse_fulfillment": "Warehouse & Fulfilled by MP",
+    "artisan_grants": "Artisan Incubator Grants",
+    "merchant_login": "Merchant Dashboard Login"
+  },
+  "newsletter": {
+    "title": "Stay Updated",
+    "desc": "Subscribe for exclusive drops, curated editorial stories, and secret sale passes.",
+    "placeholder": "Enter your email address",
+    "button": "Join Newsletter"
+  },
+  "bottom": {
+    "license": "© 2025 MarketPulse Technologies Vietnam JSC. Enterprise License No. 0108892461.",
+    "payments_title": "Accepted Payments:",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "security": "Security"
+  }
+}
+

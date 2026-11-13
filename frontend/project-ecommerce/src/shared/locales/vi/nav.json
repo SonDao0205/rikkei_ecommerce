@@ -1,0 +1,29 @@
+{
+  "shop": {
+    "title": "Kênh Người Bán",
+    "overview": "Tổng quan",
+    "products": "Quản lý sản phẩm",
+    "orders": "Đơn hàng & Vận chuyển",
+    "vouchers": "Quản lý voucher",
+    "finance": "Ví & Doanh thu",
+    "customer_care": "Chăm sóc khách",
+    "settings": "Cài đặt gian hàng",
+    "active_merchant": "Active Merchant",
+    "level": "Cấp {{level}}",
+    "new_badge": "mới",
+    "search_placeholder": "Tìm kiếm đơn hàng, SKU...",
+    "store_open": "Cửa hàng: Đang mở cửa"
+  },
+  "customer": {
+    "home": "Trang chủ",
+    "cart": "Giỏ hàng",
+    "notifications": "Thông báo",
+    "profile": "Tài khoản của tôi",
+    "orders": "Đơn mua",
+    "open_shop": "Kênh Người Bán",
+    "logout": "Đăng xuất",
+    "login": "Đăng nhập",
+    "register": "Đăng ký"
+  }
+}
+

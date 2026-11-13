@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { ShopBestSellerProduct } from "@/domains/shop/types/shopDashboard.types";
 
 interface ShopTopProductsProps {
@@ -20,23 +21,25 @@ const getRankBadgeClasses = (rank: number) => {
 };
 
 export const ShopTopProducts: React.FC<ShopTopProductsProps> = ({ products }) => {
+  const { t } = useTranslation('shop');
+
   return (
     <div className="lg:col-span-4 bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/40 flex flex-col justify-between">
       <div>
         <div className="flex items-center justify-between pb-5 border-b border-outline-variant/30">
           <div>
             <h2 className="font-headline-md text-headline-md font-bold text-on-surface tracking-tight">
-              Top 5 Bán Chạy
+              {t("dashboard.top_products.title")}
             </h2>
             <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
-              Thống kê 30 ngày qua
+              {t("dashboard.top_products.subtitle")}
             </p>
           </div>
           <Link
             to="/shop/products"
             className="font-label-sm text-label-sm text-primary font-semibold hover:underline"
           >
-            Chi tiết
+            {t("dashboard.top_products.detail")}
           </Link>
         </div>
 
@@ -67,7 +70,7 @@ export const ShopTopProducts: React.FC<ShopTopProductsProps> = ({ products }) =>
                   {item.name}
                 </h3>
                 <div className="flex items-center gap-2 font-body-sm text-body-sm text-on-surface-variant mt-0.5">
-                  <span className="font-mono text-xs">{item.soldCount} đã bán</span>
+                  <span className="font-mono text-xs">{t("dashboard.top_products.sold", { count: item.soldCount })}</span>
                   <span className="text-outline-variant">•</span>
                   <span
                     className={`font-mono text-xs ${
@@ -80,7 +83,7 @@ export const ShopTopProducts: React.FC<ShopTopProductsProps> = ({ products }) =>
                         : "text-on-surface-variant"
                     }`}
                   >
-                    Kho: {item.stockQuantity} {item.isLowStock && "(Sắp hết)"}
+                    Kho: {item.stockQuantity} {item.isLowStock && `(${t("dashboard.top_products.low_stock_alert")})`}
                   </span>
                 </div>
               </div>
@@ -94,7 +97,7 @@ export const ShopTopProducts: React.FC<ShopTopProductsProps> = ({ products }) =>
           to="/shop/products"
           className="block w-full py-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container text-primary font-label-md text-label-md font-semibold text-center transition-colors border border-outline-variant/20"
         >
-          Xem báo cáo phân tích mặt hàng
+          {t("dashboard.top_products.detail")}
         </Link>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useAppSelector } from "@/app/state/store";
 import type { ProductReview, ProductReviewReply } from "@/domains/storefront/types/review.types";
 import ProductReviewItem from "./ProductReviewItem";
@@ -141,6 +142,7 @@ export const ProductReviewsSection: React.FC<ProductReviewsSectionProps> = ({
   productId,
   productName,
 }) => {
+  const { t } = useTranslation("customer");
   const { user, isAuthenticated } = useAppSelector((state) => state.auth);
 
   const storageKey = `marketpulse_product_reviews_${productId}`;
@@ -295,7 +297,7 @@ export const ProductReviewsSection: React.FC<ProductReviewsSectionProps> = ({
             rate_review
           </span>
           <h2 className="text-base sm:text-lg font-bold text-on-surface">
-            Đánh giá sản phẩm
+            {t("product.reviews.product_reviews_title")}
           </h2>
           <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-bold">
             {reviews.length}
@@ -315,7 +317,7 @@ export const ProductReviewsSection: React.FC<ProductReviewsSectionProps> = ({
                 star
               </span>
             </span>
-            <span>• Dựa trên {reviews.length} nhận xét</span>
+            <span>• {t("product.reviews.based_on", { count: reviews.length })}</span>
           </div>
         )}
       </div>
@@ -331,7 +333,7 @@ export const ProductReviewsSection: React.FC<ProductReviewsSectionProps> = ({
               check_circle
             </span>
             <span className="text-emerald-950 dark:text-emerald-50 font-semibold text-xs sm:text-sm leading-snug">
-              Đánh giá của bạn đã được đăng thành công! Cảm ơn bạn đã chia sẻ.
+              {t("product.reviews.success_toast")}
             </span>
           </div>
           <button
@@ -352,7 +354,7 @@ export const ProductReviewsSection: React.FC<ProductReviewsSectionProps> = ({
       >
         <div className="flex items-center justify-between flex-wrap gap-2">
           <span className="text-xs sm:text-sm font-semibold text-on-surface">
-            Bạn đánh giá sản phẩm này thế nào?
+            {t("product.reviews.write_review_prompt")}
           </span>
 
           {/* Interactive Star Picker */}
@@ -381,15 +383,7 @@ export const ProductReviewsSection: React.FC<ProductReviewsSectionProps> = ({
               );
             })}
             <span className="text-xs font-semibold text-on-surface-variant ml-1">
-              {selectedRating === 5
-                ? "Tuyệt vời"
-                : selectedRating === 4
-                ? "Rất tốt"
-                : selectedRating === 3
-                ? "Bình thường"
-                : selectedRating === 2
-                ? "Kém"
-                : "Rất kém"}
+              {t(`product.reviews.ratings.${selectedRating}`)}
             </span>
           </div>
         </div>
@@ -400,7 +394,7 @@ export const ProductReviewsSection: React.FC<ProductReviewsSectionProps> = ({
             type="text"
             value={guestName}
             onChange={(e) => setGuestName(e.target.value)}
-            placeholder="Nhập họ và tên của bạn..."
+            placeholder={t("product.reviews.guest_name_placeholder")}
             className="w-full bg-surface-container-lowest px-3 py-2 rounded-lg text-xs sm:text-sm text-on-surface outline-none ring-1 ring-outline-variant/30 focus:ring-1 focus:ring-primary transition-all placeholder:text-outline"
           />
         )}
@@ -411,7 +405,7 @@ export const ProductReviewsSection: React.FC<ProductReviewsSectionProps> = ({
             rows={3}
             value={commentText}
             onChange={(e) => setCommentText(e.target.value)}
-            placeholder="Chia sẻ trải nghiệm hoặc cảm nhận của bạn về sản phẩm này... (chất lượng, độ bền, trải nghiệm sử dụng)"
+            placeholder={t("product.reviews.comment_placeholder")}
             className="w-full bg-surface-container-lowest p-3 rounded-lg text-xs sm:text-sm text-on-surface outline-none ring-1 ring-outline-variant/30 focus:ring-1 focus:ring-primary transition-all placeholder:text-outline resize-y"
           />
         </div>
@@ -419,7 +413,7 @@ export const ProductReviewsSection: React.FC<ProductReviewsSectionProps> = ({
         {/* Submit Actions */}
         <div className="flex items-center justify-between">
           <span className="text-[11px] text-on-surface-variant">
-            Đánh giá của bạn sẽ được hiển thị công khai ngay lập tức.
+            {t("product.reviews.public_notice")}
           </span>
           <button
             type="submit"
@@ -427,7 +421,7 @@ export const ProductReviewsSection: React.FC<ProductReviewsSectionProps> = ({
             className="px-4 py-2 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-bold text-xs sm:text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-xs inline-flex items-center gap-1.5 cursor-pointer"
           >
             <span className="material-symbols-outlined text-[16px]">send</span>
-            <span>Gửi đánh giá</span>
+            <span>{isSubmitting ? t("product.reviews.sending") : t("product.reviews.send_review")}</span>
           </button>
         </div>
       </form>
@@ -435,11 +429,11 @@ export const ProductReviewsSection: React.FC<ProductReviewsSectionProps> = ({
       {/* Reviews List Header */}
       <div className="flex items-center justify-between pt-2">
         <h3 className="text-sm font-bold text-on-surface">
-          Đánh giá từ người mua ({reviews.length})
+          {t("product.reviews.buyer_reviews_count", { count: reviews.length })}
         </h3>
         {reviews.length > 5 && (
           <span className="text-xs text-on-surface-variant">
-            Hiển thị 5 đánh giá mới nhất
+            {t("product.reviews.showing_latest")}
           </span>
         )}
       </div>
@@ -451,7 +445,7 @@ export const ProductReviewsSection: React.FC<ProductReviewsSectionProps> = ({
             <span className="material-symbols-outlined text-3xl text-outline mb-1">
               chat_bubble_outline
             </span>
-            <p className="text-xs sm:text-sm">Chưa có đánh giá nào. Hãy là người đầu tiên đánh giá sản phẩm này!</p>
+            <p className="text-xs sm:text-sm">{t("product.reviews.empty_reviews")}</p>
           </div>
         ) : (
           latestFiveReviews.map((review) => (
@@ -476,7 +470,7 @@ export const ProductReviewsSection: React.FC<ProductReviewsSectionProps> = ({
             onClick={() => setIsAllReviewsModalOpen(true)}
             className="w-full sm:w-auto px-6 py-2.5 rounded-xl border border-primary/30 hover:bg-primary/5 text-primary font-bold text-xs sm:text-sm transition-colors inline-flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
           >
-            <span>Xem tất cả đánh giá ({reviews.length})</span>
+            <span>{t("product.reviews.view_all", { count: reviews.length })}</span>
             <span className="material-symbols-outlined text-[18px]">
               arrow_forward
             </span>

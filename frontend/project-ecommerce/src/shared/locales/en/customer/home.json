@@ -1,0 +1,40 @@
+{
+  "flash_notification": {
+    "tag": "MARKETPLACE",
+    "message": "Discover products from active stores on MarketPulse"
+  },
+  "featured": {
+    "title": "Featured Products",
+    "subtitle_all": "Featured products currently available in marketplace",
+    "subtitle_category": "Featured products in category: {{category}}",
+    "view_catalog": "View Catalog",
+    "empty_all": "No products available to display.",
+    "empty_category": "No featured products available for {{category}}."
+  },
+  "catalog": {
+    "showing_count": "/ {{total}} products",
+    "all_catalog": "All Catalog",
+    "sort_label": "Sort:",
+    "sort_options": {
+      "Relevance": "Relevance",
+      "Best Selling": "Best Selling",
+      "Latest Arrivals": "Latest Arrivals",
+      "Price: Low → High": "Price: Low → High",
+      "Price: High → Low": "Price: High → Low"
+    },
+    "load_more": "Load more products"
+  },
+  "product_card": {
+    "add_to_cart": "Add to Cart",
+    "view_wishlist": "View Wishlist",
+    "wishlist_unavailable_title": "Not Available",
+    "wishlist_added_title": "Added to Wishlist",
+    "wishlist_added_msg": "\"{{name}}\" has been added to your wishlist.",
+    "wishlist_removed_title": "Removed from Wishlist",
+    "wishlist_removed_msg": "\"{{name}}\" has been removed from your wishlist.",
+    "wishlist_error_buyer_only": "Wishlist is only available for buyer accounts.",
+    "cart_error_buyer_only": "Cart is only available for buyer accounts.",
+    "cart_add_failed": "Failed to add product to cart.",
+    "action_failed": "Action failed"
+  }
+}

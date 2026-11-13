@@ -1,0 +1,43 @@
+{
+  "utility": {
+    "free_shipping": "Free shipping on orders over 500k ₫ | Cash on Delivery available across Vietnam",
+    "hotline": "+84 1900 6868",
+    "order_tracking": "Order Tracking"
+  },
+  "search": {
+    "categories": "All Categories",
+    "placeholder": "Search 12,000+ verified artisan stores & products...",
+    "mobile_placeholder": "Search 12,000+ products...",
+    "button": "Search"
+  },
+  "actions": {
+    "wishlist": "Wishlist",
+    "cart": "Cart",
+    "sign_in": "Sign In",
+    "my_profile": "My Profile",
+    "my_shop": "My Shop",
+    "sign_out": "Sign Out",
+    "welcome": "Welcome",
+    "login_prompt": "Sign in for the best experience"
+  },
+  "mobile_drawer": {
+    "user_features": "User Features",
+    "close": "Close menu",
+    "loyal_customer": "Loyal Customer",
+    "saved_items": "{{count}} saved products",
+    "footer_copyright": "MarketPulse © 2026 – E-commerce Platform"
+  },
+  "switch_shop_modal": {
+    "title": "Switch to Seller Center",
+    "description": "Are you sure you want to switch to Seller Center to manage products, orders, and shop operations?",
+    "btn_confirm": "Go to Seller Center",
+    "btn_cancel": "Stay on Storefront"
+  },
+  "logout_modal": {
+    "title": "Confirm Sign Out",
+    "description": "Are you sure you want to sign out? Your current session will end and you will be redirected to the homepage.",
+    "logging_out": "Signing out...",
+    "btn_confirm": "Sign Out",
+    "btn_cancel": "Cancel"
+  }
+}

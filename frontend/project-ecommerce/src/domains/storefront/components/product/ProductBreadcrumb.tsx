@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAppDispatch } from "@/app/state/store";
 import { setSelectedCategory } from "@/domains/storefront/state/productSlice";
 import { cleanCategoryName } from "@/domains/storefront/utils/categoryUtils";
@@ -15,12 +16,15 @@ export interface ProductBreadcrumbProps {
 export const ProductBreadcrumb: React.FC<ProductBreadcrumbProps> = ({
   categoryName,
   categoryId,
-  shopName = "Cửa hàng",
+  shopName,
   shopId,
   productName,
 }) => {
+  const { t } = useTranslation("customer");
   const dispatch = useAppDispatch();
   const displayName = cleanCategoryName(categoryName, categoryId);
+
+  const effectiveShopName = shopName || t("product.breadcrumb.shop_default");
 
   return (
     <nav
@@ -34,7 +38,7 @@ export const ProductBreadcrumb: React.FC<ProductBreadcrumbProps> = ({
         title="Quay lại trang chủ Marketplace"
       >
         <span className="material-symbols-outlined text-[16px]">storefront</span>
-        <span>Marketplace</span>
+        <span>{t("product.breadcrumb.marketplace")}</span>
       </Link>
 
       <span className="material-symbols-outlined text-[14px] text-outline">chevron_right</span>
@@ -60,12 +64,12 @@ export const ProductBreadcrumb: React.FC<ProductBreadcrumbProps> = ({
         <Link
           to={`/shop/${shopId}`}
           className="hover:text-primary transition-colors cursor-pointer font-medium"
-          title={`Xem gian hàng ${shopName}`}
+          title={`Xem gian hàng ${effectiveShopName}`}
         >
-          <span className="text-secondary font-semibold">{shopName}</span>
+          <span className="text-secondary font-semibold">{effectiveShopName}</span>
         </Link>
       ) : (
-        <span className="text-secondary font-semibold">{shopName}</span>
+        <span className="text-secondary font-semibold">{effectiveShopName}</span>
       )}
 
       <span className="material-symbols-outlined text-[14px] text-outline">chevron_right</span>

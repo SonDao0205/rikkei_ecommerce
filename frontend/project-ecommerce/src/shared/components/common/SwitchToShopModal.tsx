@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 
 export interface SwitchToShopModalProps {
   isOpen: boolean;
@@ -15,6 +16,7 @@ export const SwitchToShopModal: React.FC<SwitchToShopModalProps> = ({
   shopName,
   userName,
 }) => {
+  const { t } = useTranslation('customer');
   const [isRendered, setIsRendered] = useState(false);
 
   const handleClose = useCallback(() => {
@@ -102,11 +104,11 @@ export const SwitchToShopModal: React.FC<SwitchToShopModalProps> = ({
             id="switch-shop-modal-title"
             className="text-xl font-extrabold text-slate-900 tracking-tight"
           >
-            Chuyển sang trang Gian hàng
+            {t("header.switch_shop_modal.title")}
           </h3>
 
           <p className="mt-2 text-sm text-slate-500 leading-relaxed max-w-sm">
-            Bạn có chắc chắn muốn chuyển sang Kênh Người Bán để quản lý sản phẩm, đơn hàng và hoạt động kinh doanh không?
+            {t("header.switch_shop_modal.description")}
           </p>
 
           {/* Shop/User Preview Box */}
@@ -134,14 +136,14 @@ export const SwitchToShopModal: React.FC<SwitchToShopModalProps> = ({
               onClick={handleClose}
               className="w-full py-3 px-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-700 font-bold text-sm transition-all focus:outline-none focus:ring-2 focus:ring-slate-300 cursor-pointer"
             >
-              Hủy bỏ
+              {t("header.switch_shop_modal.btn_cancel")}
             </button>
             <button
               type="button"
               onClick={onConfirm}
               className="w-full py-3 px-4 rounded-xl bg-primary hover:bg-primary/90 active:bg-primary text-white font-bold text-sm shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/35 transition-all focus:outline-none focus:ring-4 focus:ring-primary/20 cursor-pointer flex items-center justify-center gap-2"
             >
-              <span>Vào gian hàng</span>
+              <span>{t("header.switch_shop_modal.btn_confirm")}</span>
               <span className="material-symbols-outlined text-[18px]">
                 arrow_forward
               </span>

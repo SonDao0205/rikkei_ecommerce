@@ -1,0 +1,36 @@
+{
+  "actions": {
+    "save": "Lưu thay đổi",
+    "cancel": "Hủy",
+    "edit": "Chỉnh sửa",
+    "delete": "Xóa",
+    "confirm": "Xác nhận",
+    "search": "Tìm kiếm",
+    "close": "Đóng",
+    "back": "Quay lại",
+    "retry": "Thử lại",
+    "view_detail": "Xem chi tiết",
+    "copy": "Sao chép",
+    "copied": "Đã sao chép"
+  },
+  "status": {
+    "active": "Đang hoạt động",
+    "pending": "Chờ duyệt",
+    "rejected": "Bị từ chối",
+    "suspended": "Tạm ngưng",
+    "completed": "Hoàn thành",
+    "cancelled": "Đã hủy"
+  },
+  "feedback": {
+    "loading": "Đang tải dữ liệu...",
+    "no_data": "Không tìm thấy dữ liệu",
+    "success": "Thao tác thành công",
+    "error_occurred": "Đã xảy ra lỗi, vui lòng thử lại"
+  },
+  "language": {
+    "select": "Chọn ngôn ngữ",
+    "vietnamese": "Tiếng Việt",
+    "english": "English"
+  }
+}
+

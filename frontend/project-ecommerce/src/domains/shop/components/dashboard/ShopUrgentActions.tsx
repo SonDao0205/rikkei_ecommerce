@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { ShopUrgentActionItem, UrgentActionBadgeType } from "@/domains/shop/types/shopDashboard.types";
 
 interface ShopUrgentActionsProps {
@@ -35,6 +36,53 @@ const getTextColor = (id: string) => {
 };
 
 export const ShopUrgentActions: React.FC<ShopUrgentActionsProps> = ({ urgentActions }) => {
+  const { t } = useTranslation('shop');
+
+  const getTranslatedTitle = (item: ShopUrgentActionItem) => {
+    switch (item.id) {
+      case "pending_orders":
+        return t("dashboard.urgent.pending_orders");
+      case "packing_orders":
+        return t("dashboard.urgent.packing_orders");
+      case "low_stock":
+        return t("dashboard.urgent.low_stock");
+      case "complaints":
+        return t("dashboard.urgent.complaints");
+      default:
+        return item.title;
+    }
+  };
+
+  const getTranslatedDescription = (item: ShopUrgentActionItem) => {
+    switch (item.id) {
+      case "pending_orders":
+        return t("dashboard.urgent.pending_orders_sub");
+      case "packing_orders":
+        return t("dashboard.urgent.packing_orders_sub");
+      case "low_stock":
+        return t("dashboard.urgent.low_stock_sub");
+      case "complaints":
+        return t("dashboard.urgent.complaints_sub");
+      default:
+        return item.description;
+    }
+  };
+
+  const getTranslatedActionLabel = (item: ShopUrgentActionItem) => {
+    switch (item.id) {
+      case "pending_orders":
+        return t("dashboard.urgent.btn_confirm");
+      case "packing_orders":
+        return t("dashboard.urgent.btn_pack");
+      case "low_stock":
+        return t("dashboard.urgent.btn_restock");
+      case "complaints":
+        return t("dashboard.urgent.btn_resolve");
+      default:
+        return item.actionLabel;
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mt-6">
       {urgentActions.map((item) => {
@@ -48,7 +96,7 @@ export const ShopUrgentActions: React.FC<ShopUrgentActionsProps> = ({ urgentActi
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">
-                  {item.title}
+                  {getTranslatedTitle(item)}
                 </span>
                 <span
                   className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-label-sm text-[11px] font-semibold font-mono ${getBadgeClasses(
@@ -86,7 +134,7 @@ export const ShopUrgentActions: React.FC<ShopUrgentActionsProps> = ({ urgentActi
                     : "text-outline"
                 }`}
               >
-                {item.description}
+                {getTranslatedDescription(item)}
               </p>
             </div>
 
@@ -94,7 +142,7 @@ export const ShopUrgentActions: React.FC<ShopUrgentActionsProps> = ({ urgentActi
               to={item.actionPath}
               className={`mt-4 pt-2 border-t border-outline-variant/20 flex items-center justify-between font-label-md text-label-md font-semibold group-hover:translate-x-1 transition-transform ${actionTextColor}`}
             >
-              <span>{item.actionLabel}</span>
+              <span>{getTranslatedActionLabel(item)}</span>
               <span className="material-symbols-outlined text-[18px]">
                 {item.actionIcon || "arrow_forward"}
               </span>
