@@ -14,22 +14,15 @@ func Migrate(ctx context.Context, db *sql.DB) error {
 	if duplicateGroups > 0 {
 		return fmt.Errorf("cannot enforce one review per order item: %d order items have duplicate reviews; resolve them before migration", duplicateGroups)
 	}
-	var nonUnique int
-	err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema=DATABASE() AND table_name='reviews' AND index_name='idx_reviews_order_item' AND non_unique=1`).Scan(&nonUnique)
-	if err != nil {
-		return err
-	}
-	if nonUnique > 0 {
-		if _, err = db.ExecContext(ctx, `ALTER TABLE reviews DROP INDEX idx_reviews_order_item`); err != nil {
-			return err
-		}
-	}
 	var uniqueExists int
-	if err = db.QueryRowContext(ctx, `SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema=DATABASE() AND table_name='reviews' AND index_name='uq_reviews_order_item' AND non_unique=0`).Scan(&uniqueExists); err != nil {
+	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema=DATABASE() AND table_name='reviews' AND index_name='uq_reviews_order_item' AND non_unique=0`).Scan(&uniqueExists); err != nil {
 		return err
 	}
 	if uniqueExists == 0 {
-		_, err = db.ExecContext(ctx, `CREATE UNIQUE INDEX uq_reviews_order_item ON reviews(order_item_id)`)
+		// Keep idx_reviews_order_item: InnoDB may rely on it for the foreign
+		// key, so dropping it before creating the unique index fails with 1553.
+		_, err := db.ExecContext(ctx, `CREATE UNIQUE INDEX uq_reviews_order_item ON reviews(order_item_id)`)
+		return err
 	}
-	return err
+	return nil
 }
