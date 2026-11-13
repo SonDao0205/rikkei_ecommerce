@@ -24,6 +24,8 @@ import AdminOrder from "@/domains/admin/pages/AdminOrder";
 import AdminOrderDetail from "@/domains/admin/pages/AdminOrderDetail";
 import AdminShop from "@/domains/admin/pages/AdminShop";
 import AdminUser from "@/domains/admin/pages/AdminUser";
+import AdminPromotionReview from "@/domains/admin/pages/AdminPromotionReview";
+import ShopReviewManagement from "@/domains/shop/pages/ShopReviewManagement";
 import MyProfile from "@/domains/customer/pages/MyProfile";
 import ChangePassword from "@/domains/customer/pages/ChangePassword";
 import Address from "@/domains/customer/pages/Address";
@@ -379,6 +381,14 @@ const router = createBrowserRouter([
     ),
   },
   {
+    path: "/shop/reviews",
+    element: (
+      <ProtectedRoute allowedRoles={["seller", "SELLER"]}>
+        <ShopReviewManagement />
+      </ProtectedRoute>
+    ),
+  },
+  {
     path: "/shop/voucher",
     element: (
       <ProtectedRoute allowedRoles={["seller", "SELLER"]}>
@@ -663,6 +673,14 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute allowedRoles={["admin", "ADMIN"]}>
         <AdminUser />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/admin/promotions",
+    element: (
+      <ProtectedRoute allowedRoles={["admin", "ADMIN"]}>
+        <AdminPromotionReview />
       </ProtectedRoute>
     ),
   },

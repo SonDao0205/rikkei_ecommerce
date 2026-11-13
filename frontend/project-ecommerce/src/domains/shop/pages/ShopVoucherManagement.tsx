@@ -170,7 +170,7 @@ export const ShopVoucherManagement: React.FC = () => {
     setIsDeleting(true);
     try {
       await dispatch(deleteShopVoucherThunk(deletingVoucher.id)).unwrap();
-      showToast(`Đã xoá voucher "${deletingVoucher.code}"`);
+      showToast(`Đã ngừng voucher "${deletingVoucher.code}"`);
       setDeletingVoucher(null);
     } catch (err) {
       const msg = typeof err === "string" ? err : "Lỗi khi xoá voucher";
@@ -239,14 +239,14 @@ export const ShopVoucherManagement: React.FC = () => {
               </div>
               <div className="space-y-1">
                 <h3 className="font-headline-sm text-headline-sm font-bold text-on-surface">
-                  Xác nhận xoá voucher?
+                  Ngừng voucher này?
                 </h3>
                 <p className="font-body-sm text-body-sm text-on-surface-variant">
-                  Bạn có chắc chắn muốn xoá mã ưu đãi{" "}
+                  Voucher sẽ bị tắt và không áp dụng được cho đơn mới. Lịch sử sử dụng sẽ được giữ lại cho đối soát: {" "}
                   <strong className="text-on-surface font-mono text-primary">
                     {deletingVoucher.code}
                   </strong>{" "}
-                  ({deletingVoucher.title}) không? Thao tác này không thể hoàn tác.
+                  ({deletingVoucher.title}).
                 </p>
               </div>
 
@@ -257,7 +257,7 @@ export const ShopVoucherManagement: React.FC = () => {
                   onClick={() => setDeletingVoucher(null)}
                   className="px-4 py-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-xl font-label-md text-label-md transition-colors"
                 >
-                  Không, giữ lại
+                  Quay lại
                 </button>
                 <button
                   type="button"
@@ -265,7 +265,7 @@ export const ShopVoucherManagement: React.FC = () => {
                   onClick={handleConfirmDelete}
                   className="inline-flex items-center gap-1.5 px-5 py-2 bg-error hover:bg-error/90 text-on-error rounded-xl font-label-md text-label-md font-semibold transition-all active:scale-95 disabled:opacity-50"
                 >
-                  {isDeleting ? "Đang xoá..." : "Xoá voucher"}
+                  {isDeleting ? "Đang ngừng..." : "Ngừng voucher"}
                 </button>
               </div>
             </div>

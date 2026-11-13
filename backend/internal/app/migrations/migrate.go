@@ -27,11 +27,11 @@ func Run(ctx context.Context, db *sql.DB) error {
 		{name: "address", run: address.Migrate},
 		{name: "catalog", run: catalog.Migrate},
 		{name: "cart", run: cart.Migrate},
+		{name: "promotion", run: promotion.Migrate},
 		{name: "checkout", run: checkout.Migrate},
 		{name: "media", run: media.Migrate},
 		{name: "seller", run: seller.Migrate},
 		{name: "shop", run: shop.Migrate},
-		{name: "promotion", run: promotion.Migrate},
 		{name: "review", run: review.Migrate},
 		{name: "auditlog", run: auditlog.Migrate},
 	}

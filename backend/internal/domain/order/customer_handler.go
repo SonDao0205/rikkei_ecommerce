@@ -516,7 +516,7 @@ func (h *CustomerHandler) cancelCustomerOrder(w http.ResponseWriter, r *http.Req
 
 		// Restore stock and decrement sold_count atomically
 		itemRows, err := tx.QueryContext(r.Context(),
-			`SELECT variant_id, product_id, quantity FROM order_items WHERE shop_order_id = ? FOR UPDATE`,
+			`SELECT variant_id, product_id, quantity, flash_sale_id FROM order_items WHERE shop_order_id = ? FOR UPDATE`,
 			t.id,
 		)
 		if err != nil {
@@ -525,14 +525,15 @@ func (h *CustomerHandler) cancelCustomerOrder(w http.ResponseWriter, r *http.Req
 		}
 
 		type itemRestock struct {
-			variantID int64
-			productID int64
-			qty       int64
+			variantID   int64
+			productID   int64
+			qty         int64
+			flashSaleID sql.NullInt64
 		}
 		var restocks []itemRestock
 		for itemRows.Next() {
 			var ir itemRestock
-			if err := itemRows.Scan(&ir.variantID, &ir.productID, &ir.qty); err != nil {
+			if err := itemRows.Scan(&ir.variantID, &ir.productID, &ir.qty, &ir.flashSaleID); err != nil {
 				itemRows.Close()
 				serverError(w, h.logger, err)
 				return
@@ -557,6 +558,12 @@ func (h *CustomerHandler) cancelCustomerOrder(w http.ResponseWriter, r *http.Req
 			if err != nil {
 				serverError(w, h.logger, err)
 				return
+			}
+			if ir.flashSaleID.Valid {
+				if _, err = tx.ExecContext(r.Context(), `UPDATE flash_sales SET quantity_sold=GREATEST(quantity_sold-?,0) WHERE id=?`, ir.qty, ir.flashSaleID.Int64); err != nil {
+					serverError(w, h.logger, err)
+					return
+				}
 			}
 		}
 	}

@@ -81,6 +81,56 @@ func (h handler) publicVouchers(w http.ResponseWriter, r *http.Request) {
 	defer rows.Close()
 	h.writeVoucherRows(w, rows)
 }
+
+func (h handler) myVouchers(w http.ResponseWriter, r *http.Request) {
+	uid, ok := h.actor(r)
+	if !ok {
+		h.fail(w, 401, "unauthorized", "Invalid user")
+		return
+	}
+	rows, err := h.db.QueryContext(r.Context(), `SELECT v.id,v.code,v.scope,v.shop_id,v.title,v.description,v.discount_type,v.discount_value,v.max_discount_amount,v.min_order_value,v.usage_limit,v.usage_per_user,v.used_count,v.start_at,v.end_at,v.is_active
+		FROM voucher_claims vc JOIN vouchers v ON v.id=vc.voucher_id WHERE vc.user_id=? ORDER BY vc.claimed_at DESC LIMIT 200`, uid)
+	if err != nil {
+		h.internal(w, err)
+		return
+	}
+	defer rows.Close()
+	h.writeVoucherRows(w, rows)
+}
+
+func (h handler) claimVoucher(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(r)
+	if !ok {
+		h.fail(w, 400, "invalid_id", "Voucher ID must be positive")
+		return
+	}
+	uid, ok := h.actor(r)
+	if !ok {
+		h.fail(w, 401, "unauthorized", "Invalid user")
+		return
+	}
+	var available int
+	err := h.db.QueryRowContext(r.Context(), `SELECT COUNT(*) FROM vouchers WHERE id=? AND is_active=1 AND start_at<=UTC_TIMESTAMP() AND end_at>UTC_TIMESTAMP() AND (usage_limit IS NULL OR used_count<usage_limit)`, id).Scan(&available)
+	if err != nil {
+		h.internal(w, err)
+		return
+	}
+	if available == 0 {
+		h.fail(w, 422, "voucher_unavailable", "Voucher is inactive, not yet started, expired, or exhausted")
+		return
+	}
+	result, err := h.db.ExecContext(r.Context(), `INSERT IGNORE INTO voucher_claims(voucher_id,user_id) VALUES(?,?)`, id, uid)
+	if err != nil {
+		h.internal(w, err)
+		return
+	}
+	inserted, err := result.RowsAffected()
+	if err != nil {
+		h.internal(w, err)
+		return
+	}
+	h.ok(w, 200, map[string]any{"voucher_id": id, "claimed": true, "already_claimed": inserted == 0})
+}
 func (h handler) sellerVouchers(w http.ResponseWriter, r *http.Request) {
 	id, ok := h.actor(r)
 	if !ok {
@@ -121,8 +171,9 @@ func (h handler) writeVoucherRows(w http.ResponseWriter, rows *sql.Rows) {
 		var code, scope, title, typ string
 		var sid sql.NullInt64
 		var desc sql.NullString
-		var value, max, min float64
-		var maxN, limit sql.NullInt64
+		var value, min float64
+		var maxN sql.NullFloat64
+		var limit sql.NullInt64
 		var per, used int
 		var start, end time.Time
 		var active bool
@@ -132,7 +183,7 @@ func (h handler) writeVoucherRows(w http.ResponseWriter, rows *sql.Rows) {
 		}
 		var mx any
 		if maxN.Valid {
-			mx = max
+			mx = maxN.Float64
 		}
 		var lim any
 		if limit.Valid {
@@ -142,13 +193,47 @@ func (h handler) writeVoucherRows(w http.ResponseWriter, rows *sql.Rows) {
 		if sid.Valid {
 			s = sid.Int64
 		}
-		out = append(out, map[string]any{"id": id, "code": code, "scope": scope, "shop_id": s, "title": title, "description": desc, "discount_type": typ, "discount_value": value, "max_discount_amount": mx, "min_order_value": min, "usage_limit": lim, "usage_per_user": per, "used_count": used, "start_at": start, "end_at": end, "is_active": active})
+		var description any
+		if desc.Valid {
+			description = desc.String
+		}
+		out = append(out, map[string]any{"id": id, "code": code, "scope": scope, "shop_id": s, "title": title, "description": description, "discount_type": typ, "discount_value": value, "max_discount_amount": mx, "min_order_value": min, "usage_limit": lim, "usage_per_user": per, "used_count": used, "start_at": start, "end_at": end, "is_active": active})
 	}
 	if e := rows.Err(); e != nil {
 		h.internal(w, e)
 		return
 	}
 	h.ok(w, 200, out)
+}
+
+func (h handler) sellerVoucherStats(w http.ResponseWriter, r *http.Request) {
+	uid, ok := h.actor(r)
+	if !ok {
+		h.fail(w, 401, "unauthorized", "Invalid user")
+		return
+	}
+	shopID, err := h.activeShop(r, uid)
+	if err != nil {
+		h.internal(w, err)
+		return
+	}
+	if shopID == 0 {
+		h.fail(w, 403, "active_shop_required", "An active shop is required")
+		return
+	}
+	var active, usage int64
+	var discountSpent, revenue float64
+	err = h.db.QueryRowContext(r.Context(), `SELECT
+		(SELECT COUNT(*) FROM vouchers WHERE shop_id=? AND is_active=1 AND start_at<=UTC_TIMESTAMP() AND end_at>UTC_TIMESTAMP()),
+		COUNT(vu.id),COALESCE(SUM(so.shop_discount),0),COALESCE(SUM(so.subtotal),0)
+		FROM vouchers v LEFT JOIN voucher_usages vu ON vu.voucher_id=v.id
+		LEFT JOIN shop_orders so ON so.order_id=vu.order_id AND so.shop_voucher_id=v.id
+		WHERE v.shop_id=?`, shopID, shopID).Scan(&active, &usage, &discountSpent, &revenue)
+	if err != nil {
+		h.internal(w, err)
+		return
+	}
+	h.ok(w, 200, map[string]any{"active_count": active, "total_usage": usage, "voucher_revenue": revenue, "discount_spent": discountSpent})
 }
 func (h handler) createPlatformVoucher(w http.ResponseWriter, r *http.Request) {
 	h.createVoucher(w, r, nil, "PLATFORM")
@@ -218,6 +303,96 @@ func (h handler) createVoucher(w http.ResponseWriter, r *http.Request, shopID *i
 		return
 	}
 	h.ok(w, 201, map[string]any{"id": id, "code": in.Code, "scope": scope, "shop_id": shopID, "is_active": true})
+}
+
+func (h handler) updatePlatformVoucher(w http.ResponseWriter, r *http.Request) {
+	h.updateVoucher(w, r, "PLATFORM")
+}
+
+func (h handler) updateShopVoucher(w http.ResponseWriter, r *http.Request) {
+	h.updateVoucher(w, r, "SHOP")
+}
+
+func (h handler) updateVoucher(w http.ResponseWriter, r *http.Request, expectedScope string) {
+	id, ok := pathID(r)
+	if !ok {
+		h.fail(w, 400, "invalid_id", "ID must be positive")
+		return
+	}
+	uid, ok := h.actor(r)
+	if !ok {
+		h.fail(w, 401, "unauthorized", "Invalid user")
+		return
+	}
+	var shopID *int64
+	if expectedScope == "SHOP" {
+		id, err := h.activeShop(r, uid)
+		if err != nil {
+			h.internal(w, err)
+			return
+		}
+		if id == 0 {
+			h.fail(w, 403, "active_shop_required", "An active shop is required")
+			return
+		}
+		shopID = &id
+	}
+	var in voucherInput
+	if !httpx.Decode(w, r, &in) {
+		return
+	}
+	in.Code = strings.ToUpper(strings.TrimSpace(in.Code))
+	in.Title = strings.TrimSpace(in.Title)
+	in.DiscountType = strings.ToUpper(strings.TrimSpace(in.DiscountType))
+	start, e1 := time.Parse(time.RFC3339, in.StartAt)
+	end, e2 := time.Parse(time.RFC3339, in.EndAt)
+	if len(in.Code) < 4 || len(in.Code) > 50 || !codeAllowed(in.Code) || len(in.Title) < 2 || len(in.Title) > 200 || len(in.Description) > 500 || in.Minimum < 0 || in.Minimum > 9_999_999_999_999.99 || in.PerUser < 1 || in.PerUser > 100 || e1 != nil || e2 != nil || !end.After(start) || in.DiscountValue <= 0 || in.DiscountValue > 9_999_999_999_999.99 || (in.DiscountType != "PERCENT" && in.DiscountType != "FIXED") || (in.DiscountType == "PERCENT" && in.DiscountValue > 100) || (in.MaxDiscount != nil && (*in.MaxDiscount <= 0 || *in.MaxDiscount > 9_999_999_999_999.99)) || (in.UsageLimit != nil && (*in.UsageLimit < 1 || *in.UsageLimit > 1_000_000_000)) {
+		h.fail(w, 400, "invalid_voucher", "Voucher fields or date range are invalid")
+		return
+	}
+	tx, err := h.db.BeginTx(r.Context(), nil)
+	if err != nil {
+		h.internal(w, err)
+		return
+	}
+	defer tx.Rollback()
+	var scope string
+	var ownerShop sql.NullInt64
+	var used int
+	err = tx.QueryRowContext(r.Context(), `SELECT scope,shop_id,used_count FROM vouchers WHERE id=? FOR UPDATE`, id).Scan(&scope, &ownerShop, &used)
+	if errors.Is(err, sql.ErrNoRows) {
+		h.fail(w, 404, "voucher_not_found", "Voucher not found")
+		return
+	}
+	if err != nil {
+		h.internal(w, err)
+		return
+	}
+	if scope != expectedScope || (shopID != nil && (!ownerShop.Valid || ownerShop.Int64 != *shopID)) {
+		h.fail(w, 404, "voucher_not_found", "Voucher not found")
+		return
+	}
+	if in.UsageLimit != nil && *in.UsageLimit < used {
+		h.fail(w, 400, "usage_limit_below_used", "Usage limit cannot be lower than the number already used")
+		return
+	}
+	if _, err = tx.ExecContext(r.Context(), `UPDATE vouchers SET code=?,title=?,description=?,discount_type=?,discount_value=?,max_discount_amount=?,min_order_value=?,usage_limit=?,usage_per_user=?,start_at=?,end_at=? WHERE id=?`, in.Code, in.Title, nullString(in.Description), in.DiscountType, in.DiscountValue, in.MaxDiscount, in.Minimum, in.UsageLimit, in.PerUser, start.UTC(), end.UTC(), id); err != nil {
+		if strings.Contains(strings.ToLower(err.Error()), "duplicate") {
+			h.fail(w, 409, "voucher_code_exists", "Voucher code already exists")
+			return
+		}
+		h.internal(w, err)
+		return
+	}
+	if err = auditlog.Record(r.Context(), tx, strconv.FormatInt(uid, 10), "VOUCHER_UPDATED", "VOUCHER", id, nil, map[string]any{"code": in.Code, "scope": scope, "shop_id": shopID}); err != nil {
+		h.internal(w, err)
+		return
+	}
+	if err = tx.Commit(); err != nil {
+		h.internal(w, err)
+		return
+	}
+	h.ok(w, 200, map[string]any{"id": id, "code": in.Code, "scope": scope, "shop_id": shopID})
 }
 func codeAllowed(s string) bool {
 	for _, c := range s {
@@ -663,5 +838,68 @@ func (h handler) flashSaleStatus(w http.ResponseWriter, r *http.Request) {
 		h.fail(w, 400, "invalid_id", "ID must be positive")
 		return
 	}
-	h.setActive(w, r, "flash_sales", "FLASH_SALE", id)
+	uid, ok := h.actor(r)
+	if !ok {
+		h.fail(w, 401, "unauthorized", "Invalid user")
+		return
+	}
+	var req struct {
+		Active *bool `json:"is_active"`
+	}
+	if !httpx.Decode(w, r, &req) {
+		return
+	}
+	if req.Active == nil {
+		h.fail(w, 400, "invalid_status", "is_active is required")
+		return
+	}
+	tx, err := h.db.BeginTx(r.Context(), nil)
+	if err != nil {
+		h.internal(w, err)
+		return
+	}
+	defer tx.Rollback()
+	var productID int64
+	if err = tx.QueryRowContext(r.Context(), `SELECT product_id FROM flash_sales WHERE id=?`, id).Scan(&productID); errors.Is(err, sql.ErrNoRows) {
+		h.fail(w, 404, "not_found", "Record not found")
+		return
+	} else if err != nil {
+		h.internal(w, err)
+		return
+	}
+	var lockedProduct int64
+	if err = tx.QueryRowContext(r.Context(), `SELECT id FROM products WHERE id=? FOR UPDATE`, productID).Scan(&lockedProduct); err != nil {
+		h.internal(w, err)
+		return
+	}
+	var start, end time.Time
+	var old bool
+	if err = tx.QueryRowContext(r.Context(), `SELECT start_at,end_at,is_active FROM flash_sales WHERE id=? FOR UPDATE`, id).Scan(&start, &end, &old); err != nil {
+		h.internal(w, err)
+		return
+	}
+	if *req.Active {
+		var overlap int
+		if err = tx.QueryRowContext(r.Context(), `SELECT COUNT(*) FROM flash_sales WHERE product_id=? AND id<>? AND is_active=1 AND start_at<? AND end_at>?`, productID, id, end, start).Scan(&overlap); err != nil {
+			h.internal(w, err)
+			return
+		}
+		if overlap > 0 {
+			h.fail(w, 409, "flash_sale_overlap", "Another active flash sale overlaps this campaign")
+			return
+		}
+	}
+	if _, err = tx.ExecContext(r.Context(), `UPDATE flash_sales SET is_active=? WHERE id=?`, *req.Active, id); err != nil {
+		h.internal(w, err)
+		return
+	}
+	if err = auditlog.Record(r.Context(), tx, strconv.FormatInt(uid, 10), "PROMOTION_STATUS_CHANGED", "FLASH_SALE", id, map[string]any{"is_active": old}, map[string]any{"is_active": *req.Active}); err != nil {
+		h.internal(w, err)
+		return
+	}
+	if err = tx.Commit(); err != nil {
+		h.internal(w, err)
+		return
+	}
+	h.ok(w, 200, map[string]any{"id": id, "is_active": *req.Active})
 }

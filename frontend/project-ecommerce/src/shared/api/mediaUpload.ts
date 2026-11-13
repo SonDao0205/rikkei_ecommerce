@@ -1,6 +1,6 @@
 import axiosClient from "@/shared/api/axiosClient";
 
-export type MediaPurpose = "avatar" | "shop-image" | "product-image" | "product-video";
+export type MediaPurpose = "avatar" | "shop-image" | "product-image" | "review-image" | "product-video";
 export interface UploadedMedia {
   url: string;
   public_id: string;

@@ -67,6 +67,7 @@ export const ShopLayout: React.FC<ShopLayoutProps> = ({ children }) => {
       badgeVariant: "error" as const,
     },
     { label: "Quản lý voucher", path: "/shop/vouchers", icon: "confirmation_number" },
+    { label: "Đánh giá", path: "/shop/reviews", icon: "rate_review" },
     { label: "Ví & Doanh thu", path: "/shop/finances", icon: "account_balance_wallet" },
     {
       label: "Chăm sóc khách",

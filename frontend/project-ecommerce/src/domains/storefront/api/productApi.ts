@@ -16,6 +16,7 @@ import {
   mapBackendCategory,
   type BackendProductRaw,
 } from "@/domains/storefront/utils/catalogAdapters";
+import { promotionApi } from "@/domains/storefront/api/promotionApi";
 
 interface ApiResponse<T> {
   success: boolean;
@@ -73,15 +74,24 @@ export const productApi = {
    * GET /api/v1/products?sort=best_selling&limit=4[&category_id=...]
    */
   fetchFlashSaleProducts: async (categoryId?: number): Promise<ProductItem[]> => {
-    const params: Record<string, string | number> = { sort: "best_selling", limit: 4 };
-    if (typeof categoryId === "number" && categoryId > 0) {
-      params.category_id = categoryId;
-    }
-    const response = await axiosClient.get<ApiResponse<{ products: BackendProductRaw[]; total: number }>>("/api/v1/products", {
-      params,
-    });
-    const products = response.data?.data?.products || [];
-    return products.map(mapBackendProductToProductItem);
+    const campaigns = await promotionApi.getFlashSales();
+    const details = await Promise.allSettled(campaigns.map((sale) => productApi.fetchProductDetail(sale.product_id)));
+    return details.flatMap((result, index) => {
+      if (result.status !== "fulfilled") return [];
+      const sale = campaigns[index];
+      const item = result.value.product;
+      if (categoryId && categoryId > 0 && item.category_id !== categoryId) return [];
+      const originalPrice = item.price;
+      return [{
+        ...item,
+        original_price: originalPrice,
+        price: sale.sale_price,
+        discount_percent: originalPrice > 0 ? Math.round((originalPrice - sale.sale_price) * 100 / originalPrice) : 0,
+        is_flash_sale: true,
+        tag: "FLASH SALE",
+        stock_alert: sale.remaining < 10 ? `Còn ${sale.remaining} suất ưu đãi` : undefined,
+      }];
+    }).slice(0, 4);
   },
 
   /**

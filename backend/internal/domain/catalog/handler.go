@@ -42,26 +42,27 @@ type category struct {
 }
 
 type product struct {
-	ID           int64   `json:"id"`
-	ShopID       int64   `json:"shop_id"`
-	CategoryID   int64   `json:"category_id"`
-	BrandID      *int64  `json:"brand_id"`
-	Name         string  `json:"name"`
-	Slug         string  `json:"slug"`
-	Description  *string `json:"description"`
-	ThumbnailURL *string `json:"thumbnail_url"`
-	VideoURL     *string `json:"video_url"`
-	Price        float64 `json:"price"`
-	SoldCount    int64   `json:"sold_count"`
-	RatingAvg    float64 `json:"rating_avg"`
-	RatingCount  int64   `json:"rating_count"`
-	Status       string  `json:"status"`
-	RejectReason *string `json:"reject_reason"`
-	IsDeleted    int     `json:"is_deleted"`
-	ShopName     string  `json:"shop_name"`
-	CategoryName string  `json:"category_name"`
-	Stock        int64   `json:"stock"`
-	IsFlashSale  bool    `json:"is_flash_sale"`
+	ID            int64   `json:"id"`
+	ShopID        int64   `json:"shop_id"`
+	CategoryID    int64   `json:"category_id"`
+	BrandID       *int64  `json:"brand_id"`
+	Name          string  `json:"name"`
+	Slug          string  `json:"slug"`
+	Description   *string `json:"description"`
+	ThumbnailURL  *string `json:"thumbnail_url"`
+	VideoURL      *string `json:"video_url"`
+	Price         float64 `json:"price"`
+	OriginalPrice float64 `json:"original_price,omitempty"`
+	SoldCount     int64   `json:"sold_count"`
+	RatingAvg     float64 `json:"rating_avg"`
+	RatingCount   int64   `json:"rating_count"`
+	Status        string  `json:"status"`
+	RejectReason  *string `json:"reject_reason"`
+	IsDeleted     int     `json:"is_deleted"`
+	ShopName      string  `json:"shop_name"`
+	CategoryName  string  `json:"category_name"`
+	Stock         int64   `json:"stock"`
+	IsFlashSale   bool    `json:"is_flash_sale"`
 }
 
 type adminProduct struct {
