@@ -16,6 +16,29 @@ interface ApiResponse<T> {
 
 export const INITIAL_SHOP_VOUCHERS: Record<number, ShopVoucher> = {};
 export const INITIAL_PLATFORM_VOUCHER: PlatformVoucher | null = null;
+const pendingCartAddKeys = new Map<string, string>();
+
+function createCartAddKey(variantId: number, quantity: number): { key: string; storageKey: string } {
+  const storageKey = `cart.add.idempotency.v1:${variantId}:${quantity}`;
+  const pendingKey = pendingCartAddKeys.get(storageKey);
+  if (pendingKey) return { key: pendingKey, storageKey };
+  try {
+    const savedKey = sessionStorage.getItem(storageKey);
+    if (savedKey) return { key: savedKey, storageKey };
+  } catch {
+    // Continue with an in-memory request key when browser storage is disabled.
+  }
+  const key = typeof crypto.randomUUID === "function"
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+  try {
+    sessionStorage.setItem(storageKey, key);
+  } catch {
+    // The request remains protected from duplicate clicks by the cart thunk condition.
+  }
+  pendingCartAddKeys.set(storageKey, key);
+  return { key, storageKey };
+}
 
 /**
  * Maps a single backend cart item to UI CartItem model
@@ -93,10 +116,18 @@ export const cartApi = {
   },
 
   async addItem(variantId: number, quantity: number = 1): Promise<CartResponse> {
-    const response = await axiosClient.post<ApiResponse<CartResponse>>("/api/v1/cart/items", {
-      variant_id: variantId,
-      quantity,
-    });
+    const { key, storageKey } = createCartAddKey(variantId, quantity);
+    const response = await axiosClient.post<ApiResponse<CartResponse>>(
+      "/api/v1/cart/items",
+      { variant_id: variantId, quantity },
+      { headers: { "Idempotency-Key": key } }
+    );
+    try {
+      if (sessionStorage.getItem(storageKey) === key) sessionStorage.removeItem(storageKey);
+    } catch {
+      // The cart mutation is complete even if session storage cannot be cleared.
+    }
+    pendingCartAddKeys.delete(storageKey);
     return response.data.data;
   },
 
@@ -153,8 +184,12 @@ export const cartApi = {
     return response.data.data;
   },
 
-  async createOrder(request: CreateOrderRequest) {
-    const response = await axiosClient.post<ApiResponse<CreatedOrder>>("/api/v1/checkout/orders", request);
+  async createOrder(request: CreateOrderRequest, idempotencyKey: string) {
+    const response = await axiosClient.post<ApiResponse<CreatedOrder>>(
+      "/api/v1/checkout/orders",
+      request,
+      { headers: { "Idempotency-Key": idempotencyKey } }
+    );
     return response.data.data;
   },
 };

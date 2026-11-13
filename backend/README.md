@@ -444,7 +444,7 @@ Cart và wishlist yêu cầu đăng nhập với role `CLIENT`; seller vẫn gi�
 - `PUT /api/v1/cart/items/{id}` nhận `{ "quantity": 2 }` và thay số lượng tuyệt đối (không cộng dồn). Biến thể không được đổi qua endpoint này; nếu sản phẩm không còn mua được hoặc số lượng vượt tồn kho, BE trả lỗi thay vì ghi dữ liệu sai. `DELETE /api/v1/cart/items/{id}` xóa đúng item thuộc cart của user; `DELETE /api/v1/cart/items` xóa cả giỏ. Cart được khóa theo user trong transaction để tuần tự hóa thao tác ghi cùng một cart.
 - GET cart vẫn trả các item đã hết hàng/ngừng bán để người dùng nhận biết và tự xóa; mỗi item có `is_available` và `available_stock`. Chỉ item khả dụng được cộng vào subtotal. Số tiền dòng được nhân ở `DECIMAL(30,2)` để bao phủ mức giá schema và số lượng tồn kho kiểu `INT`.
 - `GET /api/v1/wishlist` trả `items` và `total`, cùng trạng thái khả dụng/tồn kho hiện tại. Có thể lưu sản phẩm hết hàng; chỉ sản phẩm public (cùng shop/category active, chưa soft-delete) mới được thêm. `POST` lặp là idempotent; `DELETE` lặp vẫn thành công. Wishlist không khóa biến thể vì được lưu theo sản phẩm.
-- Cart and wishlist APIs are implemented. Checkout quote APIs are documented below; they calculate current pricing but do not create orders. Postman covers authorization and invalid-request cases.
+- Cart and wishlist APIs are implemented. Checkout supports quote and real order creation; POST order requires an `Idempotency-Key` so a retry returns the original order response rather than reserving stock or vouchers twice.
 
 ### Admin inventory
 
@@ -531,6 +531,8 @@ Example quote body:
 ```
 
 ### Order creation: `POST /api/v1/checkout/orders`
+
+Send a unique `Idempotency-Key` header (16–128 ASCII letters, digits, `-`, `_`, `.`, or `:`). The key is scoped to the authenticated user and bound to a SHA-256 fingerprint of the canonical JSON request (the note is trimmed before hashing). Replaying the same key and request returns the original status/body with `Idempotency-Replayed: true`; using the same key for a different body returns `409 idempotency_key_reused`. The key, resulting order, stock/voucher changes, cart cleanup, and replay response are committed atomically. A failed transaction leaves no key reservation, so the same key can safely retry.
 
 Tạo đơn hàng từ giỏ hàng được bảo vệ bởi role `CLIENT`, thực thi toàn bộ trong một transaction cơ sở dữ liệu duy nhất:
 
@@ -670,7 +672,7 @@ Avatar workflow: upload media, then save the returned URL using `PUT /api/v1/aut
 
 Product create/update accepts optional `video_url` in addition to the existing `images` array. The seller migration adds `products.video_url` idempotently; the public product-detail response returns that URL so the storefront can play the video. Ensure the migration is run before deploying with `AUTO_MIGRATE=false` (`go run ./cmd/migrate` from `backend`). Existing product image URLs remain in `product_images` and continue to be validated by the seller API.
 
-The FE uses JPEG-only file pickers and validates type/size before sending; the backend repeats validation and is authoritative. Uploads run independently of React route components and show progress/status in the global upload panel, so in-app navigation does not abort a transfer. Reloading or closing the browser still ends an in-flight browser request; start that upload again if it did not complete.
+The FE file pickers accept JPG/JPEG/PNG images and validate type/size before sending; the backend checks the extension against the detected and decoded file content and is authoritative. Images are limited to 5 MiB. Product videos accept MP4/MOV/WebM up to 20 MiB. Uploads run independently of React route components and show progress/status in the global upload panel, so in-app navigation does not abort a transfer. Reloading or closing the browser still ends an in-flight browser request; start that upload again if it did not complete.
 
 ## Admin APIs and scope
 
@@ -690,3 +692,21 @@ All `/api/v1/admin/*` endpoints require a valid access token and the `ADMIN` rol
 Promotion/review schema migrations run automatically with the API migration runner and are also represented in `database/scriptDb.sql`. Run `go test ./...` and `go vet ./...` from `backend`; use an isolated database and verify campaign boundaries, exhausted usage, completed/non-completed reviews, duplicate review attempts, cross-shop seller access and moderation audit entries before a shared deployment. The current FE shop voucher screen still contains mock-backed edit/claim/statistics behavior; API support is live, but those UI actions must be connected before treating the full promotion management UI as complete.
 
 Database-backed admin integration tests should use disposable data and an ADMIN fixture. Unit tests cover admin validation and state filters; ensure `go test ./...` and `go vet ./...` pass before merging.
+
+## Idempotency and maintainability audit (2026-11-13)
+
+Checkout order creation is protected by a required per-user `Idempotency-Key`; the key reservation, request fingerprint, created order, stock/voucher/payment updates, cart cleanup, and replay response share one MySQL transaction. A replay with the same key/body returns the committed response; a changed body returns `409`. Registration is guarded by unique email/phone constraints; wishlist insertion is guarded by a unique row and uses an upsert; order/shop transitions lock rows and validate the current state so a repeated transition cannot apply stock/payment effects twice.
+
+This is not yet a universal idempotency-key policy. `POST /api/v1/cart/items` and `POST /api/v1/media` now have per-operation keys; address creation intentionally creates a new address per request. Other resource-creation APIs are protected by natural constraints where available, but they do not all replay the original response on retry. Do not blindly add a generic HTTP middleware: successful domain writes and stored responses must be committed atomically for reliable recovery after a lost response.
+
+The domain/package structure and route/handler separation provide a useful starting point for SOLID, but strict SOLID compliance is not claimed: several business handlers still combine transport, validation, SQL orchestration, and response mapping. Refactor incrementally by extracting cohesive domain services/repositories with behavior-preserving tests; avoid adding interfaces with only one implementation unless they create a real boundary.
+
+Validation in this workspace: `go test ./...`, `go vet ./...`, frontend `npm run lint`, and `npm run build` pass. The checkout idempotency behavior still needs a MySQL-backed replay/concurrency test before deployment; this run did not execute the mutating end-to-end Postman collection against a disposable database.
+
+## Cart and media idempotency
+
+`POST /api/v1/cart/items` requires `Idempotency-Key`. The cart mutation and `(user_id, key, request_hash)` record commit in the same transaction. Retrying the same add returns the user's current cart with `Idempotency-Replayed: true`; the same key with a different variant or quantity returns `409 idempotency_key_reused`. The FE persists pending keys per variant/quantity in session storage so a retry after a lost response does not increment quantity twice. A successful explicit add clears the key, so a later intentional add creates a new operation.
+
+`POST /api/v1/media` also requires the key. The request fingerprint includes purpose, basename, and SHA-256 of file bytes. The backend stores the response and Cloudinary public ID under the same user-scoped key; Cloudinary receives a deterministic public ID and `overwrite=true`, so a retry targets the same logical asset. Upload requests may hold a DB transaction while Cloudinary is responding; upload concurrency is capped at three per API process. Retry the same file and key after a network error; changed file content/purpose/filename with that key returns `409` after a committed upload.
+
+CORS preflight explicitly allows `Idempotency-Key` and exposes replay/rate-limit headers. Keep API clients and Postman callers on the same header contract.

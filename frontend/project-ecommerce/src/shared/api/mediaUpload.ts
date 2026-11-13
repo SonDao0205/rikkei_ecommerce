@@ -27,6 +27,36 @@ const maxImageBytes = 5 * 1024 * 1024;
 const maxVideoBytes = 20 * 1024 * 1024;
 let jobs: MediaUploadJob[] = [];
 const listeners = new Set<() => void>();
+const pendingUploadKeys = new Map<string, string>();
+
+async function mediaUploadKey(file: File, purpose: MediaPurpose) {
+  let fingerprint: string;
+  try {
+    const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
+    fingerprint = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+  } catch {
+    fingerprint = `${file.name}:${file.size}:${file.lastModified}`;
+  }
+  const storageKey = `media.upload.idempotency.v1:${purpose}:${fingerprint}`;
+  const pendingKey = pendingUploadKeys.get(storageKey);
+  if (pendingKey) return { key: pendingKey, storageKey };
+  try {
+    const savedKey = sessionStorage.getItem(storageKey);
+    if (savedKey) return { key: savedKey, storageKey };
+  } catch {
+    // Continue with an in-memory key when browser storage is disabled.
+  }
+  const key = typeof crypto.randomUUID === "function"
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+  try {
+    sessionStorage.setItem(storageKey, key);
+  } catch {
+    // A current upload remains protected even when retry persistence is unavailable.
+  }
+  pendingUploadKeys.set(storageKey, key);
+  return { key, storageKey };
+}
 
 function publish(next: MediaUploadJob[]) {
   jobs = next;
@@ -77,17 +107,25 @@ export async function uploadMedia(file: File, purpose: MediaPurpose): Promise<Up
 
   try {
     validateMedia(file, purpose);
+    const { key, storageKey } = await mediaUploadKey(file, purpose);
     const body = new FormData();
     body.append("purpose", purpose);
     body.append("file", file, file.name);
     const response = await axiosClient.post<MediaUploadEnvelope>("/api/v1/media", body, {
       timeout: 120000,
+      headers: { "Idempotency-Key": key },
       onUploadProgress: (event) => {
         const progress = event.total ? Math.min(99, Math.round((event.loaded / event.total) * 100)) : 0;
         publish(jobs.map((item) => item.id === id ? { ...item, progress } : item));
       },
     });
     if (!response.data?.success || !response.data.data?.url) throw new Error("Máy chủ không trả về địa chỉ tệp hợp lệ.");
+    try {
+      if (sessionStorage.getItem(storageKey) === key) sessionStorage.removeItem(storageKey);
+    } catch {
+      // The completed upload is already confirmed by the server.
+    }
+    pendingUploadKeys.delete(storageKey);
     publish(jobs.map((item) => item.id === id ? { ...item, progress: 100, state: "complete" } : item));
     window.setTimeout(() => publish(jobs.filter((item) => item.id !== id)), 8000);
     return response.data.data;

@@ -89,4 +89,8 @@ See [Backend README](backend/README.md#order-workflow-customer-and-seller) for A
 
 ### Media uploads
 
-Avatar, shop branding, product images, and product video files use the authenticated Cloudinary upload API. Configure Cloudinary values in ignored local `.env` files only; the API secret is backend-only. JPEG-only images are capped at 5 MiB and product videos at 20 MiB. See [Backend media API documentation](backend/README.md#media-uploads-cloudinary) and [Frontend integration](frontend/project-ecommerce/README.md#media-upload-integration).
+Avatar, shop branding, product images, and product video files use the authenticated Cloudinary upload API. Configure Cloudinary values in ignored local `.env` files only; the API secret is backend-only. JPG/JPEG/PNG images are capped at 5 MiB and product videos at 20 MiB. See [Backend media API documentation](backend/README.md#media-uploads-cloudinary) and [Frontend integration](frontend/project-ecommerce/README.md#media-upload-integration).
+
+Checkout order creation now requires an `Idempotency-Key`. The FE retains the same key for retries of an unchanged checkout request, and the BE atomically stores the order response with inventory, voucher, payment, and cart changes. Reusing the key with changed input is rejected. Postman order creation requests use a dynamic GUID; reuse that exact key manually to verify replay behavior.
+
+Cart add (`POST /api/v1/cart/items`) and media upload (`POST /api/v1/media`) now require `Idempotency-Key` as well. The cart retries reuse a pending session key; media retries reuse a key derived from the file contents and purpose. The API persists request fingerprints and rejects reuse with changed input. CORS permits this header for configured FE origins.
