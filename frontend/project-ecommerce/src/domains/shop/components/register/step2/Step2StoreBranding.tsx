@@ -2,6 +2,7 @@ import React, { useRef } from "react";
 import type { ShopStoreData } from "@/shared/types";
 import { toSlug } from "@/shared/utils/slug";
 import { uploadMedia } from "@/shared/api/mediaUpload";
+import { getShopDefaultLogo, DEFAULT_SHOP_BANNER } from "@/shared/utils/avatar";
 
 interface Step2StoreBrandingProps {
   data: ShopStoreData;
@@ -185,6 +186,18 @@ export const Step2StoreBranding: React.FC<Step2StoreBrandingProps> = ({
                   <span className="text-[10px] font-semibold">Đổi ảnh</span>
                 </div>
               </>
+            ) : data.shopName?.trim() ? (
+              <>
+                <img
+                  className="w-full h-full object-cover"
+                  alt="Logo mặc định"
+                  src={getShopDefaultLogo(data.shopName)}
+                />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white gap-1">
+                  <span className="material-symbols-outlined text-[24px]">photo_camera</span>
+                  <span className="text-[10px] font-semibold">Tải ảnh tùy chỉnh</span>
+                </div>
+              </>
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center text-primary text-center p-2">
                 <span className="material-symbols-outlined text-[32px]">storefront</span>
@@ -257,10 +270,16 @@ export const Step2StoreBranding: React.FC<Step2StoreBrandingProps> = ({
                 </div>
               </>
             ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center text-primary text-center p-2">
-                <span className="material-symbols-outlined text-[32px]">panorama</span>
-                <span className="text-[10px] uppercase font-bold tracking-wider mt-1 text-center">
-                  Banner gian hàng
+              <div className="relative w-full h-full flex flex-col items-center justify-center text-white text-center p-2 overflow-hidden">
+                <img
+                  className="absolute inset-0 w-full h-full object-cover opacity-75"
+                  alt="Ảnh bìa mặc định"
+                  src={DEFAULT_SHOP_BANNER}
+                />
+                <div className="absolute inset-0 bg-black/40" />
+                <span className="relative z-10 material-symbols-outlined text-[32px]">panorama</span>
+                <span className="relative z-10 text-[10px] uppercase font-bold tracking-wider mt-1 text-center">
+                  Ảnh bìa mặc định (Nhấp để đổi)
                 </span>
               </div>
             )}

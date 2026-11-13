@@ -12,15 +12,6 @@ interface NavItem {
   to?: string;
 }
 
-const NAV_ITEMS: NavItem[] = [
-  { path: "dashboard", label: "Tổng quan", icon: "grid_view", to: "/shop/dashboard" },
-  { path: "products", label: "Quản lý sản phẩm", icon: "inventory_2", badge: "124" },
-  { path: "orders", label: "Đơn hàng & Vận chuyển", icon: "local_shipping", badge: "11 mới", badgeVariant: "error" },
-  { path: "vouchers", label: "Quản lý voucher", icon: "confirmation_number", to: "/shop/vouchers" },
-  { path: "finances", label: "Ví & Doanh thu", icon: "account_balance_wallet" },
-  { path: "customer-chat", label: "Chăm sóc khách", icon: "chat", badge: "3", badgeVariant: "secondary" },
-  { path: "shop-settings", label: "Cài đặt gian hàng", icon: "settings" },
-];
 
 interface ShopSidebarProps {
   currentPath?: string;
@@ -36,6 +27,24 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
   onCloseMobile,
 }) => {
   const { user, role } = useAppSelector((state) => state.auth);
+  const pendingOrders = useAppSelector((state) => state.shopOrder.counts.pending);
+
+  const navItems: NavItem[] = [
+    { path: "dashboard", label: "Tổng quan", icon: "grid_view", to: "/shop/dashboard" },
+    { path: "products", label: "Quản lý sản phẩm", icon: "inventory_2" },
+    {
+      path: "orders",
+      label: "Đơn hàng & Vận chuyển",
+      icon: "local_shipping",
+      badge: pendingOrders > 0 ? (pendingOrders > 99 ? "99+ mới" : `${pendingOrders} mới`) : undefined,
+      badgeVariant: "error",
+      to: "/shop/orders",
+    },
+    { path: "vouchers", label: "Quản lý voucher", icon: "confirmation_number", to: "/shop/vouchers" },
+    { path: "finances", label: "Ví & Doanh thu", icon: "account_balance_wallet" },
+    { path: "customer-chat", label: "Chăm sóc khách", icon: "chat", badge: "3", badgeVariant: "secondary" },
+    { path: "shop-settings", label: "Cài đặt gian hàng", icon: "settings" },
+  ];
 
   const userRoles = new Set(
     (user?.roles?.length ? user.roles : user?.role ? [user.role] : []).map((v) =>
@@ -98,7 +107,7 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
 
           {/* Navigation Items */}
           <nav className="px-space-sm py-space-md flex flex-col gap-1">
-            {NAV_ITEMS.map((item) => {
+            {navItems.map((item) => {
               const isActive = currentPath === item.path;
               const handleClick = (e: React.MouseEvent) => {
                 if (onSelectNav) {
@@ -125,18 +134,18 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
                   to={item.to || "#"}
                   onClick={handleClick}
                   aria-current={isActive ? "page" : undefined}
-                  className={`flex items-center justify-between px-space-sm py-2.5 rounded-lg transition-all ${
+                  className={`flex items-center justify-between gap-2 px-space-sm py-2.5 rounded-lg transition-all ${
                     isActive
                       ? "bg-primary text-on-primary font-label-lg shadow-sm"
                       : "text-inverse-on-surface/80 hover:bg-surface-container-highest/20 hover:text-inverse-on-surface font-label-lg"
                   }`}
                 >
-                  <div className="flex items-center gap-space-sm">
-                    <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
-                    <span className="font-label-lg text-label-lg">{item.label}</span>
+                  <div className="flex items-center gap-space-sm min-w-0">
+                    <span className="material-symbols-outlined text-[20px] shrink-0">{item.icon}</span>
+                    <span className="font-label-lg text-label-lg truncate">{item.label}</span>
                   </div>
                   {item.badge && (
-                    <span className={`font-label-sm text-label-sm px-2 py-0.5 rounded-full ${badgeClasses}`}>
+                    <span className={`font-label-sm text-label-sm px-2.5 py-0.5 rounded-full shrink-0 whitespace-nowrap ${badgeClasses}`}>
                       {item.badge}
                     </span>
                   )}

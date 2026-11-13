@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import { Link } from "react-router-dom";
 
 export interface CartEmptyStateProps {
@@ -28,7 +28,7 @@ export const CartEmptyState: React.FC<CartEmptyStateProps> = () => {
 
       <Link
         to="/"
-        className="h-12 px-8 rounded-xl bg-primary-container text-on-primary font-bold shadow-md hover:bg-primary transition-all inline-flex items-center justify-center gap-2"
+        className="h-12 px-8 rounded-xl bg-primary-container text-on-primary font-bold shadow-md hover:bg-primary transition-all inline-flex items-center justify-center gap-2 cursor-pointer"
       >
         <span className="material-symbols-outlined text-[20px]">storefront</span>
         <span>Khám phá sản phẩm ngay</span>

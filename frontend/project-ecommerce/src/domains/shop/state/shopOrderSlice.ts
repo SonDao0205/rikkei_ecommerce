@@ -63,7 +63,7 @@ const initialState: ShopOrderState = {
 
 export const fetchShopOrderList = createAsyncThunk<
   { orders: ShopOrderItem[]; total: number },
-  Partial<ShopOrderFilterParams> | undefined,
+  Partial<ShopOrderFilterParams> | void,
   { rejectValue: string }
 >("shopOrder/fetchShopOrderList", async (params, { getState, rejectWithValue }) => {
   try {
