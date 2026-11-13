@@ -1,11 +1,14 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 export interface CartEmptyStateProps {
   isCollapsiblePreview?: boolean;
 }
 
 export const CartEmptyState: React.FC<CartEmptyStateProps> = () => {
+  const { t } = useTranslation("customer");
+
   return (
     <div className="py-12 px-4 flex flex-col items-center text-center bg-surface-container-lowest rounded-2xl shadow-sm border border-outline-variant/60">
       {/* Minimalist shopping bag illustration badge */}
@@ -19,11 +22,11 @@ export const CartEmptyState: React.FC<CartEmptyStateProps> = () => {
       </div>
 
       <h3 className="font-headline-lg text-xl sm:text-2xl text-on-surface font-bold mb-2">
-        Giỏ hàng của bạn đang trống
+        {t("cart.empty.title")}
       </h3>
 
       <p className="text-sm sm:text-base text-on-surface-variant max-w-md mb-8">
-        Có vẻ như bạn chưa thêm sản phẩm nào vào giỏ hàng. Khám phá ngay các gian hàng thủ công, sản phẩm chất lượng và ưu đãi hấp dẫn hôm nay!
+        {t("cart.empty.desc")}
       </p>
 
       <Link
@@ -31,7 +34,7 @@ export const CartEmptyState: React.FC<CartEmptyStateProps> = () => {
         className="h-12 px-8 rounded-xl bg-primary-container text-on-primary font-bold shadow-md hover:bg-primary transition-all inline-flex items-center justify-center gap-2 cursor-pointer"
       >
         <span className="material-symbols-outlined text-[20px]">storefront</span>
-        <span>Khám phá sản phẩm ngay</span>
+        <span>{t("cart.empty.explore_btn")}</span>
       </Link>
     </div>
   );

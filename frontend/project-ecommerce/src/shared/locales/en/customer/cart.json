@@ -1,0 +1,79 @@
+{
+  "stepper": {
+    "cart": "Cart",
+    "checkout": "Checkout",
+    "complete": "Completed"
+  },
+  "header": {
+    "title": "My Shopping Cart",
+    "items_count": "{{count}} products",
+    "shipping_notice": "Select address and shipping method at checkout to see exact delivery fees.",
+    "back": "Back"
+  },
+  "empty": {
+    "title": "Your cart is empty",
+    "desc": "Looks like you haven't added any products to your cart yet. Explore artisan stores, verified items, and exciting offers today!",
+    "explore_btn": "Explore Products Now"
+  },
+  "auth_required": {
+    "title": "Log in to view cart",
+    "desc": "Please log in to your account to review the items in your cart and proceed to checkout.",
+    "login_btn": "Log In Now"
+  },
+  "select_all_bar": {
+    "select_all": "Select All ({{count}} products)",
+    "delete_selected": "Delete Selected",
+    "move_to_wishlist": "Save to Wishlist"
+  },
+  "shop_group": {
+    "chat": "Chat",
+    "shop_voucher_label": "Store Voucher:",
+    "shop_voucher_applied": "Store Voucher applied: -{{discount}}",
+    "shop_total": "Store subtotal ({{count}} items):",
+    "you_save": "Save {{amount}}",
+    "apply_voucher_failed": "Failed to apply voucher"
+  },
+  "item_row": {
+    "in_stock": "In Stock",
+    "out_of_stock": "Out of Stock",
+    "delete_title": "Remove item",
+    "wishlist_title": "Save to wishlist"
+  },
+  "summary": {
+    "title": "Order Summary",
+    "selected_items": "{{count}} items selected",
+    "platform_voucher_title": "Platform Voucher",
+    "voucher_applied": "Applied",
+    "enter_voucher_placeholder": "Enter promo code...",
+    "btn_apply": "Apply",
+    "items_subtotal": "Items Subtotal ({{count}} items)",
+    "estimated_shipping": "Estimated Shipping (final at checkout)",
+    "shipping_discount": "Shipping Discount",
+    "store_vouchers": "Store Vouchers",
+    "platform_voucher": "Platform Voucher",
+    "estimated_total": "Estimated Total",
+    "final_total_notice": "Final total confirmed in checkout quote",
+    "savings_notice": "You save a total of {{amount}} on this purchase!",
+    "checkout_btn": "Select delivery, payment & see final quote",
+    "loading_quote": "Loading quote...",
+    "protection_guarantee": "100% Escrow Protection",
+    "free_returns": "7-Day Free Returns",
+    "inspect_before_pay": "Inspect Before Pay",
+    "accepted_payments_title": "Accepted Payment Options",
+    "accepted_payments_notice": "Choose from payment options supported during checkout."
+  },
+  "notifications": {
+    "item_removed": "Product removed from cart",
+    "select_at_least_one_delete": "Please select at least one item to delete.",
+    "selected_items_removed": "Removed {{count}} selected items",
+    "select_items_wishlist": "Please select items to save to your wishlist.",
+    "saved_to_wishlist": "Saved {{count}} items to your wishlist!",
+    "item_saved_to_wishlist": "Saved \"{{name}}\" to your wishlist!",
+    "shop_voucher_applied": "Store voucher applied successfully!",
+    "shop_voucher_removed": "Store voucher has been removed.",
+    "platform_voucher_applied": "Platform voucher \"{{code}}\" applied successfully!",
+    "platform_voucher_removed": "Platform voucher removed.",
+    "select_items_checkout": "Please select at least one in-stock item to proceed to checkout."
+  }
+}
+

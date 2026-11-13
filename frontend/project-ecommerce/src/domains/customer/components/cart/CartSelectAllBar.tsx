@@ -1,4 +1,5 @@
-﻿import React from "react";
+import React from "react";
+import { useTranslation } from "react-i18next";
 
 export interface CartSelectAllBarProps {
   totalItems: number;
@@ -15,6 +16,8 @@ export const CartSelectAllBar: React.FC<CartSelectAllBarProps> = ({
   onDeleteSelected,
   onMoveToWishlist,
 }) => {
+  const { t } = useTranslation("customer");
+
   return (
     <div className="bg-surface-container-lowest rounded-xl p-4 shadow-sm flex flex-wrap items-center justify-between gap-3 border border-outline-variant/60">
       <label className="flex items-center gap-3 cursor-pointer select-none">
@@ -25,7 +28,7 @@ export const CartSelectAllBar: React.FC<CartSelectAllBarProps> = ({
           className="w-5 h-5 rounded text-primary-container focus:ring-primary-container accent-primary-container cursor-pointer"
         />
         <span className="font-label-lg text-sm sm:text-base text-on-surface font-bold">
-          Chọn tất cả ({totalItems} sản phẩm)
+          {t("cart.select_all_bar.select_all", { count: totalItems })}
         </span>
       </label>
 
@@ -36,7 +39,7 @@ export const CartSelectAllBar: React.FC<CartSelectAllBarProps> = ({
           className="text-on-surface-variant hover:text-error transition-colors flex items-center gap-1 cursor-pointer"
         >
           <span className="material-symbols-outlined text-[18px]">delete</span>
-          <span>Xóa đã chọn</span>
+          <span>{t("cart.select_all_bar.delete_selected")}</span>
         </button>
         <span className="text-outline-variant">|</span>
         <button
@@ -45,7 +48,7 @@ export const CartSelectAllBar: React.FC<CartSelectAllBarProps> = ({
           className="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 cursor-pointer"
         >
           <span className="material-symbols-outlined text-[18px]">favorite</span>
-          <span>Lưu vào yêu thích</span>
+          <span>{t("cart.select_all_bar.move_to_wishlist")}</span>
         </button>
       </div>
     </div>

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import CustomerLayout from "@/app/layout/CustomerLayout";
 import {
   CartBreadcrumbStepper,
@@ -28,6 +29,7 @@ import type { CartItem, CartShopGroup as ICartShopGroup } from "@/domains/custom
 import { formatCurrencyVND } from "@/shared/utils/currency";
 
 export const ShoppingCart: React.FC = () => {
+  const { t } = useTranslation("customer");
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { isAuthenticated } = useAppSelector((state) => state.auth);
@@ -135,7 +137,7 @@ export const ShoppingCart: React.FC = () => {
     dispatch(removeItem(itemId));
     setNotification({
       type: "info",
-      message: "Đã xóa sản phẩm khỏi giỏ hàng",
+      message: t("cart.notifications.item_removed"),
     });
   };
 
@@ -143,14 +145,14 @@ export const ShoppingCart: React.FC = () => {
     if (summary.selected_count === 0) {
       setNotification({
         type: "error",
-        message: "Vui lòng chọn ít nhất một sản phẩm để xóa.",
+        message: t("cart.notifications.select_at_least_one_delete"),
       });
       return;
     }
     dispatch(removeSelectedItemsAction());
     setNotification({
       type: "info",
-      message: `Đã xóa ${summary.selected_count} sản phẩm đã chọn`,
+      message: t("cart.notifications.selected_items_removed", { count: summary.selected_count }),
     });
   };
 
@@ -158,20 +160,20 @@ export const ShoppingCart: React.FC = () => {
     if (summary.selected_count === 0) {
       setNotification({
         type: "error",
-        message: "Vui lòng chọn sản phẩm cần lưu vào yêu thích.",
+        message: t("cart.notifications.select_items_wishlist"),
       });
       return;
     }
     setNotification({
       type: "success",
-      message: `Đã lưu ${summary.selected_count} sản phẩm vào danh sách yêu thích!`,
+      message: t("cart.notifications.saved_to_wishlist", { count: summary.selected_count }),
     });
   };
 
   const handleSaveItemForLater = (item: CartItem) => {
     setNotification({
       type: "success",
-      message: `Đã lưu "${item.name}" vào danh sách yêu thích!`,
+      message: t("cart.notifications.item_saved_to_wishlist", { name: item.name }),
     });
   };
 
@@ -179,7 +181,7 @@ export const ShoppingCart: React.FC = () => {
     await dispatch(applyShopVoucherAction({ shopId, code })).unwrap();
     setNotification({
       type: "success",
-      message: `Đã áp dụng thành công mã ưu đãi của shop!`,
+      message: t("cart.notifications.shop_voucher_applied"),
     });
   };
 
@@ -187,7 +189,7 @@ export const ShoppingCart: React.FC = () => {
     dispatch(removeShopVoucher(shopId));
     setNotification({
       type: "info",
-      message: "Đã hủy áp dụng mã giảm giá của shop.",
+      message: t("cart.notifications.shop_voucher_removed"),
     });
   };
 
@@ -195,7 +197,7 @@ export const ShoppingCart: React.FC = () => {
     await dispatch(applyPlatformVoucherAction(code)).unwrap();
     setNotification({
       type: "success",
-      message: `Đã áp dụng thành công mã ưu đãi sàn "${code}"!`,
+      message: t("cart.notifications.platform_voucher_applied", { code }),
     });
   };
 
@@ -203,7 +205,7 @@ export const ShoppingCart: React.FC = () => {
     dispatch(removePlatformVoucher());
     setNotification({
       type: "info",
-      message: "Đã hủy mã voucher sàn.",
+      message: t("cart.notifications.platform_voucher_removed"),
     });
   };
 
@@ -211,7 +213,7 @@ export const ShoppingCart: React.FC = () => {
     if (summary.selected_count === 0) {
       setNotification({
         type: "error",
-        message: "Vui lòng chọn ít nhất một sản phẩm còn hàng để tiếp tục thanh toán.",
+        message: t("cart.notifications.select_items_checkout"),
       });
       return;
     }
@@ -270,16 +272,18 @@ export const ShoppingCart: React.FC = () => {
               <div className="w-20 h-20 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-4">
                 <span className="material-symbols-outlined text-[40px]">lock</span>
               </div>
-              <h2 className="text-xl font-bold text-on-surface mb-2">Đăng nhập để xem giỏ hàng</h2>
+              <h2 className="text-xl font-bold text-on-surface mb-2">
+                {t("cart.auth_required.title")}
+              </h2>
               <p className="text-sm text-outline mb-6">
-                Vui lòng đăng nhập tài khoản để xem các sản phẩm trong giỏ hàng và tiếp tục thanh toán.
+                {t("cart.auth_required.desc")}
               </p>
               <button
                 type="button"
                 onClick={() => navigate("/login?redirect=/cart")}
                 className="px-6 py-3 rounded-xl bg-primary text-on-primary font-bold shadow-md hover:bg-primary-container transition-all cursor-pointer"
               >
-                Đăng nhập ngay
+                {t("cart.auth_required.login_btn")}
               </button>
             </div>
           ) : items.length === 0 ? (

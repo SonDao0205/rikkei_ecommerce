@@ -15,7 +15,27 @@
   },
   "gallery": {
     "authentic_badge": "Chính hãng • MarketPulse Store",
-    "video_intro": "Video giới thiệu {{name}}"
+    "video_intro": "Video giới thiệu {{name}}",
+    "discount": "Giảm {{percent}}%",
+    "hot_seller": "Hot Seller",
+    "default_badge": "Chế tác thủ công • Saigon Lab",
+    "zoom_in": "Phóng to ảnh",
+    "zoom_out": "Thu nhỏ ảnh",
+    "studio_badge": "Hình chụp Studio • 100% Ảnh thật",
+    "interactive_view": "Góc nhìn trực quan",
+    "guarantees": {
+      "authentic_title": "100% Chính Hãng",
+      "authentic_desc": "Kiểm định và xác nhận tem chuẩn sàn MarketPulse.",
+      "return_title": "Đổi Trả 7 Ngày",
+      "return_desc": "Miễn phí đổi kích cỡ hoặc hoàn tiền tận nơi toàn quốc.",
+      "shipping_title": "Hỏa Tốc 2 Giờ COD",
+      "shipping_desc": "Giao nhanh nội thành TP.HCM & Hà Nội nhận hàng thanh toán."
+    },
+    "social_proof": {
+      "customer_count": "{{count}} khách hàng",
+      "added_today": "đã thêm sản phẩm này vào giỏ trong hôm nay.",
+      "in_stock_warehouse": "Sẵn hàng tại Kho"
+    }
   },
   "shop_info": {
     "partner_badge": "Mall Partner",

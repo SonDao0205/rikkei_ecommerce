@@ -1,0 +1,114 @@
+{
+  "header": {
+    "back": "Quay lại",
+    "back_title": "Quay lại trang trước",
+    "title": "Thanh toán đơn hàng",
+    "subtitle": "(Checkout)",
+    "desc": "Kiểm tra thông tin nhận hàng, chọn phương thức thanh toán và áp dụng các mã ưu đãi có sẵn."
+  },
+  "loading": "Đang chuẩn bị thông tin thanh toán...",
+  "empty_selected": {
+    "title": "Không có sản phẩm nào được chọn",
+    "desc": "Vui lòng quay lại giỏ hàng và chọn ít nhất một sản phẩm còn hàng để tiếp tục thanh toán.",
+    "back_to_cart": "Quay lại giỏ hàng"
+  },
+  "shop_items": {
+    "title": "Kiểm tra sản phẩm & Cửa hàng",
+    "subtitle": "Danh sách các món hàng được chọn thanh toán",
+    "summary_count": "{{shops}} Cửa hàng • {{items}} Món",
+    "official_badge": "Chính hãng",
+    "shop_subtotal": "Tiền hàng:",
+    "variant": "Phân loại: {{variant}} • SL: {{quantity}}",
+    "default_variant": "Mặc định",
+    "shop_voucher": "Voucher của Shop:",
+    "discounted": "Đã giảm {{amount}}",
+    "enter_code": "+ Nhập mã khác",
+    "shop_voucher_placeholder": "Mã voucher shop",
+    "apply_voucher_failed": "Mã ưu đãi không hợp lệ"
+  },
+  "address": {
+    "title": "Địa chỉ nhận hàng (Delivery Address)",
+    "change": "Thay đổi",
+    "manage": "Quản lý địa chỉ",
+    "no_address_notice": "Bạn chưa có địa chỉ nhận hàng nào. Vui lòng thêm địa chỉ trong hồ sơ.",
+    "add_address": "Thêm địa chỉ ngay",
+    "modal_title": "Chọn địa chỉ nhận hàng",
+    "modal_close": "Đóng",
+    "default_badge": "Mặc định",
+    "confirm_select": "Xác nhận địa chỉ"
+  },
+  "shipping": {
+    "title": "Phương thức vận chuyển (Shipping Method)",
+    "nationwide_badge": "Giao hàng toàn quốc",
+    "estimated_prefix": "Dự kiến:",
+    "standard": {
+      "name": "Giao hàng tiêu chuẩn",
+      "estimated": "2–4 ngày",
+      "note": "Tiết kiệm chi phí, an toàn"
+    },
+    "express": {
+      "name": "Giao hàng nhanh",
+      "estimated": "1–2 ngày",
+      "note": "Ưu tiên xử lý & giao hỏa tốc"
+    }
+  },
+  "payment": {
+    "title": "Phương thức thanh toán (Payment Method)",
+    "safe_badge": "An toàn 100%",
+    "recommended": "Khuyên dùng",
+    "coming_soon": "Sắp ra mắt",
+    "methods": {
+      "cod": {
+        "name": "Thanh toán khi nhận hàng",
+        "desc": "Thanh toán bằng tiền mặt khi nhận hàng tận nơi. Kiểm tra hàng trước khi thanh toán, hoàn toàn an tâm không rủi ro.",
+        "co_check": "Đồng kiểm cùng shipper (Co-Check)",
+        "vat_invoice": "Hóa đơn VAT đầy đủ"
+      },
+      "bank_transfer": {
+        "name": "Chuyển khoản ngân hàng",
+        "desc": "Chuyển khoản qua ngân hàng nội địa hoặc quét mã VietQR tự động xác nhận đơn hàng nhanh chóng."
+      },
+      "cards_wallets": {
+        "name": "Thẻ tín dụng / Ghi nợ & Ví điện tử (MoMo, VNPay-QR, ZaloPay)",
+        "desc": "Cổng thanh toán online thẻ Visa/Mastercard và ví MoMo, ZaloPay, VNPay đang được hoàn thiện tích hợp."
+      }
+    }
+  },
+  "summary": {
+    "title": "Tóm tắt đơn hàng",
+    "subtitle": "Chi tiết thanh toán & Ưu đãi",
+    "platform_vouchers": "Mã giảm giá Toàn Sàn",
+    "applied_badge": "Đang áp dụng",
+    "min_order": "Đơn từ {{amount}}",
+    "remove_voucher": "Bỏ chọn",
+    "apply_btn": "Áp dụng",
+    "not_eligible": "Chưa đủ ĐK",
+    "ineligible_tooltip": "Đơn hàng cần đạt tối thiểu {{amount}}",
+    "custom_voucher_placeholder": "Nhập mã ưu đãi khác",
+    "voucher_applied": "Mã '{{code}}' đã áp dụng:",
+    "subtotal": "Tổng tiền hàng",
+    "shipping_fee": "Phí vận chuyển",
+    "shop_discount": "Giảm giá từ Shop",
+    "platform_voucher": "Voucher Sàn ({{code}})",
+    "total_payment": "Tổng thanh toán",
+    "cod_note": "Thanh toán khi nhận hàng • Đã gồm VAT",
+    "transfer_note": "Chuyển khoản ngân hàng • Đã gồm VAT",
+    "updating_quote": "Đang cập nhật báo giá...",
+    "place_order_btn": "Đặt hàng ({{method}}) — {{amount}}",
+    "submitting": "Đang xử lý đơn hàng...",
+    "terms_agreement": "Bằng việc bấm đặt hàng, bạn đồng ý với điều khoản sử dụng và kiểm tra gói hàng trước khi thanh toán cho đơn vị vận chuyển.",
+    "authentic_badge": "100% Chính hãng",
+    "returns_badge": "7 Ngày đổi trả",
+    "inspect_badge": "Đồng kiểm VIP"
+  },
+  "success_modal": {
+    "title": "Đặt hàng thành công!",
+    "order_code_label": "Mã đơn hàng:",
+    "description": "Hệ thống đã thông báo cho {{shops}}. Đơn hàng của bạn sẽ sớm được đóng gói và bàn giao cho {{carrier}}.",
+    "amount_to_collect": "Số tiền thu khi nhận hàng:",
+    "amount_to_transfer": "Số tiền cần chuyển khoản:",
+    "transfer_ref": "Nội dung chuyển khoản:",
+    "view_orders_btn": "Xem chi tiết đơn hàng",
+    "continue_shopping_btn": "Tiếp tục mua sắm"
+  }
+}

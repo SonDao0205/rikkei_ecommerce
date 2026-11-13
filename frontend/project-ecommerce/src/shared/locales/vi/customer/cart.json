@@ -1,0 +1,79 @@
+{
+  "stepper": {
+    "cart": "Giỏ hàng",
+    "checkout": "Thanh toán",
+    "complete": "Hoàn tất đơn"
+  },
+  "header": {
+    "title": "Giỏ hàng của tôi",
+    "items_count": "{{count}} sản phẩm",
+    "shipping_notice": "Chọn địa chỉ và phương thức vận chuyển để xem phí giao hàng chính xác.",
+    "back": "Quay lại"
+  },
+  "empty": {
+    "title": "Giỏ hàng của bạn đang trống",
+    "desc": "Có vẻ như bạn chưa thêm sản phẩm nào vào giỏ hàng. Khám phá ngay các gian hàng thủ công, sản phẩm chất lượng và ưu đãi hấp dẫn hôm nay!",
+    "explore_btn": "Khám phá sản phẩm ngay"
+  },
+  "auth_required": {
+    "title": "Đăng nhập để xem giỏ hàng",
+    "desc": "Vui lòng đăng nhập tài khoản để xem các sản phẩm trong giỏ hàng và tiếp tục thanh toán.",
+    "login_btn": "Đăng nhập ngay"
+  },
+  "select_all_bar": {
+    "select_all": "Chọn tất cả ({{count}} sản phẩm)",
+    "delete_selected": "Xóa đã chọn",
+    "move_to_wishlist": "Lưu vào yêu thích"
+  },
+  "shop_group": {
+    "chat": "Chat",
+    "shop_voucher_label": "Voucher của Shop:",
+    "shop_voucher_applied": "Shop Voucher đã áp dụng: -{{discount}}",
+    "shop_total": "Tổng shop ({{count}} món):",
+    "you_save": "Tiết kiệm {{amount}}",
+    "apply_voucher_failed": "Không thể áp dụng voucher"
+  },
+  "item_row": {
+    "in_stock": "Còn hàng",
+    "out_of_stock": "Hết hàng",
+    "delete_title": "Xóa sản phẩm",
+    "wishlist_title": "Lưu vào yêu thích"
+  },
+  "summary": {
+    "title": "Order Summary",
+    "selected_items": "{{count}} items selected",
+    "platform_voucher_title": "Mã giảm giá Sàn (Platform Voucher)",
+    "voucher_applied": "Đang áp dụng",
+    "enter_voucher_placeholder": "Nhập mã voucher...",
+    "btn_apply": "Áp dụng",
+    "items_subtotal": "Items Subtotal ({{count}} món)",
+    "estimated_shipping": "Estimated Shipping (final at checkout)",
+    "shipping_discount": "Shipping Discount",
+    "store_vouchers": "Store Vouchers",
+    "platform_voucher": "Platform Voucher",
+    "estimated_total": "Estimated Total",
+    "final_total_notice": "Final total confirmed in checkout quote",
+    "savings_notice": "You save a total of {{amount}} on this purchase!",
+    "checkout_btn": "Chọn giao hàng, thanh toán & xem báo giá",
+    "loading_quote": "Đang tải báo giá...",
+    "protection_guarantee": "100% Escrow Protection",
+    "free_returns": "7-Day Free Returns",
+    "inspect_before_pay": "Inspect Before Pay",
+    "accepted_payments_title": "Accepted Payment Options",
+    "accepted_payments_notice": "Chọn phương thức đang được hệ thống hỗ trợ ở bước checkout."
+  },
+  "notifications": {
+    "item_removed": "Đã xóa sản phẩm khỏi giỏ hàng",
+    "select_at_least_one_delete": "Vui lòng chọn ít nhất một sản phẩm để xóa.",
+    "selected_items_removed": "Đã xóa {{count}} sản phẩm đã chọn",
+    "select_items_wishlist": "Vui lòng chọn sản phẩm cần lưu vào yêu thích.",
+    "saved_to_wishlist": "Đã lưu {{count}} sản phẩm vào danh sách yêu thích!",
+    "item_saved_to_wishlist": "Đã lưu \"{{name}}\" vào danh sách yêu thích!",
+    "shop_voucher_applied": "Đã áp dụng thành công mã ưu đãi của shop!",
+    "shop_voucher_removed": "Đã hủy áp dụng mã giảm giá của shop.",
+    "platform_voucher_applied": "Đã áp dụng thành công mã ưu đãi sàn \"{{code}}\"!",
+    "platform_voucher_removed": "Đã hủy mã voucher sàn.",
+    "select_items_checkout": "Vui lòng chọn ít nhất một sản phẩm còn hàng để tiếp tục thanh toán."
+  }
+}
+

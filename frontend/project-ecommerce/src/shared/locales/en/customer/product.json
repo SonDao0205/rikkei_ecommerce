@@ -15,7 +15,27 @@
   },
   "gallery": {
     "authentic_badge": "Official • MarketPulse Store",
-    "video_intro": "Introductory video for {{name}}"
+    "video_intro": "Introductory video for {{name}}",
+    "discount": "{{percent}}% OFF",
+    "hot_seller": "Hot Seller",
+    "default_badge": "Artisan Crafted • Saigon Lab",
+    "zoom_in": "Zoom in image",
+    "zoom_out": "Zoom out image",
+    "studio_badge": "Studio Photography • 100% Raw Item Match",
+    "interactive_view": "Interactive View",
+    "guarantees": {
+      "authentic_title": "100% Authentic",
+      "authentic_desc": "Verified and certified with MarketPulse standard seal.",
+      "return_title": "7-Day Returns",
+      "return_desc": "Free size exchange or doorstep refund nationwide.",
+      "shipping_title": "2-Hour Express COD",
+      "shipping_desc": "Fast delivery in HCMC & Hanoi with cash on delivery."
+    },
+    "social_proof": {
+      "customer_count": "{{count}} customers",
+      "added_today": "added this product to cart today.",
+      "in_stock_warehouse": "In Stock at Warehouse"
+    }
   },
   "shop_info": {
     "partner_badge": "Mall Partner",

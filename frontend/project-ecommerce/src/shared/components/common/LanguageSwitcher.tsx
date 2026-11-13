@@ -3,13 +3,14 @@ import { useTranslation } from 'react-i18next';
 
 interface LanguageOption {
   code: 'vi' | 'en';
+  shortLabel: string;
   label: string;
   flag: string;
 }
 
 const LANGUAGES: LanguageOption[] = [
-  { code: 'vi', label: 'Tiếng Việt', flag: '🇻🇳' },
-  { code: 'en', label: 'English', flag: '🇬🇧' },
+  { code: 'vi', shortLabel: 'VN', label: 'Tiếng Việt', flag: '🇻🇳' },
+  { code: 'en', shortLabel: 'EN', label: 'English', flag: '🇬🇧' },
 ];
 
 interface LanguageSwitcherProps {
@@ -25,7 +26,7 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Normalize current language code (e.g., 'vi-VN' -> 'vi', default 'vi')
+  // Chuẩn hóa mã ngôn ngữ (e.g., 'vi-VN' -> 'vi', mặc định 'vi')
   const currentLangCode = i18n.language?.startsWith('en') ? 'en' : 'vi';
   const currentLanguage =
     LANGUAGES.find((lang) => lang.code === currentLangCode) || LANGUAGES[0];
@@ -35,7 +36,7 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
     setIsOpen(false);
   };
 
-  // Close dropdown on outside click
+  // Đóng dropdown khi click ra ngoài
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -53,37 +54,45 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
         onClick={() => setIsOpen((prev) => !prev)}
         className={
           variant === 'dark'
-            ? 'inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-inverse-on-surface hover:text-white hover:bg-white/10 text-body-sm transition-colors cursor-pointer select-none'
-            : 'inline-flex items-center justify-center gap-2 h-9 px-3 rounded-xl border border-outline-variant/50 bg-surface-container-lowest hover:bg-surface-container text-xs font-semibold text-on-surface transition-all cursor-pointer shadow-2xs'
+            ? 'flex items-center gap-1 text-inverse-on-surface hover:text-white transition-colors cursor-pointer select-none text-body-sm font-body-sm leading-none'
+            : 'inline-flex items-center justify-center gap-2 h-7.5 sm:h-8 px-3 rounded-[12px] border border-slate-200/90 bg-white hover:bg-slate-50 text-slate-800 transition-all cursor-pointer shadow-2xs select-none'
         }
         aria-label="Chọn ngôn ngữ"
         title="Chọn ngôn ngữ / Select Language"
       >
         {variant === 'dark' ? (
           <>
-            <span className="material-symbols-outlined text-[15px] opacity-80">language</span>
-            <span className="font-medium text-xs leading-none">{currentLanguage.label}</span>
-            <span className="material-symbols-outlined text-[14px] opacity-70 leading-none">
+            <span className="material-symbols-outlined text-[15px]">language</span>
+            <span>{currentLanguage.label}</span>
+            <span className="material-symbols-outlined text-[15px] opacity-75 leading-none">
               {isOpen ? 'expand_less' : 'expand_more'}
             </span>
           </>
         ) : (
           <>
-            <span className="text-[10px] font-bold tracking-wide px-1.5 py-0.5 rounded bg-primary/10 text-primary uppercase leading-tight">
-              {currentLanguage.code}
+            <span className="font-bold text-slate-900 text-xs sm:text-[13px] tracking-tight leading-none">
+              {currentLanguage.shortLabel}
             </span>
-            <span className="hidden sm:inline leading-none font-medium">
+            <span className="font-medium text-slate-800 text-xs sm:text-[13px] leading-none">
               {currentLanguage.label}
             </span>
-            <span className="material-symbols-outlined text-[16px] text-on-surface-variant leading-none">
-              {isOpen ? 'expand_less' : 'expand_more'}
-            </span>
+            <svg
+              className={`w-3.5 h-3.5 text-slate-700 transition-transform duration-200 leading-none shrink-0 ${
+                isOpen ? 'rotate-180' : ''
+              }`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2.5}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
           </>
         )}
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-1.5 w-36 rounded-xl bg-surface-container-lowest border border-outline-variant/40 shadow-lg py-1 z-50 animate-fade-in">
+        <div className="absolute right-0 top-full mt-2 w-36 rounded-xl bg-surface-container-lowest text-on-surface border border-outline-variant/60 shadow-xl py-1 z-50 animate-fade-in">
           {LANGUAGES.map((lang) => {
             const isSelected = lang.code === currentLangCode;
             return (
@@ -91,15 +100,15 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
                 key={lang.code}
                 type="button"
                 onClick={() => handleSelectLanguage(lang.code)}
-                className={`w-full flex items-center justify-between px-3 py-2 text-xs font-semibold transition-colors cursor-pointer text-left ${
+                className={`w-full flex items-center justify-between px-3 py-2 text-xs transition-colors cursor-pointer text-left ${
                   isSelected
                     ? 'bg-primary/10 text-primary font-bold'
-                    : 'text-on-surface hover:bg-surface-container'
+                    : 'text-on-surface hover:bg-surface-container font-medium'
                 }`}
               >
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant uppercase">
-                    {lang.code}
+                  <span className="font-bold text-on-surface text-xs">
+                    {lang.shortLabel}
                   </span>
                   <span className="leading-none">{lang.label}</span>
                 </div>
@@ -118,4 +127,3 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
 };
 
 export default LanguageSwitcher;
-

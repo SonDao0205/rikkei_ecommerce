@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { CartItem, ShopVoucher } from "@/domains/customer/types/cart.types";
 import { formatCurrencyVND } from "@/shared/utils/currency";
 import { getAvailableShopVouchers } from "@/domains/customer/data/availableVouchers";
@@ -26,6 +27,7 @@ export const CheckoutShopItems: React.FC<CheckoutShopItemsProps> = ({
   onRemoveShopVoucher,
   isCalculating = false,
 }) => {
+  const { t } = useTranslation("customer");
   const [manualCodeInputs, setManualCodeInputs] = useState<Record<number, string>>({});
   const [showManualInputs, setShowManualInputs] = useState<Record<number, boolean>>({});
   const [shopErrors, setShopErrors] = useState<Record<number, string | null>>({});
@@ -46,7 +48,7 @@ export const CheckoutShopItems: React.FC<CheckoutShopItemsProps> = ({
             ? err
             : err instanceof Error
             ? err.message
-            : "Mã ưu đãi không hợp lệ",
+            : t("checkout.shop_items.apply_voucher_failed"),
       }));
     }
   };
@@ -56,15 +58,17 @@ export const CheckoutShopItems: React.FC<CheckoutShopItemsProps> = ({
       <div className="flex items-center justify-between pb-3 border-b border-outline-variant/40">
         <div>
           <h3 className="font-bold text-sm sm:text-base text-on-surface">
-            Kiểm tra sản phẩm & Cửa hàng
+            {t("checkout.shop_items.title")}
           </h3>
           <span className="text-xs text-on-surface-variant">
-            Danh sách các món hàng được chọn thanh toán
+            {t("checkout.shop_items.subtitle")}
           </span>
         </div>
         <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-surface-container-low text-on-surface-variant border border-outline-variant/40">
-          {groups.length} Cửa hàng •{" "}
-          {groups.reduce((acc, g) => acc + g.items.reduce((s, it) => s + it.quantity, 0), 0)} Món
+          {t("checkout.shop_items.summary_count", {
+            shops: groups.length,
+            items: groups.reduce((acc, g) => acc + g.items.reduce((s, it) => s + it.quantity, 0), 0),
+          })}
         </span>
       </div>
 
@@ -90,13 +94,15 @@ export const CheckoutShopItems: React.FC<CheckoutShopItemsProps> = ({
                   </span>
                   {group.shopBadge && (
                     <span className="px-1.5 py-0.2 rounded bg-tertiary/10 text-tertiary text-[10px] uppercase font-bold tracking-wider">
-                      {group.shopBadge}
+                      {group.shopBadge === "Chính hãng"
+                        ? t("checkout.shop_items.official_badge", { defaultValue: "Chính hãng" })
+                        : group.shopBadge}
                     </span>
                   )}
                 </div>
 
                 <span className="text-xs font-semibold text-on-surface-variant">
-                  Tiền hàng:{" "}
+                  {t("checkout.shop_items.shop_subtotal")}{" "}
                   <strong className="text-on-surface font-bold">
                     {formatCurrencyVND(currentShopSubtotal)}
                   </strong>
@@ -130,7 +136,13 @@ export const CheckoutShopItems: React.FC<CheckoutShopItemsProps> = ({
                           {item.name || item.product_name}
                         </h4>
                         <p className="text-[11px] text-on-surface-variant mt-0.5">
-                          Phân loại: {item.variant_label || "Mặc định"} • SL: {item.quantity}
+                          {t("checkout.shop_items.variant", {
+                            variant:
+                              item.variant_label ||
+                              t("checkout.shop_items.default_variant", { defaultValue: "Mặc định" }),
+                            quantity: item.quantity,
+                            defaultValue: `Phân loại: ${item.variant_label || "Mặc định"} • SL: ${item.quantity}`,
+                          })}
                         </p>
                         <div className="flex items-center justify-between gap-2 mt-1">
                           <span className="text-xs text-on-surface-variant">
@@ -153,7 +165,7 @@ export const CheckoutShopItems: React.FC<CheckoutShopItemsProps> = ({
                     <span className="material-symbols-outlined text-[16px] text-primary">
                       sell
                     </span>
-                    <span>Voucher của Shop:</span>
+                    <span>{t("checkout.shop_items.shop_voucher", { defaultValue: "Voucher của Shop:" })}</span>
                   </div>
 
                   {appliedVoucher && appliedVoucher.is_applied && (
@@ -162,7 +174,10 @@ export const CheckoutShopItems: React.FC<CheckoutShopItemsProps> = ({
                         check_circle
                       </span>
                       <span>
-                        Đã giảm {formatCurrencyVND(appliedVoucher.discount_amount)}
+                        {t("checkout.shop_items.discounted", {
+                          amount: formatCurrencyVND(appliedVoucher.discount_amount),
+                          defaultValue: `Đã giảm ${formatCurrencyVND(appliedVoucher.discount_amount)}`,
+                        })}
                       </span>
                     </span>
                   )}
@@ -195,7 +210,7 @@ export const CheckoutShopItems: React.FC<CheckoutShopItemsProps> = ({
                                     ? err
                                     : err instanceof Error
                                     ? err.message
-                                    : "Mã ưu đãi không hợp lệ",
+                                    : t("checkout.shop_items.apply_voucher_failed"),
                               }));
                             }
                           }
@@ -231,7 +246,7 @@ export const CheckoutShopItems: React.FC<CheckoutShopItemsProps> = ({
                       }
                       className="text-xs text-primary hover:underline font-semibold cursor-pointer py-1 px-1 flex items-center gap-0.5"
                     >
-                      <span>+ Nhập mã khác</span>
+                      <span>{t("checkout.shop_items.enter_code", { defaultValue: "+ Nhập mã khác" })}</span>
                     </button>
                   ) : (
                     <form
@@ -240,7 +255,9 @@ export const CheckoutShopItems: React.FC<CheckoutShopItemsProps> = ({
                     >
                       <input
                         type="text"
-                        placeholder="Mã voucher shop"
+                        placeholder={t("checkout.shop_items.shop_voucher_placeholder", {
+                          defaultValue: "Mã voucher shop",
+                        })}
                         value={manualCodeInputs[group.shopId] || ""}
                         onChange={(e) =>
                           setManualCodeInputs((prev) => ({

@@ -13,11 +13,15 @@ import viCustomerFooter from '@/shared/locales/vi/customer/footer.json';
 import viCustomerHome from '@/shared/locales/vi/customer/home.json';
 import viCustomerProduct from '@/shared/locales/vi/customer/product.json';
 import viCustomerPublicShop from '@/shared/locales/vi/customer/public_shop.json';
+import viCustomerCart from '@/shared/locales/vi/customer/cart.json';
+import viCustomerCheckout from '@/shared/locales/vi/customer/checkout.json';
 import enCustomerHeader from '@/shared/locales/en/customer/header.json';
 import enCustomerFooter from '@/shared/locales/en/customer/footer.json';
 import enCustomerHome from '@/shared/locales/en/customer/home.json';
 import enCustomerProduct from '@/shared/locales/en/customer/product.json';
 import enCustomerPublicShop from '@/shared/locales/en/customer/public_shop.json';
+import enCustomerCart from '@/shared/locales/en/customer/cart.json';
+import enCustomerCheckout from '@/shared/locales/en/customer/checkout.json';
 
 export const defaultNS = 'common';
 
@@ -32,6 +36,8 @@ export const resources = {
       home: viCustomerHome,
       product: viCustomerProduct,
       public_shop: viCustomerPublicShop,
+      cart: viCustomerCart,
+      checkout: viCustomerCheckout,
     },
   },
   en: {
@@ -44,6 +50,8 @@ export const resources = {
       home: enCustomerHome,
       product: enCustomerProduct,
       public_shop: enCustomerPublicShop,
+      cart: enCustomerCart,
+      checkout: enCustomerCheckout,
     },
   },
 } as const;
