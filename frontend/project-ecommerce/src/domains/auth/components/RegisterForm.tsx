@@ -184,7 +184,7 @@ const RegisterForm = () => {
     );
 
     if (registerUser.fulfilled.match(resultAction)) {
-      navigate("/home");
+      navigate(`/verify-email?email=${encodeURIComponent(formData.email.trim().toLowerCase())}`);
     }
   };
 

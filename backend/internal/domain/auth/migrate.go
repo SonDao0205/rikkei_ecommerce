@@ -11,7 +11,7 @@ import (
 var migrationFS embed.FS
 
 func Migrate(ctx context.Context, db *sql.DB) error {
-	for _, file := range []string{"migrations/001_security.sql", "migrations/002_multi_role.sql"} {
+	for _, file := range []string{"migrations/001_security.sql", "migrations/002_multi_role.sql", "migrations/003_email_verification.sql"} {
 		b, err := migrationFS.ReadFile(file)
 		if err != nil {
 			return err
@@ -60,5 +60,9 @@ func Migrate(ctx context.Context, db *sql.DB) error {
 		return err
 	}
 	_, err = db.ExecContext(ctx, `DELETE FROM password_reset_otps WHERE expires_at<DATE_SUB(UTC_TIMESTAMP(),INTERVAL 30 DAY)`)
+	if err != nil {
+		return err
+	}
+	_, err = db.ExecContext(ctx, `DELETE FROM email_verification_otps WHERE expires_at<DATE_SUB(UTC_TIMESTAMP(),INTERVAL 30 DAY)`)
 	return err
 }

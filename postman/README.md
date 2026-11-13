@@ -53,7 +53,7 @@ docker compose up -d
 
 Trong Postman mở Collection Runner, chọn environment **Rikkei E-Commerce - Local** và chạy collection. Chạy lại seed trước mỗi lượt để phục hồi tài khoản seed và fixture `960009`. **Tuyệt đối không chạy collection hoặc seed trên production, staging hay database dùng chung.**
 
-Các request OTP thành công nằm trong folder **Manual Password Reset (requires OTP)**. Khi backend chạy `APP_ENV=development`, gửi yêu cầu khôi phục, lấy OTP từ log backend, nhập vào biến `resetOtp` trong environment rồi chạy riêng folder đó. Xóa giá trị OTP sau khi test; OTP không được trả trong API response.
+Trong environment local, đặt `testEmail` là hộp thư dùng được và sau khi nhận mã đặt `emailOTP`; với Newman, mỗi lượt cần email test mới. Chạy request đăng ký, lấy mã, chạy request xác minh, rồi đăng nhập. Đăng ký mới cần xác minh trước khi đăng nhập: gọi `POST /api/v1/auth/register` bằng mailbox dùng được, lấy mã trong email (hoặc log backend development nếu SMTP chưa cấu hình), rồi gọi `POST /api/v1/auth/verify-email-otp` với `email` và `otp`. `POST /api/v1/auth/resend-email-otp` gửi lại sau 60 giây. Cấu hình `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`/`SMTP_PASS`, `SMTP_FROM`; không đưa app password vào collection/environment đã commit. Các request OTP thành công nằm trong folder **Manual Password Reset (requires OTP)**. Khi backend chạy `APP_ENV=development`, gửi yêu cầu khôi phục, lấy OTP từ log backend, nhập vào biến `resetOtp` trong environment rồi chạy riêng folder đó. Xóa giá trị OTP sau khi test; OTP không được trả trong API response.
 
 ## Chạy Newman
 

@@ -167,6 +167,34 @@ func TestOTPFormatAndPhoneNormalization(t *testing.T) {
 	}
 }
 
+func TestGeneratedOTPIsSixDigits(t *testing.T) {
+	for range 100 {
+		code, err := newOTP()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !validOTP(code) {
+			t.Fatalf("generated malformed OTP %q", code)
+		}
+	}
+}
+
+func TestEmailVerificationRoutesValidateOTPBeforeDatabase(t *testing.T) {
+	a := testApp()
+	for _, tc := range []struct{ path, body string }{
+		{"/api/v1/auth/verify-email-otp", `{"email":"new@example.test","otp":"12x456"}`},
+		{"/api/v1/auth/verify-email-otp", `{"email":"","otp":"123456"}`},
+	} {
+		req := httptest.NewRequest(http.MethodPost, tc.path, bytes.NewBufferString(tc.body))
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		a.Handler().ServeHTTP(rec, req)
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("%s returned %d, expected 400 before DB access", tc.path, rec.Code)
+		}
+	}
+}
+
 func TestCORSRejectsUnknownOrigin(t *testing.T) {
 	a := testApp()
 	a.cfg.Origins = []string{"https://shop.example"}

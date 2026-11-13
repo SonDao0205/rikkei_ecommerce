@@ -117,6 +117,8 @@ export const RegisterOpenShopStep1: React.FC = () => {
         return;
       }
       dispatch(updateAccount({ password: "", confirmPassword: "", agreeTerms: true }));
+      navigate(`/verify-email?email=${encodeURIComponent(email.trim().toLowerCase())}&next=${encodeURIComponent("/register-open-shop")}`);
+      return;
     }
     // Navigate to Step 2 page
     dispatch(resetStore());
