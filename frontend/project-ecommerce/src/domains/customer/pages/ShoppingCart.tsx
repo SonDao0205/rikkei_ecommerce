@@ -252,7 +252,7 @@ export const ShoppingCart: React.FC = () => {
               <button
                 type="button"
                 onClick={handleDismissNotification}
-                className="text-outline hover:text-on-surface"
+                className="text-outline hover:text-on-surface cursor-pointer"
               >
                 <span className="material-symbols-outlined text-[18px]">close</span>
               </button>

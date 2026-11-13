@@ -7,6 +7,8 @@ interface CheckoutSuccessModalProps {
   totalAmount: number;
   shopNames: string[];
   shippingCarrier?: string;
+  paymentMethodCode?: string;
+  paymentReference?: string;
   onViewOrders: () => void;
   onContinueShopping: () => void;
 }
@@ -16,6 +18,8 @@ export const CheckoutSuccessModal: React.FC<CheckoutSuccessModalProps> = ({
   orderCode,
   totalAmount,
   shopNames,
+  paymentMethodCode = "COD",
+  paymentReference,
   shippingCarrier = "Giao Hàng Tiết Kiệm (GHTK)",
   onViewOrders,
   onContinueShopping,
@@ -52,12 +56,18 @@ export const CheckoutSuccessModal: React.FC<CheckoutSuccessModalProps> = ({
 
         <div className="w-full p-3.5 rounded-2xl bg-surface-container-low border border-outline-variant/40 flex items-center justify-between text-xs sm:text-sm">
           <span className="text-on-surface-variant font-medium">
-            Số tiền thanh toán khi nhận hàng:
+            {paymentMethodCode === "COD" ? "Số tiền thu khi nhận hàng:" : "Số tiền cần chuyển khoản:"}
           </span>
           <span className="font-bold text-primary text-base sm:text-lg">
             {formatCurrencyVND(totalAmount)}
           </span>
         </div>
+
+        {paymentReference && paymentMethodCode !== "COD" && (
+          <p className="w-full text-xs text-on-surface-variant">
+            Nội dung chuyển khoản: <strong className="font-mono">{paymentReference}</strong>
+          </p>
+        )}
 
         {/* Action Buttons */}
         <div className="w-full flex flex-col gap-2.5 pt-2">

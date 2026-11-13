@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"rikkei-ecommerce/internal/domain/auth"
+	"rikkei-ecommerce/internal/platform/idempotency"
 )
 
 func TestGenerateOrderCode(t *testing.T) {
@@ -38,6 +39,54 @@ func TestGenerateOrderCode(t *testing.T) {
 		if len(shopCode) > 40 {
 			t.Fatalf("shop order code length %d exceeds VARCHAR(40) database limit: %s", len(shopCode), shopCode)
 		}
+	}
+}
+
+func TestCheckoutIdempotencyHelpers(t *testing.T) {
+	if !idempotency.ValidKey("9f5e14a2-bd44-4ebc-a95a-5ba041c73509") {
+		t.Fatal("UUID idempotency key should be accepted")
+	}
+	for _, key := range []string{"", "short", strings.Repeat("x", 129), "has spaces in key!!"} {
+		if idempotency.ValidKey(key) {
+			t.Errorf("invalid idempotency key %q was accepted", key)
+		}
+	}
+
+	first, err := idempotency.Fingerprint(createOrderRequest{AddressID: 1, CartItemIDs: []int64{2, 3}, ShopVouchers: map[string]string{"7": "A", "8": "B"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := idempotency.Fingerprint(createOrderRequest{AddressID: 1, CartItemIDs: []int64{2, 3}, ShopVouchers: map[string]string{"8": "B", "7": "A"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if first != second {
+		t.Fatal("equivalent voucher maps must produce a stable request fingerprint")
+	}
+	changed, err := idempotency.Fingerprint(createOrderRequest{AddressID: 2, CartItemIDs: []int64{2, 3}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if first == changed {
+		t.Fatal("different checkout requests must not share a fingerprint")
+	}
+}
+
+func TestCreateOrderRequiresIdempotencyKey(t *testing.T) {
+	handler := &Handler{}
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/checkout/orders", strings.NewReader(
+		`{"address_id":1,"shipping_method_id":1,"payment_method_id":1,"cart_item_ids":[10]}`,
+	))
+	req.Header.Set("Content-Type", "application/json")
+	req = req.WithContext(auth.WithUser(req.Context(), "900001", "CLIENT"))
+	rec := httptest.NewRecorder()
+
+	handler.createOrder(rec, req)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected missing idempotency key to return 400, got %d", rec.Code)
+	}
+	if !strings.Contains(rec.Body.String(), "idempotency_key_required") {
+		t.Fatalf("expected an idempotency key error, got %s", rec.Body.String())
 	}
 }
 

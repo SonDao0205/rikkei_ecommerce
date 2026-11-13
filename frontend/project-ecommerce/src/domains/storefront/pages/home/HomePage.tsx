@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import CustomerLayout from "@/app/layout/CustomerLayout";
 import FlashNotificationBar from "@/domains/storefront/components/home/FlashNotificationBar";
@@ -16,12 +16,15 @@ import {
 import type { ProductItem } from "@/shared/types";
 import { addCartItem } from "@/domains/customer/state/cartSlice";
 import { productApi } from "@/domains/storefront/api/productApi";
+import { promotionApi, type PromotionBanner } from "@/domains/storefront/api/promotionApi";
+import PromotionBannerStrip from "@/domains/storefront/components/home/PromotionBannerStrip";
 
 const HomePage: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
+  const [banners, setBanners] = useState<PromotionBanner[]>([]);
   const categoryParam = searchParams.get("category_id");
 
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
@@ -56,6 +59,9 @@ const HomePage: React.FC = () => {
   // Nạp danh mục 1 lần khi trang được khởi tạo
   useEffect(() => {
     dispatch(getCategories());
+    promotionApi.getBanners()
+      .then((items) => setBanners(items.filter((item) => item.position === "HOME_HERO" || item.position === "HOME_MIDDLE")))
+      .catch(() => setBanners([]));
   }, [dispatch]);
 
   // Cập nhật sản phẩm nổi bật khi danh mục thay đổi
@@ -123,6 +129,7 @@ const HomePage: React.FC = () => {
     <CustomerLayout>
       {/* Top Notification Flash Strip */}
       <FlashNotificationBar />
+      <PromotionBannerStrip banners={banners} />
 
       {/* SECTION 1: Category Circles Bar */}
       <CategoryBar

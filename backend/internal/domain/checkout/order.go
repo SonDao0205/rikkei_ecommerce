@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -15,6 +16,7 @@ import (
 
 	"rikkei-ecommerce/internal/domain/auth"
 	"rikkei-ecommerce/internal/platform/httpx"
+	"rikkei-ecommerce/internal/platform/idempotency"
 )
 
 type createOrderRequest struct {
@@ -40,6 +42,7 @@ type itemDetails struct {
 	LineCents   int64
 	ShopID      int64
 	ShopName    string
+	FlashSaleID *int64
 }
 
 type shopOrderPlan struct {
@@ -63,6 +66,11 @@ func (h *Handler) createOrder(w http.ResponseWriter, r *http.Request) {
 	uid, err := strconv.ParseInt(auth.CurrentUser(r).ID, 10, 64)
 	if err != nil || uid < 1 {
 		writeError(w, http.StatusUnauthorized, "unauthorized", "Authenticated user is invalid")
+		return
+	}
+	idempotencyKey := strings.TrimSpace(r.Header.Get("Idempotency-Key"))
+	if !idempotency.ValidKey(idempotencyKey) {
+		writeError(w, http.StatusBadRequest, "idempotency_key_required", "A valid Idempotency-Key header is required")
 		return
 	}
 
@@ -90,10 +98,37 @@ func (h *Handler) createOrder(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid_shop_vouchers", "Too many shop vouchers provided")
 		return
 	}
+	requestFingerprint, err := idempotency.Fingerprint(req)
+	if err != nil {
+		h.serverError(w, err)
+		return
+	}
+
+	tx, replay, err := beginIdempotentCheckout(r.Context(), h.db, uid, idempotencyKey, requestFingerprint)
+	if errors.Is(err, errIdempotencyKeyReused) {
+		writeError(w, http.StatusConflict, "idempotency_key_reused", "This Idempotency-Key was already used with a different checkout request")
+		return
+	}
+	if errors.Is(err, errCheckoutRequestPending) {
+		writeError(w, http.StatusConflict, "request_in_progress", "The original checkout request is still being processed; retry with the same key")
+		return
+	}
+	if err != nil {
+		h.serverError(w, err)
+		return
+	}
+	if replay != nil {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Header().Set("Idempotency-Replayed", "true")
+		w.WriteHeader(replay.status)
+		_, _ = w.Write(replay.body)
+		return
+	}
+	defer tx.Rollback()
 
 	// 1. Validate shipping address belonging to current user
 	var recipient, phone, province, district, ward, street string
-	err = h.db.QueryRowContext(r.Context(),
+	err = tx.QueryRowContext(r.Context(),
 		`SELECT recipient_name, phone, province, district, ward, street_detail FROM addresses WHERE id=? AND user_id=?`,
 		req.AddressID, uid,
 	).Scan(&recipient, &phone, &province, &district, &ward, &street)
@@ -109,7 +144,7 @@ func (h *Handler) createOrder(w http.ResponseWriter, r *http.Request) {
 
 	// 2. Validate shipping method
 	var ship method
-	err = h.db.QueryRowContext(r.Context(),
+	err = tx.QueryRowContext(r.Context(),
 		`SELECT id, code, name, base_fee, estimated_days FROM shipping_methods WHERE id=? AND is_active=1`,
 		req.ShippingMethodID,
 	).Scan(&ship.ID, &ship.Code, &ship.Name, &ship.Fee, &ship.EstimatedDays)
@@ -124,7 +159,7 @@ func (h *Handler) createOrder(w http.ResponseWriter, r *http.Request) {
 
 	// 3. Validate payment method (COD or BANK_TRANSFER, exclude MOCK_CARD)
 	var pay method
-	err = h.db.QueryRowContext(r.Context(),
+	err = tx.QueryRowContext(r.Context(),
 		`SELECT id, code, name FROM payment_methods WHERE id=? AND is_active=1 AND code<>'MOCK_CARD'`,
 		req.PaymentMethodID,
 	).Scan(&pay.ID, &pay.Code, &pay.Name)
@@ -137,15 +172,7 @@ func (h *Handler) createOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 4. Begin single database transaction for the entire order workflow
-	tx, err := h.db.BeginTx(r.Context(), nil)
-	if err != nil {
-		h.serverError(w, err)
-		return
-	}
-	defer tx.Rollback()
-
-	// 5. Query and verify cart items owned by this user
+	// 4. Query and verify cart items owned by this user
 	cartPlaceholders := strings.TrimRight(strings.Repeat("?,", len(req.CartItemIDs)), ",")
 	cartArgs := make([]any, 0, len(req.CartItemIDs)+1)
 	cartArgs = append(cartArgs, uid)
@@ -230,6 +257,7 @@ func (h *Handler) createOrder(w http.ResponseWriter, r *http.Request) {
 		shopID      int64
 		shopName    string
 		purchasable bool
+		flashSaleID *int64
 	}
 	variantsByID := make(map[int64]variantSnapshot, len(variantIDs))
 	for variantRows.Next() {
@@ -287,6 +315,8 @@ func (h *Handler) createOrder(w http.ResponseWriter, r *http.Request) {
 		for variantID, snap := range variantsByID {
 			if snap.productID == productID {
 				snap.price = salePrice
+				saleIDCopy := saleID
+				snap.flashSaleID = &saleIDCopy
 				variantsByID[variantID] = snap
 			}
 		}
@@ -331,6 +361,7 @@ func (h *Handler) createOrder(w http.ResponseWriter, r *http.Request) {
 			LineCents:   lineCents,
 			ShopID:      snap.shopID,
 			ShopName:    snap.shopName,
+			FlashSaleID: snap.flashSaleID,
 		}
 		orderedItems = append(orderedItems, item)
 
@@ -643,10 +674,10 @@ func (h *Handler) createOrder(w http.ResponseWriter, r *http.Request) {
 
 			if _, itmErr := tx.ExecContext(r.Context(),
 				`INSERT INTO order_items (
-					shop_order_id, product_id, variant_id, product_name, variant_name,
+					shop_order_id, product_id, variant_id, flash_sale_id, product_name, variant_name,
 					sku, image_url, unit_price, quantity, line_total
-				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-				shopOrderID, item.ProductID, item.VariantID, item.ProductName, varName,
+				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+				shopOrderID, item.ProductID, item.VariantID, item.FlashSaleID, item.ProductName, varName,
 				item.SKU, imgURL, item.UnitPrice, item.Quantity, float64(item.LineCents)/100,
 			); itmErr != nil {
 				h.serverError(w, itmErr)
@@ -700,13 +731,7 @@ func (h *Handler) createOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 18. Commit the entire transaction atomically
-	if err = tx.Commit(); err != nil {
-		h.serverError(w, err)
-		return
-	}
-
-	// 19. Build and return structured response
+	// 18. Build and persist the exact response in the same transaction as the order.
 	responseData := map[string]any{
 		"order_id":            parentOrderID,
 		"order_code":          orderCode,
@@ -735,10 +760,25 @@ func (h *Handler) createOrder(w http.ResponseWriter, r *http.Request) {
 		"shop_orders":      createdShopOrders,
 	}
 
-	writeJSON(w, http.StatusCreated, map[string]any{
+	responseBody, err := json.Marshal(map[string]any{
 		"success": true,
 		"data":    responseData,
 	})
+	if err != nil {
+		h.serverError(w, err)
+		return
+	}
+	if err = persistCheckoutResponse(r.Context(), tx, uid, idempotencyKey, responseBody, http.StatusCreated); err != nil {
+		h.serverError(w, err)
+		return
+	}
+	if err = tx.Commit(); err != nil {
+		h.serverError(w, err)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusCreated)
+	_, _ = w.Write(responseBody)
 }
 
 func (h *Handler) validateVoucherTx(ctx context.Context, tx *sql.Tx, uid int64, code, scope string, shopID *int64, basis int64) (voucherResult, int64, string) {

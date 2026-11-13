@@ -277,7 +277,7 @@ export const ShopVoucherTable: React.FC<ShopVoucherTableProps> = ({
                       <button
                         type="button"
                         onClick={() => onDelete(voucher)}
-                        title="Xoá voucher"
+                        title="Ngừng voucher"
                         className="p-1.5 rounded-lg text-error bg-error/10 hover:bg-error/20 border border-error/20 transition-colors cursor-pointer"
                       >
                         <span className="material-symbols-outlined text-[18px]">delete</span>

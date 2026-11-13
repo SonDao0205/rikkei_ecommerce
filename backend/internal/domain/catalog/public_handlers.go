@@ -105,7 +105,9 @@ func (h handler) productImages(r *http.Request, productID int64) ([]productImage
 }
 
 func (h handler) productVariants(r *http.Request, productID int64) ([]productVariant, error) {
-	rows, err := h.db.QueryContext(r.Context(), `SELECT v.id,v.sku,v.name,v.price,v.stock,v.image_url,av.id,a.id,a.name,av.value
+	rows, err := h.db.QueryContext(r.Context(), `SELECT v.id,v.sku,v.name,
+		COALESCE((SELECT fs.sale_price FROM flash_sales fs WHERE fs.product_id=v.product_id AND fs.is_active=1 AND fs.start_at<=UTC_TIMESTAMP() AND fs.end_at>UTC_TIMESTAMP() AND fs.quantity_sold<fs.quantity_limit ORDER BY fs.sale_price,fs.id LIMIT 1),v.price),
+		v.stock,v.image_url,av.id,a.id,a.name,av.value
 		FROM product_variants v
 		LEFT JOIN variant_attribute_values vav ON vav.variant_id=v.id
 		LEFT JOIN attribute_values av ON av.id=vav.attribute_value_id

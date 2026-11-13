@@ -1,4 +1,4 @@
-DROP DATABASE IF EXISTS rikkei_ecommerce;
+-- Safe bootstrap: never drop an existing database. Run against a new/empty local DB.
 CREATE DATABASE IF NOT EXISTS rikkei_ecommerce;
 USE rikkei_ecommerce;
 
@@ -318,6 +318,16 @@ CREATE TABLE cart_items (
   CONSTRAINT chk_cart_items_qty CHECK (quantity > 0)
 );
 
+CREATE TABLE cart_add_idempotency (
+  user_id          BIGINT UNSIGNED NOT NULL,
+  idempotency_key  VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  request_hash     CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  created_at       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, idempotency_key),
+  KEY idx_cart_add_idempotency_created_at (created_at),
+  CONSTRAINT fk_cart_add_idempotency_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
 CREATE TABLE wishlists (
   user_id    BIGINT UNSIGNED NOT NULL,
   product_id BIGINT UNSIGNED NOT NULL,
@@ -411,6 +421,16 @@ CREATE TABLE promotion_banners (
   CONSTRAINT chk_promotion_banner_period CHECK (end_at > start_at)
 );
 
+CREATE TABLE voucher_claims (
+  voucher_id BIGINT UNSIGNED NOT NULL,
+  user_id BIGINT UNSIGNED NOT NULL,
+  claimed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (voucher_id,user_id),
+  KEY idx_voucher_claims_user (user_id,claimed_at),
+  CONSTRAINT fk_voucher_claims_voucher FOREIGN KEY (voucher_id) REFERENCES vouchers(id) ON DELETE CASCADE,
+  CONSTRAINT fk_voucher_claims_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 CREATE TABLE flash_sales (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   product_id BIGINT UNSIGNED NOT NULL,
@@ -467,6 +487,32 @@ CREATE TABLE orders (
   CONSTRAINT chk_orders_total CHECK (total_amount >= 0)
 );
 
+-- Idempotency keys protect checkout retries from creating duplicate orders.
+CREATE TABLE checkout_idempotency (
+  user_id          BIGINT UNSIGNED NOT NULL,
+  idempotency_key  VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  request_hash     CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  response_body    MEDIUMBLOB NULL,
+  http_status      SMALLINT UNSIGNED NULL,
+  created_at       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, idempotency_key),
+  KEY idx_checkout_idempotency_created_at (created_at),
+  CONSTRAINT fk_checkout_idempotency_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE media_upload_idempotency (
+  user_id          BIGINT UNSIGNED NOT NULL,
+  idempotency_key  VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  purpose          VARCHAR(32) NOT NULL,
+  request_hash     CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  public_id        VARCHAR(255) NOT NULL,
+  response_body    MEDIUMBLOB NULL,
+  created_at       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, idempotency_key),
+  KEY idx_media_upload_idempotency_created_at (created_at),
+  CONSTRAINT fk_media_upload_idempotency_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
 CREATE TABLE shop_orders (
   id                BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   order_id          BIGINT UNSIGNED NOT NULL,
@@ -508,6 +554,7 @@ CREATE TABLE order_items (
   shop_order_id BIGINT UNSIGNED NOT NULL,
   product_id   BIGINT UNSIGNED NOT NULL,
   variant_id   BIGINT UNSIGNED NOT NULL,
+  flash_sale_id BIGINT UNSIGNED NULL,
   product_name VARCHAR(255) NOT NULL,
   variant_name VARCHAR(200) NULL,
   sku          VARCHAR(80)  NOT NULL,
@@ -523,6 +570,7 @@ CREATE TABLE order_items (
   CONSTRAINT fk_order_items_shop_order FOREIGN KEY (shop_order_id) REFERENCES shop_orders (id),
   CONSTRAINT fk_order_items_product    FOREIGN KEY (product_id)    REFERENCES products (id),
   CONSTRAINT fk_order_items_variant    FOREIGN KEY (variant_id)    REFERENCES product_variants (id),
+  CONSTRAINT fk_order_items_flash_sale FOREIGN KEY (flash_sale_id) REFERENCES flash_sales (id),
   CONSTRAINT chk_order_items_qty CHECK (quantity > 0)
 );
 
@@ -616,7 +664,7 @@ CREATE TABLE reviews (
   updated_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   KEY idx_reviews_product (product_id, status, created_at),
-  KEY idx_reviews_order_item (order_item_id),
+  UNIQUE KEY uq_reviews_order_item (order_item_id),
   KEY idx_reviews_shop (shop_id),
   KEY idx_reviews_user (user_id),
   CONSTRAINT fk_reviews_order_item FOREIGN KEY (order_item_id) REFERENCES order_items (id),

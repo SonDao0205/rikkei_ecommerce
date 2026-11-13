@@ -53,7 +53,7 @@ docker compose up -d
 
 Trong Postman mở Collection Runner, chọn environment **Rikkei E-Commerce - Local** và chạy collection. Chạy lại seed trước mỗi lượt để phục hồi tài khoản seed và fixture `960009`. **Tuyệt đối không chạy collection hoặc seed trên production, staging hay database dùng chung.**
 
-Các request OTP thành công nằm trong folder **Manual Password Reset (requires OTP)**. Khi backend chạy `APP_ENV=development`, gửi yêu cầu khôi phục, lấy OTP từ log backend, nhập vào biến `resetOtp` trong environment rồi chạy riêng folder đó. Xóa giá trị OTP sau khi test; OTP không được trả trong API response.
+Trong environment local, đặt `testEmail` là hộp thư dùng được và sau khi nhận mã đặt `emailOTP`; với Newman, mỗi lượt cần email test mới. Chạy request đăng ký, lấy mã, chạy request xác minh, rồi đăng nhập. Đăng ký mới cần xác minh trước khi đăng nhập: gọi `POST /api/v1/auth/register` bằng mailbox dùng được, lấy mã trong email (hoặc log backend development nếu SMTP chưa cấu hình), rồi gọi `POST /api/v1/auth/verify-email-otp` với `email` và `otp`. `POST /api/v1/auth/resend-email-otp` gửi lại sau 60 giây. Cấu hình `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`/`SMTP_PASS`, `SMTP_FROM`; không đưa app password vào collection/environment đã commit. Các request OTP thành công nằm trong folder **Manual Password Reset (requires OTP)**. Khi backend chạy `APP_ENV=development`, gửi yêu cầu khôi phục, lấy OTP từ log backend, nhập vào biến `resetOtp` trong environment rồi chạy riêng folder đó. Xóa giá trị OTP sau khi test; OTP không được trả trong API response.
 
 ## Chạy Newman
 
@@ -137,6 +137,16 @@ Automated checks for this change: `go test ./...`, `go vet ./...`, frontend `npm
 
 ## Upload image and product media
 
-The media API is `POST /api/v1/media` (`Authorization: Bearer ...`, multipart fields `purpose` and `file`). It accepts JPEG images only up to 5 MiB and MP4/MOV/WebM product videos up to 20 MiB. Verify JPEG success; reject PNG renamed as JPG; reject oversized files; test unauthenticated access, CLIENT vs SELLER purpose permissions, malformed multipart, and Cloudinary unavailable responses. Then save a returned avatar URL with `PUT /api/v1/auth/profile/avatar` and check `GET /api/v1/auth/me`; use `DELETE /api/v1/auth/profile/avatar` to remove it. Product create/update should persist `video_url` and product detail should return it.
+The media API is `POST /api/v1/media` (`Authorization: Bearer ...`, multipart fields `purpose` and `file`). It accepts JPG/JPEG/PNG images up to 5 MiB and MP4/MOV/WebM product videos up to 20 MiB. Verify valid image content, reject mismatched extensions and oversized files, check unauthenticated access and purpose-specific roles, malformed multipart, and Cloudinary unavailable responses. `purpose=review-image` is CLIENT-only. Then save a returned avatar URL with `PUT /api/v1/auth/profile/avatar` and check `GET /api/v1/auth/me`; use `DELETE /api/v1/auth/profile/avatar` to remove it. Product create/update should persist `video_url` and product detail should return it.
 
 Uploads continue while navigating between SPA routes and report progress in the global upload panel. A browser reload/close interrupts an in-flight transfer. Use local test files and a local Cloudinary account; do not commit `.env` files or Postman secrets.
+
+## Checkout retry/idempotency
+
+Every `POST /api/v1/checkout/orders` request in the collection sends Postman's `{{$guid}}` dynamic value as `Idempotency-Key`. The API requires a key (16–128 allowed ASCII characters) and scopes it to the authenticated user. Replaying the same request with the same key returns the original `201` response; reusing the key with a changed body returns `409`. For an explicit replay check, copy the same key and body into a second request; do not let the dynamic GUID resolve to a new value between the two calls.
+
+Cart add and media upload requests use a Postman dynamic `{{$guid}}` idempotency key. If manually replaying one request to verify deduplication, reuse the exact key and body. The key is required for successful cart-add and upload flows.
+
+## Promotions, reviews, and audit
+
+The `Promotions, Reviews, and Audit` folder covers public campaign reads, buyer voucher claims/review eligibility, seller voucher and review endpoints, and admin voucher/banner/flash-sale/review/audit reads. Provide `clientToken`, `sellerToken`, and `adminToken`; replace `voucherId` and `reviewOrderItemId` with records returned by the corresponding GET requests. Mutating requests create persistent data, so run them only against a disposable local database. For full validation, also test duplicate claims/reviews, inactive or expired vouchers, invalid campaign price/time ranges, cancelling an order with a flash-sale item, cross-shop seller access, hiding a review without a reason, and restoring a hidden review.

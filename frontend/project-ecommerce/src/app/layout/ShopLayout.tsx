@@ -1,7 +1,8 @@
-import React, { type ReactNode, useState } from "react";
+import React, { type ReactNode, useState, useEffect } from "react";
 import { Link, useLocation, Navigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "@/app/state/store";
 import { openLogoutModal } from "@/domains/auth/state/authSlice";
+import { fetchShopOrderCountsThunk } from "@/domains/shop/state/shopOrderSlice";
 import { APP_CONFIG } from "@/shared/config/appConfig";
 import { BrandIcon } from "@/shared/components/common/BrandLogo";
 
@@ -15,6 +16,15 @@ export const ShopLayout: React.FC<ShopLayoutProps> = ({ children }) => {
   const { user, isAuthenticated, isInitialized } = useAppSelector(
     (state) => state.auth
   );
+  const pendingOrders = useAppSelector((state) => state.shopOrder.counts.pending);
+  const totalProducts = useAppSelector((state) => state.shopProduct.total);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(fetchShopOrderCountsThunk());
+    }
+  }, [dispatch, isAuthenticated]);
+
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [quickSearch, setQuickSearch] = useState("");
   const [prevPathname, setPrevPathname] = useState(location.pathname);
@@ -43,22 +53,28 @@ export const ShopLayout: React.FC<ShopLayoutProps> = ({ children }) => {
 
   const navItems = [
     { label: "Tổng quan", path: "/shop/dashboard", icon: "space_dashboard" },
-    { label: "Quản lý sản phẩm", path: "/shop/products", icon: "inventory_2", badge: "124" },
+    {
+      label: "Quản lý sản phẩm",
+      path: "/shop/products",
+      icon: "inventory_2",
+      badge: totalProducts > 0 ? String(totalProducts) : undefined,
+    },
     {
       label: "Đơn hàng & Vận chuyển",
       path: "/shop/orders",
       icon: "local_shipping",
-      badge: "11 mới",
-      badgeVariant: "error",
+      badge: pendingOrders > 0 ? (pendingOrders > 99 ? "99+ mới" : `${pendingOrders} mới`) : undefined,
+      badgeVariant: "error" as const,
     },
     { label: "Quản lý voucher", path: "/shop/vouchers", icon: "confirmation_number" },
+    { label: "Đánh giá", path: "/shop/reviews", icon: "rate_review" },
     { label: "Ví & Doanh thu", path: "/shop/finances", icon: "account_balance_wallet" },
     {
       label: "Chăm sóc khách",
       path: "/shop/customer-chat",
       icon: "chat",
       badge: "3",
-      badgeVariant: "secondary",
+      badgeVariant: "secondary" as const,
     },
     { label: "Cài đặt gian hàng", path: "/shop/settings", icon: "settings" },
   ];
@@ -121,27 +137,27 @@ export const ShopLayout: React.FC<ShopLayoutProps> = ({ children }) => {
                   key={item.path}
                   to={item.path}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className={`flex items-center justify-between px-3.5 py-3 rounded-xl font-label-lg text-label-lg transition-all ${
+                  className={`flex items-center justify-between gap-2 px-3.5 py-3 rounded-xl font-label-lg text-label-lg transition-all ${
                     isActive
                       ? "bg-primary-container text-on-primary font-bold shadow-sm"
                       : "text-inverse-on-surface/75 hover:bg-inverse-surface/80 hover:text-white"
                   }`}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
                     <span
-                      className={`material-symbols-outlined text-[22px] ${
+                      className={`material-symbols-outlined text-[22px] shrink-0 ${
                         isActive ? "text-white" : ""
                       }`}
                     >
                       {item.icon}
                     </span>
-                    <span>{item.label}</span>
+                    <span className="truncate">{item.label}</span>
                   </div>
                   {item.badge && (
                     <span
-                      className={`px-2 py-0.5 rounded-full text-label-sm font-bold font-mono ${
+                      className={`shrink-0 whitespace-nowrap px-2.5 py-0.5 rounded-full text-xs font-bold font-mono leading-tight tracking-tight flex items-center justify-center ${
                         item.badgeVariant === "error"
-                          ? "bg-error text-on-error"
+                          ? "bg-error text-on-error shadow-xs"
                           : item.badgeVariant === "secondary"
                           ? "bg-secondary-container text-on-secondary-container"
                           : isActive

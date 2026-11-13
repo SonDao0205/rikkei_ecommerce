@@ -208,7 +208,6 @@ const FormContent: React.FC<FormContentProps> = ({
             {[
               { type: "money", label: "Giảm tiền mặt (₫)", icon: "payments" },
               { type: "percent", label: "Giảm phần trăm (%)", icon: "percent" },
-              { type: "shipping", label: "Freeship vận chuyển", icon: "local_shipping" },
             ].map((item) => (
               <button
                 key={item.type}

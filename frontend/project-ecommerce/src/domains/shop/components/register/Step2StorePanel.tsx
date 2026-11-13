@@ -1,6 +1,7 @@
 import React, { useRef } from "react";
 import type { ShopStoreData } from "@/shared/types";
 import { toSlug } from "@/shared/utils/slug";
+import { getShopDefaultLogo, DEFAULT_SHOP_BANNER } from "@/shared/utils/avatar";
 
 interface Step2StorePanelProps {
   data: ShopStoreData;
@@ -59,10 +60,7 @@ export const Step2StorePanel: React.FC<Step2StorePanelProps> = ({
   };
 
   const handleRemoveLogo = () => {
-    onChange({
-      logoUrl:
-        "https://lh3.googleusercontent.com/aida-public/AB6AXuCNrMAmg1_AP-gnUKfHAfOto09k01wTZaTh_q6IPwC2nW7DHLKrQ4iBbixGfuOM_awfq9mqDYiFrJIVwnWDLxpqfQJ-h_dnQjYOpT03VOr1b9gSFeUwu2BDjyL5baGCRCdusrgP9ISfHy6SbLTr-R8gpXgmaL1Qlkp2WyumtPlHraMxa93SIoaiy6ClnoIE7Z6VAdO5cTTVGaz5wyFCK0lnS4HYbPiYhCB67IVpFgI",
-    });
+    onChange({ logoUrl: "" });
   };
 
   const districts = DISTRICTS_MAP[data.province] || DISTRICTS_MAP["TP. Hồ Chí Minh"];
@@ -119,6 +117,12 @@ export const Step2StorePanel: React.FC<Step2StorePanelProps> = ({
                   alt="Store Logo"
                   src={data.logoUrl}
                 />
+              ) : data.shopName?.trim() ? (
+                <img
+                  className="w-full h-full object-cover"
+                  alt="Default Store Logo"
+                  src={getShopDefaultLogo(data.shopName)}
+                />
               ) : (
                 <span className="material-symbols-outlined text-[36px] text-outline">
                   storefront
@@ -174,17 +178,11 @@ export const Step2StorePanel: React.FC<Step2StorePanelProps> = ({
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-space-lg py-2 border-t border-outline-variant/20 pt-4">
           <div className="relative group">
             <div className="w-40 h-20 rounded-xl bg-surface-container-highest flex items-center justify-center overflow-hidden shadow-sm border border-outline-variant/30">
-              {data.bannerUrl ? (
-                <img
-                  className="w-full h-full object-cover"
-                  alt="Store Banner"
-                  src={data.bannerUrl}
-                />
-              ) : (
-                <span className="material-symbols-outlined text-[36px] text-outline">
-                  panorama
-                </span>
-              )}
+              <img
+                className="w-full h-full object-cover"
+                alt="Store Banner"
+                src={data.bannerUrl || DEFAULT_SHOP_BANNER}
+              />
             </div>
             <button
               onClick={() => bannerInputRef.current?.click()}

@@ -46,5 +46,17 @@ func Migrate(ctx context.Context, db *sql.DB) error {
 		CONSTRAINT chk_flash_sale_quantity CHECK(quantity_limit>0 AND quantity_sold<=quantity_limit),
 		CONSTRAINT chk_flash_sale_period CHECK(end_at>start_at)
 	) ENGINE=InnoDB`)
+	if err != nil {
+		return err
+	}
+	_, err = db.ExecContext(ctx, `CREATE TABLE IF NOT EXISTS voucher_claims (
+		voucher_id BIGINT UNSIGNED NOT NULL,
+		user_id BIGINT UNSIGNED NOT NULL,
+		claimed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+		PRIMARY KEY(voucher_id,user_id),
+		KEY idx_voucher_claims_user(user_id,claimed_at),
+		CONSTRAINT fk_voucher_claims_voucher FOREIGN KEY(voucher_id) REFERENCES vouchers(id) ON DELETE CASCADE,
+		CONSTRAINT fk_voucher_claims_user FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+	) ENGINE=InnoDB`)
 	return err
 }

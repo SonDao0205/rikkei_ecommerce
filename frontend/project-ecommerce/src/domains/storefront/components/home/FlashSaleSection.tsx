@@ -23,11 +23,11 @@ const FlashSaleSection: React.FC<FlashSaleSectionProps> = ({
   <section className="w-full max-w-[1440px] mx-auto px-margin-lg pb-space-xl">
     <div className="flex items-center justify-between gap-space-md mb-space-lg p-space-md rounded-xl bg-surface-container-lowest shadow-sm">
       <div>
-        <h2 className="font-headline-md text-headline-md font-bold text-on-surface">Sản phẩm nổi bật</h2>
+        <h2 className="font-headline-md text-headline-md font-bold text-on-surface">Flash Sale đang diễn ra</h2>
         <p className="text-on-surface-variant">
           {categoryName
-            ? `Dữ liệu sản phẩm nổi bật thuộc danh mục: ${categoryName}`
-            : "Dữ liệu sản phẩm hiện có trong cửa hàng"}
+            ? `Ưu đãi giới hạn cho danh mục: ${categoryName}`
+            : "Săn giá ưu đãi khi chương trình còn số lượng"}
         </p>
       </div>
       <Link className="flex items-center gap-1 text-primary font-label-md font-bold hover:underline" to="#catalog">
@@ -51,8 +51,8 @@ const FlashSaleSection: React.FC<FlashSaleSectionProps> = ({
     ) : products.length === 0 ? (
       <p className="py-8 text-center text-on-surface-variant">
         {categoryName
-          ? `Chưa có sản phẩm nổi bật cho danh mục ${categoryName}.`
-          : "Chưa có sản phẩm để hiển thị."}
+          ? `Hiện chưa có Flash Sale cho danh mục ${categoryName}.`
+          : "Hiện chưa có chương trình Flash Sale đang mở."}
       </p>
     ) : (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter">

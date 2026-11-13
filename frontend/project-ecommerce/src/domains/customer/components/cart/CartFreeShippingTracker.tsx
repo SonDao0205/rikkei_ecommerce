@@ -15,7 +15,7 @@ export const CartFreeShippingTracker: React.FC<CartFreeShippingTrackerProps> = (
         <button
           type="button"
           onClick={onGoBack}
-          className="group inline-flex w-fit items-center gap-1.5 font-semibold text-on-surface-variant transition-colors hover:text-primary"
+          className="group inline-flex w-fit items-center gap-1.5 font-semibold text-on-surface-variant transition-colors hover:text-primary cursor-pointer"
           title="Quay lại trang trước"
         >
           <span className="material-symbols-outlined text-[18px] transition-transform group-hover:-translate-x-1">
