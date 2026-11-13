@@ -51,7 +51,8 @@ function Set-RefreshCookie {
   return $Matches[1]
 }
 
-$email = "smoke-$([guid]::NewGuid().ToString('N'))@example.test"
+if ([string]::IsNullOrWhiteSpace($env:SMOKE_TEST_EMAIL)) { throw 'Set SMOKE_TEST_EMAIL to a reachable disposable mailbox before running this smoke test.' }
+$email = $env:SMOKE_TEST_EMAIL.Trim().ToLowerInvariant()
 $phone = "+84$(([DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds() % 1000000000).ToString('D9'))"
 $password = 'SmokeTest12345'
 $null = Invoke-Api GET '/healthz'
@@ -88,7 +89,16 @@ if ($shopDetail.Status -ne 200 -or $shopDetail.Json.data.shop.id -ne 920001 -or 
 $shopProducts = Invoke-Api GET '/api/v1/shops/920001/products?page=1&limit=10'
 if ($shopProducts.Status -ne 200 -or $shopProducts.Json.data.products.Count -lt 1) { throw 'Shop product list failed' }
 $registration = Invoke-Api POST '/api/v1/auth/register' @{ email = $email; password = $password; full_name = 'Smoke Test'; phone = $phone }
-if ($registration.Status -ne 201) { throw "Registration failed with HTTP $($registration.Status)" }
+if ($registration.Status -ne 202) { throw "Registration must start email verification (HTTP $($registration.Status))" }
+$otp = $env:SMOKE_EMAIL_OTP
+if (-not $otp -and (Get-Command docker -ErrorAction SilentlyContinue)) {
+  $logs = & docker compose logs backend --no-color --since 5m
+  $pattern = 'DEV email verification code for ' + [regex]::Escape($email) + ': (\d{6})'
+  foreach ($line in $logs) { if ($line -match $pattern) { $otp = $Matches[1] } }
+}
+if (-not $otp) { throw 'Set SMOKE_EMAIL_OTP to the code received at SMOKE_TEST_EMAIL, or use the development backend log. A reachable test email is required.' }
+$emailVerification = Invoke-Api POST '/api/v1/auth/verify-email-otp' @{ email = $email; otp = $otp }
+if ($emailVerification.Status -ne 200) { throw "Email verification failed with HTTP $($emailVerification.Status)" }
 
 # Login by email, then exercise refresh rotation and replay detection.
 $emailCookies = New-Object System.Net.CookieContainer

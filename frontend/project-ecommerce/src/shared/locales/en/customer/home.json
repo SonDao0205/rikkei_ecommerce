@@ -3,6 +3,14 @@
     "tag": "MARKETPLACE",
     "message": "Discover products from active stores on MarketPulse"
   },
+  "flash_sale": {
+    "title": "Flash Sale Ongoing",
+    "subtitle_all": "Grab promotional prices while supplies last",
+    "subtitle_category": "Limited offers for category: {{category}}",
+    "view_catalog": "View Catalog",
+    "empty_all": "No open Flash Sale events at the moment.",
+    "empty_category": "No Flash Sale available for category {{category}}."
+  },
   "featured": {
     "title": "Featured Products",
     "subtitle_all": "Featured products currently available in marketplace",

@@ -2,6 +2,7 @@ package review
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/go-sql-driver/mysql"
 	"rikkei-ecommerce/internal/domain/auth"
 	"rikkei-ecommerce/internal/platform/auditlog"
 	"rikkei-ecommerce/internal/platform/httpx"
@@ -100,6 +102,11 @@ func (h handler) create(w http.ResponseWriter, r *http.Request) {
 	}
 	res, e := tx.ExecContext(r.Context(), `INSERT INTO reviews(order_item_id,product_id,shop_id,user_id,rating,content,status) VALUES(?,?,?,?,?,?,'VISIBLE')`, x.OrderItemID, productID, shopID, uid, x.Rating, nullText(x.Content))
 	if e != nil {
+		var mysqlErr *mysql.MySQLError
+		if errors.As(e, &mysqlErr) && mysqlErr.Number == 1062 {
+			h.err(w, 409, "already_reviewed", "This order item already has a review")
+			return
+		}
 		h.internal(w, e)
 		return
 	}
@@ -128,6 +135,41 @@ func (h handler) create(w http.ResponseWriter, r *http.Request) {
 	}
 	h.json(w, 201, map[string]any{"id": id, "status": "VISIBLE"})
 }
+
+func (h handler) eligible(w http.ResponseWriter, r *http.Request) {
+	uid, ok := h.id(r)
+	if !ok {
+		h.err(w, 401, "unauthorized", "Invalid user")
+		return
+	}
+	rows, err := h.db.QueryContext(r.Context(), `SELECT oi.id,oi.product_id,p.name,so.shop_order_code,so.updated_at
+		FROM order_items oi JOIN shop_orders so ON so.id=oi.shop_order_id
+		JOIN orders o ON o.id=so.order_id JOIN products p ON p.id=oi.product_id
+		LEFT JOIN reviews r ON r.order_item_id=oi.id
+		WHERE o.user_id=? AND so.status='COMPLETED' AND r.id IS NULL
+		ORDER BY so.updated_at DESC,oi.id DESC LIMIT 100`, uid)
+	if err != nil {
+		h.internal(w, err)
+		return
+	}
+	defer rows.Close()
+	out := []map[string]any{}
+	for rows.Next() {
+		var itemID, productID int64
+		var productName, orderCode string
+		var completedAt sql.NullTime
+		if err = rows.Scan(&itemID, &productID, &productName, &orderCode, &completedAt); err != nil {
+			h.internal(w, err)
+			return
+		}
+		out = append(out, map[string]any{"order_item_id": itemID, "product_id": productID, "product_name": productName, "order_code": orderCode, "completed_at": completedAt})
+	}
+	if err = rows.Err(); err != nil {
+		h.internal(w, err)
+		return
+	}
+	h.json(w, 200, out)
+}
 func nullText(s string) any {
 	if s == "" {
 		return nil
@@ -135,7 +177,9 @@ func nullText(s string) any {
 	return s
 }
 func (h handler) list(w http.ResponseWriter, r *http.Request, where string, args ...any) {
-	q := `SELECT r.id,r.order_item_id,r.product_id,r.shop_id,r.user_id,r.rating,r.content,r.status,r.shop_reply,r.shop_replied_at,r.created_at,u.full_name FROM reviews r JOIN users u ON u.id=r.user_id WHERE ` + where + ` ORDER BY r.created_at DESC LIMIT 100`
+	q := `SELECT r.id,r.order_item_id,r.product_id,r.shop_id,r.user_id,r.rating,r.content,r.status,r.shop_reply,r.shop_replied_at,r.created_at,u.full_name,
+		COALESCE((SELECT JSON_ARRAYAGG(ri.url) FROM review_images ri WHERE ri.review_id=r.id),JSON_ARRAY())
+		FROM reviews r JOIN users u ON u.id=r.user_id WHERE ` + where + ` ORDER BY r.created_at DESC LIMIT 100`
 	rows, e := h.db.QueryContext(r.Context(), q, args...)
 	if e != nil {
 		h.internal(w, e)
@@ -147,13 +191,31 @@ func (h handler) list(w http.ResponseWriter, r *http.Request, where string, args
 		var id, item, pid, sid, uid int64
 		var rating int
 		var content, reply sql.NullString
+		var imagesJSON []byte
 		var status, name string
 		var replied, created sql.NullTime
-		if e = rows.Scan(&id, &item, &pid, &sid, &uid, &rating, &content, &status, &reply, &replied, &created, &name); e != nil {
+		if e = rows.Scan(&id, &item, &pid, &sid, &uid, &rating, &content, &status, &reply, &replied, &created, &name, &imagesJSON); e != nil {
 			h.internal(w, e)
 			return
 		}
-		out = append(out, map[string]any{"id": id, "order_item_id": item, "product_id": pid, "shop_id": sid, "customer_name": name, "rating": rating, "content": content, "status": status, "shop_reply": reply, "shop_replied_at": replied, "created_at": created})
+		images := []string{}
+		if len(imagesJSON) > 0 {
+			if e = json.Unmarshal(imagesJSON, &images); e != nil {
+				h.internal(w, e)
+				return
+			}
+		}
+		var contentValue, replyValue, repliedValue any
+		if content.Valid {
+			contentValue = content.String
+		}
+		if reply.Valid {
+			replyValue = reply.String
+		}
+		if replied.Valid {
+			repliedValue = replied.Time
+		}
+		out = append(out, map[string]any{"id": id, "order_item_id": item, "product_id": pid, "shop_id": sid, "customer_name": name, "rating": rating, "content": contentValue, "images": images, "status": status, "shop_reply": replyValue, "shop_replied_at": repliedValue, "created_at": created.Time})
 	}
 	if e = rows.Err(); e != nil {
 		h.internal(w, e)
@@ -350,7 +412,26 @@ func (h handler) auditLogs(w http.ResponseWriter, r *http.Request) {
 			h.internal(w, e)
 			return
 		}
-		out = append(out, map[string]any{"id": id, "user_id": uid, "action": action, "entity_type": entity, "entity_id": eid, "old_value": oldv, "new_value": newv, "request_id": request, "created_at": created})
+		var userID, entityID, oldValue, newValue, requestID, createdAt any
+		if uid.Valid {
+			userID = uid.Int64
+		}
+		if eid.Valid {
+			entityID = eid.Int64
+		}
+		if oldv.Valid {
+			oldValue = oldv.String
+		}
+		if newv.Valid {
+			newValue = newv.String
+		}
+		if request.Valid {
+			requestID = request.String
+		}
+		if created.Valid {
+			createdAt = created.Time
+		}
+		out = append(out, map[string]any{"id": id, "user_id": userID, "action": action, "entity_type": entity, "entity_id": entityID, "old_value": oldValue, "new_value": newValue, "request_id": requestID, "created_at": createdAt})
 	}
 	if e = rows.Err(); e != nil {
 		h.internal(w, e)

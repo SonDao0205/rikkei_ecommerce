@@ -76,6 +76,7 @@ export const ShopLayout: React.FC<ShopLayoutProps> = ({ children }) => {
     },
     { label: t("shop.vouchers"), path: "/shop/vouchers", icon: "confirmation_number" },
     { label: t("shop.finance"), path: "/shop/finances", icon: "account_balance_wallet" },
+    { label: t("shop.reviews"), path: "/shop/reviews", icon: "rate_review" },
     {
       label: t("shop.customer_care"),
       path: "/shop/customer-chat",
@@ -238,6 +239,8 @@ export const ShopLayout: React.FC<ShopLayoutProps> = ({ children }) => {
                   ? t("shop.vouchers")
                   : location.pathname.startsWith("/shop/finance")
                   ? t("shop.finance")
+                  : location.pathname.startsWith("/shop/review")
+                  ? t("shop.reviews")
                   : location.pathname.startsWith("/shop/setting")
                   ? t("shop.settings")
                   : t("shop.overview")}

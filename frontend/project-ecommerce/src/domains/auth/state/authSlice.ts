@@ -116,8 +116,7 @@ export const registerUser = createAsyncThunk(
   async (payload: RegisterPayload, { rejectWithValue }) => {
     try {
       const response = await authApi.register(payload);
-      setInMemoryAccessToken(response.accessToken);
-      return response;
+      return { ...response, email: payload.email.trim().toLowerCase() };
     } catch (err: unknown) {
       return rejectWithValue(
         err instanceof Error ? err.message : "Failed to register"
@@ -305,18 +304,7 @@ export const authSlice = createSlice({
       })
       .addCase(registerUser.fulfilled, (state, action) => {
         state.loading = false;
-        state.isInitialized = true;
-        state.user = action.payload.user;
-        state.role = action.payload.user.role;
-        state.accessToken = action.payload.accessToken; // Saved strictly in memory
-        state.refreshToken = action.payload.refreshToken;
-        state.isAuthenticated = true;
-        state.successMessage = action.payload.message || "Registered successfully";
-        try {
-          localStorage.setItem(CACHED_USER_KEY, JSON.stringify(action.payload.user));
-        } catch {
-          void 0;
-        }
+        state.successMessage = action.payload.message || "Verification code sent";
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.loading = false;

@@ -3,6 +3,7 @@ import RegisterPage from "@/domains/auth/pages/RegisterPage";
 import LoginPage from "@/domains/auth/pages/LoginPage";
 import RoleSelectionPage from "@/domains/auth/pages/RoleSelectionPage";
 import ForgotPassword from "@/domains/auth/pages/ForgotPassword";
+import VerifyEmailPage from "@/domains/auth/pages/VerifyEmailPage";
 import HomePage from "@/domains/storefront/pages/home/HomePage";
 import ProductDetail from "@/domains/storefront/pages/product/ProductDetail";
 import InforShop from "@/domains/shop/pages/InforShop";
@@ -24,6 +25,8 @@ import AdminOrder from "@/domains/admin/pages/AdminOrder";
 import AdminOrderDetail from "@/domains/admin/pages/AdminOrderDetail";
 import AdminShop from "@/domains/admin/pages/AdminShop";
 import AdminUser from "@/domains/admin/pages/AdminUser";
+import AdminPromotionReview from "@/domains/admin/pages/AdminPromotionReview";
+import ShopReviewManagement from "@/domains/shop/pages/ShopReviewManagement";
 import MyProfile from "@/domains/customer/pages/MyProfile";
 import ChangePassword from "@/domains/customer/pages/ChangePassword";
 import Address from "@/domains/customer/pages/Address";
@@ -379,6 +382,14 @@ const router = createBrowserRouter([
     ),
   },
   {
+    path: "/shop/reviews",
+    element: (
+      <ProtectedRoute allowedRoles={["seller", "SELLER"]}>
+        <ShopReviewManagement />
+      </ProtectedRoute>
+    ),
+  },
+  {
     path: "/shop/voucher",
     element: (
       <ProtectedRoute allowedRoles={["seller", "SELLER"]}>
@@ -463,6 +474,14 @@ const router = createBrowserRouter([
     element: (
       <GuestRoute>
         <ForgotPassword />
+      </GuestRoute>
+    ),
+  },
+  {
+    path: "/verify-email",
+    element: (
+      <GuestRoute>
+        <VerifyEmailPage />
       </GuestRoute>
     ),
   },
@@ -663,6 +682,14 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute allowedRoles={["admin", "ADMIN"]}>
         <AdminUser />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/admin/promotions",
+    element: (
+      <ProtectedRoute allowedRoles={["admin", "ADMIN"]}>
+        <AdminPromotionReview />
       </ProtectedRoute>
     ),
   },

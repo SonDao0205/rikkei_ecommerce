@@ -41,6 +41,7 @@ export const ShopSidebar: React.FC<ShopSidebarProps> = ({
       to: "/shop/orders",
     },
     { path: "vouchers", label: "Quản lý voucher", icon: "confirmation_number", to: "/shop/vouchers" },
+    { path: "reviews", label: "Đánh giá", icon: "rate_review", to: "/shop/reviews" },
     { path: "finances", label: "Ví & Doanh thu", icon: "account_balance_wallet" },
     { path: "customer-chat", label: "Chăm sóc khách", icon: "chat", badge: "3", badgeVariant: "secondary" },
     { path: "shop-settings", label: "Cài đặt gian hàng", icon: "settings" },

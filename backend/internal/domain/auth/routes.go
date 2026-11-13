@@ -5,6 +5,8 @@ package auth
 func RegisterRoutes(a *App) {
 	a.mux.HandleFunc("GET /healthz", a.health)
 	a.mux.HandleFunc("POST /api/v1/auth/register", a.register)
+	a.mux.HandleFunc("POST /api/v1/auth/resend-email-otp", a.resendEmailOTP)
+	a.mux.HandleFunc("POST /api/v1/auth/verify-email-otp", a.verifyEmailOTP)
 	a.mux.HandleFunc("POST /api/v1/auth/login", a.login)
 	a.mux.HandleFunc("POST /api/v1/auth/refresh", a.refresh)
 	a.mux.Handle("POST /api/v1/auth/logout", a.requireAuth(a.logout))

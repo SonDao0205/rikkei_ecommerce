@@ -354,8 +354,11 @@ func (h handler) listProducts(w http.ResponseWriter, r *http.Request, forcedShop
 	}
 
 	offset := (filters.page - 1) * filters.limit
-	query := `SELECT p.id,p.shop_id,p.category_id,p.brand_id,p.name,p.slug,p.description,p.thumbnail_url,p.price,p.sold_count,p.rating_avg,p.rating_count,p.status,NULL,p.is_deleted,s.name,c.name,
-		(SELECT COALESCE(SUM(v.stock),0) FROM product_variants v WHERE v.product_id=p.id AND v.status='ACTIVE')` +
+	query := `SELECT p.id,p.shop_id,p.category_id,p.brand_id,p.name,p.slug,p.description,p.thumbnail_url,
+		COALESCE((SELECT fs.sale_price FROM flash_sales fs WHERE fs.product_id=p.id AND fs.is_active=1 AND fs.start_at<=UTC_TIMESTAMP() AND fs.end_at>UTC_TIMESTAMP() AND fs.quantity_sold<fs.quantity_limit ORDER BY fs.sale_price,fs.id LIMIT 1),p.price),
+		p.price,p.sold_count,p.rating_avg,p.rating_count,p.status,NULL,p.is_deleted,s.name,c.name,
+		(SELECT COALESCE(SUM(v.stock),0) FROM product_variants v WHERE v.product_id=p.id AND v.status='ACTIVE'),
+		EXISTS(SELECT 1 FROM flash_sales fs WHERE fs.product_id=p.id AND fs.is_active=1 AND fs.start_at<=UTC_TIMESTAMP() AND fs.end_at>UTC_TIMESTAMP() AND fs.quantity_sold<fs.quantity_limit)` +
 		baseQuery + ` ORDER BY `
 	listArgs := append([]any(nil), args...)
 	if search.relevance != "" {
@@ -374,7 +377,7 @@ func (h handler) listProducts(w http.ResponseWriter, r *http.Request, forcedShop
 	items := []product{}
 	for rows.Next() {
 		var item product
-		if err = rows.Scan(&item.ID, &item.ShopID, &item.CategoryID, &item.BrandID, &item.Name, &item.Slug, &item.Description, &item.ThumbnailURL, &item.Price, &item.SoldCount, &item.RatingAvg, &item.RatingCount, &item.Status, &item.RejectReason, &item.IsDeleted, &item.ShopName, &item.CategoryName, &item.Stock); err != nil {
+		if err = rows.Scan(&item.ID, &item.ShopID, &item.CategoryID, &item.BrandID, &item.Name, &item.Slug, &item.Description, &item.ThumbnailURL, &item.Price, &item.OriginalPrice, &item.SoldCount, &item.RatingAvg, &item.RatingCount, &item.Status, &item.RejectReason, &item.IsDeleted, &item.ShopName, &item.CategoryName, &item.Stock, &item.IsFlashSale); err != nil {
 			writeError(w, http.StatusInternalServerError, "internal_error", "Could not load products")
 			return
 		}

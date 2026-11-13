@@ -17,6 +17,7 @@ type Config struct {
 	SMTPHost, SMTPUser, SMTPPassword, SMTPFrom                 string
 	CloudinaryCloudName, CloudinaryAPIKey, CloudinaryAPISecret string
 	SMTPPort                                                   int
+	SMTPSecure                                                 bool
 	AccessTTL, RefreshTTL, OTPTTL                              time.Duration
 	Origins, TrustedProxyCIDRs                                 []string
 	CookieSecure, AutoMigrate                                  bool
@@ -38,7 +39,15 @@ func LoadConfig() (Config, error) {
 	if autoValue != "true" && autoValue != "false" {
 		return Config{}, fmt.Errorf("AUTO_MIGRATE must be true or false")
 	}
-	c := Config{AppEnv: appEnv, HTTPAddr: env("HTTP_ADDR", ":8080"), DatabaseDSN: os.Getenv("DATABASE_DSN"), JWTSecret: os.Getenv("JWT_SECRET"), LogLevel: strings.ToLower(env("LOG_LEVEL", "info")), SMTPHost: os.Getenv("SMTP_HOST"), SMTPUser: os.Getenv("SMTP_USER"), SMTPPassword: os.Getenv("SMTP_PASSWORD"), SMTPFrom: os.Getenv("SMTP_FROM"), CloudinaryCloudName: strings.TrimSpace(os.Getenv("CLOUDINARY_CLOUD_NAME")), CloudinaryAPIKey: strings.TrimSpace(os.Getenv("CLOUDINARY_API_KEY")), CloudinaryAPISecret: strings.TrimSpace(os.Getenv("CLOUDINARY_API_SECRET")), SMTPPort: port("SMTP_PORT", 587), AccessTTL: duration("ACCESS_TOKEN_TTL", 15*time.Minute), RefreshTTL: duration("REFRESH_TOKEN_TTL", 7*24*time.Hour), OTPTTL: duration("OTP_TTL", 10*time.Minute), Origins: split(os.Getenv("CORS_ALLOWED_ORIGINS")), TrustedProxyCIDRs: split(os.Getenv("TRUSTED_PROXY_CIDRS")), CookieSecure: os.Getenv("COOKIE_SECURE") == "true", AutoMigrate: autoValue == "true"}
+	smtpPassword := os.Getenv("SMTP_PASSWORD")
+	if smtpPassword == "" {
+		smtpPassword = os.Getenv("SMTP_PASS")
+	}
+	smtpSecure := strings.ToLower(strings.TrimSpace(os.Getenv("SMTP_SECURE")))
+	if smtpSecure != "" && smtpSecure != "true" && smtpSecure != "false" {
+		return Config{}, fmt.Errorf("SMTP_SECURE must be true or false")
+	}
+	c := Config{AppEnv: appEnv, HTTPAddr: env("HTTP_ADDR", ":8080"), DatabaseDSN: os.Getenv("DATABASE_DSN"), JWTSecret: os.Getenv("JWT_SECRET"), LogLevel: strings.ToLower(env("LOG_LEVEL", "info")), SMTPHost: strings.TrimSpace(os.Getenv("SMTP_HOST")), SMTPUser: strings.TrimSpace(os.Getenv("SMTP_USER")), SMTPPassword: smtpPassword, SMTPFrom: strings.TrimSpace(os.Getenv("SMTP_FROM")), CloudinaryCloudName: strings.TrimSpace(os.Getenv("CLOUDINARY_CLOUD_NAME")), CloudinaryAPIKey: strings.TrimSpace(os.Getenv("CLOUDINARY_API_KEY")), CloudinaryAPISecret: strings.TrimSpace(os.Getenv("CLOUDINARY_API_SECRET")), SMTPPort: port("SMTP_PORT", 587), SMTPSecure: smtpSecure == "true", AccessTTL: duration("ACCESS_TOKEN_TTL", 15*time.Minute), RefreshTTL: duration("REFRESH_TOKEN_TTL", 7*24*time.Hour), OTPTTL: duration("OTP_TTL", 10*time.Minute), Origins: split(os.Getenv("CORS_ALLOWED_ORIGINS")), TrustedProxyCIDRs: split(os.Getenv("TRUSTED_PROXY_CIDRS")), CookieSecure: os.Getenv("COOKIE_SECURE") == "true", AutoMigrate: autoValue == "true"}
 	cloudinarySet := 0
 	for _, value := range []string{c.CloudinaryCloudName, c.CloudinaryAPIKey, c.CloudinaryAPISecret} {
 		if value != "" {
@@ -90,8 +99,8 @@ func LoadConfig() (Config, error) {
 				return c, fmt.Errorf("wildcard CORS is forbidden in production")
 			}
 		}
-		if c.SMTPHost == "" || c.SMTPFrom == "" {
-			return c, fmt.Errorf("SMTP_HOST and SMTP_FROM are required in production")
+		if c.SMTPHost == "" || c.SMTPFrom == "" || c.SMTPUser == "" || c.SMTPPassword == "" {
+			return c, fmt.Errorf("SMTP_HOST, SMTP_USER, SMTP_PASSWORD, and SMTP_FROM are required in production")
 		}
 		for _, origin := range c.Origins {
 			parsed, err := url.Parse(origin)
@@ -99,9 +108,14 @@ func LoadConfig() (Config, error) {
 				return c, fmt.Errorf("production CORS origins must be exact HTTPS origins")
 			}
 		}
-		from, err := mail.ParseAddress(c.SMTPFrom)
-		if err != nil || from.Address != c.SMTPFrom {
-			return c, fmt.Errorf("SMTP_FROM must be a valid email address")
+		if _, err := mail.ParseAddress(c.SMTPFrom); err != nil {
+			return c, fmt.Errorf("SMTP_FROM must be a valid email address or display-name address")
+		}
+		if strings.EqualFold(c.SMTPHost, "smtp.gmail.com") {
+			from, _ := mail.ParseAddress(c.SMTPFrom)
+			if !strings.EqualFold(from.Address, c.SMTPUser) {
+				return c, fmt.Errorf("for Gmail SMTP, SMTP_FROM address must match SMTP_USER")
+			}
 		}
 	}
 	if c.SMTPPort == 0 {

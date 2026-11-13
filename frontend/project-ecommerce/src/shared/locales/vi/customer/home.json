@@ -3,6 +3,14 @@
     "tag": "MARKETPLACE",
     "message": "Khám phá các sản phẩm từ các gian hàng đang hoạt động trên MarketPulse"
   },
+  "flash_sale": {
+    "title": "Flash Sale đang diễn ra",
+    "subtitle_all": "Săn giá ưu đãi khi chương trình còn số lượng",
+    "subtitle_category": "Ưu đãi giới hạn cho danh mục: {{category}}",
+    "view_catalog": "Xem danh mục",
+    "empty_all": "Hiện chưa có chương trình Flash Sale đang mở.",
+    "empty_category": "Hiện chưa có Flash Sale cho danh mục {{category}}."
+  },
   "featured": {
     "title": "Sản phẩm nổi bật",
     "subtitle_all": "Dữ liệu sản phẩm hiện có trong cửa hàng",
