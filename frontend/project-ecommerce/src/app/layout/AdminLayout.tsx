@@ -47,6 +47,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { label: "Orders", path: "/admin/orders", icon: "local_shipping" },
     { label: "Shops & Merchants", path: "/admin/shops", icon: "store" },
     { label: "Quản lý người dùng", path: "/admin/users", icon: "group" },
+    { label: "Khuyến mãi & đánh giá", path: "/admin/promotions", icon: "campaign" },
     { label: "Settings", path: "/admin/settings", icon: "settings" },
   ];
 
@@ -177,6 +178,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 ? "Quản lý người dùng"
                 : location.pathname.startsWith("/admin/setting")
                 ? "Settings"
+                : location.pathname.startsWith("/admin/promotions")
+                ? "Khuyến mãi & đánh giá"
                 : "Dashboard"}
             </span>
           </div>

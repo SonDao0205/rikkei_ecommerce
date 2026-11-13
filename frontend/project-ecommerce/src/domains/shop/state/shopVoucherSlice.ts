@@ -203,7 +203,7 @@ export const shopVoucherSlice = createSlice({
 
     // Delete
     builder.addCase(deleteShopVoucherThunk.fulfilled, (state, action) => {
-      state.vouchers = state.vouchers.filter((v) => v.id !== action.payload);
+      state.vouchers = state.vouchers.map((voucher) => voucher.id === action.payload ? { ...voucher, status: "paused" } : voucher);
     });
 
     // Toggle

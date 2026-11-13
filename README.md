@@ -79,7 +79,7 @@ Backend CI chạy gofmt check, unit tests, vet và build. Frontend CI chạy lin
 
 ## Trạng thái phạm vi sản phẩm
 
-Backend currently supports auth/RBAC, catalog/categories, shop onboarding, seller products, addresses, cart, wishlist, voucher validation, checkout quote, and order creation APIs (multi-shop order splitting, atomic stock reservation with oversell prevention, COD and bank transfer payments). Online payment gateway callbacks and product reviews remain to be integrated. Some admin FE screens still use mock fallbacks; see [Backend README](backend/README.md#order-creation-post-apiv1checkoutorders) for API contracts and details.
+Backend currently supports auth/RBAC, catalog/categories, shop onboarding, seller products, addresses, cart, wishlist, platform/shop vouchers, banners, flash sales, verified-purchase reviews, seller replies, moderation, audit logs, checkout quotes, and order creation (multi-shop splitting, atomic stock reservation, COD and bank transfer). See [promotion/review API and workflow notes](backend/README.md#promotions-reviews-and-audit-log) for authorization and lifecycle details.
 
 ### Order status workflow (customer and seller)
 

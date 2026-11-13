@@ -245,11 +245,14 @@ func (h *Handler) uploadPolicy(w http.ResponseWriter, r *http.Request, purpose s
 	case "product-image":
 		allowed = hasRole(identity.Roles, "SELLER") || hasRole([]string{identity.Role}, "SELLER")
 		resourceType, maxBytes, folder = "image", maxImageBytes, "product-images"
+	case "review-image":
+		allowed = hasRole(identity.Roles, "CLIENT") || hasRole([]string{identity.Role}, "CLIENT")
+		resourceType, maxBytes, folder = "image", maxImageBytes, "review-images"
 	case "product-video":
 		allowed = hasRole(identity.Roles, "SELLER") || hasRole([]string{identity.Role}, "SELLER")
 		resourceType, maxBytes, folder = "video", maxVideoBytes, "product-videos"
 	default:
-		writeError(w, http.StatusBadRequest, "invalid_upload_purpose", "purpose must be avatar, shop-image, product-image, or product-video")
+		writeError(w, http.StatusBadRequest, "invalid_upload_purpose", "purpose must be avatar, shop-image, product-image, review-image, or product-video")
 		return "", 0, "", false
 	}
 	if !allowed {

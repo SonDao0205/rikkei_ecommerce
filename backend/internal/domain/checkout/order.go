@@ -42,6 +42,7 @@ type itemDetails struct {
 	LineCents   int64
 	ShopID      int64
 	ShopName    string
+	FlashSaleID *int64
 }
 
 type shopOrderPlan struct {
@@ -256,6 +257,7 @@ func (h *Handler) createOrder(w http.ResponseWriter, r *http.Request) {
 		shopID      int64
 		shopName    string
 		purchasable bool
+		flashSaleID *int64
 	}
 	variantsByID := make(map[int64]variantSnapshot, len(variantIDs))
 	for variantRows.Next() {
@@ -313,6 +315,8 @@ func (h *Handler) createOrder(w http.ResponseWriter, r *http.Request) {
 		for variantID, snap := range variantsByID {
 			if snap.productID == productID {
 				snap.price = salePrice
+				saleIDCopy := saleID
+				snap.flashSaleID = &saleIDCopy
 				variantsByID[variantID] = snap
 			}
 		}
@@ -357,6 +361,7 @@ func (h *Handler) createOrder(w http.ResponseWriter, r *http.Request) {
 			LineCents:   lineCents,
 			ShopID:      snap.shopID,
 			ShopName:    snap.shopName,
+			FlashSaleID: snap.flashSaleID,
 		}
 		orderedItems = append(orderedItems, item)
 
@@ -669,10 +674,10 @@ func (h *Handler) createOrder(w http.ResponseWriter, r *http.Request) {
 
 			if _, itmErr := tx.ExecContext(r.Context(),
 				`INSERT INTO order_items (
-					shop_order_id, product_id, variant_id, product_name, variant_name,
+					shop_order_id, product_id, variant_id, flash_sale_id, product_name, variant_name,
 					sku, image_url, unit_price, quantity, line_total
-				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-				shopOrderID, item.ProductID, item.VariantID, item.ProductName, varName,
+				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+				shopOrderID, item.ProductID, item.VariantID, item.FlashSaleID, item.ProductName, varName,
 				item.SKU, imgURL, item.UnitPrice, item.Quantity, float64(item.LineCents)/100,
 			); itmErr != nil {
 				h.serverError(w, itmErr)
