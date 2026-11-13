@@ -137,9 +137,15 @@ const LoginForm = () => {
       const isCustomer = roles.includes("client") || roles.includes("customer");
       const isSeller = roles.includes("seller");
 
-      const requestedPath = (
+      const stateRequestedPath = (
         location.state as { from?: { pathname?: string } } | null
       )?.from?.pathname;
+      const queryRequestedPath = searchParams.get("next") || undefined;
+      const requestedPath = stateRequestedPath || (
+        queryRequestedPath?.startsWith("/") && !queryRequestedPath.startsWith("//")
+          ? queryRequestedPath
+          : undefined
+      );
 
       const allowedRequestedPath =
         requestedPath?.startsWith("/") &&

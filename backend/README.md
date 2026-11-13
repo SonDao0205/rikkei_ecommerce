@@ -97,8 +97,10 @@ Không chạy hai backend cùng bind một host port. API gốc mặc định `h
 | `TRUSTED_PROXY_CIDRS` | CIDR của reverse proxy được phép cung cấp `X-Real-IP` | Compose local mặc định `172.22.0.3/32`; thay bằng đúng IP/CIDR proxy thực tế |
 | `COOKIE_SECURE` | Chỉ gửi refresh cookie qua HTTPS | `false` local; production bắt buộc `true` |
 | `AUTO_MIGRATE` | Áp dụng migration theo domain khi API khởi động | `true` development; production bắt buộc `false` |
-| `SMTP_HOST`, `SMTP_PORT` | SMTP STARTTLS gửi OTP | Port mặc định `587`; production cần SMTP hoạt động |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE` | SMTP gửi OTP qua implicit TLS (`true`, thường port `465`) hoặc STARTTLS (`false`, thường port `587`) | Gmail thường dùng `smtp.gmail.com:587` với `SMTP_SECURE=false` |
 | `SMTP_USER`, `SMTP_PASSWORD` | SMTP authentication nếu nhà cung cấp yêu cầu | Không commit credentials |
+| `SMTP_PASS` | Alias tương thích cho `SMTP_PASSWORD` | Chỉ dùng nếu môi trường triển khai cấp tên biến này |
+| `SMTP_SECURE` | TLS ngầm định (true, thường port 465) hay STARTTLS (false, thường port 587) | Mặc định `false` |
 | `SMTP_FROM` | Email gửi OTP | Production bắt buộc email hợp lệ |
 
 Không commit `.env`, DSN/password DB, SMTP credentials hoặc JWT secret. Dùng tài khoản DB có quyền tối thiểu; chỉ bước migration cần quyền DDL.
@@ -174,7 +176,9 @@ Postman collection importable kiểm thử các luồng API chính (không kiể
 | Method | Endpoint | Xác thực | Công dụng |
 |---|---|---|---|
 | `GET` | `/healthz` | Không | Health check DB |
-| `POST` | `/api/v1/auth/register` | Không | Đăng ký tài khoản CLIENT |
+| `POST` | `/api/v1/auth/register` | Không | Tạo yêu cầu đăng ký, gửi OTP; chưa tạo user trước khi xác minh |
+| `POST` | `/api/v1/auth/resend-email-otp` | Không | Gửi lại OTP cho đăng ký đang chờ; giới hạn 60 giây |
+| `POST` | `/api/v1/auth/verify-email-otp` | Không | Xác minh email và tạo tài khoản CLIENT |
 | `POST` | `/api/v1/auth/login` | Không | Email/phone và password; cấp access token, đặt refresh cookie |
 | `POST` | `/api/v1/auth/refresh` | Refresh cookie | Xoay refresh token và cấp access token |
 | `POST` | `/api/v1/auth/logout` | Access token | Thu hồi phiên hiện tại |
@@ -310,7 +314,7 @@ BE xác minh password hiện tại, yêu cầu password mới hợp lệ và kh�
 
 ### Quên password và OTP
 
-1. `POST /api/v1/auth/forgot-password` với `{ "identifier": "email-or-phone" }`. Response luôn chung để không tiết lộ tài khoản tồn tại; OTP gửi đến email của tài khoản. Development ghi OTP vào BE log.
+1. `POST /api/v1/auth/forgot-password` với `{ "identifier": "email-or-phone" }`. Response luôn chung để không tiết lộ tài khoản tồn tại; OTP gửi đến email của tài khoản qua SMTP khi được cấu hình. Chỉ development không có SMTP mới ghi OTP vào BE log.
 2. `POST /api/v1/auth/verify-reset-otp` với `{ "identifier": "email-or-phone", "otp": "123456" }`. OTP gồm đúng 6 chữ số.
 3. `POST /api/v1/auth/reset-password` với `{ "identifier": "email-or-phone", "otp": "123456", "new_password": "NewSecurePass456" }`. Field `email` cũ được hỗ trợ thay cho `identifier` để tương thích client cũ.
 
@@ -722,3 +726,15 @@ Validation in this workspace: `go test ./...`, `go vet ./...`, frontend `npm run
 `POST /api/v1/media` also requires the key. The request fingerprint includes purpose, basename, and SHA-256 of file bytes. The backend stores the response and Cloudinary public ID under the same user-scoped key; Cloudinary receives a deterministic public ID and `overwrite=true`, so a retry targets the same logical asset. Upload requests may hold a DB transaction while Cloudinary is responding; upload concurrency is capped at three per API process. Retry the same file and key after a network error; changed file content/purpose/filename with that key returns `409` after a committed upload.
 
 CORS preflight explicitly allows `Idempotency-Key` and exposes replay/rate-limit headers. Keep API clients and Postman callers on the same header contract.
+
+### Email OTP cho đăng ký và khôi phục mật khẩu
+
+Đăng ký mới là luồng hai bước: `POST /api/v1/auth/register` kiểm tra input, chuẩn hóa email và lưu yêu cầu tạm đã băm password; OTP chỉ lưu HMAC. Tài khoản chưa được tạo và không thể đăng nhập ở bước này. FE chuyển tới `/verify-email`; `POST /api/v1/auth/verify-email-otp` xác minh mã trong transaction, sau đó mới tạo `users` với `email_verified=1` và role `CLIENT`. Mã có thời hạn `OTP_TTL`, tối đa 5 lần thử và gửi lại sau tối thiểu 60 giây. `POST /api/v1/auth/resend-email-otp` không tiết lộ email có yêu cầu chờ hay không.
+
+Nếu SMTP hoạt động, cả xác minh đăng ký và khôi phục mật khẩu gửi email qua SMTP ngay cả ở local. Chỉ khi `APP_ENV=development` và không cấu hình SMTP, mã mới được ghi vào log backend để test. SMTP lỗi khi đăng ký trả lỗi tạm thời và xóa yêu cầu/code vừa tạo để người dùng gửi lại; OTP khôi phục lỗi gửi không được giữ lại trong DB.
+
+Cấu hình local trong `.env` dùng `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=587`, `SMTP_SECURE=false`, `SMTP_USER`, `SMTP_PASSWORD` (hoặc alias `SMTP_PASS`) và `SMTP_FROM`. Với Gmail, địa chỉ người gửi phải trùng `SMTP_USER`. Dùng Gmail App Password, không dùng mật khẩu đăng nhập tài khoản. Nếu App Password đã được chia sẻ trong chat/log, hãy thu hồi và tạo App Password mới trước khi dùng. Không commit `.env`.
+
+Migration `internal/domain/auth/migrations/003_email_verification.sql` tạo bảng yêu cầu đăng ký tạm và được chạy cùng auth migrations. Khi `AUTO_MIGRATE=false`, chạy lệnh migration của backend trước khi triển khai API.
+
+SMOKE API cần mailbox dùng được: đặt `SMOKE_TEST_EMAIL` và cung cấp OTP nhận được bằng `SMOKE_EMAIL_OTP`; khi development SMTP chưa cấu hình, script thử đọc mã xác minh từ Docker backend log. Tài khoản và số điện thoại phải là dữ liệu test riêng.

@@ -88,66 +88,23 @@ export const mapBackendUser = (u: BackendUser): UserProfile => {
  * Real API client matching Rikkei E-Commerce Backend (Section 2 - FE Guide)
  */
 export const authApi = {
-  /**
-   * Đăng ký tài khoản mới (POST /api/v1/auth/register)
-   * Tự động đăng nhập sau khi tạo tài khoản thành công để cấp access token và refresh cookie
-   */
-  register: async (payload: RegisterPayload): Promise<AuthResponse> => {
+  /** Begins registration; the backend creates the account only after email OTP verification. */
+  register: async (payload: RegisterPayload): Promise<{ message: string }> => {
     const cleanPhone = payload.phone.replace(/[\s\-()]/g, "");
-
-    // 1. Gọi API tạo tài khoản CLIENT
-    try {
-      await axiosClient.post<ApiResponse<BackendUser>>(
-        "/api/v1/auth/register",
-        {
-          email: payload.email.trim().toLowerCase(),
-          password: payload.password,
-          full_name: payload.fullName.trim(),
-          phone: cleanPhone,
-        },
-      );
-    } catch (err: unknown) {
-      // Nếu tài khoản đã tồn tại (ví dụ đã được tạo ở lần bấm trước trước khi lỗi client xảy ra),
-      // thử đăng nhập ngay bằng chính thông tin người dùng vừa nhập
-      const errorObj = err as {
-        response?: { status?: number };
-        message?: string;
-      };
-      if (
-        errorObj?.response?.status === 409 ||
-        errorObj?.message?.toLowerCase().includes("already exists")
-      ) {
-        try {
-          return await authApi.login({
-            identifier: payload.email.trim().toLowerCase(),
-            password: payload.password,
-          });
-        } catch {
-          throw err;
-        }
-      }
-      throw err;
-    }
-
-    // 2. Tự động đăng nhập để nhận Access Token và HttpOnly Refresh Cookie
-    const loginRes = await axiosClient.post<ApiResponse<BackendAuthData>>(
-      "/api/v1/auth/login",
-      {
-        identifier: payload.email.trim().toLowerCase(),
-        password: payload.password,
-      },
+    const res = await axiosClient.post<{ success: boolean; message: string }>(
+      "/api/v1/auth/register",
+      { email: payload.email.trim().toLowerCase(), password: payload.password, full_name: payload.fullName.trim(), phone: cleanPhone },
     );
-
-    const authData = loginRes.data.data;
-    const user = mapBackendUser(authData.user);
-    return {
-      user,
-      accessToken: authData.access_token,
-      refreshToken: "", // Refresh token được lưu riêng trong HttpOnly cookie
-      message: "Đăng ký và khởi tạo phiên thành công!",
-    };
+    return { message: res.data.message || "Verification code sent" };
   },
 
+  requestEmailVerification: async (email: string): Promise<void> => {
+    await axiosClient.post("/api/v1/auth/resend-email-otp", { email: email.trim().toLowerCase() });
+  },
+
+  verifyEmailOtp: async (email: string, otp: string): Promise<void> => {
+    await axiosClient.post("/api/v1/auth/verify-email-otp", { email: email.trim().toLowerCase(), otp: otp.trim() });
+  },
   /**
    * Đăng nhập (POST /api/v1/auth/login)
    * Identifier nhận email hoặc số điện thoại

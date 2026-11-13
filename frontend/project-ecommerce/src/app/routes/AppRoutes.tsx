@@ -3,6 +3,7 @@ import RegisterPage from "@/domains/auth/pages/RegisterPage";
 import LoginPage from "@/domains/auth/pages/LoginPage";
 import RoleSelectionPage from "@/domains/auth/pages/RoleSelectionPage";
 import ForgotPassword from "@/domains/auth/pages/ForgotPassword";
+import VerifyEmailPage from "@/domains/auth/pages/VerifyEmailPage";
 import HomePage from "@/domains/storefront/pages/home/HomePage";
 import ProductDetail from "@/domains/storefront/pages/product/ProductDetail";
 import InforShop from "@/domains/shop/pages/InforShop";
@@ -473,6 +474,14 @@ const router = createBrowserRouter([
     element: (
       <GuestRoute>
         <ForgotPassword />
+      </GuestRoute>
+    ),
+  },
+  {
+    path: "/verify-email",
+    element: (
+      <GuestRoute>
+        <VerifyEmailPage />
       </GuestRoute>
     ),
   },

@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"crypto/rand"
 	"database/sql"
 	"errors"
@@ -69,15 +70,15 @@ func (a *App) forgotPassword(w http.ResponseWriter, r *http.Request) {
 		a.serverError(w, r, e)
 		return
 	}
-	if a.cfg.AppEnv == "development" {
-		a.logger.Printf("DEV password reset code for %s: %s", email, otp)
-	} else {
-		go func() {
-			if e := a.sendOTP(email, otp); e != nil {
-				a.logger.Printf("password reset email delivery failed: %v", e)
-			}
-		}()
-	}
+	otpHash := hmacDigest(a.cfg.JWTSecret, otp)
+	go func() {
+		if sendErr := a.deliverOTP(email, otp, "password reset"); sendErr != nil {
+			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+			defer cancel()
+			_, _ = a.db.ExecContext(ctx, `DELETE FROM password_reset_otps WHERE email=? AND otp_hash=?`, email, otpHash)
+			a.logger.Printf("password reset email delivery failed: %v", sendErr)
+		}
+	}()
 	writeJSON(w, 200, generic)
 }
 

@@ -128,6 +128,10 @@
     {
       "key": "flashSaleId",
       "value": ""
+    },
+    {
+      "key": "emailOTP",
+      "value": ""
     }
   ],
   "item": [
@@ -461,7 +465,7 @@
       "name": "Authentication",
       "item": [
         {
-          "name": "Register disposable CLIENT",
+          "name": "Register disposable CLIENT (email OTP required)",
           "event": [
             {
               "listen": "prerequest",
@@ -470,10 +474,10 @@
                 "exec": [
                   "const runId = Date.now().toString() + Math.floor(Math.random() * 100000).toString().padStart(5, '0');",
                   "pm.collectionVariables.set('runId', runId);",
-                  "pm.collectionVariables.set('testEmail', 'postman-' + runId + '@example.test');",
+                  "pm.collectionVariables.set('testEmail', pm.environment.get('testEmail') || 'postman-' + runId + '@example.test');",
                   "pm.collectionVariables.set('testPhone', '+849' + runId.slice(-9));",
                   "pm.collectionVariables.set('testPassword', 'PostmanTest123!');",
-                  "pm.environment.set('testEmail', 'postman-' + runId + '@example.test');",
+                  "pm.environment.set('testEmail', pm.collectionVariables.get('testEmail'));",
                   "pm.environment.set('testPassword', 'PostmanTest123!');"
                 ]
               }
@@ -483,12 +487,10 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Creates a CLIENT account with valid input', function () {",
-                  "  pm.response.to.have.status(201);",
-                  "  const user = pm.response.json().data;",
-                  "  pm.expect(user.email).to.eql(pm.collectionVariables.get('testEmail'));",
-                  "  pm.expect(user.role).to.eql('CLIENT');",
-                  "  pm.collectionVariables.set('clientId', String(user.id));",
+                  "pm.test('Starts pending email verification without creating a session', function () {",
+                  "  pm.response.to.have.status(202);",
+                  "  pm.expect(pm.response.json().success).to.eql(true);",
+                  "  pm.expect(pm.response.json().data).to.be.undefined;",
                   "});"
                 ]
               }
@@ -510,7 +512,37 @@
           }
         },
         {
-          "name": "Reject duplicate registration",
+          "name": "Verify registration email OTP (manual mailbox step)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"otp\": \"{{emailOTP}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/verify-email-otp"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Verifies the pending email before login', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reject duplicate registration after email verification",
           "request": {
             "method": "POST",
             "header": [
@@ -531,7 +563,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Returns conflict for duplicate account data', function () {",
+                  "pm.test('Rejects creating a duplicate verified account', function () {",
                   "  pm.response.to.have.status(409);",
                   "  pm.expect(pm.response.json().errors[0].code).to.eql('account_exists');",
                   "});"
