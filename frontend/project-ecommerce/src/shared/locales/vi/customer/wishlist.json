@@ -1,0 +1,86 @@
+{
+  "breadcrumb": {
+    "home": "Trang chủ",
+    "account": "Tài khoản của tôi",
+    "wishlist": "Danh sách yêu thích",
+    "realtime_sync": "Đồng bộ thời gian thực với tài khoản"
+  },
+  "toolbar": {
+    "back": "Quay lại",
+    "back_title": "Quay lại trang trước",
+    "title": "Danh sách yêu thích",
+    "saved_count": "{{count}} sản phẩm đã lưu",
+    "desc": "Các sản phẩm bạn đang quan tâm và lưu lại để mua sau. Nhanh tay chuyển vào giỏ trước khi hết phiên ưu đãi hoặc hết hàng lưu kho!",
+    "add_all_in_stock": "Thêm tất cả còn hàng vào giỏ ({{count}})",
+    "clear_all": "Xóa tất cả"
+  },
+  "filter": {
+    "all": "Tất cả",
+    "sale": "Đang giảm giá",
+    "in_stock": "Còn hàng",
+    "out_of_stock": "Tạm hết",
+    "search_placeholder": "Tìm kiếm trong mục yêu thích...",
+    "no_results": "Không tìm thấy sản phẩm yêu thích nào khớp với bộ lọc hiện tại."
+  },
+  "sort": {
+    "recent": "Sắp xếp: Mới thêm gần đây",
+    "price_asc": "Giá: Thấp đến cao",
+    "price_desc": "Giá: Cao đến thấp",
+    "discount": "Mức giảm giá nhiều nhất"
+  },
+  "card": {
+    "out_of_stock_badge": "TẠM HẾT HÀNG",
+    "remove_tooltip": "Bỏ thích",
+    "variant_prefix": "Phân loại:",
+    "add_to_cart": "Thêm vào giỏ hàng",
+    "out_of_stock_btn": "Hết hàng tạm thời",
+    "notify_restock": "Báo cho tôi khi có hàng lại"
+  },
+  "empty": {
+    "title": "Danh sách yêu thích trống",
+    "desc": "Bạn chưa lưu sản phẩm nào. Hãy dạo quanh các cửa hàng thủ công, thời trang và đồ gia dụng tuyển chọn để tìm món đồ ưng ý nhé!",
+    "explore_btn": "Khám phá sản phẩm hot hôm nay",
+    "back_btn": "Quay lại danh sách đã lưu"
+  },
+  "auth": {
+    "login_required_title": "Đăng nhập để xem danh sách yêu thích",
+    "login_required_desc": "Vui lòng đăng nhập tài khoản để xem các sản phẩm bạn đã lưu và nhận thông báo khi có ưu đãi.",
+    "login_btn": "Đăng nhập ngay"
+  },
+  "recommendations": {
+    "title": "Gợi ý tương tự dành riêng cho bạn",
+    "view_all": "Xem tất cả gợi ý",
+    "add_tooltip": "Lưu vào yêu thích"
+  },
+  "trust": {
+    "price_alert_title": "Cảnh báo hạ giá tự động",
+    "price_alert_desc": "Sản phẩm trong danh sách sẽ kích hoạt chuông thông báo khi nhà bán hàng áp dụng mã voucher hoặc Flash Sale.",
+    "save_cloud_title": "Lưu trữ giỏ hàng 30 ngày",
+    "save_cloud_desc": "Các sản phẩm yêu thích được lưu cố định trên đám mây tài khoản, đồng bộ mượt mà giữa ứng dụng điện thoại và web.",
+    "verified_shops_title": "100% Cửa hàng xác thực",
+    "verified_shops_desc": "Mọi sản phẩm từ nghệ nhân và thương hiệu địa phương đều trải qua quy trình kiểm duyệt chất lượng 5 bước nghiêm ngặt."
+  },
+  "toast": {
+    "view_wishlist": "Xem yêu thích",
+    "view_cart": "Xem giỏ",
+    "removed_title": "Đã bỏ thích sản phẩm",
+    "removed_msg": "\"{{name}}\" đã được xóa khỏi danh sách.",
+    "added_to_cart_title": "Đã thêm vào giỏ hàng",
+    "added_to_cart_msg": "\"{{name}}\" đã được thêm vào giỏ.",
+    "added_all_title": "Đã thêm vào giỏ hàng",
+    "added_all_msg": "Đã chuyển {{count}} sản phẩm còn hàng vào giỏ.",
+    "clear_confirm": "Bạn có chắc chắn muốn xóa toàn bộ sản phẩm khỏi danh sách yêu thích?",
+    "cleared_title": "Đã xóa tất cả",
+    "cleared_msg": "Danh sách yêu thích của bạn hiện đang trống.",
+    "notify_restock_alert": "Hệ thống sẽ gửi thông báo qua Zalo/Email cho bạn ngay khi sản phẩm \"{{name}}\" có sẵn trở lại!",
+    "added_wishlist_title": "Đã thêm vào yêu thích!",
+    "added_wishlist_msg": "\"{{name}}\" đã được lưu vào danh sách yêu thích.",
+    "choose_variant_title": "Đang mở trang sản phẩm",
+    "choose_variant_msg": "Vui lòng chọn size/màu sắc của \"{{name}}\".",
+    "error_title": "Lỗi",
+    "error_remove": "Không thể xóa sản phẩm khỏi danh sách yêu thích.",
+    "error_clear": "Không thể làm sạch danh sách yêu thích.",
+    "error_add": "Không thể thêm vào danh sách yêu thích."
+  }
+}
+

@@ -49,9 +49,9 @@ export const ShopBannerCard: React.FC<ShopBannerCardProps> = ({
     if (!isAuthenticated || !user) {
       setToast({
         isOpen: true,
-        title: "Yêu cầu đăng nhập",
-        message: "Vui lòng đăng nhập với tài khoản khách hàng để theo dõi gian hàng.",
-        actionText: "Đăng nhập ngay",
+        title: t("public_shop.banner.toast.login_required_title"),
+        message: t("public_shop.banner.toast.login_required_msg"),
+        actionText: t("public_shop.banner.toast.login_btn"),
         actionLink: "/login",
         type: "error",
       });
@@ -61,8 +61,8 @@ export const ShopBannerCard: React.FC<ShopBannerCardProps> = ({
     if (!user.roles?.includes("client") && user.role !== "client") {
       setToast({
         isOpen: true,
-        title: "Không thể thao tác",
-        message: "Tính năng theo dõi gian hàng chỉ dành cho tài khoản Người mua.",
+        title: t("public_shop.banner.toast.not_allowed_title"),
+        message: t("public_shop.banner.toast.buyer_only_msg"),
         type: "error",
       });
       return;
@@ -79,26 +79,28 @@ export const ShopBannerCard: React.FC<ShopBannerCardProps> = ({
 
       setToast({
         isOpen: true,
-        title: result.following ? "Đã theo dõi cửa hàng" : "Đã bỏ theo dõi cửa hàng",
+        title: result.following
+          ? t("public_shop.banner.toast.followed_title")
+          : t("public_shop.banner.toast.unfollowed_title"),
         message: result.following
-          ? `Bạn đã theo dõi thành công gian hàng "${shop.name}".`
-          : `Bạn đã bỏ theo dõi gian hàng "${shop.name}".`,
-        actionText: "Xem gian hàng",
+          ? t("public_shop.banner.toast.followed_msg", { name: shop.name })
+          : t("public_shop.banner.toast.unfollowed_msg", { name: shop.name }),
+        actionText: t("public_shop.banner.toast.view_shop"),
         actionLink: `/shop/${shop.id}`,
         type: "success",
       });
     } catch (err: unknown) {
       setToast({
         isOpen: true,
-        title: "Không thể thao tác",
-        message: err instanceof Error ? err.message : "Thao tác thất bại, vui lòng thử lại.",
+        title: t("public_shop.banner.toast.not_allowed_title"),
+        message: err instanceof Error ? err.message : "Thao tác thất bại",
         type: "error",
       });
     }
   };
 
   const handleChatClick = () => {
-    alert(`Bắt đầu kết nối trò chuyện với gian hàng ${shop.name}`);
+    alert(t("public_shop.banner.toast.chat_alert", { name: shop.name }));
   };
 
   const bannerBg = shop.banner_url || DEFAULT_SHOP_BANNER;
@@ -120,12 +122,12 @@ export const ShopBannerCard: React.FC<ShopBannerCardProps> = ({
               type="button"
               onClick={handleGoBack}
               className="inline-flex items-center gap-1.5 text-on-surface-variant hover:text-primary font-label-md text-label-md font-semibold transition-colors cursor-pointer group"
-              title="Quay lại trang trước"
+              title={t("public_shop.breadcrumb.back_title")}
             >
               <span className="material-symbols-outlined text-[18px] group-hover:-translate-x-1 transition-transform">
                 arrow_back
               </span>
-              <span>Quay lại</span>
+              <span>{t("public_shop.breadcrumb.back")}</span>
             </button>
           </div>
 
@@ -135,13 +137,13 @@ export const ShopBannerCard: React.FC<ShopBannerCardProps> = ({
               className="hover:text-primary transition-colors flex items-center gap-1"
             >
               <span className="material-symbols-outlined text-[16px]">home</span>
-              <span>Trang chủ</span>
+              <span>{t("public_shop.breadcrumb.home")}</span>
             </Link>
             <span className="material-symbols-outlined text-[14px] text-outline">
               chevron_right
             </span>
             <span className="hover:text-primary transition-colors text-on-surface-variant">
-              Gian hàng & Đối tác
+              {t("public_shop.breadcrumb.partners")}
             </span>
             <span className="material-symbols-outlined text-[14px] text-outline">
               chevron_right
@@ -166,13 +168,13 @@ export const ShopBannerCard: React.FC<ShopBannerCardProps> = ({
           <div className="absolute top-4 right-4 md:top-6 md:right-6 hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-container-lowest/90 backdrop-blur-md shadow-sm">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
             <span className="font-label-sm text-label-sm text-on-surface font-bold uppercase tracking-wider">
-              STORE ACTIVE • GIAO HỎA TỐC 24H
+              {t("public_shop.banner.store_active_express")}
             </span>
           </div>
 
           <div className="absolute bottom-16 md:bottom-16 left-6 md:left-8 text-on-primary hidden md:block">
             <span className="font-label-sm text-label-sm uppercase tracking-widest text-primary-fixed font-bold drop-shadow-sm">
-              Flagship Marketplace Partner
+              {t("public_shop.banner.flagship_partner")}
             </span>
             <h1 className="font-headline-lg text-headline-lg text-on-primary font-bold mt-1 drop-shadow-md">
               {shop.name}
@@ -217,8 +219,7 @@ export const ShopBannerCard: React.FC<ShopBannerCardProps> = ({
               </div>
 
               <p className="font-body-sm text-body-sm text-on-surface-variant line-clamp-1">
-                {shop.description ||
-                  "Phân phối độc quyền thương hiệu chính hãng, cam kết 100% xuất xứ chuẩn mực và chính sách bảo hành sàn MarketPulse."}
+                {shop.description || t("public_shop.banner.default_desc")}
               </p>
 
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 font-body-sm text-body-sm text-on-surface-variant pt-0.5 text-xs">
@@ -226,7 +227,11 @@ export const ShopBannerCard: React.FC<ShopBannerCardProps> = ({
                   <span className="material-symbols-outlined text-[16px] text-primary">
                     location_on
                   </span>
-                  <span>{t("public_shop.banner.shipping_from", { location: "TP. Hồ Chí Minh" })}</span>
+                  <span>
+                    {t("public_shop.banner.shipping_from", {
+                      location: t("public_shop.banner.default_location"),
+                    })}
+                  </span>
                 </span>
                 <span className="text-outline">•</span>
                 <span className="flex items-center gap-1">
@@ -262,7 +267,7 @@ export const ShopBannerCard: React.FC<ShopBannerCardProps> = ({
                   </span>
                 </div>
                 <span className="text-[11px] text-on-surface-variant leading-tight">
-                  2.4k Đánh giá
+                  2.4k {t("public_shop.banner.stats.rating")}
                 </span>
               </div>
 
@@ -274,7 +279,7 @@ export const ShopBannerCard: React.FC<ShopBannerCardProps> = ({
                   </span>
                 </div>
                 <span className="text-[11px] text-on-surface-variant leading-tight">
-                  Theo dõi
+                  {t("public_shop.banner.stats.followers")}
                 </span>
               </div>
 
@@ -288,7 +293,7 @@ export const ShopBannerCard: React.FC<ShopBannerCardProps> = ({
                   </span>
                 </div>
                 <span className="text-[11px] text-on-surface-variant leading-tight">
-                  Sản phẩm
+                  {t("public_shop.banner.stats.products")}
                 </span>
               </div>
 
@@ -300,7 +305,7 @@ export const ShopBannerCard: React.FC<ShopBannerCardProps> = ({
                   </span>
                 </div>
                 <span className="text-[11px] text-on-surface-variant leading-tight">
-                  Phản hồi
+                  {t("public_shop.banner.stats.response")}
                 </span>
               </div>
             </div>

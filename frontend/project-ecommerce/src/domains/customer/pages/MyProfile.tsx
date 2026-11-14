@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import CustomerLayout from "@/app/layout/CustomerLayout";
 import ProfileSidebar from "@/domains/customer/components/profile/ProfileSidebar";
 import ProfileInfoForm from "@/domains/customer/components/profile/ProfileInfoForm";
@@ -10,6 +11,7 @@ import { fetchMyShop } from "@/domains/shop/state/myShopSlice";
 import type { UserProfileDetails, UserRole } from "@/shared/types";
 
 export const MyProfile: React.FC = () => {
+  const { t } = useTranslation("customer");
   const dispatch = useAppDispatch();
   const { profile, loading } = useAppSelector((state) => state.profile);
   const { user } = useAppSelector((state) => state.auth);
@@ -43,16 +45,16 @@ export const MyProfile: React.FC = () => {
             className="hover:text-primary transition-colors flex items-center gap-1"
           >
             <span className="material-symbols-outlined text-[16px]">home</span>
-            <span>Home</span>
+            <span>{t("profile.breadcrumb.home")}</span>
           </Link>
           <span className="material-symbols-outlined text-outline text-[14px]">
             chevron_right
           </span>
-          <span className="text-on-surface-variant">My Account</span>
+          <span className="text-on-surface-variant">{t("profile.breadcrumb.account")}</span>
           <span className="material-symbols-outlined text-outline text-[14px]">
             chevron_right
           </span>
-          <span className="text-on-surface font-semibold">My Profile</span>
+          <span className="text-on-surface font-semibold">{t("profile.breadcrumb.profile")}</span>
         </nav>
 
         {/* Page Header */}
@@ -60,17 +62,17 @@ export const MyProfile: React.FC = () => {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="px-2.5 py-0.5 rounded-full bg-primary-fixed text-primary font-label-sm text-label-sm uppercase tracking-wider font-bold">
-                Account Management
+                {t("profile.header.badge")}
               </span>
               <span className="text-outline text-body-sm">
-                • Vietnam Marketplace Hub
+                • {t("profile.header.hub")}
               </span>
             </div>
             <h1 className="font-headline-xl text-headline-xl text-on-surface tracking-tight">
-              My Profile (Hồ sơ cá nhân)
+              {t("profile.header.title")}
             </h1>
             <p className="font-body-md text-body-md text-on-surface-variant mt-1">
-              Manage your personal credentials, contact verification, profile avatar, and account details.
+              {t("profile.header.desc")}
             </p>
           </div>
         </div>

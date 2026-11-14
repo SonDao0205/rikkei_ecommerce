@@ -4,17 +4,75 @@
   "loading": "Loading store details...",
   "not_found_title": "Store Not Found",
   "not_found_desc": "This store does not exist or has temporarily suspended operations on MarketPulse.",
+  "breadcrumb": {
+    "back": "Back",
+    "back_title": "Back to previous page",
+    "home": "Home",
+    "partners": "Stores & Partners"
+  },
   "banner": {
+    "store_active_express": "STORE ACTIVE • 24H EXPRESS DELIVERY",
+    "flagship_partner": "Flagship Marketplace Partner",
     "official_partner": "Official Partner",
+    "default_desc": "Exclusive distributor of authentic brands, guaranteed 100% genuine origin and backed by MarketPulse warranty policy.",
     "shipping_from": "Ships from: {{location}}",
+    "default_location": "Ho Chi Minh City",
     "hotline": "Hotline: {{phone}}",
     "active_now": "Active now",
-    "followers_count": "{{count}} followers",
-    "chat_response_rate": "98% Chat response rate",
-    "products_count": "{{count}} products",
+    "stats": {
+      "rating": "Reviews",
+      "followers": "Followers",
+      "products": "Products",
+      "response": "Response"
+    },
     "chat_button": "Chat",
     "follow_button": "Follow",
-    "following_button": "Following"
+    "following_button": "Following",
+    "toast": {
+      "login_required_title": "Sign in required",
+      "login_required_msg": "Please sign in with a buyer account to follow stores.",
+      "login_btn": "Sign In Now",
+      "not_allowed_title": "Action not permitted",
+      "buyer_only_msg": "Following stores is only available for Buyer accounts.",
+      "followed_title": "Followed store",
+      "unfollowed_title": "Unfollowed store",
+      "followed_msg": "You are now following \"{{name}}\".",
+      "unfollowed_msg": "You have unfollowed \"{{name}}\".",
+      "view_shop": "View store",
+      "chat_alert": "Starting chat with store {{name}}"
+    }
+  },
+  "vouchers": {
+    "exclusive_title": "Exclusive Store Vouchers",
+    "exclusive_desc": "Collect promo vouchers to apply directly at checkout for {{shopName}}",
+    "view_all": "View all vouchers",
+    "login_to_claim": "Please sign in with a buyer account to save vouchers.",
+    "claim": "Claim",
+    "claimed": "Saved",
+    "modal": {
+      "title": "All Vouchers from {{shopName}}",
+      "subtitle": "Collect exclusive store vouchers to automatically apply in your cart",
+      "search_placeholder": "Search promo vouchers (e.g. 30K, FREESHIP, VIP)...",
+      "tabs": {
+        "all": "All ({{count}})",
+        "money": "Cash Discount ({{count}})",
+        "percent": "% Discount ({{count}})",
+        "shipping": "Shipping ({{count}})"
+      },
+      "loading": "Loading available vouchers...",
+      "empty_title": "No matching vouchers found",
+      "empty_desc": "No promo vouchers match your search criteria. Try selecting another category or clearing search keywords.",
+      "view_all_btn": "View all vouchers",
+      "used_percent": "{{percent}}% used",
+      "copy_code": "Copy",
+      "copied": "Copied",
+      "copy_tooltip": "Copy promo code",
+      "conditions": "Terms",
+      "conditions_title": "Applicable Terms:",
+      "conditions_note": "* Automatically applied at Cart / Checkout when minimum order value is reached. Only 1 shop voucher per order.",
+      "footer_tip": "Saved vouchers will automatically appear on the <strong>Cart</strong> page to apply discounts.",
+      "close": "Close"
+    }
   },
   "toolbar": {
     "tabs": {
@@ -24,6 +82,8 @@
       "sale": "Flash Sale & Discounts",
       "reviews": "Store Reviews"
     },
+    "search_placeholder": "Search products in this store...",
+    "sort_label": "Sort by:",
     "sort": {
       "popular": "Popular",
       "newest": "Newest",
@@ -31,17 +91,29 @@
       "price_asc": "Price: Low to High",
       "price_desc": "Price: High to Low",
       "price_default": "Price"
-    },
-    "search_placeholder": "Search products in this store..."
-  },
-  "vouchers": {
-    "title": "Store Discount Vouchers",
-    "claim": "Claim",
-    "claimed": "Claimed",
-    "view_more": "View more vouchers"
+    }
   },
   "grid": {
     "empty": "No products found in this store.",
-    "page": "Page {{current}} of {{total}}"
+    "sold_count": "{{count}} sold",
+    "add_to_cart": "Add to Cart",
+    "added": "Added",
+    "add_wishlist_aria": "Add to wishlist",
+    "toast": {
+      "login_required_title": "Not signed in",
+      "login_required_msg": "Please sign in to save products to your wishlist.",
+      "removed_title": "Removed from wishlist",
+      "removed_msg": "\"{{name}}\" has been removed from your wishlist.",
+      "added_title": "Added to wishlist",
+      "added_msg": "\"{{name}}\" has been saved to your wishlist.",
+      "failed_title": "Action failed"
+    },
+    "pagination": {
+      "showing": "Showing",
+      "of": "of",
+      "products": "products",
+      "prev": "Previous",
+      "next": "Next"
+    }
   }
 }

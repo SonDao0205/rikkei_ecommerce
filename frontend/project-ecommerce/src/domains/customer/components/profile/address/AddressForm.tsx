@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useAppDispatch, useAppSelector } from "@/app/state/store";
 import {
   createAddressThunk,
@@ -43,6 +44,7 @@ const VIETNAM_LOCATIONS: Record<
 };
 
 export const AddressForm: React.FC = () => {
+  const { t } = useTranslation("customer");
   const dispatch = useAppDispatch();
   const { editingAddress, saving, error } = useAppSelector((state) => state.address);
   const isEditMode = Boolean(editingAddress);
@@ -112,20 +114,20 @@ export const AddressForm: React.FC = () => {
 
     // Validation
     if (!recipientName.trim()) {
-      setValidationError("Vui lòng nhập họ và tên người nhận");
+      setValidationError(t("profile.address.errors.recipient_required"));
       return;
     }
     const cleanPhone = phone.trim().replace(/[\s().-]/g, "");
     if (!isValidVietnamesePhone(cleanPhone)) {
-      setValidationError("Vui lòng nhập số điện thoại Việt Nam hợp lệ (VD: 0912 345 678)");
+      setValidationError(t("profile.address.errors.invalid_phone"));
       return;
     }
     if (!province.trim() || !district.trim() || !ward.trim()) {
-      setValidationError("Vui lòng nhập đầy đủ tỉnh/thành phố, quận/huyện và phường/xã");
+      setValidationError(t("profile.address.errors.location_required"));
       return;
     }
     if (!streetDetail.trim()) {
-      setValidationError("Vui lòng nhập địa chỉ chi tiết (số nhà, tên đường, toà nhà)");
+      setValidationError(t("profile.address.errors.street_required"));
       return;
     }
 
@@ -176,10 +178,14 @@ export const AddressForm: React.FC = () => {
             {isEditMode ? "edit_location_alt" : "add_location_alt"}
           </span>
           <span className="font-label-md text-label-md font-bold text-on-surface uppercase tracking-wider">
-            {isEditMode ? "Chỉnh sửa địa chỉ" : "Thêm địa chỉ giao hàng mới"}
+            {isEditMode
+              ? t("profile.address.form.badge_edit")
+              : t("profile.address.form.badge_add")}
           </span>
         </div>
-        <span className="text-body-sm font-body-sm text-outline">Tối đa 20 địa chỉ</span>
+        <span className="text-body-sm font-body-sm text-outline">
+          {t("profile.address.form.max_limit")}
+        </span>
       </div>
 
       {/* Styled Form Container */}
@@ -194,12 +200,14 @@ export const AddressForm: React.FC = () => {
             </div>
             <div>
               <h3 className="font-headline-md text-headline-md text-on-surface font-bold leading-tight">
-                {isEditMode ? "Edit Delivery Address" : "Add New Delivery Address"}
+                {isEditMode
+                  ? t("profile.address.form.title_edit")
+                  : t("profile.address.form.title_add")}
               </h3>
               <p className="font-body-sm text-body-sm text-on-surface-variant">
                 {isEditMode
-                  ? "Cập nhật địa chỉ nhận hàng của bạn"
-                  : "Thêm địa chỉ giao hàng nhận bưu kiện mới"}
+                  ? t("profile.address.form.desc_edit")
+                  : t("profile.address.form.desc_add")}
               </p>
             </div>
           </div>
@@ -208,7 +216,7 @@ export const AddressForm: React.FC = () => {
             type="button"
             onClick={() => dispatch(closeForm())}
             className="w-8 h-8 rounded-full flex items-center justify-center text-outline hover:text-on-surface hover:bg-surface-container transition-colors cursor-pointer"
-            title="Đóng form"
+            title={t("profile.address.form.close_tooltip")}
           >
             <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
@@ -229,13 +237,13 @@ export const AddressForm: React.FC = () => {
             {/* Recipient Name */}
             <div className="flex flex-col gap-1.5">
               <label className="font-label-sm text-label-sm text-on-surface font-bold">
-                Full Name (Họ và tên người nhận) <span className="text-error">*</span>
+                {t("profile.address.form.recipient_label")} <span className="text-error">*</span>
               </label>
               <input
                 type="text"
                 value={recipientName}
                 onChange={(e) => setRecipientName(e.target.value)}
-                placeholder="e.g. Nguyễn Văn A"
+                placeholder={t("profile.address.form.recipient_placeholder")}
                 maxLength={120}
                 className="h-11 px-3.5 rounded-xl bg-surface-container-lowest border border-outline-variant text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 transition-all"
                 required
@@ -245,7 +253,7 @@ export const AddressForm: React.FC = () => {
             {/* Phone */}
             <div className="flex flex-col gap-1.5">
               <label className="font-label-sm text-label-sm text-on-surface font-bold">
-                Phone Number (Số điện thoại) <span className="text-error">*</span>
+                {t("profile.address.form.phone_label")} <span className="text-error">*</span>
               </label>
               <div className="relative flex items-center">
                 <span className="absolute left-3 text-on-surface-variant font-label-sm text-label-sm font-semibold">
@@ -267,8 +275,7 @@ export const AddressForm: React.FC = () => {
           {/* Administrative area fields with suggestions and free-text support */}
           <div className="space-y-1.5">
             <label className="font-label-sm text-label-sm text-on-surface font-bold">
-              Administrative Area (Tỉnh / Thành phố, Quận / Huyện, Phường / Xã){" "}
-              <span className="text-error">*</span>
+              {t("profile.address.form.admin_area_label")} <span className="text-error">*</span>
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {/* Province/City */}
@@ -278,7 +285,7 @@ export const AddressForm: React.FC = () => {
                   list="vietnam-provinces"
                   value={province}
                   onChange={handleProvinceChange}
-                  placeholder="Tỉnh / Thành phố"
+                  placeholder={t("profile.address.form.province_placeholder")}
                   maxLength={100}
                   required
                   className="w-full h-11 px-3 rounded-xl bg-surface-container-lowest border border-outline-variant text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 shadow-xs"
@@ -299,7 +306,7 @@ export const AddressForm: React.FC = () => {
                   list="vietnam-districts"
                   value={district}
                   onChange={handleDistrictChange}
-                  placeholder="Quận / Huyện"
+                  placeholder={t("profile.address.form.district_placeholder")}
                   maxLength={100}
                   required
                   className="w-full h-11 px-3 rounded-xl bg-surface-container-lowest border border-outline-variant text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 shadow-xs"
@@ -320,7 +327,7 @@ export const AddressForm: React.FC = () => {
                   list="vietnam-wards"
                   value={ward}
                   onChange={(e) => setWard(e.target.value)}
-                  placeholder="Phường / Xã"
+                  placeholder={t("profile.address.form.ward_placeholder")}
                   maxLength={100}
                   required
                   className="w-full h-11 px-3 rounded-xl bg-surface-container-lowest border border-outline-variant text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 shadow-xs"
@@ -339,14 +346,13 @@ export const AddressForm: React.FC = () => {
           {/* Street Address & Building */}
           <div className="flex flex-col gap-1.5">
             <label className="font-label-sm text-label-sm text-on-surface font-bold">
-              Street Address &amp; House Number (Số nhà, tên đường, toà nhà){" "}
-              <span className="text-error">*</span>
+              {t("profile.address.form.street_label")} <span className="text-error">*</span>
             </label>
             <textarea
               rows={2}
               value={streetDetail}
               onChange={(e) => setStreetDetail(e.target.value)}
-              placeholder="Ví dụ: Tầng 4, Tòa nhà Bitexco Financial Tower, số 2 Hải Triều..."
+              placeholder={t("profile.address.form.street_placeholder")}
               maxLength={255}
               className="w-full p-3 rounded-xl bg-surface-container-lowest border border-outline-variant text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 resize-none transition-all shadow-xs"
               required
@@ -356,13 +362,13 @@ export const AddressForm: React.FC = () => {
           {/* Address Category Tags Selector */}
           <div className="flex flex-col gap-2">
             <label className="font-label-sm text-label-sm text-on-surface font-bold">
-              Loại địa chỉ
+              {t("profile.address.form.type_label")}
             </label>
             <div className="flex flex-wrap items-center gap-3">
               {[
-                { type: "HOME" as AddressType, label: "Nhà riêng", icon: "home" },
-                { type: "OFFICE" as AddressType, label: "Văn phòng / Công ty", icon: "business" },
-                { type: "OTHER" as AddressType, label: "Khác", icon: "pin_drop" },
+                { type: "HOME" as AddressType, label: t("profile.address.types.home"), icon: "home" },
+                { type: "OFFICE" as AddressType, label: t("profile.address.types.office"), icon: "business" },
+                { type: "OTHER" as AddressType, label: t("profile.address.types.other"), icon: "pin_drop" },
               ].map((cat) => {
                 const isSelected = addressType === cat.type;
                 return (
@@ -394,7 +400,7 @@ export const AddressForm: React.FC = () => {
                 className="w-4 h-4 rounded text-primary focus:ring-primary-container border-outline-variant accent-primary cursor-pointer"
               />
               <span className="font-body-md text-body-md text-on-surface">
-                Đặt làm địa chỉ giao hàng mặc định
+                {t("profile.address.form.set_default_checkbox")}
               </span>
             </label>
           </div>
@@ -407,7 +413,7 @@ export const AddressForm: React.FC = () => {
               disabled={saving}
               className="h-11 px-5 rounded-xl border border-outline-variant hover:bg-surface-container text-on-surface font-label-md text-label-md font-semibold transition-colors cursor-pointer"
             >
-              Cancel
+              {t("profile.address.form.cancel_btn")}
             </button>
             <button
               type="submit"
@@ -417,12 +423,16 @@ export const AddressForm: React.FC = () => {
               {saving ? (
                 <>
                   <span className="inline-block w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin" />
-                  <span>Đang lưu...</span>
+                  <span>{t("profile.address.form.saving")}</span>
                 </>
               ) : (
                 <>
                   <span className="material-symbols-outlined text-[18px]">save</span>
-                  <span>{isEditMode ? "Save Changes (Lưu thay đổi)" : "Save Address (Lưu địa chỉ)"}</span>
+                  <span>
+                    {isEditMode
+                      ? t("profile.address.form.save_changes_btn")
+                      : t("profile.address.form.save_address_btn")}
+                  </span>
                 </>
               )}
             </button>

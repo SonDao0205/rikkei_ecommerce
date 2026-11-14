@@ -1,16 +1,35 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 interface OrderSuccessHeroProps {
   orderCode: string;
   customerEmail: string;
   paymentMethodName?: string;
+  paymentMethodCode?: string;
 }
 
 export const OrderSuccessHero: React.FC<OrderSuccessHeroProps> = ({
   orderCode,
   customerEmail,
-  paymentMethodName = "COD - Thanh toán khi nhận hàng",
+  paymentMethodName,
+  paymentMethodCode = "COD",
 }) => {
+  const { t } = useTranslation("customer");
+
+  const getPaymentMethodDisplay = () => {
+    const code = (paymentMethodCode || "").toLowerCase();
+    if (code === "cod") {
+      return t("checkout.payment.methods.cod.name", { defaultValue: "Thanh toán khi nhận hàng" });
+    }
+    if (code === "bank_transfer") {
+      return t("checkout.payment.methods.bank_transfer.name", { defaultValue: "Chuyển khoản ngân hàng" });
+    }
+    if (code === "cards_wallets") {
+      return t("checkout.payment.methods.cards_wallets.name", { defaultValue: "Thẻ tín dụng / Ghi nợ & Ví điện tử" });
+    }
+    return paymentMethodName || t("checkout.payment.methods.cod.name");
+  };
+
   return (
     <section className="flex flex-col items-center text-center pt-4 pb-6 max-w-3xl mx-auto">
       {/* Animated Emerald Pulse Badge */}
@@ -25,19 +44,19 @@ export const OrderSuccessHero: React.FC<OrderSuccessHeroProps> = ({
         <span className="material-symbols-outlined text-[18px] text-emerald-600">
           payments
         </span>
-        <span>Đã ghi nhận đơn hàng ({paymentMethodName})</span>
+        <span>{t("order_complete.hero.recorded", { paymentMethod: getPaymentMethodDisplay() })}</span>
       </div>
 
       <h1 className="font-headline-xl text-2xl sm:text-3xl lg:text-4xl font-bold text-on-surface tracking-tight mb-2">
-        Cảm ơn bạn đã đặt hàng!
+        {t("order_complete.hero.title")}
       </h1>
 
       <p className="font-body-md text-sm sm:text-base text-on-surface-variant max-w-2xl leading-relaxed">
-        Mã đơn hàng của bạn là{" "}
+        {t("order_complete.hero.order_code_prefix")}{" "}
         <span className="font-bold text-primary font-mono bg-surface-container-high px-2.5 py-1 rounded-lg select-all">
           {orderCode}
         </span>
-        . Một email xác nhận chi tiết và biên nhận điện tử đã được chuyển đến{" "}
+        {t("order_complete.hero.email_sent_to")}{" "}
         <span className="font-semibold text-on-surface">{customerEmail}</span>.
       </p>
     </section>
@@ -45,4 +64,3 @@ export const OrderSuccessHero: React.FC<OrderSuccessHeroProps> = ({
 };
 
 export default OrderSuccessHero;
-

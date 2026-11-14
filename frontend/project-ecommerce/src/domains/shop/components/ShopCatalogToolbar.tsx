@@ -154,7 +154,7 @@ export const ShopCatalogToolbar: React.FC<ShopCatalogToolbarProps> = ({
           {/* Sort Chips */}
           <div className="flex items-center gap-2 overflow-x-auto shrink-0 pb-1 lg:pb-0 scrollbar-none">
             <span className="font-label-md text-label-md text-outline shrink-0 mr-1">
-              {t("home.catalog.sort_label", { defaultValue: "Sắp xếp theo:" })}
+              {t("public_shop.toolbar.sort_label", { defaultValue: "Sắp xếp theo:" })}
             </span>
 
             <button

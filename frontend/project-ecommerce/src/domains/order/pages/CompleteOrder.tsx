@@ -1,5 +1,6 @@
 import React from "react";
 import { useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import CustomerLayout from "@/app/layout/CustomerLayout";
 import { CartBreadcrumbStepper } from "@/domains/customer/components/cart/CartBreadcrumbStepper";
 import {
@@ -36,6 +37,7 @@ export interface CompleteOrderState {
 }
 
 export const CompleteOrder: React.FC = () => {
+  const { t } = useTranslation("customer");
   const location = useLocation();
   const passedData = (location.state as CompleteOrderState) || {};
 
@@ -48,14 +50,16 @@ export const CompleteOrder: React.FC = () => {
     passedData.deliveryAddress ||
     "Số 142/8 Ung Văn Khiêm, Phường 25, Quận Bình Thạnh, TP. Hồ Chí Minh";
   const deliveryNote =
-    passedData.deliveryNote ||
-    "Giao giờ hành chính, gọi trước 15 phút. Cho kiểm tra hàng trước khi nhận (Đồng kiểm COD chuẩn quy chuẩn).";
-  const carrierName = passedData.carrierName || "GHN Express";
+    passedData.deliveryNote || t("order_complete.shipping.default_delivery_note");
+  const carrierName = passedData.carrierName || t("order_complete.shipping.standard_delivery");
   const trackingCode = passedData.trackingCode || "GHN-VN-98234120";
-  const estimatedDeliveryDate = passedData.estimatedDeliveryDate || "28/10 – 30/10/2026";
+  const estimatedDeliveryDate =
+    passedData.estimatedDeliveryDate || t("order_complete.shipping.default_estimated_days");
   const orderTime = passedData.orderTime || "26/10/2026 • 15:30";
-  const paymentMethodName = passedData.paymentMethodName || "Thu hộ COD";
   const paymentMethodCode = passedData.paymentMethodCode || "COD";
+  const paymentMethodName =
+    passedData.paymentMethodName ||
+    t("checkout.payment.methods.cod.name", { defaultValue: "Thanh toán khi nhận hàng" });
 
   const itemsSubtotal = passedData.itemsSubtotal ?? 1640000;
   const shippingFee = passedData.shippingFee ?? 45000;
@@ -74,7 +78,7 @@ export const CompleteOrder: React.FC = () => {
             shopName: "UrbanStep Official Store",
             shopBadge: "Mall",
             shopAvatarText: "U",
-            warehouseLocation: "Kho xuất hàng: Tổng kho Quận 7, TP. HCM",
+            warehouseLocation: t("order_complete.items.default_warehouse"),
             subtotal: 1640000,
             items: [
               {
@@ -88,7 +92,7 @@ export const CompleteOrder: React.FC = () => {
                 lineTotal: 890000,
                 imageUrl:
                   "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=300",
-                stockStatusBadge: "Còn hàng sẵn sàng xuất kho",
+                stockStatusBadge: t("order_complete.items.in_stock"),
               },
               {
                 id: 2,
@@ -101,7 +105,7 @@ export const CompleteOrder: React.FC = () => {
                 lineTotal: 750000,
                 imageUrl:
                   "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=300",
-                stockStatusBadge: "Bảo hành phụ kiện 12 tháng",
+                stockStatusBadge: t("order_complete.items.warranty_12m"),
                 shopDiscountText: "Voucher Shop -15%",
               },
             ],
@@ -120,6 +124,7 @@ export const CompleteOrder: React.FC = () => {
             orderCode={orderCode}
             customerEmail={customerEmail}
             paymentMethodName={paymentMethodName}
+            paymentMethodCode={paymentMethodCode}
           />
 
           {/* 2. Order Overview Quick Metadata Grid (4 Cards) */}
@@ -127,6 +132,7 @@ export const CompleteOrder: React.FC = () => {
             orderCode={orderCode}
             orderTime={orderTime}
             paymentMethodName={paymentMethodName}
+            paymentMethodCode={paymentMethodCode}
             totalAmount={totalAmount}
             totalSavings={totalSavings}
           />
@@ -167,4 +173,3 @@ export const CompleteOrder: React.FC = () => {
 };
 
 export default CompleteOrder;
-

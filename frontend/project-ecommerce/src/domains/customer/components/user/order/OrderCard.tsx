@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import OrderItemRow from "@/domains/customer/components/user/order/OrderItemRow";
 import type { UserOrder } from "@/shared/types";
 
@@ -18,6 +19,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
   onRepurchase,
   actionLoading = false,
 }) => {
+  const { t } = useTranslation("customer");
   const [isExpanded, setIsExpanded] = useState(false);
 
   const formatPrice = (price: number) => {
@@ -51,6 +53,40 @@ export const OrderCard: React.FC<OrderCardProps> = ({
     }
   };
 
+  const getStatusLabel = () => {
+    switch (order.status) {
+      case "pending":
+        return t("profile.orders.statuses.pending");
+      case "packing":
+        return t("profile.orders.statuses.packing");
+      case "shipping":
+        return t("profile.orders.statuses.shipping");
+      case "completed":
+        return t("profile.orders.statuses.completed");
+      case "cancelled":
+        return t("profile.orders.statuses.cancelled");
+      case "returned":
+        return t("profile.orders.statuses.returned");
+      default:
+        return order.statusLabel;
+    }
+  };
+
+  const formatPaymentStatus = (text: string, method?: string) => {
+    const isCod = method === "COD" || text.toLowerCase().includes("nhận hàng");
+    const isPaid = text.toLowerCase().includes("đã thanh toán") || text.toLowerCase().includes("paid");
+    const methodLabel = isCod ? t("profile.orders.payment_cod") : t("profile.orders.payment_online");
+    const statusLabel = isPaid ? t("profile.orders.paid") : t("profile.orders.unpaid");
+    return `${methodLabel} • ${statusLabel}`;
+  };
+
+  const formatShippingInfo = (info?: string) => {
+    if (!info) return "";
+    if (info.includes("trên đường giao")) return t("profile.orders.shipping_in_transit");
+    if (info.includes("thành công")) return t("profile.orders.shipping_delivered");
+    return info;
+  };
+
   const cleanOrderCode = order.orderCode.replace(/^#/, "");
   const orderDetailUrl = `/profile/orders/${cleanOrderCode}`;
 
@@ -66,7 +102,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                 <span className="material-symbols-outlined text-[13px]">
                   hub
                 </span>
-                <span>Đơn đa gian hàng ({order.shops.length} Shops)</span>
+                <span>{t("profile.orders.card.multi_shop", { count: order.shops.length })}</span>
               </span>
 
               <div className="flex items-center gap-1.5 flex-wrap">
@@ -108,7 +144,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                 </span>
               )}
               <span className="font-headline-md text-headline-md font-bold text-on-surface">
-                {order.shops[0]?.shopName || "Gian hàng đối tác"}
+                {order.shops[0]?.shopName || t("profile.orders.card.partner_shop")}
               </span>
 
               <button
@@ -121,7 +157,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                 <span className="material-symbols-outlined text-[13px] text-primary">
                   chat
                 </span>
-                <span>Chat ngay</span>
+                <span>{t("profile.orders.card.chat")}</span>
               </button>
 
               {order.shops[0]?.shopId && (
@@ -129,7 +165,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                   to={`/shop/${order.shops[0].shopId}`}
                   className="px-2 py-1 rounded bg-surface-container-low hover:bg-surface-container text-on-surface font-label-sm text-[11px] transition-colors"
                 >
-                  Xem Shop
+                  {t("profile.orders.card.view_shop")}
                 </Link>
               )}
             </div>
@@ -143,7 +179,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
               <span className="material-symbols-outlined text-[18px]">
                 local_shipping
               </span>
-              <span>{order.shippingInfoText}</span>
+              <span>{formatShippingInfo(order.shippingInfoText)}</span>
             </div>
           )}
 
@@ -152,14 +188,14 @@ export const OrderCard: React.FC<OrderCardProps> = ({
               <span className="material-symbols-outlined text-[18px]">
                 check_circle
               </span>
-              <span>{order.shippingInfoText}</span>
+              <span>{formatShippingInfo(order.shippingInfoText)}</span>
             </div>
           )}
 
           <span
             className={`px-2.5 py-1 rounded-full font-label-sm text-label-sm font-bold uppercase tracking-wider whitespace-nowrap shadow-xs ${getStatusBadge()}`}
           >
-            {order.statusLabel}
+            {getStatusLabel()}
           </span>
         </div>
       </div>
@@ -187,7 +223,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                   keyboard_arrow_down
                 </span>
                 <span>
-                  Xem thêm ({remainingCount} sản phẩm khác của đơn hàng này)
+                  {t("profile.orders.card.see_more", { count: remainingCount })}
                 </span>
               </button>
             ) : (
@@ -196,7 +232,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                 onClick={() => setIsExpanded(false)}
                 className="w-full py-2 px-4 rounded-xl bg-surface-container-low/40 hover:bg-surface-container text-on-surface-variant font-label-md text-label-md font-medium flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
               >
-                <span>Thu gọn danh sách</span>
+                <span>{t("profile.orders.card.collapse")}</span>
                 <span className="material-symbols-outlined text-[18px]">
                   keyboard_arrow_up
                 </span>
@@ -212,11 +248,13 @@ export const OrderCard: React.FC<OrderCardProps> = ({
               info
             </span>
             <div className="flex flex-col text-body-sm font-body-sm">
-              <span className="font-bold">Lý do hủy: {order.cancelReason}</span>
+              <span className="font-bold">
+                {t("profile.orders.card.cancel_reason_prefix")} {order.cancelReason}
+              </span>
               <span className="text-[12px] opacity-90">
                 {order.cancelledAt
-                  ? `Hủy bởi Người mua lúc ${order.cancelledAt} • Đơn chưa bị trừ tiền.`
-                  : "Đơn hàng đã được ghi nhận hủy thành công."}
+                  ? t("profile.orders.card.cancelled_by_buyer", { time: order.cancelledAt })
+                  : t("profile.orders.card.cancelled_recorded")}
               </span>
             </div>
           </div>
@@ -230,22 +268,25 @@ export const OrderCard: React.FC<OrderCardProps> = ({
             {order.paymentMethod === "COD" ? "payments" : "verified"}
           </span>
           <span>
-            Thanh toán: <strong className="text-on-surface">{order.paymentStatusText}</strong>
+            {t("profile.orders.card.payment_prefix")}{" "}
+            <strong className="text-on-surface">
+              {formatPaymentStatus(order.paymentStatusText, order.paymentMethod)}
+            </strong>
           </span>
         </div>
 
         <div className="flex items-center gap-2 self-end md:self-auto">
           <span className="font-body-sm text-body-sm text-on-surface-variant">
-            Mã đơn:{" "}
+            {t("profile.orders.card.order_code_prefix")}{" "}
             <Link
               to={orderDetailUrl}
               className="text-primary hover:underline font-bold font-mono"
-              title="Bấm để xem chi tiết đơn hàng này"
+              title={t("profile.orders.card.order_code_tooltip")}
             >
               {order.orderCode}
             </Link>
             {" | "}
-            Thành tiền:
+            {t("profile.orders.card.total_prefix")}
           </span>
           <span className="font-headline-xl text-headline-xl font-bold text-primary">
             {formatPrice(order.totalAmount)}
@@ -258,12 +299,12 @@ export const OrderCard: React.FC<OrderCardProps> = ({
         {/* Left note / Order time */}
         {order.status === "pending" || order.status === "packing" ? (
           <span className="font-body-sm text-[12px] text-amber-800 bg-amber-50 px-2.5 py-1 rounded-md">
-            Người bán đang chuẩn bị đóng gói hàng
+            {t("profile.orders.card.seller_preparing")}
           </span>
         ) : (
           <div className="flex items-center gap-1.5 text-body-sm font-body-sm text-outline text-xs">
             <span className="material-symbols-outlined text-[16px]">schedule</span>
-            <span>Đặt hàng lúc: {order.createdAt}</span>
+            <span>{t("profile.orders.card.ordered_at", { time: order.createdAt })}</span>
           </div>
         )}
 
@@ -278,7 +319,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                 <span className="material-symbols-outlined text-[16px]">
                   location_searching
                 </span>
-                <span>Theo dõi đơn hàng</span>
+                <span>{t("profile.orders.card.track_order")}</span>
               </Link>
 
               <button
@@ -288,7 +329,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                 }
                 className="px-4 py-2 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md transition-colors cursor-pointer"
               >
-                Liên hệ Shop
+                {t("profile.orders.card.contact_shop")}
               </button>
 
               <button
@@ -297,7 +338,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                 onClick={() => onConfirmReceived && onConfirmReceived(order.id)}
                 className="px-5 py-2.5 rounded-lg bg-primary hover:bg-primary-container text-on-primary font-label-lg text-label-lg font-bold transition-all shadow-sm cursor-pointer disabled:opacity-50"
               >
-                Đã nhận được hàng
+                {t("profile.orders.card.received_btn")}
               </button>
             </>
           )}
@@ -308,7 +349,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                 to={orderDetailUrl}
                 className="font-label-sm text-label-sm text-primary hover:underline flex items-center gap-1 cursor-pointer mr-2"
               >
-                <span>Xem chi tiết hóa đơn VAT & đơn hàng</span>
+                <span>{t("profile.orders.card.view_vat_invoice")}</span>
                 <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
               </Link>
 
@@ -323,7 +364,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                 >
                   star
                 </span>
-                <span>Đánh giá 5★</span>
+                <span>{t("profile.orders.card.review_btn")}</span>
               </button>
 
               <button
@@ -332,7 +373,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                 className="px-5 py-2.5 rounded-lg bg-primary hover:bg-primary-container text-on-primary font-label-lg text-label-lg font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
               >
                 <span className="material-symbols-outlined text-[18px]">replay</span>
-                <span>Mua lại</span>
+                <span>{t("profile.orders.card.repurchase")}</span>
               </button>
             </>
           )}
@@ -344,7 +385,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                 onClick={() => alert(`Yêu cầu đổi địa chỉ nhận hàng cho ${order.orderCode}`)}
                 className="px-3.5 py-2 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md transition-colors cursor-pointer"
               >
-                Thay đổi địa chỉ nhận
+                {t("profile.orders.card.change_address")}
               </button>
 
               <button
@@ -352,14 +393,14 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                 onClick={() => onCancelClick && onCancelClick(order)}
                 className="px-3.5 py-2 rounded-lg bg-surface-container-low hover:bg-error-container hover:text-on-error-container text-error font-label-md text-label-md transition-colors cursor-pointer"
               >
-                Hủy đơn hàng
+                {t("profile.orders.card.cancel_order")}
               </button>
 
               <Link
                 to={orderDetailUrl}
                 className="px-4 py-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-colors cursor-pointer"
               >
-                Chi tiết đơn hàng
+                {t("profile.orders.card.order_details")}
               </Link>
             </>
           )}
@@ -370,7 +411,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                 to={orderDetailUrl}
                 className="px-4 py-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-colors cursor-pointer"
               >
-                Chi tiết đơn hàng
+                {t("profile.orders.card.order_details")}
               </Link>
 
               <button
@@ -380,7 +421,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                 }
                 className="px-4 py-2 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md transition-colors cursor-pointer"
               >
-                Liên hệ Shop
+                {t("profile.orders.card.contact_shop")}
               </button>
 
               <button
@@ -389,7 +430,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                 className="px-5 py-2.5 rounded-lg bg-primary hover:bg-primary-container text-on-primary font-label-lg text-label-lg font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
               >
                 <span className="material-symbols-outlined text-[18px]">replay</span>
-                <span>Mua lại</span>
+                <span>{t("profile.orders.card.repurchase")}</span>
               </button>
             </>
           )}
@@ -400,7 +441,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                 to={orderDetailUrl}
                 className="px-4 py-2 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md transition-colors cursor-pointer"
               >
-                Xem chi tiết
+                {t("profile.orders.card.view_details")}
               </Link>
 
               <button
@@ -409,7 +450,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                 className="px-5 py-2.5 rounded-lg bg-primary hover:bg-primary-container text-on-primary font-label-lg text-label-lg font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
               >
                 <span className="material-symbols-outlined text-[18px]">replay</span>
-                <span>Mua lại</span>
+                <span>{t("profile.orders.card.repurchase")}</span>
               </button>
             </>
           )}
@@ -420,7 +461,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                 to={orderDetailUrl}
                 className="px-4 py-2 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md transition-colors cursor-pointer"
               >
-                Xem chi tiết
+                {t("profile.orders.card.view_details")}
               </Link>
 
               <button
@@ -429,7 +470,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                 className="px-5 py-2.5 rounded-lg bg-primary hover:bg-primary-container text-on-primary font-label-lg text-label-lg font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
               >
                 <span className="material-symbols-outlined text-[18px]">replay</span>
-                <span>Mua lại</span>
+                <span>{t("profile.orders.card.repurchase")}</span>
               </button>
             </>
           )}

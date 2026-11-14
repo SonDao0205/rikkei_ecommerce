@@ -55,8 +55,8 @@ export const ShopProductGrid: React.FC<ShopProductGridProps> = ({
     if (!isAuthenticated) {
       setToastState({
         isOpen: true,
-        title: "Chưa đăng nhập",
-        message: "Vui lòng đăng nhập để lưu sản phẩm vào danh sách yêu thích.",
+        title: t("public_shop.grid.toast.login_required_title"),
+        message: t("public_shop.grid.toast.login_required_msg"),
         type: "error",
       });
       return;
@@ -72,15 +72,15 @@ export const ShopProductGrid: React.FC<ShopProductGridProps> = ({
       if (isLiked) {
         setToastState({
           isOpen: true,
-          title: "Đã bỏ thích sản phẩm",
-          message: `"${prodName}" đã được xóa khỏi danh sách yêu thích.`,
+          title: t("public_shop.grid.toast.removed_title"),
+          message: t("public_shop.grid.toast.removed_msg", { name: prodName }),
           type: "success",
         });
       } else {
         setToastState({
           isOpen: true,
-          title: "Đã thêm vào yêu thích",
-          message: `"${prodName}" đã được lưu vào danh sách yêu thích.`,
+          title: t("public_shop.grid.toast.added_title"),
+          message: t("public_shop.grid.toast.added_msg", { name: prodName }),
           type: "success",
         });
       }
@@ -88,7 +88,7 @@ export const ShopProductGrid: React.FC<ShopProductGridProps> = ({
       const msg = err instanceof Error ? err.message : "Thao tác thất bại";
       setToastState({
         isOpen: true,
-        title: "Thao tác thất bại",
+        title: t("public_shop.grid.toast.failed_title"),
         message: msg,
         type: "error",
       });
@@ -192,7 +192,7 @@ export const ShopProductGrid: React.FC<ShopProductGridProps> = ({
                 <button
                   type="button"
                   onClick={(e) => toggleWishlist(e, product.id)}
-                  aria-label="Thêm vào danh sách yêu thích"
+                  aria-label={t("public_shop.grid.add_wishlist_aria")}
                   className="absolute top-3 right-3 w-8 h-8 rounded-full bg-surface-container-lowest/80 backdrop-blur-md flex items-center justify-center text-on-surface-variant hover:text-tertiary transition-colors shadow-sm cursor-pointer"
                 >
                   <span
@@ -224,7 +224,7 @@ export const ShopProductGrid: React.FC<ShopProductGridProps> = ({
                       {product.rating_avg > 0 ? product.rating_avg.toFixed(1) : "4.9"}
                     </span>
                     <span className="font-body-sm text-body-sm text-outline ml-1">
-                      • {product.rating_count ? `${product.rating_count} đã bán` : "1.2k đã bán"}
+                      • {t("public_shop.grid.sold_count", { count: product.rating_count ? product.rating_count : "1.2k" })}
                     </span>
                   </div>
 
@@ -261,7 +261,7 @@ export const ShopProductGrid: React.FC<ShopProductGridProps> = ({
                     >
                       {isAdded ? "done" : "add_shopping_cart"}
                     </span>
-                    <span>{isAdded ? "Đã thêm" : "Thêm vào giỏ"}</span>
+                    <span>{isAdded ? t("public_shop.grid.added") : t("public_shop.grid.add_to_cart")}</span>
                   </button>
                 </div>
               </div>
@@ -274,13 +274,13 @@ export const ShopProductGrid: React.FC<ShopProductGridProps> = ({
       {totalProducts > 0 && (
         <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-outline-variant/30">
           <span className="font-body-md text-body-md text-on-surface-variant order-2 sm:order-1">
-            Hiển thị{" "}
+            {t("public_shop.grid.pagination.showing")}{" "}
             <span className="font-bold text-on-surface">
-              {startIndex} - {endIndex}
+              {startIndex} – {endIndex}
             </span>{" "}
-            trên tổng số{" "}
-            <span className="font-bold text-on-surface">{totalProducts}</span> sản
-            phẩm
+            {t("public_shop.grid.pagination.of")}{" "}
+            <span className="font-bold text-on-surface">{totalProducts}</span>{" "}
+            {t("public_shop.grid.pagination.products")}
           </span>
 
           <div className="flex items-center gap-1.5 order-1 sm:order-2">
@@ -293,7 +293,7 @@ export const ShopProductGrid: React.FC<ShopProductGridProps> = ({
               <span className="material-symbols-outlined text-[18px]">
                 chevron_left
               </span>
-              <span>Trước</span>
+              <span>{t("public_shop.grid.pagination.prev")}</span>
             </button>
 
             {Array.from({ length: totalPages }).map((_, idx) => {
@@ -340,7 +340,7 @@ export const ShopProductGrid: React.FC<ShopProductGridProps> = ({
               onClick={() => onPageChange(currentPage + 1)}
               className="h-10 px-3.5 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md flex items-center gap-1 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
-              <span>Tiếp</span>
+              <span>{t("public_shop.grid.pagination.next")}</span>
               <span className="material-symbols-outlined text-[18px]">
                 chevron_right
               </span>

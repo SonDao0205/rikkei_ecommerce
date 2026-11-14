@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 interface OrderSearchBarProps {
   totalCount: number;
@@ -13,6 +14,8 @@ export const OrderSearchBar: React.FC<OrderSearchBarProps> = ({
   onSearchChange,
   onSearchSubmit,
 }) => {
+  const { t } = useTranslation("customer");
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       onSearchSubmit();
@@ -32,21 +35,21 @@ export const OrderSearchBar: React.FC<OrderSearchBarProps> = ({
               >
                 verified
               </span>
-              <span>ACCOUNT MANAGEMENT • ĐƠN HÀNG CỦA BẠN</span>
+              <span>{t("profile.orders.header.badge")}</span>
             </span>
           </div>
 
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold font-headline-lg text-on-surface tracking-tight">
-              Đơn hàng của tôi
+              {t("profile.orders.header.title")}
             </h1>
             <span className="px-2.5 py-0.5 rounded-full bg-surface-container text-primary font-label-md text-label-md font-semibold">
-              {totalCount} Đơn hàng
+              {t("profile.orders.header.total_orders", { count: totalCount })}
             </span>
           </div>
 
           <p className="text-body-sm font-body-sm text-on-surface-variant mt-1">
-            Theo dõi, quản lý và kiểm tra tiến độ giao nhận của các đơn hàng đa gian hàng trên toàn quốc.
+            {t("profile.orders.header.desc")}
           </p>
         </div>
 
@@ -56,7 +59,7 @@ export const OrderSearchBar: React.FC<OrderSearchBarProps> = ({
               local_shipping
             </span>
             <span>
-              Đơn vị vận chuyển:{" "}
+              {t("profile.orders.header.carrier_label")}{" "}
               <strong className="text-on-surface font-semibold">
                 GHTK / GHN Express
               </strong>
@@ -75,7 +78,7 @@ export const OrderSearchBar: React.FC<OrderSearchBarProps> = ({
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Tìm kiếm theo Mã đơn hàng, Tên sản phẩm hoặc Tên shop..."
+          placeholder={t("profile.orders.search.placeholder")}
           className="w-full h-10 bg-transparent text-on-surface placeholder:text-outline font-body-md text-body-md focus:outline-none"
         />
         {searchQuery && (
@@ -95,7 +98,7 @@ export const OrderSearchBar: React.FC<OrderSearchBarProps> = ({
           onClick={onSearchSubmit}
           className="h-9 px-4 rounded-lg bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md font-semibold transition-colors cursor-pointer shadow-xs shrink-0"
         >
-          Tìm kiếm
+          {t("profile.orders.search.button")}
         </button>
       </div>
     </div>

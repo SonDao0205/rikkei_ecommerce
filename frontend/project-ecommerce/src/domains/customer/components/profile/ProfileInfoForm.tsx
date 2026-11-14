@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useAppDispatch, useAppSelector } from "@/app/state/store";
 import {
   updateUserProfile,
@@ -16,7 +17,14 @@ interface ProfileInfoFormProps {
   profile: UserProfileDetails | null;
 }
 
+const parseMonthNumber = (val?: string) => {
+  if (!val) return "08";
+  const digits = val.replace(/\D/g, "");
+  return digits ? digits.padStart(2, "0") : "08";
+};
+
 export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => {
+  const { t } = useTranslation("customer");
   const dispatch = useAppDispatch();
   const { saving, successMessage, error } = useAppSelector(
     (state) => state.profile
@@ -32,7 +40,7 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
   const [email, setEmail] = useState(profile?.email || "");
   const [phone, setPhone] = useState(profile?.phone || "");
   const [birthDay, setBirthDay] = useState(profile?.date_of_birth?.day || "15");
-  const [birthMonth, setBirthMonth] = useState(profile?.date_of_birth?.month || "Tháng 08");
+  const [birthMonth, setBirthMonth] = useState(parseMonthNumber(profile?.date_of_birth?.month));
   const [birthYear, setBirthYear] = useState(profile?.date_of_birth?.year || "1995");
   const [gender, setGender] = useState<"male" | "female" | "other">(profile?.gender || "male");
 
@@ -46,7 +54,7 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
     setPhone(profile.phone || "");
     if (profile.date_of_birth) {
       setBirthDay(profile.date_of_birth.day || "15");
-      setBirthMonth(profile.date_of_birth.month || "Tháng 08");
+      setBirthMonth(parseMonthNumber(profile.date_of_birth.month));
       setBirthYear(profile.date_of_birth.year || "1995");
     }
     if (profile.gender) {
@@ -67,7 +75,13 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
 
   // Generate selectable options for DoB
   const days = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, "0"));
-  const months = Array.from({ length: 12 }, (_, i) => `Tháng ${String(i + 1).padStart(2, "0")}`);
+  const months = Array.from({ length: 12 }, (_, i) => {
+    const num = String(i + 1).padStart(2, "0");
+    return {
+      value: num,
+      label: t("profile.form.month_prefix", { month: num }),
+    };
+  });
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 70 }, (_, i) => String(currentYear - 14 - i));
 
@@ -87,7 +101,11 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
       dispatch(setLocalAvatarPreview(updatedProfile.avatar_url || upload.url));
     } catch (uploadError) {
       dispatch(setLocalAvatarPreview(previousAvatar));
-      setLocalError(uploadError instanceof Error ? uploadError.message : "Không thể tải ảnh đại diện lên.");
+      setLocalError(
+        uploadError instanceof Error
+          ? uploadError.message
+          : t("profile.form.errors.avatar_upload_failed")
+      );
     } finally {
       if (previewURL) URL.revokeObjectURL(previewURL);
       setIsUploadingAvatar(false);
@@ -95,7 +113,7 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
   };
 
   const handleRemovePhoto = () => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa ảnh đại diện hiện tại?")) {
+    if (window.confirm(t("profile.form.confirm_remove_avatar"))) {
       dispatch(removeUserAvatar());
     }
   };
@@ -116,7 +134,7 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
 
     if (isUsernameChanged || isEmailChanged) {
       dispatch(clearProfileStatus());
-      setLocalError("Bạn chỉ được cập nhật Full Name và Phone Number");
+      setLocalError(t("profile.form.errors.restricted_fields"));
       // Khôi phục lại giá trị Username và Email gốc
       setUsername(profile?.username || "nguyenvana_vn");
       setEmail(profile?.email || "");
@@ -127,7 +145,7 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
 
     if (phone.trim() && !isValidVietnamesePhone(phone)) {
       dispatch(clearProfileStatus());
-      setLocalError("Số điện thoại không đúng định dạng số di động Việt Nam (VD: 0912 345 678)");
+      setLocalError(t("profile.form.errors.invalid_phone"));
       return;
     }
 
@@ -148,9 +166,9 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
   };
 
   const genderOptions = [
-    { value: "male" as const, label: "Nam (Male)" },
-    { value: "female" as const, label: "Nữ (Female)" },
-    { value: "other" as const, label: "Khác" },
+    { value: "male" as const, label: t("profile.form.genders.male") },
+    { value: "female" as const, label: t("profile.form.genders.female") },
+    { value: "other" as const, label: t("profile.form.genders.other") },
   ];
 
   return (
@@ -175,10 +193,10 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
           </div>
           <div>
             <h2 className="font-headline-lg text-headline-lg text-on-surface font-bold tracking-tight">
-              Profile Photo &amp; Basic Identity
+              {t("profile.form.header_title")}
             </h2>
             <p className="font-body-sm text-body-sm text-on-surface-variant">
-              Update your public avatar and official profile identification.
+              {t("profile.form.header_desc")}
             </p>
           </div>
         </div>
@@ -200,8 +218,8 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
               setLocalError(null);
             }}
             className="text-emerald-600 hover:text-emerald-900 p-1 rounded-lg hover:bg-emerald-100 transition-colors cursor-pointer"
-            aria-label="Đóng thông báo"
-            title="Đóng thông báo"
+            aria-label={t("profile.form.close_alert")}
+            title={t("profile.form.close_alert")}
           >
             <span className="material-symbols-outlined text-[16px]">close</span>
           </button>
@@ -222,8 +240,8 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
               setLocalError(null);
             }}
             className="text-red-500 hover:text-red-800 p-1 rounded-lg hover:bg-red-100 transition-colors cursor-pointer"
-            aria-label="Đóng thông báo lỗi"
-            title="Đóng thông báo lỗi"
+            aria-label={t("profile.form.close_alert_error")}
+            title={t("profile.form.close_alert_error")}
           >
             <span className="material-symbols-outlined text-[16px]">close</span>
           </button>
@@ -236,7 +254,7 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
           <div className="w-24 h-24 rounded-full ring-4 ring-primary-fixed overflow-hidden bg-surface-container flex items-center justify-center shadow-md">
             <img
               className="w-full h-full object-cover"
-              alt={profile?.full_name || "Profile Avatar"}
+              alt={profile?.full_name || t("profile.form.avatar_title")}
               src={profile?.avatar_url || defaultAvatar}
             />
           </div>
@@ -244,7 +262,7 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
             type="button"
             onClick={() => fileInputRef.current?.click()}
             className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-sm hover:bg-primary-container transition-transform active:scale-95 cursor-pointer"
-            title="Đổi ảnh đại diện"
+            title={t("profile.form.change_avatar_title")}
           >
             <span className="material-symbols-outlined text-[16px]">photo_camera</span>
           </button>
@@ -252,10 +270,10 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
 
         <div className="flex-1 flex flex-col items-center sm:items-start text-center sm:text-left">
           <h3 className="font-label-lg text-label-lg font-bold text-on-surface">
-            Profile Avatar
+            {t("profile.form.avatar_title")}
           </h3>
           <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
-              Chỉ nhận JPG/JPEG/PNG, tối đa 5 MB. Ảnh được tải nền nên bạn có thể tiếp tục sử dụng hệ thống.
+            {t("profile.form.avatar_hint")}
           </p>
           <div className="mt-3 flex flex-wrap items-center gap-2.5">
             <button
@@ -264,7 +282,7 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
               type="button"
             >
               <span className="material-symbols-outlined text-[16px]">upload</span>
-              <span>{isUploadingAvatar ? "Đang tải ảnh..." : "Tải ảnh mới"}</span>
+              <span>{isUploadingAvatar ? t("profile.form.uploading_btn") : t("profile.form.upload_btn")}</span>
             </button>
             <button
               onClick={handleRemovePhoto}
@@ -272,7 +290,7 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
               type="button"
             >
               <span className="material-symbols-outlined text-[16px]">delete</span>
-              <span>Remove</span>
+              <span>{t("profile.form.remove_btn")}</span>
             </button>
           </div>
         </div>
@@ -285,10 +303,10 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
           <div className="flex flex-col gap-1.5">
             <label className="font-label-md text-label-md text-on-surface font-semibold h-5 flex items-center justify-between">
               <span>
-                Full Name (Họ và Tên) <span className="text-error">*</span>
+                {t("profile.form.full_name")} <span className="text-error">*</span>
               </span>
               <span className="font-body-sm text-body-sm text-outline">
-                Vietnamese Diacritics OK
+                {t("profile.form.diacritics_hint")}
               </span>
             </label>
             <div className="relative flex items-center">
@@ -300,7 +318,7 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                placeholder="Nguyễn Văn A"
+                placeholder={t("profile.form.full_name_placeholder")}
                 required
               />
             </div>
@@ -310,10 +328,10 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
           <div className="flex flex-col gap-1.5">
             <label className="font-label-md text-label-md text-on-surface font-semibold h-5 flex items-center justify-between">
               <span>
-                Display Name / Username <span className="text-error">*</span>
+                {t("profile.form.username")} <span className="text-error">*</span>
               </span>
               <span className="font-body-sm text-body-sm text-outline">
-                Unique public handle
+                {t("profile.form.unique_handle_hint")}
               </span>
             </label>
             <div className="relative flex items-center">
@@ -325,7 +343,7 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="nguyenvana_vn"
+                placeholder={t("profile.form.username_placeholder")}
                 required
               />
             </div>
@@ -335,16 +353,16 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
           <div className="flex flex-col gap-1.5">
             <label className="font-label-md text-label-md text-on-surface font-semibold h-5 flex items-center justify-between">
               <span className="flex items-center gap-1.5">
-                <span>Email Address <span className="text-error">*</span></span>
+                <span>{t("profile.form.email")} <span className="text-error">*</span></span>
               </span>
               {profile?.email_verified ? (
                 <span className="h-5 inline-flex items-center gap-1 px-2 rounded-full text-[10px] leading-none font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                   <span className="material-symbols-outlined !text-[11px] leading-none" style={{ fontSize: "11px" }}>verified</span>
-                  Verified
+                  {t("profile.form.verified")}
                 </span>
               ) : (
                 <span className="h-5 inline-flex items-center px-2 rounded-full text-[10px] leading-none font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                  Unverified
+                  {t("profile.form.unverified")}
                 </span>
               )}
             </label>
@@ -357,7 +375,7 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@example.com"
+                placeholder={t("profile.form.email_placeholder")}
                 required
               />
             </div>
@@ -367,11 +385,11 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
           <div className="flex flex-col gap-1.5">
             <label className="font-label-md text-label-md text-on-surface font-semibold h-5 flex items-center justify-between">
               <span className="flex items-center gap-1.5">
-                <span>Phone Number <span className="text-error">*</span></span>
+                <span>{t("profile.form.phone")} <span className="text-error">*</span></span>
               </span>
               <span className="h-5 inline-flex items-center gap-1 px-2 rounded-full text-[10px] leading-none font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                 <span className="material-symbols-outlined !text-[11px] leading-none" style={{ fontSize: "11px" }}>verified</span>
-                Verified
+                {t("profile.form.verified")}
               </span>
             </label>
             <div className="relative flex items-center">
@@ -383,7 +401,7 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder="0909 123 456"
+                placeholder={t("profile.form.phone_placeholder")}
                 required
               />
             </div>
@@ -392,7 +410,7 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
           {/* Date of Birth */}
           <div className="flex flex-col gap-1.5">
             <label className="font-label-md text-label-md text-on-surface font-semibold h-5 flex items-center justify-between">
-              <span>Date of Birth (Ngày sinh)</span>
+              <span>{t("profile.form.dob")}</span>
               <span className="material-symbols-outlined text-outline text-[18px]">
                 cake
               </span>
@@ -424,8 +442,8 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
                   className="w-full h-11 px-3 rounded-xl bg-surface-container-lowest border border-outline-variant text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 appearance-none shadow-sm cursor-pointer"
                 >
                   {months.map((m) => (
-                    <option key={m} value={m}>
-                      {m}
+                    <option key={m.value} value={m.value}>
+                      {m.label}
                     </option>
                   ))}
                 </select>
@@ -457,7 +475,7 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
           {/* Gender */}
           <div className="flex flex-col gap-1.5">
             <label className="font-label-md text-label-md text-on-surface font-semibold h-5 flex items-center">
-              <span>Gender (Giới tính)</span>
+              <span>{t("profile.form.gender")}</span>
             </label>
             <div className="grid grid-cols-3 gap-2">
               {genderOptions.map((opt) => {
@@ -500,12 +518,12 @@ export const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ profile }) => 
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                 </svg>
-                <span>Đang lưu...</span>
+                <span>{t("profile.form.saving")}</span>
               </>
             ) : (
               <>
                 <span className="material-symbols-outlined text-[18px]">save</span>
-                <span>Lưu thông tin hồ sơ</span>
+                <span>{t("profile.form.save_btn")}</span>
               </>
             )}
           </button>

@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 export interface WishlistBreadcrumbProps {
   isEmptyViewActive?: boolean;
@@ -7,6 +8,8 @@ export interface WishlistBreadcrumbProps {
 }
 
 export const WishlistBreadcrumb: React.FC<WishlistBreadcrumbProps> = () => {
+  const { t } = useTranslation("customer");
+
   return (
     <div className="w-full bg-surface-container-lowest shadow-sm border-b border-outline-variant/40">
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-3">
@@ -16,19 +19,19 @@ export const WishlistBreadcrumb: React.FC<WishlistBreadcrumbProps> = () => {
             className="hover:text-primary transition-colors flex items-center gap-1 cursor-pointer"
           >
             <span className="material-symbols-outlined text-[16px]">home</span>
-            <span>Trang chủ</span>
+            <span>{t("wishlist.breadcrumb.home")}</span>
           </Link>
           <span className="material-symbols-outlined text-[14px] text-outline">
             chevron_right
           </span>
           <Link to="/profile" className="hover:text-primary transition-colors cursor-pointer">
-            Tài khoản của tôi
+            {t("wishlist.breadcrumb.account")}
           </Link>
           <span className="material-symbols-outlined text-[14px] text-outline">
             chevron_right
           </span>
           <span className="font-semibold text-on-surface">
-            Danh sách yêu thích
+            {t("wishlist.breadcrumb.wishlist")}
           </span>
         </nav>
 
@@ -36,7 +39,7 @@ export const WishlistBreadcrumb: React.FC<WishlistBreadcrumbProps> = () => {
         <div className="flex items-center gap-3">
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container-low text-secondary text-xs font-semibold">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>Đồng bộ thời gian thực với tài khoản</span>
+            <span>{t("wishlist.breadcrumb.realtime_sync")}</span>
           </span>
         </div>
       </div>
@@ -45,4 +48,3 @@ export const WishlistBreadcrumb: React.FC<WishlistBreadcrumbProps> = () => {
 };
 
 export default WishlistBreadcrumb;
-

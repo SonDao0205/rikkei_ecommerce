@@ -1,6 +1,5 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import type { ShopUrgentOrder } from "@/domains/shop/types/shopDashboard.types";
 
 interface ShopUrgentOrdersTableProps {
@@ -18,8 +17,6 @@ export const ShopUrgentOrdersTable: React.FC<ShopUrgentOrdersTableProps> = ({
   onStatusFilterToggle,
   activeStatusFilter = "ALL",
 }) => {
-  const { t } = useTranslation('shop');
-
   return (
     <div className="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/40 space-y-5 mt-6">
       {/* Table Header matching Admin Tables */}
@@ -27,16 +24,16 @@ export const ShopUrgentOrdersTable: React.FC<ShopUrgentOrdersTableProps> = ({
         <div>
           <div className="flex items-center gap-2">
             <h2 className="font-headline-md text-headline-md font-bold text-on-surface tracking-tight">
-              {t("dashboard.urgent_orders.title")}
+              Đơn hàng khẩn cấp cần xử lý ngay
             </h2>
             {activeStatusFilter !== "ALL" && (
               <span className="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-primary/10 text-primary">
-                {t("dashboard.urgent_orders.filter_label", { status: activeStatusFilter })}
+                Lọc: {activeStatusFilter}
               </span>
             )}
           </div>
           <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
-            {t("dashboard.urgent_orders.subtitle")}
+            Danh sách các đơn cần duyệt hoặc giao trước mốc ca nhận hàng của đơn vị vận chuyển
           </p>
         </div>
         <div className="flex items-center gap-2.5">
@@ -45,13 +42,13 @@ export const ShopUrgentOrdersTable: React.FC<ShopUrgentOrdersTableProps> = ({
             onClick={onStatusFilterToggle}
             className="px-3.5 py-2 rounded-xl bg-surface-container-low text-on-surface font-label-md text-label-md font-semibold hover:bg-surface-container transition-colors border border-outline-variant/30 cursor-pointer"
           >
-            {t("dashboard.urgent_orders.filter_status")}
+            Lọc theo trạng thái
           </button>
           <Link
             to="/shop/orders"
             className="px-4 py-2 rounded-xl bg-primary text-on-primary font-label-md text-label-md font-semibold shadow-sm hover:bg-primary-container transition-all cursor-pointer"
           >
-            {t("dashboard.urgent_orders.view_all", { count: 124 })}
+            Xem tất cả đơn (124)
           </Link>
         </div>
       </div>
@@ -61,19 +58,19 @@ export const ShopUrgentOrdersTable: React.FC<ShopUrgentOrdersTableProps> = ({
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-surface-container-low text-on-surface-variant font-label-md text-[11px] uppercase tracking-wider font-semibold border-b border-outline-variant/30">
-              <th className="py-3 px-4 rounded-l-lg">{t("dashboard.urgent_orders.th_code")}</th>
-              <th className="py-3 px-4">{t("dashboard.urgent_orders.th_customer")}</th>
-              <th className="py-3 px-4">{t("dashboard.urgent_orders.th_product")}</th>
-              <th className="py-3 px-4">{t("dashboard.urgent_orders.th_total")}</th>
-              <th className="py-3 px-4">{t("dashboard.urgent_orders.th_status")}</th>
-              <th className="py-3 px-4 rounded-r-lg text-right">{t("dashboard.urgent_orders.th_actions")}</th>
+              <th className="py-3 px-4 rounded-l-lg">Mã đơn hàng</th>
+              <th className="py-3 px-4">Khách hàng</th>
+              <th className="py-3 px-4">Sản phẩm & Qty</th>
+              <th className="py-3 px-4">Tổng tiền & Thanh toán</th>
+              <th className="py-3 px-4">Trạng thái</th>
+              <th className="py-3 px-4 rounded-r-lg text-right">Thao tác</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-outline-variant/20 font-body-sm text-body-sm text-on-surface">
             {orders.length === 0 ? (
               <tr>
                 <td colSpan={6} className="py-8 text-center text-on-surface-variant">
-                  {t("dashboard.urgent_orders.empty")}
+                  Không có đơn hàng khẩn cấp nào cần xử lý.
                 </td>
               </tr>
             ) : (
@@ -147,10 +144,10 @@ export const ShopUrgentOrdersTable: React.FC<ShopUrgentOrdersTableProps> = ({
                       >
                         <span className={`w-1.5 h-1.5 rounded-full ${dotBg}`} />
                         {isPending
-                          ? t("dashboard.urgent_orders.status_pending")
+                          ? "Chờ xác nhận"
                           : isPacking
-                          ? t("dashboard.urgent_orders.status_packing")
-                          : t("dashboard.urgent_orders.status_handed_over")}
+                          ? "Đang đóng gói"
+                          : "Đã bàn giao"}
                       </span>
                     </td>
 
@@ -162,7 +159,7 @@ export const ShopUrgentOrdersTable: React.FC<ShopUrgentOrdersTableProps> = ({
                           onClick={() => onConfirmOrder(order.id)}
                           className="px-3.5 py-1.5 rounded-lg bg-primary text-on-primary font-label-md text-label-md font-semibold hover:bg-primary-container transition-colors shadow-xs cursor-pointer"
                         >
-                          {t("dashboard.urgent_orders.btn_confirm")}
+                          Xác nhận đơn
                         </button>
                       )}
 
@@ -172,7 +169,7 @@ export const ShopUrgentOrdersTable: React.FC<ShopUrgentOrdersTableProps> = ({
                           onClick={() => onPrintLabel(order.id)}
                           className="px-3.5 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md font-semibold transition-colors border border-outline-variant/30 cursor-pointer"
                         >
-                          {t("dashboard.urgent_orders.btn_print")}
+                          In nhãn gửi hàng
                         </button>
                       )}
 
