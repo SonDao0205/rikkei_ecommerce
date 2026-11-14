@@ -1,0 +1,43 @@
+{
+  "utility": {
+    "free_shipping": "Miễn phí vận chuyển cho đơn từ 500k ₫ | Thanh toán khi nhận hàng (COD) toàn quốc",
+    "hotline": "+84 1900 6868",
+    "order_tracking": "Tra cứu đơn hàng"
+  },
+  "search": {
+    "categories": "Tất cả danh mục",
+    "placeholder": "Tìm kiếm hơn 12,000+ sản phẩm & cửa hàng uy tín...",
+    "mobile_placeholder": "Tìm kiếm hơn 12,000+ sản phẩm...",
+    "button": "Tìm kiếm"
+  },
+  "actions": {
+    "wishlist": "Yêu thích",
+    "cart": "Giỏ hàng",
+    "sign_in": "Đăng nhập",
+    "my_profile": "Hồ sơ của tôi",
+    "my_shop": "Gian hàng của tôi",
+    "sign_out": "Đăng xuất",
+    "welcome": "Chào mừng bạn",
+    "login_prompt": "Đăng nhập để trải nghiệm đầy đủ"
+  },
+  "mobile_drawer": {
+    "user_features": "Tính năng người dùng",
+    "close": "Đóng menu",
+    "loyal_customer": "Khách hàng thân thiết",
+    "saved_items": "{{count}} sản phẩm đã lưu",
+    "footer_copyright": "MarketPulse © 2026 – Nền tảng thương mại điện tử"
+  },
+  "switch_shop_modal": {
+    "title": "Chuyển sang trang Gian hàng",
+    "description": "Bạn có chắc chắn muốn chuyển sang Kênh Người Bán để quản lý sản phẩm, đơn hàng và hoạt động kinh doanh không?",
+    "btn_confirm": "Chuyển sang Gian hàng",
+    "btn_cancel": "Ở lại trang mua sắm"
+  },
+  "logout_modal": {
+    "title": "Xác nhận đăng xuất",
+    "description": "Bạn có chắc chắn muốn đăng xuất không? Phiên đăng nhập hiện tại sẽ kết thúc và bạn sẽ được chuyển về trang chủ.",
+    "logging_out": "Đang đăng xuất...",
+    "btn_confirm": "Đăng xuất",
+    "btn_cancel": "Hủy bỏ"
+  }
+}

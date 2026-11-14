@@ -1,0 +1,47 @@
+{
+  "invalid_shop_id": "Invalid Store ID",
+  "invalid_shop_desc": "The store link is inaccurate or has been modified.",
+  "loading": "Loading store details...",
+  "not_found_title": "Store Not Found",
+  "not_found_desc": "This store does not exist or has temporarily suspended operations on MarketPulse.",
+  "banner": {
+    "official_partner": "Official Partner",
+    "shipping_from": "Ships from: {{location}}",
+    "hotline": "Hotline: {{phone}}",
+    "active_now": "Active now",
+    "followers_count": "{{count}} followers",
+    "chat_response_rate": "98% Chat response rate",
+    "products_count": "{{count}} products",
+    "chat_button": "Chat",
+    "follow_button": "Follow",
+    "following_button": "Following"
+  },
+  "toolbar": {
+    "tabs": {
+      "all": "All Products",
+      "new": "New Arrivals",
+      "bestseller": "Best Sellers",
+      "sale": "Flash Sale & Discounts",
+      "reviews": "Store Reviews"
+    },
+    "sort": {
+      "popular": "Popular",
+      "newest": "Newest",
+      "sales": "Top Sales",
+      "price_asc": "Price: Low to High",
+      "price_desc": "Price: High to Low",
+      "price_default": "Price"
+    },
+    "search_placeholder": "Search products in this store..."
+  },
+  "vouchers": {
+    "title": "Store Discount Vouchers",
+    "claim": "Claim",
+    "claimed": "Claimed",
+    "view_more": "View more vouchers"
+  },
+  "grid": {
+    "empty": "No products found in this store.",
+    "page": "Page {{current}} of {{total}}"
+  }
+}

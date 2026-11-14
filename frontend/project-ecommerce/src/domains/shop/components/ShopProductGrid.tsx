@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { ProductItem } from "@/shared/types";
 import { useAppDispatch, useAppSelector } from "@/app/state/store";
 import { toggleWishlistItem } from "@/domains/customer/state/wishlistSlice";
@@ -22,6 +23,7 @@ export const ShopProductGrid: React.FC<ShopProductGridProps> = ({
   onPageChange,
   pageSize = 12,
 }) => {
+  const { t } = useTranslation("customer");
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { items: wishlistItems } = useAppSelector((state) => state.wishlist);
@@ -137,11 +139,8 @@ export const ShopProductGrid: React.FC<ShopProductGridProps> = ({
           <span className="material-symbols-outlined text-4xl">inventory_2</span>
         </div>
         <h4 className="font-headline-md text-headline-md font-bold text-on-surface">
-          Không tìm thấy sản phẩm phù hợp
+          {t("public_shop.grid.empty")}
         </h4>
-        <p className="font-body-md text-body-md text-on-surface-variant max-w-md mx-auto mt-1">
-          Gian hàng này hiện chưa có sản phẩm nào khớp với bộ lọc hoặc từ khóa tìm kiếm của bạn.
-        </p>
       </div>
     );
   }
@@ -356,7 +355,7 @@ export const ShopProductGrid: React.FC<ShopProductGridProps> = ({
         title={toastState.title}
         message={toastState.message}
         type={toastState.type}
-        actionText="Xem yêu thích"
+        actionText={t("home.product_card.view_wishlist")}
         actionLink="/wishlist"
         onClose={() => setToastState((prev) => ({ ...prev, isOpen: false }))}
       />

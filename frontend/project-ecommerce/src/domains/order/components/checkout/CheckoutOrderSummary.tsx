@@ -1,8 +1,12 @@
 import React, { useState } from "react";
-import type { PlatformVoucher } from "@/domains/customer/types/cart.types";
+import { useTranslation } from "react-i18next";
 import type { CheckoutQuote } from "@/domains/customer/api/cartApi";
+import type { PlatformVoucher } from "@/domains/customer/types/cart.types";
 import { formatCurrencyVND } from "@/shared/utils/currency";
-import { AVAILABLE_PLATFORM_VOUCHERS } from "@/domains/customer/data/availableVouchers";
+import {
+  AVAILABLE_PLATFORM_VOUCHERS,
+  type AvailableVoucher,
+} from "@/domains/customer/data/availableVouchers";
 
 interface CheckoutOrderSummaryProps {
   quote: CheckoutQuote | null;
@@ -14,11 +18,11 @@ interface CheckoutOrderSummaryProps {
   platformVoucher: PlatformVoucher | null;
   onApplyPlatformVoucher: (code: string) => Promise<void>;
   onRemovePlatformVoucher: () => void;
-  onSubmitOrder: () => void | Promise<void>;
-  isCalculating?: boolean;
-  isSubmitting?: boolean;
-  selectedPaymentCode?: string;
-  errorMessage?: string | null;
+  onSubmitOrder: () => void;
+  isCalculating: boolean;
+  isSubmitting: boolean;
+  selectedPaymentCode: string;
+  errorMessage: string | null;
 }
 
 export const CheckoutOrderSummary: React.FC<CheckoutOrderSummaryProps> = ({
@@ -32,19 +36,23 @@ export const CheckoutOrderSummary: React.FC<CheckoutOrderSummaryProps> = ({
   onApplyPlatformVoucher,
   onRemovePlatformVoucher,
   onSubmitOrder,
-  isCalculating = false,
-  isSubmitting = false,
-  selectedPaymentCode = "COD",
-  errorMessage = null,
+  isCalculating,
+  isSubmitting,
+  selectedPaymentCode,
+  errorMessage,
 }) => {
-  const [customCode, setCustomCode] = useState("");
-  const [isApplying, setIsApplying] = useState(false);
+  const { t } = useTranslation("customer");
+  const [customCode, setCustomCode] = useState<string>("");
+  const [isApplying, setIsApplying] = useState<boolean>(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
+  // Values precedence: quote data if available, otherwise fallbacks
   const subtotal = quote ? quote.subtotal : fallbackSubtotal;
   const shippingFee = quote ? quote.shipping_fee : fallbackShippingFee;
   const shopDiscount = quote ? quote.shop_discount : fallbackShopDiscount;
-  const platformDiscount = quote ? quote.platform_discount : fallbackPlatformDiscount;
+  const platformDiscount = quote
+    ? quote.platform_discount
+    : fallbackPlatformDiscount;
   const total = quote ? quote.total : fallbackTotal;
 
   const handleCustomApply = async (e: React.FormEvent) => {
@@ -57,7 +65,11 @@ export const CheckoutOrderSummary: React.FC<CheckoutOrderSummaryProps> = ({
       setCustomCode("");
     } catch (err: unknown) {
       setLocalError(
-        typeof err === "string" ? err : err instanceof Error ? err.message : "Mã ưu đãi không hợp lệ"
+        typeof err === "string"
+          ? err
+          : err instanceof Error
+          ? err.message
+          : t("checkout.shop_items.apply_voucher_failed", { defaultValue: "Mã ưu đãi không hợp lệ" })
       );
     } finally {
       setIsApplying(false);
@@ -70,9 +82,11 @@ export const CheckoutOrderSummary: React.FC<CheckoutOrderSummaryProps> = ({
       <div className="flex items-center justify-between pb-3 border-b border-outline-variant/40">
         <div>
           <h3 className="font-bold text-sm sm:text-base text-on-surface">
-            Tóm tắt đơn hàng
+            {t("checkout.summary.title", { defaultValue: "Tóm tắt đơn hàng" })}
           </h3>
-          <span className="text-xs text-on-surface-variant">Chi tiết thanh toán & Ưu đãi</span>
+          <span className="text-xs text-on-surface-variant">
+            {t("checkout.summary.subtitle", { defaultValue: "Chi tiết thanh toán & Ưu đãi" })}
+          </span>
         </div>
         <span className="material-symbols-outlined text-primary text-[20px]">
           receipt_long
@@ -86,18 +100,20 @@ export const CheckoutOrderSummary: React.FC<CheckoutOrderSummaryProps> = ({
             <span className="material-symbols-outlined text-primary text-[18px]">
               redeem
             </span>
-            <span>Mã giảm giá Toàn Sàn</span>
+            <span>
+              {t("checkout.summary.platform_vouchers", { defaultValue: "Mã giảm giá Toàn Sàn" })}
+            </span>
           </span>
           {platformVoucher?.is_applied && (
             <span className="text-[11px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-              Đang áp dụng
+              {t("checkout.summary.applied_badge", { defaultValue: "Đang áp dụng" })}
             </span>
           )}
         </div>
 
         {/* Available Platform Vouchers List */}
         <div className="flex flex-col gap-1.5">
-          {AVAILABLE_PLATFORM_VOUCHERS.map((v) => {
+          {AVAILABLE_PLATFORM_VOUCHERS.map((v: AvailableVoucher) => {
             const isApplied =
               platformVoucher?.is_applied && platformVoucher.code === v.code;
             const isEligible = subtotal >= v.minOrderValue;
@@ -130,7 +146,10 @@ export const CheckoutOrderSummary: React.FC<CheckoutOrderSummaryProps> = ({
                       {v.code}
                     </p>
                     <p className="text-[10px] text-on-surface-variant truncate">
-                      Đơn từ {formatCurrencyVND(v.minOrderValue)}
+                      {t("checkout.summary.min_order", {
+                        amount: formatCurrencyVND(v.minOrderValue),
+                        defaultValue: `Đơn từ ${formatCurrencyVND(v.minOrderValue)}`,
+                      })}
                     </p>
                   </div>
                 </div>
@@ -143,7 +162,7 @@ export const CheckoutOrderSummary: React.FC<CheckoutOrderSummaryProps> = ({
                       disabled={isCalculating || isApplying}
                       className="px-2 py-1 rounded-lg border border-emerald-300 text-emerald-700 bg-white hover:bg-emerald-50 text-[10px] font-bold cursor-pointer transition-colors"
                     >
-                      Bỏ chọn
+                      {t("checkout.summary.remove_voucher", { defaultValue: "Bỏ chọn" })}
                     </button>
                   ) : (
                     <button
@@ -160,7 +179,7 @@ export const CheckoutOrderSummary: React.FC<CheckoutOrderSummaryProps> = ({
                               ? err
                               : err instanceof Error
                               ? err.message
-                              : "Mã ưu đãi không hợp lệ"
+                              : t("checkout.shop_items.apply_voucher_failed", { defaultValue: "Mã ưu đãi không hợp lệ" })
                           );
                         } finally {
                           setIsApplying(false);
@@ -173,11 +192,18 @@ export const CheckoutOrderSummary: React.FC<CheckoutOrderSummaryProps> = ({
                       }`}
                       title={
                         !isEligible
-                          ? `Đơn hàng cần đạt tối thiểu ${formatCurrencyVND(v.minOrderValue)}`
+                          ? t("checkout.summary.ineligible_tooltip", {
+                              amount: formatCurrencyVND(v.minOrderValue),
+                              defaultValue: `Đơn hàng cần đạt tối thiểu ${formatCurrencyVND(v.minOrderValue)}`,
+                            })
                           : undefined
                       }
                     >
-                      {isApplying ? "..." : isEligible ? "Áp dụng" : "Chưa đủ ĐK"}
+                      {isApplying
+                        ? "..."
+                        : isEligible
+                        ? t("checkout.summary.apply_btn", { defaultValue: "Áp dụng" })
+                        : t("checkout.summary.not_eligible", { defaultValue: "Chưa đủ ĐK" })}
                     </button>
                   )}
                 </div>
@@ -195,7 +221,9 @@ export const CheckoutOrderSummary: React.FC<CheckoutOrderSummaryProps> = ({
               </span>
               <input
                 type="text"
-                placeholder="Nhập mã ưu đãi khác"
+                placeholder={t("checkout.summary.custom_voucher_placeholder", {
+                  defaultValue: "Nhập mã ưu đãi khác",
+                })}
                 value={customCode}
                 onChange={(e) => setCustomCode(e.target.value.toUpperCase())}
                 className="w-full h-8 pl-7 pr-2 rounded-lg bg-surface-container-lowest text-xs focus:outline-none focus:ring-1 focus:ring-primary border border-outline-variant/60 uppercase font-semibold"
@@ -206,7 +234,7 @@ export const CheckoutOrderSummary: React.FC<CheckoutOrderSummaryProps> = ({
               disabled={isApplying || isCalculating || !customCode.trim()}
               className="h-8 px-3 rounded-lg bg-surface-container-high text-xs text-primary font-bold hover:bg-surface-container-highest transition-colors cursor-pointer disabled:opacity-50"
             >
-              {isApplying ? "..." : "Áp dụng"}
+              {isApplying ? "..." : t("checkout.summary.apply_btn", { defaultValue: "Áp dụng" })}
             </button>
           </form>
 
@@ -216,7 +244,12 @@ export const CheckoutOrderSummary: React.FC<CheckoutOrderSummaryProps> = ({
 
           {platformVoucher?.is_applied && (
             <div className="flex items-center justify-between text-xs text-emerald-700 font-bold pt-1.5">
-              <span>Mã '{platformVoucher.code}' đã áp dụng:</span>
+              <span>
+                {t("checkout.summary.voucher_applied", {
+                  code: platformVoucher.code,
+                  defaultValue: `Mã '${platformVoucher.code}' đã áp dụng:`,
+                })}
+              </span>
               <span>-{formatCurrencyVND(platformDiscount)}</span>
             </div>
           )}
@@ -226,14 +259,14 @@ export const CheckoutOrderSummary: React.FC<CheckoutOrderSummaryProps> = ({
       {/* Financial Calculations */}
       <div className="flex flex-col gap-2.5 py-3 px-3.5 rounded-xl bg-surface-container-low/50 border border-outline-variant/30 text-xs sm:text-sm">
         <div className="flex justify-between items-center text-on-surface-variant">
-          <span>Tổng tiền hàng</span>
+          <span>{t("checkout.summary.subtotal", { defaultValue: "Tổng tiền hàng" })}</span>
           <span className="font-semibold text-on-surface">
             {formatCurrencyVND(subtotal)}
           </span>
         </div>
 
         <div className="flex justify-between items-center text-on-surface-variant">
-          <span>Phí vận chuyển</span>
+          <span>{t("checkout.summary.shipping_fee", { defaultValue: "Phí vận chuyển" })}</span>
           <span className="font-semibold text-on-surface">
             {formatCurrencyVND(shippingFee)}
           </span>
@@ -243,7 +276,7 @@ export const CheckoutOrderSummary: React.FC<CheckoutOrderSummaryProps> = ({
           <div className="flex justify-between items-center text-secondary font-semibold">
             <span className="flex items-center gap-1">
               <span className="material-symbols-outlined text-[15px]">store</span>
-              <span>Giảm giá từ Shop</span>
+              <span>{t("checkout.summary.shop_discount", { defaultValue: "Giảm giá từ Shop" })}</span>
             </span>
             <span>-{formatCurrencyVND(shopDiscount)}</span>
           </div>
@@ -253,7 +286,12 @@ export const CheckoutOrderSummary: React.FC<CheckoutOrderSummaryProps> = ({
           <div className="flex justify-between items-center text-emerald-700 font-semibold">
             <span className="flex items-center gap-1">
               <span className="material-symbols-outlined text-[15px]">redeem</span>
-              <span>Voucher Sàn ({platformVoucher?.code || "Ưu đãi"})</span>
+              <span>
+                {t("checkout.summary.platform_voucher", {
+                  code: platformVoucher?.code || "Ưu đãi",
+                  defaultValue: `Voucher Sàn (${platformVoucher?.code || "Ưu đãi"})`,
+                })}
+              </span>
             </span>
             <span>-{formatCurrencyVND(platformDiscount)}</span>
           </div>
@@ -262,11 +300,13 @@ export const CheckoutOrderSummary: React.FC<CheckoutOrderSummaryProps> = ({
         {/* Total Amount Row */}
         <div className="pt-3 mt-1 border-t border-outline-variant/40 flex justify-between items-baseline">
           <div className="flex flex-col">
-            <span className="font-bold text-sm text-on-surface">Tổng thanh toán</span>
+            <span className="font-bold text-sm text-on-surface">
+              {t("checkout.summary.total_payment", { defaultValue: "Tổng thanh toán" })}
+            </span>
             <span className="text-[11px] text-on-surface-variant">
               {selectedPaymentCode === "COD"
-                ? "Thanh toán khi nhận hàng • Đã gồm VAT"
-                : "Chuyển khoản ngân hàng • Đã gồm VAT"}
+                ? t("checkout.summary.cod_note", { defaultValue: "Thanh toán khi nhận hàng • Đã gồm VAT" })
+                : t("checkout.summary.transfer_note", { defaultValue: "Chuyển khoản ngân hàng • Đã gồm VAT" })}
             </span>
           </div>
 
@@ -276,7 +316,7 @@ export const CheckoutOrderSummary: React.FC<CheckoutOrderSummaryProps> = ({
             </span>
             {isCalculating && (
               <span className="block text-[10px] text-on-surface-variant animate-pulse">
-                Đang cập nhật báo giá...
+                {t("checkout.summary.updating_quote", { defaultValue: "Đang cập nhật báo giá..." })}
               </span>
             )}
           </div>
@@ -299,13 +339,20 @@ export const CheckoutOrderSummary: React.FC<CheckoutOrderSummaryProps> = ({
         <span className="material-symbols-outlined text-[20px]">lock</span>
         <span>
           {isSubmitting
-            ? "Đang xử lý đơn hàng..."
-            : `Đặt hàng (${selectedPaymentCode}) — ${formatCurrencyVND(total)}`}
+            ? t("checkout.summary.submitting", { defaultValue: "Đang xử lý đơn hàng..." })
+            : t("checkout.summary.place_order_btn", {
+                method: selectedPaymentCode,
+                amount: formatCurrencyVND(total),
+                defaultValue: `Đặt hàng (${selectedPaymentCode}) — ${formatCurrencyVND(total)}`,
+              })}
         </span>
       </button>
 
       <p className="text-[11px] text-on-surface-variant text-center px-1 leading-normal">
-        Bằng việc bấm đặt hàng, bạn đồng ý với điều khoản sử dụng và kiểm tra gói hàng trước khi thanh toán cho đơn vị vận chuyển.
+        {t("checkout.summary.terms_agreement", {
+          defaultValue:
+            "Bằng việc bấm đặt hàng, bạn đồng ý với điều khoản sử dụng và kiểm tra gói hàng trước khi thanh toán cho đơn vị vận chuyển.",
+        })}
       </p>
 
       {/* Trust Badges */}
@@ -315,7 +362,7 @@ export const CheckoutOrderSummary: React.FC<CheckoutOrderSummaryProps> = ({
             verified
           </span>
           <span className="text-[10px] text-on-surface font-semibold leading-tight">
-            100% Chính hãng
+            {t("checkout.summary.authentic_badge", { defaultValue: "100% Chính hãng" })}
           </span>
         </div>
 
@@ -324,7 +371,7 @@ export const CheckoutOrderSummary: React.FC<CheckoutOrderSummaryProps> = ({
             replay_7
           </span>
           <span className="text-[10px] text-on-surface font-semibold leading-tight">
-            7 Ngày đổi trả
+            {t("checkout.summary.returns_badge", { defaultValue: "7 Ngày đổi trả" })}
           </span>
         </div>
 
@@ -333,7 +380,7 @@ export const CheckoutOrderSummary: React.FC<CheckoutOrderSummaryProps> = ({
             fact_check
           </span>
           <span className="text-[10px] text-on-surface font-semibold leading-tight">
-            Đồng kiểm VIP
+            {t("checkout.summary.inspect_badge", { defaultValue: "Đồng kiểm VIP" })}
           </span>
         </div>
       </div>
@@ -342,4 +389,3 @@ export const CheckoutOrderSummary: React.FC<CheckoutOrderSummaryProps> = ({
 };
 
 export default CheckoutOrderSummary;
-

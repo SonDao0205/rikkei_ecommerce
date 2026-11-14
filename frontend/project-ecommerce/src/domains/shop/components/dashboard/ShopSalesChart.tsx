@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type {
   ShopChartMetricTab,
   ShopSalesTrendPoint,
@@ -18,6 +19,7 @@ export const ShopSalesChart: React.FC<ShopSalesChartProps> = ({
   activeTab,
   onTabChange,
 }) => {
+  const { t } = useTranslation('shop');
   const [hoveredIndex, setHoveredIndex] = useState<number>(5); // Default to Saturday peak
 
   const activePoint = salesTrend[hoveredIndex] || salesTrend[salesTrend.length - 1];
@@ -36,14 +38,14 @@ export const ShopSalesChart: React.FC<ShopSalesChartProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <h2 className="font-headline-md text-headline-md font-bold text-on-surface tracking-tight">
-                Biểu đồ xu hướng bán hàng
+                {t("dashboard.chart.title")}
               </h2>
               <span className="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-primary-fixed text-on-primary-fixed-variant">
-                7 Ngày qua
+                {t("dashboard.chart.tag_7days")}
               </span>
             </div>
             <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
-              Hiệu suất luân chuyển doanh số và sản lượng tiêu thụ thời gian thực
+              {t("dashboard.chart.subtitle")}
             </p>
           </div>
 
@@ -58,7 +60,7 @@ export const ShopSalesChart: React.FC<ShopSalesChartProps> = ({
                     : "text-on-surface-variant hover:text-on-surface"
                 }`}
               >
-                Doanh thu (₫)
+                {t("dashboard.chart.revenue_tab")}
               </button>
               <button
                 type="button"
@@ -69,7 +71,7 @@ export const ShopSalesChart: React.FC<ShopSalesChartProps> = ({
                     : "text-on-surface-variant hover:text-on-surface"
                 }`}
               >
-                Sản lượng (SP)
+                {t("dashboard.chart.volume_tab")}
               </button>
             </div>
           </div>
@@ -79,7 +81,7 @@ export const ShopSalesChart: React.FC<ShopSalesChartProps> = ({
         <div className="flex items-center justify-between pt-4">
           <div className="flex items-center gap-2">
             <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">
-              Điểm nổi bật:
+              {t("dashboard.chart.highlight")}
             </span>
             <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary bg-primary/10 px-2.5 py-0.5 rounded-md font-mono">
               <span className="material-symbols-outlined text-[13px]">bolt</span>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { useAppDispatch, useAppSelector } from "@/app/state/store";
 import { logoutUser, closeLogoutModal } from "@/domains/auth/state/authSlice";
 import router from "@/app/routes/AppRoutes";
@@ -18,6 +19,7 @@ export const LogoutConfirmModal: React.FC<LogoutConfirmModalProps> = ({
   userName: propsUserName,
   userRole: propsUserRole,
 }) => {
+  const { t } = useTranslation('customer');
   const dispatch = useAppDispatch();
   const { isLogoutModalOpen, user, role, loading } = useAppSelector(
     (state) => state.auth
@@ -133,12 +135,11 @@ export const LogoutConfirmModal: React.FC<LogoutConfirmModalProps> = ({
             id="logout-modal-title"
             className="text-xl font-extrabold text-slate-900 tracking-tight"
           >
-            Xác nhận đăng xuất
+            {t("header.logout_modal.title")}
           </h3>
 
           <p className="mt-2 text-sm text-slate-500 leading-relaxed max-w-sm">
-            Bạn có chắc chắn muốn đăng xuất không? Phiên đăng nhập hiện tại sẽ kết
-            thúc và bạn sẽ được chuyển về trang chủ.
+            {t("header.logout_modal.description")}
           </p>
 
           {/* User Preview Box */}
@@ -168,7 +169,7 @@ export const LogoutConfirmModal: React.FC<LogoutConfirmModalProps> = ({
               disabled={loading}
               className="w-full py-3 px-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-700 font-bold text-sm transition-all focus:outline-none focus:ring-2 focus:ring-slate-300 cursor-pointer disabled:opacity-50"
             >
-              Hủy bỏ
+              {t("header.logout_modal.btn_cancel")}
             </button>
             <button
               type="button"
@@ -197,11 +198,11 @@ export const LogoutConfirmModal: React.FC<LogoutConfirmModalProps> = ({
                       d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
                     />
                   </svg>
-                  <span>Đang đăng xuất...</span>
+                  <span>{t("header.logout_modal.logging_out")}</span>
                 </>
               ) : (
                 <>
-                  <span>Đăng xuất</span>
+                  <span>{t("header.logout_modal.btn_confirm")}</span>
                   <span className="material-symbols-outlined text-[18px]">
                     logout
                   </span>

@@ -1,0 +1,37 @@
+{
+  "brand_desc": "Tập hợp thương mại đa gian hàng hàng đầu Việt Nam. Kết nối khách hàng với các nghệ nhân địa phương, thương hiệu được tuyển chọn và các nhà thiết kế độc lập.",
+  "guarantee_title": "Cam kết 100% chính hãng",
+  "guarantee_desc": "Kiểm duyệt nhà bán hàng nghiêm ngặt",
+  "buyer_protection": {
+    "title": "Bảo vệ người mua",
+    "track_package": "Theo dõi kiện hàng",
+    "refund_policy": "Chính sách đổi trả & hoàn tiền",
+    "escrow_protection": "Bảo vệ thanh toán tạm giữ",
+    "dispute_resolution": "Giải quyết tranh chấp",
+    "consumer_rights": "Quyền lợi người tiêu dùng VN"
+  },
+  "merchant_ecosystem": {
+    "title": "Hệ sinh thái nhà bán",
+    "register_shop_label": "Đăng ký mở shop:",
+    "register_now": "Đăng ký ngay",
+    "sell_on_mp": "Bán hàng cùng MarketPulse",
+    "seller_standards": "Quy chuẩn & Chính sách người bán",
+    "warehouse_fulfillment": "Dịch vụ kho bãi & vận hành MP",
+    "artisan_grants": "Quỹ hỗ trợ nghệ nhân",
+    "merchant_login": "Đăng nhập Kênh Người Bán"
+  },
+  "newsletter": {
+    "title": "Đăng ký nhận tin",
+    "desc": "Đăng ký để nhận thông tin sản phẩm mới độc quyền, câu chuyện thương hiệu và mã giảm giá đặc biệt.",
+    "placeholder": "Nhập địa chỉ email của bạn",
+    "button": "Đăng ký ngay"
+  },
+  "bottom": {
+    "license": "© 2025 MarketPulse Technologies Vietnam JSC. Giấy phép doanh nghiệp số 0108892461.",
+    "payments_title": "Phương thức thanh toán:",
+    "privacy": "Bảo mật",
+    "terms": "Điều khoản",
+    "security": "An toàn"
+  }
+}
+

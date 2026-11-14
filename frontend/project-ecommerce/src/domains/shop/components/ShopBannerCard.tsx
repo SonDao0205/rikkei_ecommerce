@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAppDispatch, useAppSelector } from "@/app/state/store";
 import { toggleFollowShop } from "@/domains/shop/state/publicShopSlice";
 import WishlistToast from "@/domains/customer/components/wishlist/WishlistToast";
@@ -15,6 +16,7 @@ export const ShopBannerCard: React.FC<ShopBannerCardProps> = ({
   shop,
   totalProducts = 0,
 }) => {
+  const { t } = useTranslation("customer");
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
 
@@ -207,7 +209,7 @@ export const ShopBannerCard: React.FC<ShopBannerCardProps> = ({
                   MALL
                 </span>
                 <span className="px-2 py-0.5 rounded-md bg-surface-container-high text-primary font-label-sm text-label-sm font-bold uppercase">
-                  Official Partner
+                  {t("public_shop.banner.official_partner")}
                 </span>
                 <span className="font-label-sm text-label-sm text-outline">
                   #SHOP-{String(shop.id).padStart(4, "0")}
@@ -224,7 +226,7 @@ export const ShopBannerCard: React.FC<ShopBannerCardProps> = ({
                   <span className="material-symbols-outlined text-[16px] text-primary">
                     location_on
                   </span>
-                  <span>Giao hàng từ: TP. Hồ Chí Minh</span>
+                  <span>{t("public_shop.banner.shipping_from", { location: "TP. Hồ Chí Minh" })}</span>
                 </span>
                 <span className="text-outline">•</span>
                 <span className="flex items-center gap-1">
@@ -232,13 +234,13 @@ export const ShopBannerCard: React.FC<ShopBannerCardProps> = ({
                     support_agent
                   </span>
                   <span>
-                    Hotline: {shop.phone ? shop.phone : "+84 909 *** 456"}
+                    {t("public_shop.banner.hotline", { phone: shop.phone ? shop.phone : "+84 909 *** 456" })}
                   </span>
                 </span>
                 <span className="text-outline">•</span>
                 <span className="flex items-center gap-1 text-emerald-600 font-semibold">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span>Đang hoạt động</span>
+                  <span>{t("public_shop.banner.active_now")}</span>
                 </span>
               </div>
             </div>
@@ -318,7 +320,9 @@ export const ShopBannerCard: React.FC<ShopBannerCardProps> = ({
                   {followState.following ? "check" : "person_add"}
                 </span>
                 <span>
-                  {followState.following ? "Đang theo dõi" : "Theo dõi Shop"}
+                  {followState.following
+                    ? t("public_shop.banner.following_button")
+                    : t("public_shop.banner.follow_button")}
                 </span>
               </button>
 
@@ -330,7 +334,7 @@ export const ShopBannerCard: React.FC<ShopBannerCardProps> = ({
                 <span className="material-symbols-outlined text-[18px] text-primary">
                   chat
                 </span>
-                <span>Chat ngay</span>
+                <span>{t("public_shop.banner.chat_button")}</span>
               </button>
             </div>
           </div>

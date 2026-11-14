@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import ProductCard from "@/domains/storefront/components/home/ProductCard";
 import type { ProductItem } from "@/shared/types";
 
@@ -23,6 +24,7 @@ const CatalogSection: React.FC<CatalogSectionProps> = ({
   onSelectProduct,
   onSelectShop,
 }) => {
+  const { t } = useTranslation("customer");
   const [gridMode, setGridMode] = useState<"grid" | "list">("grid");
 
   const sortOptions = [
@@ -42,13 +44,17 @@ const CatalogSection: React.FC<CatalogSectionProps> = ({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-space-md p-space-md rounded-xl bg-surface-container-lowest shadow-sm">
             <div className="flex items-center gap-2">
               <span className="font-label-md text-label-md font-bold text-on-surface">{products.length}</span>
-              <span className="font-label-md text-label-md text-on-surface-variant">/ {totalProducts} sản phẩm</span>
-              <span className="font-label-md text-label-md font-bold text-primary">All Catalog</span>
+              <span className="font-label-md text-label-md text-on-surface-variant">
+                {t("home.catalog.showing_count", { total: totalProducts })}
+              </span>
+              <span className="font-label-md text-label-md font-bold text-primary">
+                {t("home.catalog.all_catalog")}
+              </span>
             </div>
 
             <div className="flex items-center gap-space-md">
               <div className="flex items-center gap-1 text-body-sm font-body-sm text-on-surface-variant">
-                <span>Sort:</span>
+                <span>{t("home.catalog.sort_label")}</span>
                 <div className="relative inline-block">
                   <select
                     value={sortBy}
@@ -57,7 +63,7 @@ const CatalogSection: React.FC<CatalogSectionProps> = ({
                   >
                     {sortOptions.map((opt) => (
                       <option key={opt} value={opt}>
-                        {opt}
+                        {t(`home.catalog.sort_options.${opt}`, { defaultValue: opt })}
                       </option>
                     ))}
                   </select>
@@ -114,7 +120,14 @@ const CatalogSection: React.FC<CatalogSectionProps> = ({
             ))}
           </div>
 
-          {products.length < totalProducts && onLoadMore && <button onClick={onLoadMore} className="self-center px-space-lg py-2.5 rounded-lg bg-surface-container text-primary font-label-md font-bold">Tải thêm sản phẩm</button>}
+          {products.length < totalProducts && onLoadMore && (
+            <button
+              onClick={onLoadMore}
+              className="self-center px-space-lg py-2.5 rounded-lg bg-surface-container text-primary font-label-md font-bold cursor-pointer hover:bg-surface-container-high transition-colors"
+            >
+              {t("home.catalog.load_more")}
+            </button>
+          )}
         </div>
       </div>
     </section>

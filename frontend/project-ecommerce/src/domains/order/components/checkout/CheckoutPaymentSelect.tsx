@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import type { CheckoutMethod } from "@/domains/customer/api/cartApi";
 
 interface CheckoutPaymentSelectProps {
@@ -12,6 +13,8 @@ export const CheckoutPaymentSelect: React.FC<CheckoutPaymentSelectProps> = ({
   selectedPaymentId,
   onSelectPayment,
 }) => {
+  const { t } = useTranslation("customer");
+
   return (
     <div className="bg-surface-container-lowest rounded-2xl p-4 sm:p-5 border border-outline-variant/60 shadow-xs flex flex-col gap-3">
       <div className="flex items-center justify-between pb-2 border-b border-outline-variant/40">
@@ -20,11 +23,11 @@ export const CheckoutPaymentSelect: React.FC<CheckoutPaymentSelectProps> = ({
             payments
           </span>
           <span className="font-bold text-xs sm:text-sm text-on-surface uppercase tracking-wide">
-            Phương thức thanh toán (Payment Method)
+            {t("checkout.payment.title")}
           </span>
         </div>
         <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-          An toàn 100%
+          {t("checkout.payment.safe_badge")}
         </span>
       </div>
 
@@ -32,6 +35,18 @@ export const CheckoutPaymentSelect: React.FC<CheckoutPaymentSelectProps> = ({
         {paymentMethods.map((method) => {
           const isSelected = method.id === selectedPaymentId;
           const isCOD = method.code === "COD";
+          const methodName = isCOD
+            ? t("checkout.payment.methods.cod.name", { defaultValue: method.name })
+            : t("checkout.payment.methods.bank_transfer.name", { defaultValue: method.name });
+          const methodDesc = isCOD
+            ? t("checkout.payment.methods.cod.desc", {
+                defaultValue:
+                  "Thanh toán bằng tiền mặt khi nhận hàng tận nơi. Kiểm tra hàng trước khi thanh toán, hoàn toàn an tâm không rủi ro.",
+              })
+            : t("checkout.payment.methods.bank_transfer.desc", {
+                defaultValue:
+                  "Chuyển khoản qua ngân hàng nội địa hoặc quét mã VietQR tự động xác nhận đơn hàng nhanh chóng.",
+              });
 
           return (
             <div
@@ -62,22 +77,20 @@ export const CheckoutPaymentSelect: React.FC<CheckoutPaymentSelectProps> = ({
                       {isCOD ? "payments" : "account_balance"}
                     </span>
                     <span className="font-bold text-xs sm:text-sm text-on-surface">
-                      {method.name}
+                      {methodName}
                     </span>
                   </div>
                 </div>
 
                 {isCOD && (
                   <span className="px-2 py-0.5 rounded-full bg-primary text-on-primary text-[10px] font-bold uppercase tracking-wider">
-                    Khuyên dùng
+                    {t("checkout.payment.recommended", { defaultValue: "Khuyên dùng" })}
                   </span>
                 )}
               </div>
 
               <p className="text-xs text-on-surface-variant pl-7 leading-relaxed">
-                {isCOD
-                  ? "Thanh toán bằng tiền mặt khi nhận hàng tận nơi. Kiểm tra hàng trước khi thanh toán, hoàn toàn an tâm không rủi ro."
-                  : "Chuyển khoản qua ngân hàng nội địa hoặc quét mã VietQR tự động xác nhận đơn hàng nhanh chóng."}
+                {methodDesc}
               </p>
 
               {isCOD && (
@@ -86,13 +99,21 @@ export const CheckoutPaymentSelect: React.FC<CheckoutPaymentSelectProps> = ({
                     <span className="material-symbols-outlined text-[14px]">
                       verified_user
                     </span>
-                    <span>Đồng kiểm cùng shipper (Co-Check)</span>
+                    <span>
+                      {t("checkout.payment.methods.cod.co_check", {
+                        defaultValue: "Đồng kiểm cùng shipper (Co-Check)",
+                      })}
+                    </span>
                   </span>
                   <span className="flex items-center gap-1 text-on-surface-variant">
                     <span className="material-symbols-outlined text-[14px]">
                       receipt_long
                     </span>
-                    <span>Hóa đơn VAT đầy đủ</span>
+                    <span>
+                      {t("checkout.payment.methods.cod.vat_invoice", {
+                        defaultValue: "Hóa đơn VAT đầy đủ",
+                      })}
+                    </span>
                   </span>
                 </div>
               )}
@@ -110,18 +131,22 @@ export const CheckoutPaymentSelect: React.FC<CheckoutPaymentSelectProps> = ({
                   credit_card
                 </span>
                 <span className="font-semibold text-xs sm:text-sm text-on-surface">
-                  Thẻ tín dụng / Ghi nợ & Ví điện tử (MoMo, VNPay-QR, ZaloPay)
+                  {t("checkout.payment.methods.cards_wallets.name", {
+                    defaultValue: "Thẻ tín dụng / Ghi nợ & Ví điện tử (MoMo, VNPay-QR, ZaloPay)",
+                  })}
                 </span>
               </div>
             </div>
 
             <span className="px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant text-[10px] font-bold uppercase tracking-wider">
-              Sắp ra mắt
+              {t("checkout.payment.coming_soon", { defaultValue: "Sắp ra mắt" })}
             </span>
           </div>
 
           <p className="text-[11px] text-on-surface-variant pl-7">
-            Cổng thanh toán online thẻ Visa/Mastercard và ví MoMo, ZaloPay, VNPay đang được hoàn thiện tích hợp.
+            {t("checkout.payment.methods.cards_wallets.desc", {
+              defaultValue: "Cổng thanh toán online thẻ Visa/Mastercard và ví MoMo, ZaloPay, VNPay đang được hoàn thiện tích hợp.",
+            })}
           </p>
         </div>
       </div>

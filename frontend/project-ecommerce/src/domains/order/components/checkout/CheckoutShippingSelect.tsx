@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import type { CheckoutMethod } from "@/domains/customer/api/cartApi";
 import { formatCurrencyVND } from "@/shared/utils/currency";
 
@@ -13,6 +14,8 @@ export const CheckoutShippingSelect: React.FC<CheckoutShippingSelectProps> = ({
   selectedShippingId,
   onSelectShipping,
 }) => {
+  const { t } = useTranslation("customer");
+
   return (
     <div className="bg-surface-container-lowest rounded-2xl p-4 sm:p-5 border border-outline-variant/60 shadow-xs flex flex-col gap-3">
       <div className="flex items-center justify-between pb-2 border-b border-outline-variant/40">
@@ -21,17 +24,27 @@ export const CheckoutShippingSelect: React.FC<CheckoutShippingSelectProps> = ({
             local_shipping
           </span>
           <span className="font-bold text-xs sm:text-sm text-on-surface uppercase tracking-wide">
-            Phương thức vận chuyển (Shipping Method)
+            {t("checkout.shipping.title")}
           </span>
         </div>
         <span className="text-[11px] font-semibold text-secondary bg-secondary/10 px-2 py-0.5 rounded-full">
-          Giao hàng toàn quốc
+          {t("checkout.shipping.nationwide_badge")}
         </span>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
         {shippingMethods.map((method) => {
           const isSelected = method.id === selectedShippingId;
+          const isExpress = method.code === "EXPRESS";
+          const methodName = isExpress
+            ? t("checkout.shipping.express.name", { defaultValue: method.name })
+            : t("checkout.shipping.standard.name", { defaultValue: method.name });
+          const methodEstimated = isExpress
+            ? t("checkout.shipping.express.estimated", { defaultValue: method.estimated_days || "1–2 ngày" })
+            : t("checkout.shipping.standard.estimated", { defaultValue: method.estimated_days || "2–4 ngày" });
+          const methodNote = isExpress
+            ? t("checkout.shipping.express.note", { defaultValue: "Ưu tiên xử lý & giao hỏa tốc" })
+            : t("checkout.shipping.standard.note", { defaultValue: "Tiết kiệm chi phí, an toàn" });
 
           return (
             <div
@@ -58,14 +71,17 @@ export const CheckoutShippingSelect: React.FC<CheckoutShippingSelectProps> = ({
                   </span>
                   <div>
                     <h4 className="font-bold text-xs sm:text-sm text-on-surface">
-                      {method.name}
+                      {methodName}
                     </h4>
                     {method.estimated_days && (
                       <p className="text-[11px] text-on-surface-variant flex items-center gap-1 mt-0.5">
                         <span className="material-symbols-outlined text-[13px]">
                           schedule
                         </span>
-                        <span>Dự kiến: {method.estimated_days}</span>
+                        <span>
+                          {t("checkout.shipping.estimated_prefix", { defaultValue: "Dự kiến:" })}{" "}
+                          {methodEstimated}
+                        </span>
                       </p>
                     )}
                   </div>
@@ -80,11 +96,7 @@ export const CheckoutShippingSelect: React.FC<CheckoutShippingSelectProps> = ({
                 <span className="material-symbols-outlined text-[14px] text-teal-600">
                   verified
                 </span>
-                <span>
-                  {method.code === "EXPRESS"
-                    ? "Ưu tiên xử lý & giao hỏa tốc"
-                    : "Tiết kiệm chi phí, an toàn"}
-                </span>
+                <span>{methodNote}</span>
               </div>
             </div>
           );

@@ -1,0 +1,47 @@
+{
+  "invalid_shop_id": "Mã gian hàng không hợp lệ",
+  "invalid_shop_desc": "Đường dẫn gian hàng không chính xác hoặc đã bị thay đổi.",
+  "loading": "Đang tải thông tin gian hàng...",
+  "not_found_title": "Không tìm thấy gian hàng",
+  "not_found_desc": "Gian hàng này không tồn tại hoặc đã tạm ngừng hoạt động trên hệ thống sàn MarketPulse.",
+  "banner": {
+    "official_partner": "Official Partner",
+    "shipping_from": "Giao hàng từ: {{location}}",
+    "hotline": "Hotline: {{phone}}",
+    "active_now": "Đang hoạt động",
+    "followers_count": "{{count}} người theo dõi",
+    "chat_response_rate": "98% Phản hồi chat",
+    "products_count": "{{count}} sản phẩm",
+    "chat_button": "Nhắn tin",
+    "follow_button": "Theo dõi",
+    "following_button": "Đang theo dõi"
+  },
+  "toolbar": {
+    "tabs": {
+      "all": "Tất cả sản phẩm",
+      "new": "Hàng mới về",
+      "bestseller": "Bán chạy nhất",
+      "sale": "Flash Sale & Giảm giá",
+      "reviews": "Đánh giá Shop"
+    },
+    "sort": {
+      "popular": "Phổ biến",
+      "newest": "Mới nhất",
+      "sales": "Bán chạy",
+      "price_asc": "Giá: Thấp đến Cao",
+      "price_desc": "Giá: Cao đến Thấp",
+      "price_default": "Giá"
+    },
+    "search_placeholder": "Tìm kiếm sản phẩm trong shop này..."
+  },
+  "vouchers": {
+    "title": "Mã giảm giá từ gian hàng",
+    "claim": "Lưu mã",
+    "claimed": "Đã lưu",
+    "view_more": "Xem thêm mã giảm giá"
+  },
+  "grid": {
+    "empty": "Không tìm thấy sản phẩm nào trong gian hàng này.",
+    "page": "Trang {{current}} / {{total}}"
+  }
+}

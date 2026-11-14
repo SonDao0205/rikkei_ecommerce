@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export type ShopTabKey = "all" | "new" | "bestseller" | "sale" | "reviews";
 export type ShopSortKey = "popular" | "newest" | "sales" | "price_asc" | "price_desc";
@@ -24,6 +25,7 @@ export const ShopCatalogToolbar: React.FC<ShopCatalogToolbarProps> = ({
   sortKey,
   onSortChange,
 }) => {
+  const { t } = useTranslation("customer");
   const [isPriceDropdownOpen, setIsPriceDropdownOpen] = useState(false);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -33,9 +35,9 @@ export const ShopCatalogToolbar: React.FC<ShopCatalogToolbarProps> = ({
   };
 
   const getPriceLabel = () => {
-    if (sortKey === "price_asc") return "Giá: Thấp đến Cao";
-    if (sortKey === "price_desc") return "Giá: Cao đến Thấp";
-    return "Giá";
+    if (sortKey === "price_asc") return t("public_shop.toolbar.sort.price_asc");
+    if (sortKey === "price_desc") return t("public_shop.toolbar.sort.price_desc");
+    return t("public_shop.toolbar.sort.price_default");
   };
 
   return (
@@ -53,7 +55,7 @@ export const ShopCatalogToolbar: React.FC<ShopCatalogToolbarProps> = ({
                   : "bg-surface-container-low hover:bg-surface-container text-on-surface"
               }`}
             >
-              <span>Tất cả sản phẩm</span>
+              <span>{t("public_shop.toolbar.tabs.all")}</span>
               <span
                 className={`px-2 py-0.5 rounded-full font-label-sm text-label-sm ${
                   activeTab === "all"
@@ -74,7 +76,7 @@ export const ShopCatalogToolbar: React.FC<ShopCatalogToolbarProps> = ({
                   : "bg-surface-container-low hover:bg-surface-container text-on-surface"
               }`}
             >
-              Bộ sưu tập mới
+              {t("public_shop.toolbar.tabs.new")}
             </button>
 
             <button
@@ -86,7 +88,7 @@ export const ShopCatalogToolbar: React.FC<ShopCatalogToolbarProps> = ({
                   : "bg-surface-container-low hover:bg-surface-container text-on-surface"
               }`}
             >
-              Bán chạy nhất
+              {t("public_shop.toolbar.tabs.bestseller")}
             </button>
 
             <button
@@ -101,7 +103,7 @@ export const ShopCatalogToolbar: React.FC<ShopCatalogToolbarProps> = ({
               <span className="material-symbols-outlined text-[18px] text-tertiary">
                 bolt
               </span>
-              <span>Khuyến mãi / Flash Sale</span>
+              <span>{t("public_shop.toolbar.tabs.sale")}</span>
             </button>
 
             <button
@@ -113,7 +115,7 @@ export const ShopCatalogToolbar: React.FC<ShopCatalogToolbarProps> = ({
                   : "bg-surface-container-low hover:bg-surface-container text-on-surface"
               }`}
             >
-              Đánh giá từ khách hàng (2.4k)
+              {t("public_shop.toolbar.tabs.reviews")}
             </button>
           </div>
         </div>
@@ -131,7 +133,7 @@ export const ShopCatalogToolbar: React.FC<ShopCatalogToolbarProps> = ({
                 value={searchTerm}
                 onChange={(e) => onSearchChange(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Tìm kiếm sản phẩm trong shop này..."
+                placeholder={t("public_shop.toolbar.search_placeholder")}
                 className="w-full bg-transparent text-on-surface placeholder:text-outline font-body-md text-body-md focus:outline-none"
               />
               {searchTerm && (
@@ -152,7 +154,7 @@ export const ShopCatalogToolbar: React.FC<ShopCatalogToolbarProps> = ({
           {/* Sort Chips */}
           <div className="flex items-center gap-2 overflow-x-auto shrink-0 pb-1 lg:pb-0 scrollbar-none">
             <span className="font-label-md text-label-md text-outline shrink-0 mr-1">
-              Sắp xếp theo:
+              {t("home.catalog.sort_label", { defaultValue: "Sắp xếp theo:" })}
             </span>
 
             <button
@@ -164,7 +166,7 @@ export const ShopCatalogToolbar: React.FC<ShopCatalogToolbarProps> = ({
                   : "bg-surface-container-low hover:bg-surface-container text-on-surface"
               }`}
             >
-              Phổ biến
+              {t("public_shop.toolbar.sort.popular")}
             </button>
 
             <button
@@ -176,7 +178,7 @@ export const ShopCatalogToolbar: React.FC<ShopCatalogToolbarProps> = ({
                   : "bg-surface-container-low hover:bg-surface-container text-on-surface"
               }`}
             >
-              Mới nhất
+              {t("public_shop.toolbar.sort.newest")}
             </button>
 
             <button
@@ -188,7 +190,7 @@ export const ShopCatalogToolbar: React.FC<ShopCatalogToolbarProps> = ({
                   : "bg-surface-container-low hover:bg-surface-container text-on-surface"
               }`}
             >
-              Bán chạy
+              {t("public_shop.toolbar.sort.sales")}
             </button>
 
             {/* Dropdown Price Filter */}
@@ -220,7 +222,7 @@ export const ShopCatalogToolbar: React.FC<ShopCatalogToolbarProps> = ({
                       sortKey === "price_asc" ? "text-primary font-bold" : "text-on-surface"
                     }`}
                   >
-                    <span>Giá: Thấp đến Cao</span>
+                    <span>{t("public_shop.toolbar.sort.price_asc")}</span>
                     {sortKey === "price_asc" && (
                       <span className="material-symbols-outlined text-[16px]">check</span>
                     )}
@@ -235,7 +237,7 @@ export const ShopCatalogToolbar: React.FC<ShopCatalogToolbarProps> = ({
                       sortKey === "price_desc" ? "text-primary font-bold" : "text-on-surface"
                     }`}
                   >
-                    <span>Giá: Cao đến Thấp</span>
+                    <span>{t("public_shop.toolbar.sort.price_desc")}</span>
                     {sortKey === "price_desc" && (
                       <span className="material-symbols-outlined text-[16px]">check</span>
                     )}

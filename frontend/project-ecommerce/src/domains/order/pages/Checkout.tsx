@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import CustomerLayout from "@/app/layout/CustomerLayout";
 import { CartBreadcrumbStepper } from "@/domains/customer/components/cart/CartBreadcrumbStepper";
 import {
@@ -31,6 +32,7 @@ import type { CartItem } from "@/domains/customer/types/cart.types";
 import { formatCurrencyVND } from "@/shared/utils/currency";
 
 export const Checkout: React.FC = () => {
+  const { t } = useTranslation("customer");
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
@@ -454,23 +456,23 @@ export const Checkout: React.FC = () => {
               type="button"
               onClick={handleGoBack}
               className="group inline-flex w-fit items-center gap-1.5 font-semibold text-xs sm:text-sm text-on-surface-variant transition-colors hover:text-primary cursor-pointer py-1"
-              title="Quay lại trang trước"
+              title={t("checkout.header.back_title", { defaultValue: "Quay lại trang trước" })}
             >
               <span className="material-symbols-outlined text-[18px] transition-transform group-hover:-translate-x-1">
                 arrow_back
               </span>
-              <span>Quay lại</span>
+              <span>{t("checkout.header.back", { defaultValue: "Quay lại" })}</span>
             </button>
 
             <div className="flex flex-col gap-1">
               <h1 className="text-2xl sm:text-3xl font-bold text-on-surface tracking-tight font-headline-md flex items-center gap-2">
-                <span>Thanh toán đơn hàng</span>
+                <span>{t("checkout.header.title", { defaultValue: "Thanh toán đơn hàng" })}</span>
                 <span className="text-base sm:text-lg font-normal text-on-surface-variant">
-                  (Checkout)
+                  {t("checkout.header.subtitle", { defaultValue: "(Checkout)" })}
                 </span>
               </h1>
               <p className="text-xs sm:text-sm text-on-surface-variant">
-                Kiểm tra thông tin nhận hàng, chọn phương thức thanh toán và áp dụng các mã ưu đãi có sẵn.
+                {t("checkout.header.desc", { defaultValue: "Kiểm tra thông tin nhận hàng, chọn phương thức thanh toán và áp dụng các mã ưu đãi có sẵn." })}
               </p>
             </div>
           </div>
@@ -479,7 +481,7 @@ export const Checkout: React.FC = () => {
             <div className="py-24 flex flex-col items-center justify-center gap-3 text-center">
               <span className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></span>
               <p className="text-sm text-on-surface-variant font-medium">
-                Đang chuẩn bị thông tin thanh toán...
+                {t("checkout.loading", { defaultValue: "Đang chuẩn bị thông tin thanh toán..." })}
               </p>
             </div>
           ) : selectedItems.length === 0 ? (
@@ -488,17 +490,17 @@ export const Checkout: React.FC = () => {
                 <span className="material-symbols-outlined text-[32px]">shopping_cart</span>
               </div>
               <h2 className="text-lg font-bold text-on-surface mb-2">
-                Không có sản phẩm nào được chọn
+                {t("checkout.empty_selected.title", { defaultValue: "Không có sản phẩm nào được chọn" })}
               </h2>
               <p className="text-xs sm:text-sm text-outline mb-6">
-                Vui lòng quay lại giỏ hàng và chọn ít nhất một sản phẩm còn hàng để tiếp tục thanh toán.
+                {t("checkout.empty_selected.desc", { defaultValue: "Vui lòng quay lại giỏ hàng và chọn ít nhất một sản phẩm còn hàng để tiếp tục thanh toán." })}
               </p>
               <button
                 type="button"
                 onClick={() => navigate("/cart")}
                 className="px-6 py-2.5 rounded-xl bg-primary text-on-primary font-bold text-xs sm:text-sm shadow-md hover:bg-primary-container transition-all cursor-pointer"
               >
-                Quay lại giỏ hàng
+                {t("checkout.empty_selected.back_to_cart", { defaultValue: "Quay lại giỏ hàng" })}
               </button>
             </div>
           ) : (

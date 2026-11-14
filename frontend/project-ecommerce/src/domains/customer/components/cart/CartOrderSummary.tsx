@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { CartSummary, PlatformVoucher } from "@/domains/customer/types/cart.types";
 import { formatCurrencyVND } from "@/shared/utils/currency";
 import { AVAILABLE_PLATFORM_VOUCHERS } from "@/domains/customer/data/availableVouchers";
@@ -20,6 +21,7 @@ export const CartOrderSummary: React.FC<CartOrderSummaryProps> = ({
   onCheckout,
   isCheckingOut = false,
 }) => {
+  const { t } = useTranslation("customer");
   const [couponCode, setCouponCode] = useState(
     platformVoucher?.code || "RETRO50"
   );
@@ -45,10 +47,10 @@ export const CartOrderSummary: React.FC<CartOrderSummaryProps> = ({
       {/* Summary Header */}
       <div className="flex items-center justify-between pb-3 border-b border-surface-container">
         <h2 className="font-headline-md text-lg sm:text-xl text-on-surface font-bold">
-          Order Summary
+          {t("cart.summary.title")}
         </h2>
         <span className="text-xs sm:text-sm text-secondary font-bold">
-          {summary.selected_count} items selected
+          {t("cart.summary.selected_items", { count: summary.selected_count })}
         </span>
       </div>
 
@@ -59,12 +61,12 @@ export const CartOrderSummary: React.FC<CartOrderSummaryProps> = ({
             <span className="material-symbols-outlined text-primary text-[18px]">
               redeem
             </span>
-            <span>Mã giảm giá Sàn (Platform Voucher)</span>
+            <span>{t("cart.summary.platform_voucher_title")}</span>
           </span>
           {platformVoucher?.is_applied && (
             <span className="text-[11px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
               <span className="material-symbols-outlined text-[12px]">check</span>
-              <span>Đang áp dụng</span>
+              <span>{t("cart.summary.voucher_applied")}</span>
             </span>
           )}
         </div>
@@ -208,7 +210,7 @@ export const CartOrderSummary: React.FC<CartOrderSummaryProps> = ({
       <div className="flex flex-col gap-2.5 text-xs sm:text-sm pt-1">
         <div className="flex items-center justify-between">
           <span className="text-on-surface-variant">
-            Items Subtotal ({summary.selected_count} món)
+            {t("cart.summary.items_subtotal", { count: summary.selected_count })}
           </span>
           <span className="text-on-surface font-bold">
             {formatCurrencyVND(summary.items_subtotal)}
@@ -216,7 +218,7 @@ export const CartOrderSummary: React.FC<CartOrderSummaryProps> = ({
         </div>
 
         <div className="flex items-center justify-between">
-          <span className="text-on-surface-variant">Estimated Shipping (final at checkout)</span>
+          <span className="text-on-surface-variant">{t("cart.summary.estimated_shipping")}</span>
           <span className="text-on-surface">
             {summary.estimated_shipping > 0
               ? formatCurrencyVND(summary.estimated_shipping)
@@ -230,7 +232,7 @@ export const CartOrderSummary: React.FC<CartOrderSummaryProps> = ({
               <span className="material-symbols-outlined text-[16px]">
                 local_shipping
               </span>
-              <span>Shipping Discount</span>
+              <span>{t("cart.summary.shipping_discount")}</span>
             </span>
             <span className="font-bold">
               -{formatCurrencyVND(summary.shipping_discount)}
@@ -240,7 +242,7 @@ export const CartOrderSummary: React.FC<CartOrderSummaryProps> = ({
 
         {summary.store_vouchers_discount > 0 && (
           <div className="flex items-center justify-between text-secondary">
-            <span>Store Vouchers</span>
+            <span>{t("cart.summary.store_vouchers")}</span>
             <span className="font-bold">
               -{formatCurrencyVND(summary.store_vouchers_discount)}
             </span>
@@ -249,7 +251,7 @@ export const CartOrderSummary: React.FC<CartOrderSummaryProps> = ({
 
         {summary.platform_voucher_discount > 0 && (
           <div className="flex items-center justify-between text-secondary">
-            <span>Platform Voucher</span>
+            <span>{t("cart.summary.platform_voucher")}</span>
             <span className="font-bold">
               -{formatCurrencyVND(summary.platform_voucher_discount)}
             </span>
@@ -262,9 +264,9 @@ export const CartOrderSummary: React.FC<CartOrderSummaryProps> = ({
         <div className="flex items-baseline justify-between">
           <div>
             <span className="text-sm sm:text-base font-bold text-on-surface block">
-              Estimated Total
+              {t("cart.summary.estimated_total")}
             </span>
-            <span className="text-[11px] text-outline">Final total confirmed in checkout quote</span>
+            <span className="text-[11px] text-outline">{t("cart.summary.final_total_notice")}</span>
           </div>
           <div className="text-right">
             <span className="text-2xl sm:text-3xl text-primary-container font-black leading-none block">
@@ -277,7 +279,7 @@ export const CartOrderSummary: React.FC<CartOrderSummaryProps> = ({
           <div className="p-2 rounded-lg bg-surface-container text-primary text-xs font-bold flex items-center justify-center gap-1 mt-2 text-center">
             <span className="material-symbols-outlined text-[16px]">savings</span>
             <span>
-              You save a total of {formatCurrencyVND(summary.total_savings)} on this purchase!
+              {t("cart.summary.savings_notice", { amount: formatCurrencyVND(summary.total_savings) })}
             </span>
           </div>
         )}
@@ -296,8 +298,8 @@ export const CartOrderSummary: React.FC<CartOrderSummaryProps> = ({
       >
         <span>
           {isCheckingOut
-            ? "Đang tải báo giá..."
-            : "Chọn giao hàng, thanh toán & xem báo giá"}
+            ? t("cart.summary.loading_quote")
+            : t("cart.summary.checkout_btn")}
         </span>
         <span className="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">
           arrow_forward
@@ -311,7 +313,7 @@ export const CartOrderSummary: React.FC<CartOrderSummaryProps> = ({
             shield_with_heart
           </span>
           <span className="text-[10px] leading-tight font-bold">
-            100% Escrow Protection
+            {t("cart.summary.protection_guarantee")}
           </span>
         </div>
         <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-surface-container-low border border-outline-variant/30">
@@ -319,7 +321,7 @@ export const CartOrderSummary: React.FC<CartOrderSummaryProps> = ({
             sync_alt
           </span>
           <span className="text-[10px] leading-tight font-bold">
-            7-Day Free Returns
+            {t("cart.summary.free_returns")}
           </span>
         </div>
         <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-surface-container-low border border-outline-variant/30">
@@ -327,7 +329,7 @@ export const CartOrderSummary: React.FC<CartOrderSummaryProps> = ({
             package_2
           </span>
           <span className="text-[10px] leading-tight font-bold">
-            Inspect Before Pay
+            {t("cart.summary.inspect_before_pay")}
           </span>
         </div>
       </div>
@@ -335,10 +337,10 @@ export const CartOrderSummary: React.FC<CartOrderSummaryProps> = ({
       {/* Payment Methods Accepted */}
       <div className="flex flex-col gap-1.5 pt-1">
         <span className="text-[10px] uppercase font-bold text-outline text-center tracking-wider">
-          Accepted Payment Options
+          {t("cart.summary.accepted_payments_title")}
         </span>
         <p className="text-center text-[11px] text-on-surface-variant">
-          Chọn phương thức đang được hệ thống hỗ trợ ở bước checkout.
+          {t("cart.summary.accepted_payments_notice")}
         </p>
       </div>
     </div>

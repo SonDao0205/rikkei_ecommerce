@@ -1,0 +1,87 @@
+{
+  "dashboard": {
+    "welcome": {
+      "tier": "Hạng",
+      "code": "Mã gian hàng: {{code}}",
+      "synced_at": "Đồng bộ lúc: {{time}}",
+      "greeting": "Xin chào, {{name}}",
+      "operational_status": "Chỉ số vận hành hệ thống:",
+      "refresh": "Làm mới dữ liệu",
+      "filters": {
+        "today": "Hôm nay",
+        "yesterday": "Hôm qua",
+        "7days": "7 ngày qua",
+        "this_month": "Tháng này"
+      }
+    },
+    "metrics": {
+      "today_revenue": "Doanh thu hôm nay",
+      "revenue_target": "Chỉ tiêu: 20M ₫",
+      "new_orders": "Đơn hàng mới",
+      "orders_unit": "{{count}} Đơn",
+      "payment_ratio": "Tỷ lệ thanh toán",
+      "conversion_rate": "Tỷ lệ chuyển đổi",
+      "industry_top": "Top 15% ngành",
+      "wallet_balance": "Số dư ví người bán",
+      "pending_settlement": "Chờ đối soát:",
+      "fast_withdraw": "Rút tiền nhanh",
+      "settlement_cycle": "Chu kỳ T+2",
+      "unit_orders": "đơn"
+    },
+    "urgent": {
+      "pending_orders": "Đơn chờ duyệt",
+      "pending_orders_sub": "Cần duyệt trước 12:00 để kịp chuyến giao trưa",
+      "packing_orders": "Đang đóng gói",
+      "packing_orders_sub": "Shipper sẽ lấy hàng lúc 14:30 chiều nay",
+      "low_stock": "Cảnh báo sắp hết hàng",
+      "low_stock_sub": "SKU tồn kho dưới ngưỡng an toàn (<= 5)",
+      "complaints": "Khiếu nại / Hoàn tiền",
+      "complaints_sub": "Yêu cầu trả hàng cần xử lý trước 24h",
+      "btn_confirm": "Duyệt đơn ngay",
+      "btn_pack": "In vận đơn",
+      "btn_restock": "Nhập kho ngay",
+      "btn_resolve": "Xem khiếu nại"
+    },
+    "chart": {
+      "title": "Biểu đồ xu hướng bán hàng",
+      "subtitle": "Hiệu suất luân chuyển doanh số và sản lượng tiêu thụ thời gian thực",
+      "tag_7days": "7 Ngày qua",
+      "revenue_tab": "Doanh thu (₫)",
+      "volume_tab": "Sản lượng (SP)",
+      "highlight": "Điểm nổi bật:"
+    },
+    "top_products": {
+      "title": "Top 5 Bán Chạy",
+      "subtitle": "Thống kê 30 ngày qua",
+      "detail": "Chi tiết",
+      "sold": "{{count}} đã bán",
+      "low_stock_alert": "Sắp hết hàng",
+      "revenue_label": "Doanh số: {{amount}}"
+    },
+    "urgent_orders": {
+      "title": "Đơn hàng khẩn cấp cần xử lý ngay",
+      "subtitle": "Danh sách các đơn cần duyệt hoặc giao trước mốc ca nhận hàng của đơn vị vận chuyển",
+      "filter_status": "Lọc theo trạng thái",
+      "filter_label": "Lọc: {{status}}",
+      "view_all": "Xem tất cả đơn ({{count}})",
+      "th_code": "Mã đơn hàng",
+      "th_customer": "Khách hàng",
+      "th_product": "Sản phẩm & Qty",
+      "th_total": "Tổng tiền & Thanh toán",
+      "th_status": "Trạng thái",
+      "th_actions": "Thao tác",
+      "empty": "Không có đơn hàng khẩn cấp nào cần xử lý.",
+      "btn_confirm": "Xác nhận đơn",
+      "btn_print": "In nhãn gửi hàng",
+      "status_pending": "Chờ xác nhận",
+      "status_packing": "Đang đóng gói",
+      "status_handed_over": "Đã bàn giao",
+      "sla_prefix": "Giao trước"
+    },
+    "error": {
+      "cannot_load": "Không thể tải dữ liệu Bảng điều khiển",
+      "retry": "Thử tải lại"
+    }
+  }
+}
+
