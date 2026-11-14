@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { UserOrder, UserOrderTimelineLog } from "@/shared/types";
 
 export interface OrderDetailStepperProps {
@@ -97,6 +98,7 @@ export const OrderDetailStepper: React.FC<OrderDetailStepperProps> = ({
   onCopySuccess,
   onShowToast,
 }) => {
+  const { t } = useTranslation("customer");
   const [isTimelineCollapsed, setIsTimelineCollapsed] = useState(false);
 
   // Stepper progress index (0 to 4):
@@ -128,9 +130,9 @@ export const OrderDetailStepper: React.FC<OrderDetailStepperProps> = ({
   const handleCopy = (code: string) => {
     const notify = onCopySuccess || onShowToast;
     navigator.clipboard.writeText(code).then(() => {
-      notify?.(`Đã sao chép mã vận đơn: ${code}`);
+      notify?.(t("profile.orders.detail.stepper.copied_success", { code }));
     }).catch(() => {
-      notify?.("Sao chép thành công!");
+      notify?.(t("profile.orders.detail.stepper.copied_success", { code }));
     });
   };
 
@@ -154,6 +156,56 @@ export const OrderDetailStepper: React.FC<OrderDetailStepperProps> = ({
       ? getStandardTimeline(order)
       : order.timeline;
 
+  const localizeLogTitle = (title: string) => {
+    const lower = title.toLowerCase();
+    if (lower.includes("thành công") || lower.includes("delivered")) {
+      return t("profile.orders.detail.stepper.timeline.delivered_title");
+    }
+    if (lower.includes("vận chuyển") || lower.includes("shipping") || lower.includes("transit")) {
+      return t("profile.orders.detail.stepper.timeline.shipping_title");
+    }
+    if (lower.includes("lấy đơn") || lower.includes("pickup") || lower.includes("packing")) {
+      return t("profile.orders.detail.stepper.timeline.packing_title");
+    }
+    if (lower.includes("xác nhận") || lower.includes("pending")) {
+      return t("profile.orders.detail.stepper.timeline.pending_title");
+    }
+    if (lower.includes("đã đặt") || lower.includes("placed")) {
+      return t("profile.orders.detail.stepper.timeline.placed_title");
+    }
+    if (lower.includes("hủy") || lower.includes("cancelled")) {
+      return t("profile.orders.detail.stepper.timeline.cancelled_title");
+    }
+    return title;
+  };
+
+  const localizeLogSubtitle = (subtitle?: string) => {
+    if (!subtitle) return "";
+    if (subtitle.includes("ký nhận") || subtitle.includes("signed")) {
+      return t("profile.orders.detail.stepper.timeline.delivered_subtitle");
+    }
+    if (subtitle.includes("Dự kiến giao hôm nay") || subtitle.includes("today")) {
+      return t("profile.orders.detail.stepper.timeline.shipping_subtitle_delivered_today");
+    }
+    if (subtitle.includes("Trần Minh Quân") || subtitle.includes("courier")) {
+      return t("profile.orders.detail.stepper.timeline.shipping_subtitle");
+    }
+    if (subtitle.includes("bàn giao") || subtitle.includes("handover")) {
+      return t("profile.orders.detail.stepper.timeline.packing_subtitle");
+    }
+    if (subtitle.includes("kiểm tra và xác nhận") || subtitle.includes("confirming")) {
+      return t("profile.orders.detail.stepper.timeline.pending_subtitle");
+    }
+    if (subtitle.includes("khởi tạo thành công") || subtitle.includes("ghi nhận đơn hàng")) {
+      return t("profile.orders.detail.stepper.timeline.placed_subtitle");
+    }
+    if (subtitle.startsWith("Lý do:")) {
+      const reason = subtitle.replace(/^Lý do:\s*/, "");
+      return t("profile.orders.detail.stepper.timeline.cancel_reason_prefix", { reason });
+    }
+    return subtitle;
+  };
+
   return (
     <section className="bg-surface-container-lowest rounded-2xl p-6 md:p-8 shadow-sm border border-outline-variant/40 flex flex-col gap-8">
       {/* ETA Header */}
@@ -164,10 +216,10 @@ export const OrderDetailStepper: React.FC<OrderDetailStepperProps> = ({
           </div>
           <div>
             <h2 className="font-headline-md text-headline-md text-on-surface font-bold">
-              Tiến độ giao hàng
+              {t("profile.orders.detail.stepper.title")}
             </h2>
             <p className="font-body-sm text-body-sm text-outline">
-              Bưu kiện đang di chuyển tới điểm giao nhận gần nhất
+              {t("profile.orders.detail.stepper.subtitle")}
             </p>
           </div>
         </div>
@@ -177,7 +229,7 @@ export const OrderDetailStepper: React.FC<OrderDetailStepperProps> = ({
             event_available
           </span>
           <span>
-            Dự kiến nhận: <strong>{estimatedDate}</strong> (Còn 1-2 ngày)
+            {t("profile.orders.detail.stepper.estimated_arrival", { date: estimatedDate })}
           </span>
         </div>
       </div>
@@ -210,7 +262,7 @@ export const OrderDetailStepper: React.FC<OrderDetailStepperProps> = ({
                 currentStep === 0 ? "text-primary" : "text-on-surface"
               }`}
             >
-              Đơn hàng đã đặt
+              {t("profile.orders.detail.stepper.step_order_placed")}
             </span>
             <span className="font-body-sm text-body-sm text-outline mt-0.5">
               {order.createdAt ? order.createdAt.split("-")[0] : "26/10 14:20"}
@@ -242,7 +294,7 @@ export const OrderDetailStepper: React.FC<OrderDetailStepperProps> = ({
                 currentStep === 1 ? "text-primary" : "text-on-surface"
               }`}
             >
-              Chờ xác nhận
+              {t("profile.orders.detail.stepper.step_pending")}
             </span>
             <span className="font-body-sm text-body-sm text-outline mt-0.5">
               26/10 14:45
@@ -274,7 +326,7 @@ export const OrderDetailStepper: React.FC<OrderDetailStepperProps> = ({
                 currentStep === 2 ? "text-primary" : "text-on-surface"
               }`}
             >
-              Chờ lấy đơn hàng
+              {t("profile.orders.detail.stepper.step_packing")}
             </span>
             <span className="font-body-sm text-body-sm text-outline mt-0.5">
               26/10 18:30
@@ -306,7 +358,7 @@ export const OrderDetailStepper: React.FC<OrderDetailStepperProps> = ({
                 currentStep === 3 ? "text-primary" : "text-on-surface"
               }`}
             >
-              Đang vận chuyển
+              {t("profile.orders.detail.stepper.step_shipping")}
             </span>
             <span
               className={`font-body-sm text-body-sm mt-0.5 ${
@@ -335,10 +387,10 @@ export const OrderDetailStepper: React.FC<OrderDetailStepperProps> = ({
                 currentStep === 4 ? "text-emerald-700" : "text-outline"
               }`}
             >
-              Giao hàng thành công
+              {t("profile.orders.detail.stepper.step_completed")}
             </span>
             <span className="font-body-sm text-body-sm text-outline mt-0.5">
-              {order.status === "completed" ? "28/10 14:30" : `Dự kiến ${estimatedDate}`}
+              {order.status === "completed" ? "28/10 14:30" : t("profile.orders.detail.stepper.est_prefix", { date: estimatedDate })}
             </span>
           </div>
         </div>
@@ -360,12 +412,12 @@ export const OrderDetailStepper: React.FC<OrderDetailStepperProps> = ({
                   {courierName}
                 </span>
                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-secondary-fixed text-on-secondary-fixed uppercase tracking-wider">
-                  Express
+                  {t("profile.orders.detail.stepper.carrier_express")}
                 </span>
               </div>
               <div className="flex items-center gap-2 mt-1">
                 <span className="font-body-sm text-body-sm text-outline">
-                  Mã vận đơn:
+                  {t("profile.orders.detail.stepper.tracking_code")}
                 </span>
                 <span className="font-label-md text-label-md font-mono font-bold text-on-surface tracking-wide">
                   {trackingCode}
@@ -374,7 +426,7 @@ export const OrderDetailStepper: React.FC<OrderDetailStepperProps> = ({
                   type="button"
                   onClick={() => handleCopy(trackingCode)}
                   className="p-1 hover:bg-surface-container rounded transition-colors text-primary flex items-center cursor-pointer"
-                  title="Sao chép mã"
+                  title={t("profile.orders.detail.stepper.copy_code")}
                 >
                   <span className="material-symbols-outlined text-[16px]">
                     content_copy
@@ -391,7 +443,7 @@ export const OrderDetailStepper: React.FC<OrderDetailStepperProps> = ({
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-surface-container-lowest hover:bg-surface-container-high text-primary font-label-md text-label-md transition-colors shadow-xs"
             >
-              <span>Tra cứu trên website GHN</span>
+              <span>{t("profile.orders.detail.stepper.track_on_website", { carrier: "GHN" })}</span>
               <span className="material-symbols-outlined text-[16px]">open_in_new</span>
             </a>
 
@@ -400,7 +452,7 @@ export const OrderDetailStepper: React.FC<OrderDetailStepperProps> = ({
               onClick={() => setIsTimelineCollapsed(!isTimelineCollapsed)}
               className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-colors cursor-pointer"
             >
-              <span>{isTimelineCollapsed ? "Xem chi tiết" : "Thu gọn"}</span>
+              <span>{isTimelineCollapsed ? t("profile.orders.detail.stepper.view_details") : t("profile.orders.detail.stepper.collapse")}</span>
               <span className="material-symbols-outlined text-[18px]">
                 {isTimelineCollapsed ? "expand_more" : "expand_less"}
               </span>
@@ -433,7 +485,7 @@ export const OrderDetailStepper: React.FC<OrderDetailStepperProps> = ({
                     <div className="flex items-center gap-2 flex-wrap">
                       {log.isLatest && (
                         <span className="font-label-sm text-label-sm px-2 py-0.5 rounded bg-primary text-on-primary font-bold">
-                          Mới nhất
+                          {t("profile.orders.detail.stepper.latest")}
                         </span>
                       )}
                       <span
@@ -446,12 +498,12 @@ export const OrderDetailStepper: React.FC<OrderDetailStepperProps> = ({
                     </div>
 
                     <p className="font-body-md text-body-md text-on-surface font-medium mt-1">
-                      {log.title}
+                      {localizeLogTitle(log.title)}
                     </p>
 
                     {log.subtitle && (
                       <span className="font-body-sm text-body-sm text-outline block mt-0.5">
-                        {log.subtitle}
+                        {localizeLogSubtitle(log.subtitle)}
                       </span>
                     )}
                   </div>

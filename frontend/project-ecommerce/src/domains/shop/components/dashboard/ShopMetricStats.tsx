@@ -1,6 +1,5 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import type { ShopKpiMetrics } from "@/domains/shop/types/shopDashboard.types";
 
 interface ShopMetricStatsProps {
@@ -8,8 +7,6 @@ interface ShopMetricStatsProps {
 }
 
 export const ShopMetricStats: React.FC<ShopMetricStatsProps> = ({ metrics }) => {
-  const { t } = useTranslation('shop');
-
   // Sparkline generator for conversion rate & revenue
   const renderSparkline = () => {
     return (
@@ -48,7 +45,7 @@ export const ShopMetricStats: React.FC<ShopMetricStatsProps> = ({ metrics }) => 
         <div className="flex items-start justify-between">
           <div className="flex flex-col">
             <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">
-              {t("dashboard.metrics.today_revenue")}
+              Doanh thu hôm nay
             </span>
             <span className="font-headline-lg text-headline-lg font-bold text-on-surface mt-2 font-mono tracking-tight">
               {metrics.formattedRevenue}
@@ -66,7 +63,7 @@ export const ShopMetricStats: React.FC<ShopMetricStatsProps> = ({ metrics }) => 
             {metrics.revenueChangeLabel}
           </span>
           <span className="font-label-sm text-label-sm text-outline font-mono">
-            {t("dashboard.metrics.revenue_target")}
+            Chỉ tiêu: 20M ₫
           </span>
         </div>
 
@@ -81,10 +78,10 @@ export const ShopMetricStats: React.FC<ShopMetricStatsProps> = ({ metrics }) => 
         <div className="flex items-start justify-between">
           <div className="flex flex-col">
             <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">
-              {t("dashboard.metrics.new_orders")}
+              Đơn hàng mới
             </span>
             <span className="font-headline-lg text-headline-lg font-bold text-on-surface mt-2 font-mono tracking-tight">
-              {t("dashboard.metrics.orders_unit", { count: metrics.todayOrders })}
+              {metrics.todayOrders} Đơn
             </span>
           </div>
           <div className="w-10 h-10 rounded-xl bg-secondary-fixed text-secondary flex items-center justify-center shrink-0">
@@ -94,7 +91,7 @@ export const ShopMetricStats: React.FC<ShopMetricStatsProps> = ({ metrics }) => 
 
         <div className="mt-4">
           <div className="flex items-center justify-between text-label-sm font-label-sm mb-1.5">
-            <span className="font-medium text-on-surface-variant">{t("dashboard.metrics.payment_ratio")}</span>
+            <span className="font-medium text-on-surface-variant">Tỷ lệ thanh toán</span>
             <span className="font-mono font-semibold text-secondary">
               {metrics.codOrdersPercent}% COD • {metrics.digitalOrdersPercent}% MoMo
             </span>
@@ -104,19 +101,19 @@ export const ShopMetricStats: React.FC<ShopMetricStatsProps> = ({ metrics }) => 
             <div
               className="h-full bg-primary"
               style={{ width: `${metrics.codOrdersPercent}%` }}
-              title={`COD: ${metrics.codOrdersCount} ${t("dashboard.metrics.unit_orders")}`}
+              title={`COD: ${metrics.codOrdersCount} đơn`}
             />
             <div
               className="h-full bg-secondary-container"
               style={{ width: `${metrics.digitalOrdersPercent}%` }}
-              title={`Digital: ${metrics.digitalOrdersCount} ${t("dashboard.metrics.unit_orders")}`}
+              title={`Digital: ${metrics.digitalOrdersCount} đơn`}
             />
           </div>
         </div>
 
         <div className="mt-3 flex items-center justify-between font-label-sm text-label-sm text-outline-variant">
-          <span>COD: {metrics.codOrdersCount} {t("dashboard.metrics.unit_orders")}</span>
-          <span>Ví MoMo: {metrics.digitalOrdersCount} {t("dashboard.metrics.unit_orders")}</span>
+          <span>COD: {metrics.codOrdersCount} đơn</span>
+          <span>Ví MoMo: {metrics.digitalOrdersCount} đơn</span>
         </div>
       </div>
 
@@ -125,7 +122,7 @@ export const ShopMetricStats: React.FC<ShopMetricStatsProps> = ({ metrics }) => 
         <div className="flex items-start justify-between">
           <div className="flex flex-col">
             <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">
-              {t("dashboard.metrics.conversion_rate")}
+              Tỷ lệ chuyển đổi
             </span>
             <span className="font-headline-lg text-headline-lg font-bold text-on-surface mt-2 font-mono tracking-tight">
               {metrics.conversionRate}%
@@ -142,7 +139,7 @@ export const ShopMetricStats: React.FC<ShopMetricStatsProps> = ({ metrics }) => 
             +{metrics.conversionChangePercent}% {metrics.conversionChangeLabel}
           </span>
           <span className="font-label-sm text-label-sm text-outline font-mono">
-            {t("dashboard.metrics.industry_top")}
+            Top 15% ngành
           </span>
         </div>
 
@@ -156,7 +153,7 @@ export const ShopMetricStats: React.FC<ShopMetricStatsProps> = ({ metrics }) => 
         <div className="flex items-start justify-between">
           <div className="flex flex-col">
             <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">
-              {t("dashboard.metrics.wallet_balance")}
+              Số dư ví người bán
             </span>
             <span className="font-headline-lg text-headline-lg font-bold text-on-surface mt-2 font-mono tracking-tight">
               {metrics.formattedWalletBalance}
@@ -168,7 +165,7 @@ export const ShopMetricStats: React.FC<ShopMetricStatsProps> = ({ metrics }) => 
         </div>
 
         <div className="mt-4 flex items-center justify-between bg-surface-container-low px-3 py-1.5 rounded-lg border border-outline-variant/20">
-          <span className="font-label-sm text-label-sm text-on-surface-variant">{t("dashboard.metrics.pending_settlement")}</span>
+          <span className="font-label-sm text-label-sm text-on-surface-variant">Chờ đối soát:</span>
           <span className="font-mono font-bold text-on-surface text-label-sm">
             {metrics.formattedPendingSettlement}
           </span>
@@ -179,10 +176,10 @@ export const ShopMetricStats: React.FC<ShopMetricStatsProps> = ({ metrics }) => 
             to="/shop/finances"
             className="inline-flex items-center gap-1 font-label-md text-label-md text-primary font-semibold hover:underline"
           >
-            {t("dashboard.metrics.fast_withdraw")}
+            Rút tiền nhanh
             <span className="material-symbols-outlined text-[16px]">north_east</span>
           </Link>
-          <span className="text-[11px] text-outline font-mono">{t("dashboard.metrics.settlement_cycle")}</span>
+          <span className="text-[11px] text-outline font-mono">Chu kỳ T+2</span>
         </div>
       </div>
     </div>

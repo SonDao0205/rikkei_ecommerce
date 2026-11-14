@@ -4,10 +4,6 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 
 import viCommon from '@/shared/locales/vi/common.json';
 import enCommon from '@/shared/locales/en/common.json';
-import viNav from '@/shared/locales/vi/nav.json';
-import enNav from '@/shared/locales/en/nav.json';
-import viShop from '@/shared/locales/vi/shop.json';
-import enShop from '@/shared/locales/en/shop.json';
 import viCustomerHeader from '@/shared/locales/vi/customer/header.json';
 import viCustomerFooter from '@/shared/locales/vi/customer/footer.json';
 import viCustomerHome from '@/shared/locales/vi/customer/home.json';
@@ -15,6 +11,9 @@ import viCustomerProduct from '@/shared/locales/vi/customer/product.json';
 import viCustomerPublicShop from '@/shared/locales/vi/customer/public_shop.json';
 import viCustomerCart from '@/shared/locales/vi/customer/cart.json';
 import viCustomerCheckout from '@/shared/locales/vi/customer/checkout.json';
+import viCustomerOrderComplete from '@/shared/locales/vi/customer/order_complete.json';
+import viCustomerWishlist from '@/shared/locales/vi/customer/wishlist.json';
+import viCustomerProfile from '@/shared/locales/vi/customer/profile.json';
 import enCustomerHeader from '@/shared/locales/en/customer/header.json';
 import enCustomerFooter from '@/shared/locales/en/customer/footer.json';
 import enCustomerHome from '@/shared/locales/en/customer/home.json';
@@ -22,14 +21,15 @@ import enCustomerProduct from '@/shared/locales/en/customer/product.json';
 import enCustomerPublicShop from '@/shared/locales/en/customer/public_shop.json';
 import enCustomerCart from '@/shared/locales/en/customer/cart.json';
 import enCustomerCheckout from '@/shared/locales/en/customer/checkout.json';
+import enCustomerOrderComplete from '@/shared/locales/en/customer/order_complete.json';
+import enCustomerWishlist from '@/shared/locales/en/customer/wishlist.json';
+import enCustomerProfile from '@/shared/locales/en/customer/profile.json';
 
 export const defaultNS = 'common';
 
 export const resources = {
   vi: {
     common: viCommon,
-    nav: viNav,
-    shop: viShop,
     customer: {
       header: viCustomerHeader,
       footer: viCustomerFooter,
@@ -38,12 +38,13 @@ export const resources = {
       public_shop: viCustomerPublicShop,
       cart: viCustomerCart,
       checkout: viCustomerCheckout,
+      order_complete: viCustomerOrderComplete,
+      wishlist: viCustomerWishlist,
+      profile: viCustomerProfile,
     },
   },
   en: {
     common: enCommon,
-    nav: enNav,
-    shop: enShop,
     customer: {
       header: enCustomerHeader,
       footer: enCustomerFooter,
@@ -52,6 +53,9 @@ export const resources = {
       public_shop: enCustomerPublicShop,
       cart: enCustomerCart,
       checkout: enCustomerCheckout,
+      order_complete: enCustomerOrderComplete,
+      wishlist: enCustomerWishlist,
+      profile: enCustomerProfile,
     },
   },
 } as const;

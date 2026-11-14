@@ -1,6 +1,9 @@
-﻿import React from "react";
+import React from "react";
+import { useTranslation } from "react-i18next";
 
 export const WishlistTrustBanner: React.FC = () => {
+  const { t } = useTranslation("customer");
+
   return (
     <div className="p-4 sm:p-6 rounded-2xl bg-surface-container-low grid grid-cols-1 md:grid-cols-3 gap-6 mt-4 border border-outline-variant/40">
       <div className="flex items-start gap-4">
@@ -9,10 +12,10 @@ export const WishlistTrustBanner: React.FC = () => {
         </div>
         <div className="flex flex-col">
           <h4 className="font-label-lg text-sm sm:text-base text-on-surface font-bold">
-            Cảnh báo hạ giá tự động
+            {t("wishlist.trust.price_alert_title")}
           </h4>
           <p className="text-xs sm:text-sm text-on-surface-variant">
-            Sản phẩm trong danh sách sẽ kích hoạt chuông thông báo khi nhà bán hàng áp dụng mã voucher hoặc Flash Sale.
+            {t("wishlist.trust.price_alert_desc")}
           </p>
         </div>
       </div>
@@ -23,10 +26,10 @@ export const WishlistTrustBanner: React.FC = () => {
         </div>
         <div className="flex flex-col">
           <h4 className="font-label-lg text-sm sm:text-base text-on-surface font-bold">
-            Lưu trữ giỏ hàng 30 ngày
+            {t("wishlist.trust.save_cloud_title")}
           </h4>
           <p className="text-xs sm:text-sm text-on-surface-variant">
-            Các sản phẩm yêu thích được lưu cố định trên đám mây tài khoản, đồng bộ mượt mà giữa ứng dụng điện thoại và web.
+            {t("wishlist.trust.save_cloud_desc")}
           </p>
         </div>
       </div>
@@ -37,10 +40,10 @@ export const WishlistTrustBanner: React.FC = () => {
         </div>
         <div className="flex flex-col">
           <h4 className="font-label-lg text-sm sm:text-base text-on-surface font-bold">
-            100% Cửa hàng xác thực
+            {t("wishlist.trust.verified_shops_title")}
           </h4>
           <p className="text-xs sm:text-sm text-on-surface-variant">
-            Mọi sản phẩm từ nghệ nhân và thương hiệu địa phương đều trải qua quy trình kiểm duyệt chất lượng 5 bước nghiêm ngặt.
+            {t("wishlist.trust.verified_shops_desc")}
           </p>
         </div>
       </div>
@@ -49,4 +52,3 @@ export const WishlistTrustBanner: React.FC = () => {
 };
 
 export default WishlistTrustBanner;
-

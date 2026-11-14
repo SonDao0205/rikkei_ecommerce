@@ -1,4 +1,5 @@
-﻿import React from "react";
+import React from "react";
+import { useTranslation } from "react-i18next";
 
 export interface WishlistToolbarProps {
   totalCount: number;
@@ -15,6 +16,8 @@ export const WishlistToolbar: React.FC<WishlistToolbarProps> = ({
   onClearAll,
   onGoBack,
 }) => {
+  const { t } = useTranslation("customer");
+
   return (
     <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
       <div className="flex flex-col gap-2 max-w-2xl">
@@ -24,19 +27,19 @@ export const WishlistToolbar: React.FC<WishlistToolbarProps> = ({
               type="button"
               onClick={onGoBack}
               className="inline-flex items-center gap-1.5 text-on-surface-variant hover:text-primary font-label-md text-label-md font-semibold transition-colors cursor-pointer group w-fit"
-              title="Quay lại trang trước"
+              title={t("wishlist.toolbar.back_title")}
             >
               <span className="material-symbols-outlined text-[18px] group-hover:-translate-x-1 transition-transform">
                 arrow_back
               </span>
-              <span>Quay lại</span>
+              <span>{t("wishlist.toolbar.back")}</span>
             </button>
           </div>
         )}
 
         <div className="flex items-center gap-3 flex-wrap">
           <h1 className="font-headline-xl text-2xl sm:text-3xl text-on-surface font-bold tracking-tight">
-            Danh sách yêu thích
+            {t("wishlist.toolbar.title")}
           </h1>
           <span className="px-3 py-1 rounded-full bg-primary-fixed text-on-primary-fixed text-xs sm:text-sm font-bold flex items-center gap-1">
             <span
@@ -45,11 +48,11 @@ export const WishlistToolbar: React.FC<WishlistToolbarProps> = ({
             >
               favorite
             </span>
-            <span>{totalCount} sản phẩm đã lưu</span>
+            <span>{t("wishlist.toolbar.saved_count", { count: totalCount })}</span>
           </span>
         </div>
         <p className="text-xs sm:text-sm text-on-surface-variant">
-          Các sản phẩm bạn đang quan tâm và lưu lại để mua sau. Nhanh tay chuyển vào giỏ trước khi hết phiên ưu đãi hoặc hết hàng lưu kho!
+          {t("wishlist.toolbar.desc")}
         </p>
       </div>
 
@@ -68,7 +71,7 @@ export const WishlistToolbar: React.FC<WishlistToolbarProps> = ({
           <span className="material-symbols-outlined text-[20px]">
             add_shopping_cart
           </span>
-          <span>Thêm tất cả còn hàng vào giỏ ({inStockCount})</span>
+          <span>{t("wishlist.toolbar.add_all_in_stock", { count: inStockCount })}</span>
         </button>
 
         <button
@@ -82,7 +85,7 @@ export const WishlistToolbar: React.FC<WishlistToolbarProps> = ({
           <span className="material-symbols-outlined text-[18px]">
             delete_sweep
           </span>
-          <span>Xóa tất cả</span>
+          <span>{t("wishlist.toolbar.clear_all")}</span>
         </button>
       </div>
     </div>

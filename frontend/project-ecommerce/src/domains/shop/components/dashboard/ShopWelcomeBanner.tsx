@@ -1,5 +1,4 @@
 import React from "react";
-import { useTranslation } from "react-i18next";
 import type { ShopDateFilter, ShopOperationalInfo } from "@/domains/shop/types/shopDashboard.types";
 
 interface ShopWelcomeBannerProps {
@@ -17,13 +16,11 @@ export const ShopWelcomeBanner: React.FC<ShopWelcomeBannerProps> = ({
   onRefresh,
   isLoading = false,
 }) => {
-  const { t } = useTranslation('shop');
-
   const filterOptions: { id: ShopDateFilter; label: string }[] = [
-    { id: "today", label: t("dashboard.welcome.filters.today") },
-    { id: "yesterday", label: t("dashboard.welcome.filters.yesterday") },
-    { id: "7days", label: t("dashboard.welcome.filters.7days") },
-    { id: "this_month", label: t("dashboard.welcome.filters.this_month") },
+    { id: "today", label: "Hôm nay" },
+    { id: "yesterday", label: "Hôm qua" },
+    { id: "7days", label: "7 ngày qua" },
+    { id: "this_month", label: "Tháng này" },
   ];
 
   return (
@@ -35,18 +32,18 @@ export const ShopWelcomeBanner: React.FC<ShopWelcomeBannerProps> = ({
             {shopInfo.tierBadge}
           </span>
           <span className="text-outline font-body-sm text-body-sm">
-            • {t("dashboard.welcome.code", { code: shopInfo.shopCode })}
+            • Mã gian hàng: {shopInfo.shopCode}
           </span>
           <span className="text-outline font-body-sm text-body-sm">
-            • {t("dashboard.welcome.synced_at", { time: shopInfo.lastSyncTime })}
+            • Đồng bộ lúc: {shopInfo.lastSyncTime}
           </span>
         </div>
 
         <h1 className="font-headline-xl text-headline-xl text-on-surface tracking-tight font-bold">
-          {t("dashboard.welcome.greeting", { name: shopInfo.shopName })}
+          Xin chào, {shopInfo.shopName}
         </h1>
         <p className="font-body-md text-body-md text-on-surface-variant">
-          {t("dashboard.welcome.operational_status")}{" "}
+          Chỉ số vận hành hệ thống:{" "}
           <strong className="text-on-surface font-semibold">{shopInfo.operationalStatusText}</strong>
         </p>
       </div>
@@ -77,8 +74,8 @@ export const ShopWelcomeBanner: React.FC<ShopWelcomeBannerProps> = ({
           type="button"
           onClick={onRefresh}
           className="p-2 rounded-xl bg-surface-container-lowest border border-outline-variant/40 hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors shadow-sm cursor-pointer"
-          title={t("dashboard.welcome.refresh")}
-          aria-label={t("dashboard.welcome.refresh")}
+          title="Làm mới dữ liệu"
+          aria-label="Làm mới dữ liệu"
         >
           <span className={`material-symbols-outlined text-[20px] ${isLoading ? "animate-spin" : ""}`}>
             refresh

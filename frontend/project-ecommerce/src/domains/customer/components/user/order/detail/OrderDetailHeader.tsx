@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { UserOrder } from "@/shared/types";
 
 export interface OrderDetailHeaderProps {
@@ -15,6 +16,8 @@ export const OrderDetailHeader: React.FC<OrderDetailHeaderProps> = ({
   onChatWithShop,
   onChatShop,
 }) => {
+  const { t } = useTranslation("customer");
+
   const getStatusBadge = () => {
     switch (order.status) {
       case "pending":
@@ -34,6 +37,25 @@ export const OrderDetailHeader: React.FC<OrderDetailHeaderProps> = ({
     }
   };
 
+  const getStatusLabel = () => {
+    switch (order.status) {
+      case "pending":
+        return t("profile.orders.statuses.pending");
+      case "packing":
+        return t("profile.orders.statuses.packing");
+      case "shipping":
+        return t("profile.orders.statuses.shipping");
+      case "completed":
+        return t("profile.orders.statuses.completed");
+      case "cancelled":
+        return t("profile.orders.statuses.cancelled");
+      case "returned":
+        return t("profile.orders.statuses.returned");
+      default:
+        return order.statusLabel;
+    }
+  };
+
   return (
     <section className="flex flex-col gap-4">
       {/* Breadcrumb Navigation */}
@@ -47,25 +69,25 @@ export const OrderDetailHeader: React.FC<OrderDetailHeaderProps> = ({
             className="hover:text-primary transition-colors flex items-center gap-1"
           >
             <span className="material-symbols-outlined text-[16px]">home</span>
-            <span>Trang chủ</span>
+            <span>{t("profile.orders.breadcrumb.home")}</span>
           </Link>
           <span className="material-symbols-outlined text-[14px]">chevron_right</span>
           <Link
             to="/profile"
             className="hover:text-primary transition-colors"
           >
-            Tài khoản của tôi
+            {t("profile.orders.breadcrumb.account")}
           </Link>
           <span className="material-symbols-outlined text-[14px]">chevron_right</span>
           <Link
             to="/profile/orders"
             className="hover:text-primary transition-colors"
           >
-            Lịch sử đơn hàng
+            {t("profile.orders.breadcrumb.orders")}
           </Link>
           <span className="material-symbols-outlined text-[14px]">chevron_right</span>
           <span className="text-on-surface font-semibold truncate max-w-xs sm:max-w-md">
-            Chi tiết đơn {order.orderCode}
+            {t("profile.orders.detail.breadcrumb_detail", { code: order.orderCode })}
           </span>
         </nav>
 
@@ -74,7 +96,7 @@ export const OrderDetailHeader: React.FC<OrderDetailHeaderProps> = ({
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-all shadow-xs"
         >
           <span className="material-symbols-outlined text-[18px]">arrow_back</span>
-          <span>Quay lại danh sách đơn</span>
+          <span>{t("profile.orders.detail.back_to_list")}</span>
         </Link>
       </div>
 
@@ -83,7 +105,7 @@ export const OrderDetailHeader: React.FC<OrderDetailHeaderProps> = ({
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="font-headline-lg text-headline-lg text-on-surface font-bold tracking-tight">
-              Chi tiết đơn hàng {order.orderCode}
+              {t("profile.orders.detail.page_title", { code: order.orderCode })}
             </h1>
 
             {/* Status Badge */}
@@ -102,18 +124,18 @@ export const OrderDetailHeader: React.FC<OrderDetailHeaderProps> = ({
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600" />
                 </span>
               )}
-              <span>{order.statusLabel}</span>
+              <span>{getStatusLabel()}</span>
             </div>
           </div>
 
           <p className="font-body-md text-body-md text-outline flex items-center gap-2 flex-wrap text-sm">
             <span className="flex items-center gap-1">
               <span className="material-symbols-outlined text-[16px]">schedule</span>
-              <span>Đặt lúc {order.createdAt}</span>
+              <span>{t("profile.orders.detail.ordered_at", { time: order.createdAt })}</span>
             </span>
             <span>•</span>
             <span className="text-primary font-medium">
-              {order.updatedAtText || "Cập nhật gần đây"}
+              {order.updatedAtText || t("profile.orders.detail.updated_recent")}
             </span>
           </p>
         </div>
@@ -126,7 +148,7 @@ export const OrderDetailHeader: React.FC<OrderDetailHeaderProps> = ({
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface font-label-lg text-label-lg transition-colors cursor-pointer"
           >
             <span className="material-symbols-outlined text-[18px]">receipt_long</span>
-            <span>In hóa đơn VAT</span>
+            <span>{t("profile.orders.detail.print_vat")}</span>
           </button>
 
           <button
@@ -136,13 +158,13 @@ export const OrderDetailHeader: React.FC<OrderDetailHeaderProps> = ({
               onChatShop ||
               (() =>
                 alert(
-                  `Bắt đầu kết nối trò chuyện với người bán của đơn hàng ${order.orderCode}`
+                  t("profile.orders.detail.chat_alert_fallback", { code: order.orderCode })
                 ))
             }
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary-container hover:bg-primary text-on-primary font-label-lg text-label-lg transition-colors shadow-sm cursor-pointer"
           >
             <span className="material-symbols-outlined text-[18px]">chat</span>
-            <span>Chat với Shop</span>
+            <span>{t("profile.orders.detail.chat_with_shop")}</span>
           </button>
         </div>
       </div>

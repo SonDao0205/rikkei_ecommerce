@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import CustomerLayout from '@/app/layout/CustomerLayout';
 import { useAppDispatch, useAppSelector } from '@/app/state/store';
 import {
@@ -21,6 +22,7 @@ import { CancelOrderModal } from '@/domains/customer/components/user/order/Cance
 import OrderToast from '@/domains/customer/components/user/order/OrderToast';
 
 export const MyOrderDetail: React.FC = () => {
+  const { t } = useTranslation("customer");
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
@@ -44,14 +46,14 @@ export const MyOrderDetail: React.FC = () => {
     type: "success",
   });
 
-  const showToast = useCallback((msg: string, title: string = "Thông báo", type: "success" | "error" | "info" = "info") => {
+  const showToast = useCallback((msg: string, title?: string, type: "success" | "error" | "info" = "info") => {
     setToastConfig({
       isOpen: true,
-      title,
+      title: title || t("profile.orders.toast.cancel_success_title", "Thông báo"),
       message: msg,
       type,
     });
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (id) {
@@ -67,7 +69,7 @@ export const MyOrderDetail: React.FC = () => {
   };
 
   const handleChatShop = () => {
-    showToast('Đang kết nối trung tâm chat với nhà bán hàng...');
+    showToast(t("profile.orders.detail.toasts.connecting_chat"));
   };
 
   const handleConfirmReceived = async () => {
@@ -75,9 +77,9 @@ export const MyOrderDetail: React.FC = () => {
     try {
       await dispatch(confirmReceivedAction(order.id)).unwrap();
       setIsReceiveModalOpen(false);
-      showToast('Đã xác nhận nhận hàng thành công!');
+      showToast(t("profile.orders.detail.toasts.received_success"));
     } catch {
-      showToast('Có lỗi xảy ra khi xác nhận nhận hàng.');
+      showToast(t("profile.orders.detail.toasts.received_error"));
     }
   };
 
@@ -85,18 +87,26 @@ export const MyOrderDetail: React.FC = () => {
     try {
       await dispatch(cancelOrderAction({ orderId, cancelReason: reason })).unwrap();
       setIsCancelModalOpen(false);
-      showToast(`Đơn hàng ${order?.orderCode || orderId} đã được hủy thành công.`, 'Đã hủy đơn hàng', 'success');
+      showToast(
+        t("profile.orders.detail.toasts.cancel_success", { code: order?.orderCode || orderId }),
+        t("profile.orders.detail.toasts.cancel_success_title"),
+        'success'
+      );
     } catch {
-      showToast('Có lỗi xảy ra khi hủy đơn hàng.', 'Hủy đơn hàng thất bại', 'error');
+      showToast(
+        t("profile.orders.detail.toasts.cancel_error"),
+        t("profile.orders.detail.toasts.cancel_error_title"),
+        'error'
+      );
     }
   };
 
   const handleReturnRequest = () => {
-    showToast('Yêu cầu Trả hàng / Hoàn tiền đã được ghi nhận. Đang chuyển hướng...');
+    showToast(t("profile.orders.detail.toasts.return_requested"));
   };
 
   const handleContactSupport = () => {
-    showToast('Tổng đài hỗ trợ 1900 6868 sẵn sàng 24/7');
+    showToast(t("profile.orders.detail.toasts.hotline_ready"));
   };
 
   return (
@@ -125,10 +135,10 @@ export const MyOrderDetail: React.FC = () => {
                 <span className="material-symbols-outlined text-[36px]">receipt_long</span>
               </div>
               <h2 className="font-headline-lg text-headline-lg font-bold text-on-surface">
-                Không tìm thấy đơn hàng
+                {t("profile.orders.detail.not_found_title")}
               </h2>
               <p className="font-body-md text-body-md text-on-surface-variant max-w-md">
-                Đơn hàng bạn đang tìm kiếm không tồn tại hoặc đã bị xóa khỏi hệ thống.
+                {t("profile.orders.detail.not_found_desc")}
               </p>
               <button
                 type="button"
@@ -136,7 +146,7 @@ export const MyOrderDetail: React.FC = () => {
                 className="mt-2 inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-primary-container text-on-primary font-label-md text-label-md hover:bg-primary transition-colors shadow-sm"
               >
                 <span className="material-symbols-outlined text-[18px]">arrow_back</span>
-                <span>Quay lại danh sách đơn hàng</span>
+                <span>{t("profile.orders.detail.back_to_orders")}</span>
               </button>
             </div>
           )}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import type {
   ShopVoucherItem,
   VoucherFilterCategory,
@@ -23,6 +24,7 @@ export const ShopVouchersModal: React.FC<ShopVouchersModalProps> = ({
   onClaimVoucher,
   isLoading = false,
 }) => {
+  const { t } = useTranslation("customer");
   const [activeCategory, setActiveCategory] = useState<VoucherFilterCategory>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
@@ -126,10 +128,10 @@ export const ShopVouchersModal: React.FC<ShopVouchersModalProps> = ({
                 id="shop-vouchers-title"
                 className="font-headline-md text-xl sm:text-2xl font-bold text-on-surface leading-tight"
               >
-                Tất cả ưu đãi từ {shopName}
+                {t("public_shop.vouchers.modal.title", { shopName })}
               </h2>
               <p className="font-body-sm text-xs sm:text-sm text-on-surface-variant mt-0.5">
-                Thu thập mã giảm giá độc quyền để tự động áp dụng tại giỏ hàng
+                {t("public_shop.vouchers.modal.subtitle")}
               </p>
             </div>
           </div>
@@ -138,7 +140,7 @@ export const ShopVouchersModal: React.FC<ShopVouchersModalProps> = ({
             type="button"
             onClick={onClose}
             className="w-10 h-10 rounded-full flex items-center justify-center text-outline hover:text-on-surface hover:bg-surface-container transition-colors cursor-pointer shrink-0"
-            aria-label="Đóng cửa sổ"
+            aria-label={t("public_shop.vouchers.modal.close")}
           >
             <span className="material-symbols-outlined text-[22px]">close</span>
           </button>
@@ -155,7 +157,7 @@ export const ShopVouchersModal: React.FC<ShopVouchersModalProps> = ({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Tìm kiếm mã ưu đãi (VD: 30K, FREESHIP, VIP)..."
+              placeholder={t("public_shop.vouchers.modal.search_placeholder")}
               className="w-full bg-transparent text-sm text-on-surface placeholder:text-outline focus:outline-none"
             />
             {searchQuery && (
@@ -163,7 +165,7 @@ export const ShopVouchersModal: React.FC<ShopVouchersModalProps> = ({
                 type="button"
                 onClick={() => setSearchQuery("")}
                 className="text-outline hover:text-on-surface p-1"
-                aria-label="Xóa tìm kiếm"
+                aria-label="Clear search"
               >
                 <span className="material-symbols-outlined text-[16px]">close</span>
               </button>
@@ -181,7 +183,7 @@ export const ShopVouchersModal: React.FC<ShopVouchersModalProps> = ({
                   : "bg-surface-container hover:bg-surface-container-high text-on-surface-variant"
               }`}
             >
-              Tất cả ({counts.all})
+              {t("public_shop.vouchers.modal.tabs.all", { count: counts.all })}
             </button>
             <button
               type="button"
@@ -192,7 +194,7 @@ export const ShopVouchersModal: React.FC<ShopVouchersModalProps> = ({
                   : "bg-surface-container hover:bg-surface-container-high text-on-surface-variant"
               }`}
             >
-              Giảm tiền mặt ({counts.money})
+              {t("public_shop.vouchers.modal.tabs.money", { count: counts.money })}
             </button>
             <button
               type="button"
@@ -203,7 +205,7 @@ export const ShopVouchersModal: React.FC<ShopVouchersModalProps> = ({
                   : "bg-surface-container hover:bg-surface-container-high text-on-surface-variant"
               }`}
             >
-              Giảm theo % ({counts.percent})
+              {t("public_shop.vouchers.modal.tabs.percent", { count: counts.percent })}
             </button>
             <button
               type="button"
@@ -214,7 +216,7 @@ export const ShopVouchersModal: React.FC<ShopVouchersModalProps> = ({
                   : "bg-surface-container hover:bg-surface-container-high text-on-surface-variant"
               }`}
             >
-              Vận chuyển ({counts.shipping})
+              {t("public_shop.vouchers.modal.tabs.shipping", { count: counts.shipping })}
             </button>
           </div>
         </div>
@@ -225,7 +227,7 @@ export const ShopVouchersModal: React.FC<ShopVouchersModalProps> = ({
             <div className="py-20 flex flex-col items-center justify-center gap-3">
               <div className="w-10 h-10 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
               <p className="text-sm font-semibold text-on-surface-variant">
-                Đang tải danh sách ưu đãi...
+                {t("public_shop.vouchers.modal.loading")}
               </p>
             </div>
           ) : filteredVouchers.length === 0 ? (
@@ -236,10 +238,10 @@ export const ShopVouchersModal: React.FC<ShopVouchersModalProps> = ({
                 </span>
               </div>
               <h3 className="font-bold text-base text-on-surface">
-                Không tìm thấy ưu đãi phù hợp
+                {t("public_shop.vouchers.modal.empty_title")}
               </h3>
               <p className="text-xs text-outline max-w-sm mt-1">
-                Không có mã giảm giá nào khớp với điều kiện tìm kiếm hiện tại. Hãy thử chọn danh mục khác hoặc xóa từ khóa tìm kiếm.
+                {t("public_shop.vouchers.modal.empty_desc")}
               </p>
               {(searchQuery || activeCategory !== "all") && (
                 <button
@@ -250,7 +252,7 @@ export const ShopVouchersModal: React.FC<ShopVouchersModalProps> = ({
                   }}
                   className="mt-4 px-4 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-primary font-semibold text-xs cursor-pointer transition-colors"
                 >
-                  Xem tất cả mã
+                  {t("public_shop.vouchers.modal.view_all_btn")}
                 </button>
               )}
             </div>
@@ -337,7 +339,7 @@ export const ShopVouchersModal: React.FC<ShopVouchersModalProps> = ({
                               />
                             </div>
                             <span className="text-[10px] text-outline font-medium shrink-0">
-                              Đã dùng {voucher.usagePercent}%
+                              {t("public_shop.vouchers.modal.used_percent", { percent: voucher.usagePercent })}
                             </span>
                           </div>
                         )}
@@ -352,13 +354,15 @@ export const ShopVouchersModal: React.FC<ShopVouchersModalProps> = ({
                           type="button"
                           onClick={() => handleCopyCode(voucher.code)}
                           className="h-9 px-3 rounded-xl border border-outline-variant/60 hover:border-primary text-xs font-semibold text-on-surface hover:text-primary transition-colors flex items-center gap-1 cursor-pointer"
-                          title="Sao chép mã ưu đãi"
+                          title={t("public_shop.vouchers.modal.copy_tooltip")}
                         >
                           <span className="material-symbols-outlined text-[16px]">
                             {copiedCode === voucher.code ? "check" : "content_copy"}
                           </span>
                           <span>
-                            {copiedCode === voucher.code ? "Đã chép" : "Chép mã"}
+                            {copiedCode === voucher.code
+                              ? t("public_shop.vouchers.modal.copied")
+                              : t("public_shop.vouchers.modal.copy_code")}
                           </span>
                         </button>
 
@@ -371,7 +375,7 @@ export const ShopVouchersModal: React.FC<ShopVouchersModalProps> = ({
                             <span className="material-symbols-outlined text-[16px]">
                               check_circle
                             </span>
-                            <span>Đã lưu</span>
+                            <span>{t("public_shop.vouchers.claimed")}</span>
                           </button>
                         ) : (
                           <button
@@ -382,7 +386,7 @@ export const ShopVouchersModal: React.FC<ShopVouchersModalProps> = ({
                             <span className="material-symbols-outlined text-[16px]">
                               bookmark_add
                             </span>
-                            <span>Lưu mã</span>
+                            <span>{t("public_shop.vouchers.claim")}</span>
                           </button>
                         )}
                       </div>
@@ -393,7 +397,7 @@ export const ShopVouchersModal: React.FC<ShopVouchersModalProps> = ({
                         onClick={() => toggleExpand(voucher.id)}
                         className="text-[11px] text-outline hover:text-primary transition-colors flex items-center gap-0.5 cursor-pointer mt-0.5"
                       >
-                        <span>Điều kiện</span>
+                        <span>{t("public_shop.vouchers.modal.conditions")}</span>
                         <span
                           className={`material-symbols-outlined text-[14px] transition-transform ${
                             isExpanded ? "rotate-180" : ""
@@ -408,10 +412,10 @@ export const ShopVouchersModal: React.FC<ShopVouchersModalProps> = ({
                   {/* Expandable Terms / Description */}
                   {isExpanded && (
                     <div className="px-5 py-3 bg-surface-container-low/60 border-t border-dashed border-outline-variant/60 text-xs text-on-surface-variant flex flex-col gap-1 animate-in fade-in duration-150">
-                      <p className="font-semibold text-on-surface">Điều kiện áp dụng:</p>
+                      <p className="font-semibold text-on-surface">{t("public_shop.vouchers.modal.conditions_title")}</p>
                       <p>{voucher.description}</p>
                       <p className="text-[11px] text-outline mt-0.5">
-                        * Áp dụng tự động tại trang Giỏ hàng / Đặt hàng khi đáp ứng giá trị đơn tối thiểu. Mỗi đơn hàng chỉ áp dụng 1 mã shop voucher.
+                        {t("public_shop.vouchers.modal.conditions_note")}
                       </p>
                     </div>
                   )}
@@ -427,9 +431,7 @@ export const ShopVouchersModal: React.FC<ShopVouchersModalProps> = ({
             <span className="material-symbols-outlined text-primary text-[18px]">
               tips_and_updates
             </span>
-            <span>
-              Mã đã lưu sẽ tự động xuất hiện tại trang <strong>Giỏ hàng</strong> để áp dụng giảm giá.
-            </span>
+            <span dangerouslySetInnerHTML={{ __html: t("public_shop.vouchers.modal.footer_tip") }} />
           </div>
 
           <button
@@ -437,7 +439,7 @@ export const ShopVouchersModal: React.FC<ShopVouchersModalProps> = ({
             onClick={onClose}
             className="px-5 py-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface font-semibold text-xs transition-colors cursor-pointer self-end sm:self-auto"
           >
-            Đóng
+            {t("public_shop.vouchers.modal.close")}
           </button>
         </div>
       </div>

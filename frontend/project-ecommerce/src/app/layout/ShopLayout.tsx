@@ -1,19 +1,16 @@
 import React, { type ReactNode, useState, useEffect } from "react";
 import { Link, useLocation, Navigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import { useAppDispatch, useAppSelector } from "@/app/state/store";
 import { openLogoutModal } from "@/domains/auth/state/authSlice";
 import { fetchShopOrderCountsThunk } from "@/domains/shop/state/shopOrderSlice";
 import { APP_CONFIG } from "@/shared/config/appConfig";
 import { BrandIcon } from "@/shared/components/common/BrandLogo";
-import { LanguageSwitcher } from "@/shared/components/common/LanguageSwitcher";
 
 interface ShopLayoutProps {
   children: ReactNode;
 }
 
 export const ShopLayout: React.FC<ShopLayoutProps> = ({ children }) => {
-  const { t } = useTranslation('nav');
   const location = useLocation();
   const dispatch = useAppDispatch();
   const { user, isAuthenticated, isInitialized } = useAppSelector(
@@ -55,36 +52,36 @@ export const ShopLayout: React.FC<ShopLayoutProps> = ({ children }) => {
   };
 
   const navItems = [
-    { label: t("shop.overview"), path: "/shop/dashboard", icon: "space_dashboard" },
+    { label: "Tổng quan", path: "/shop/dashboard", icon: "space_dashboard" },
     {
-      label: t("shop.products"),
+      label: "Quản lý sản phẩm",
       path: "/shop/products",
       icon: "inventory_2",
       badge: totalProducts > 0 ? String(totalProducts) : undefined,
     },
     {
-      label: t("shop.orders"),
+      label: "Đơn hàng & Vận chuyển",
       path: "/shop/orders",
       icon: "local_shipping",
       badge:
         pendingOrders > 0
           ? pendingOrders > 99
-            ? `99+ ${t("shop.new_badge")}`
-            : `${pendingOrders} ${t("shop.new_badge")}`
+            ? "99+ mới"
+            : `${pendingOrders} mới`
           : undefined,
       badgeVariant: "error" as const,
     },
-    { label: t("shop.vouchers"), path: "/shop/vouchers", icon: "confirmation_number" },
-    { label: t("shop.finance"), path: "/shop/finances", icon: "account_balance_wallet" },
-    { label: t("shop.reviews"), path: "/shop/reviews", icon: "rate_review" },
+    { label: "Quản lý voucher", path: "/shop/vouchers", icon: "confirmation_number" },
+    { label: "Ví & Doanh thu", path: "/shop/finances", icon: "account_balance_wallet" },
+    { label: "Đánh giá", path: "/shop/reviews", icon: "rate_review" },
     {
-      label: t("shop.customer_care"),
+      label: "Chăm sóc khách",
       path: "/shop/customer-chat",
       icon: "chat",
       badge: "3",
       badgeVariant: "secondary" as const,
     },
-    { label: t("shop.settings"), path: "/shop/settings", icon: "settings" },
+    { label: "Cài đặt gian hàng", path: "/shop/settings", icon: "settings" },
   ];
 
   return (
@@ -115,7 +112,7 @@ export const ShopLayout: React.FC<ShopLayoutProps> = ({ children }) => {
                 MarketPulse Studio
               </h1>
               <p className="font-label-sm text-label-sm uppercase tracking-wider text-surface-variant/70 mt-1 font-semibold truncate">
-                {t("shop.title")} • {APP_CONFIG.appName}
+                Kênh Người Bán • {APP_CONFIG.appName}
               </p>
             </div>
           </div>
@@ -124,10 +121,10 @@ export const ShopLayout: React.FC<ShopLayoutProps> = ({ children }) => {
           <div className="flex items-center justify-between px-3.5 py-2 bg-surface-container-highest/10 rounded-xl border border-outline-variant/10">
             <div className="inline-flex items-center gap-1.5 font-label-sm text-label-sm text-secondary-fixed">
               <span className="w-2 h-2 rounded-full bg-secondary-container animate-pulse" />
-              {t("shop.active_merchant")}
+              Active Merchant
             </div>
             <span className="font-label-sm text-label-sm text-primary-fixed-dim bg-primary-container/40 px-2 py-0.5 rounded font-mono font-bold">
-              {t("shop.level", { level: 3 })}
+              Cấp 3
             </span>
           </div>
 
@@ -228,28 +225,28 @@ export const ShopLayout: React.FC<ShopLayoutProps> = ({ children }) => {
             </button>
 
             <div className="flex items-center gap-2 font-label-md text-label-md text-on-surface-variant">
-              <span className="font-medium text-on-surface-variant">{t("shop.title")}</span>
+              <span className="font-medium text-on-surface-variant">Kênh Người Bán</span>
               <span className="material-symbols-outlined text-[16px]">chevron_right</span>
               <span className="font-semibold text-on-surface">
                 {location.pathname.startsWith("/shop/product")
-                  ? t("shop.products")
+                  ? "Quản lý sản phẩm"
                   : location.pathname.startsWith("/shop/order")
-                  ? t("shop.orders")
+                  ? "Đơn hàng & Vận chuyển"
                   : location.pathname.startsWith("/shop/voucher") || location.pathname.startsWith("/shop/promotion")
-                  ? t("shop.vouchers")
+                  ? "Quản lý voucher"
                   : location.pathname.startsWith("/shop/finance")
-                  ? t("shop.finance")
+                  ? "Ví & Doanh thu"
                   : location.pathname.startsWith("/shop/review")
-                  ? t("shop.reviews")
+                  ? "Đánh giá"
                   : location.pathname.startsWith("/shop/setting")
-                  ? t("shop.settings")
-                  : t("shop.overview")}
+                  ? "Cài đặt gian hàng"
+                  : "Tổng quan"}
               </span>
             </div>
 
             <div className="hidden sm:inline-flex items-center gap-1.5 ml-2 px-2.5 py-0.5 rounded-full bg-surface-container font-label-sm text-label-sm text-secondary">
               <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
-              <span>{t("shop.store_open")}</span>
+              <span>Cửa hàng: Đang mở cửa</span>
             </div>
           </div>
 
@@ -261,7 +258,7 @@ export const ShopLayout: React.FC<ShopLayoutProps> = ({ children }) => {
               </span>
               <input
                 type="text"
-                placeholder={t("shop.search_placeholder")}
+                placeholder="Tìm kiếm đơn hàng, SKU..."
                 value={quickSearch}
                 onChange={(e) => setQuickSearch(e.target.value)}
                 className="w-full h-10 pl-9 pr-14 bg-surface-container-lowest rounded-xl font-body-sm text-body-sm text-on-surface placeholder:text-outline focus:outline-none shadow-[0_1px_3px_0_rgba(15,23,42,0.04)] border border-outline-variant/30 focus:border-primary"
@@ -273,7 +270,6 @@ export const ShopLayout: React.FC<ShopLayoutProps> = ({ children }) => {
 
             {/* Quick Action Icons */}
             <div className="flex items-center gap-1.5">
-              <LanguageSwitcher />
               <button
                 type="button"
                 className="relative p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-full transition-colors cursor-pointer"

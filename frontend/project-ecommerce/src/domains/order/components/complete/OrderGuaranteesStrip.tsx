@@ -1,6 +1,9 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 export const OrderGuaranteesStrip: React.FC = () => {
+  const { t } = useTranslation("customer");
+
   return (
     <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {/* Guarantee 1 */}
@@ -10,10 +13,10 @@ export const OrderGuaranteesStrip: React.FC = () => {
         </div>
         <div className="flex flex-col">
           <span className="font-bold text-xs sm:text-sm text-on-surface">
-            Đồng kiểm khi nhận hàng
+            {t("order_complete.guarantees.co_check.title")}
           </span>
           <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
-            Mở hộp kiểm tra ngoại quan cùng bưu tá trước khi thanh toán tiền mặt.
+            {t("order_complete.guarantees.co_check.desc")}
           </p>
         </div>
       </div>
@@ -27,10 +30,10 @@ export const OrderGuaranteesStrip: React.FC = () => {
         </div>
         <div className="flex flex-col">
           <span className="font-bold text-xs sm:text-sm text-on-surface">
-            Đổi trả miễn phí 7 ngày
+            {t("order_complete.guarantees.free_return.title")}
           </span>
           <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
-            Hỗ trợ đổi size, màu sắc hoặc hoàn tiền nhanh chóng nếu sản phẩm có lỗi.
+            {t("order_complete.guarantees.free_return.desc")}
           </p>
         </div>
       </div>
@@ -42,16 +45,18 @@ export const OrderGuaranteesStrip: React.FC = () => {
         </div>
         <div className="flex flex-col">
           <span className="font-bold text-xs sm:text-sm text-on-surface">
-            Trợ giúp 24/7 tức thì
+            {t("order_complete.guarantees.support.title")}
           </span>
           <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
-            Hotline <strong className="text-on-surface">1900 6868</strong> hoặc bấm để kết nối với bộ phận chăm sóc khách hàng.
+            {t("order_complete.guarantees.support.desc_prefix")}{" "}
+            <strong className="text-on-surface">{t("order_complete.guarantees.support.hotline")}</strong>{" "}
+            {t("order_complete.guarantees.support.desc_suffix")}
           </p>
           <a
             href="#"
             className="mt-1.5 text-primary text-xs font-bold flex items-center gap-1 hover:underline"
           >
-            <span>Chat trực tuyến với CSKH</span>
+            <span>{t("order_complete.guarantees.support.chat_link")}</span>
             <span className="material-symbols-outlined text-[13px]">arrow_outward</span>
           </a>
         </div>
@@ -61,4 +66,3 @@ export const OrderGuaranteesStrip: React.FC = () => {
 };
 
 export default OrderGuaranteesStrip;
-

@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 interface OrderShippingBentoProps {
   recipientName: string;
@@ -15,41 +16,63 @@ export const OrderShippingBento: React.FC<OrderShippingBentoProps> = ({
   recipientName,
   recipientPhone,
   deliveryAddress,
-  deliveryNote = "Giao giờ hành chính, gọi trước 15 phút. Cho kiểm tra hàng trước khi nhận (Đồng kiểm COD chuẩn quy chuẩn).",
-  carrierName = "GHTK Express",
-  trackingCode = "GHTK-VN-98234120",
-  estimatedDeliveryDate = "2-4 ngày tới",
+  deliveryNote,
+  carrierName = "Giao hàng tiêu chuẩn",
+  trackingCode = "GHN-VN-98234120",
+  estimatedDeliveryDate,
   currentStepIndex = 1,
 }) => {
+  const { t } = useTranslation("customer");
+
+  const effectiveDeliveryNote = deliveryNote || t("order_complete.shipping.default_delivery_note");
+
+  const getCarrierDisplay = () => {
+    const lower = (carrierName || "").toLowerCase();
+    if (lower.includes("tiêu chuẩn") || lower.includes("standard")) {
+      return t("order_complete.shipping.standard_delivery");
+    }
+    if (lower.includes("nhanh") || lower.includes("express")) {
+      return t("order_complete.shipping.express_delivery");
+    }
+    return carrierName;
+  };
+
+  const getEstimatedDaysDisplay = () => {
+    if (!estimatedDeliveryDate || estimatedDeliveryDate.includes("2-4") || estimatedDeliveryDate.includes("2–4")) {
+      return t("order_complete.shipping.default_estimated_days");
+    }
+    return estimatedDeliveryDate;
+  };
+
   const steps = [
     {
-      title: "Đơn hàng đã đặt",
-      time: "Vừa xong",
-      note: "Hệ thống ghi nhận",
+      title: t("order_complete.shipping.timeline.placed.title"),
+      time: t("order_complete.shipping.timeline.placed.time"),
+      note: t("order_complete.shipping.timeline.placed.note"),
       icon: "shopping_cart_checkout",
     },
     {
-      title: "Chờ xác nhận",
-      time: "Hôm nay",
-      note: "Shop đang duyệt",
+      title: t("order_complete.shipping.timeline.confirming.title"),
+      time: t("order_complete.shipping.timeline.confirming.time"),
+      note: t("order_complete.shipping.timeline.confirming.note"),
       icon: "pending_actions",
     },
     {
-      title: "Chờ lấy đơn hàng",
-      time: "Dự kiến chiều nay",
-      note: "Shop đóng gói",
+      title: t("order_complete.shipping.timeline.picking.title"),
+      time: t("order_complete.shipping.timeline.picking.time"),
+      note: t("order_complete.shipping.timeline.picking.note"),
       icon: "inventory_2",
     },
     {
-      title: "Đang vận chuyển",
-      time: "Dự kiến 1-2 ngày",
-      note: "Bưu tá giao hàng",
+      title: t("order_complete.shipping.timeline.shipping.title"),
+      time: t("order_complete.shipping.timeline.shipping.time"),
+      note: t("order_complete.shipping.timeline.shipping.note"),
       icon: "local_shipping",
     },
     {
-      title: "Giao hàng thành công",
-      time: estimatedDeliveryDate,
-      note: "Nhận & thanh toán",
+      title: t("order_complete.shipping.timeline.delivered.title"),
+      time: t("order_complete.shipping.timeline.delivered.time"),
+      note: t("order_complete.shipping.timeline.delivered.note"),
       icon: "task_alt",
     },
   ];
@@ -65,12 +88,12 @@ export const OrderShippingBento: React.FC<OrderShippingBentoProps> = ({
                 <span className="material-symbols-outlined text-[20px]">location_on</span>
               </div>
               <h2 className="font-bold text-sm sm:text-base text-on-surface">
-                Địa chỉ nhận hàng
+                {t("order_complete.shipping.recipient_address")}
               </h2>
             </div>
             <span className="px-2.5 py-0.5 rounded-full bg-surface-container text-primary text-[11px] font-bold flex items-center gap-1">
               <span className="material-symbols-outlined text-[13px]">verified</span>
-              <span>Chính chủ</span>
+              <span>{t("order_complete.shipping.verified_recipient")}</span>
             </span>
           </div>
 
@@ -88,13 +111,13 @@ export const OrderShippingBento: React.FC<OrderShippingBentoProps> = ({
               {deliveryAddress}
             </p>
 
-            {deliveryNote && (
+            {effectiveDeliveryNote && (
               <div className="p-3 rounded-xl bg-surface-container-low text-on-surface-variant text-xs flex items-start gap-2 border border-outline-variant/30">
                 <span className="material-symbols-outlined text-secondary text-[18px] shrink-0 mt-0.5">
                   sticky_note_2
                 </span>
                 <span>
-                  <strong>Ghi chú:</strong> {deliveryNote}
+                  <strong>{t("order_complete.shipping.note_label")}</strong> {effectiveDeliveryNote}
                 </span>
               </div>
             )}
@@ -106,10 +129,10 @@ export const OrderShippingBento: React.FC<OrderShippingBentoProps> = ({
             <span className="material-symbols-outlined text-[16px] text-primary">
               shield
             </span>
-            <span>Bảo hiểm giao vận 100%</span>
+            <span>{t("order_complete.shipping.transit_insurance")}</span>
           </span>
           <span className="text-[11px] font-bold text-secondary uppercase">
-            Miễn phí đổi trả 7 ngày
+            {t("order_complete.shipping.free_returns")}
           </span>
         </div>
       </div>
@@ -120,20 +143,20 @@ export const OrderShippingBento: React.FC<OrderShippingBentoProps> = ({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
             <div>
               <span className="text-[11px] uppercase tracking-wider text-outline font-bold block mb-0.5">
-                Dự kiến nhận hàng
+                {t("order_complete.shipping.estimated_delivery")}
               </span>
               <div className="flex items-center gap-2">
                 <span className="font-bold text-base sm:text-lg text-on-surface">
-                  {estimatedDeliveryDate}
+                  {getEstimatedDaysDisplay()}
                 </span>
                 <span className="px-2.5 py-0.5 rounded-full bg-secondary-container/20 text-on-secondary-container text-xs font-bold">
-                  {carrierName}
+                  {getCarrierDisplay()}
                 </span>
               </div>
             </div>
 
             <div className="inline-flex items-center gap-1 text-xs text-primary font-bold">
-              <span>Mã vận đơn: {trackingCode}</span>
+              <span>{t("order_complete.shipping.tracking_code", { code: trackingCode })}</span>
             </div>
           </div>
 
@@ -226,10 +249,10 @@ export const OrderShippingBento: React.FC<OrderShippingBentoProps> = ({
               notifications_active
             </span>
             <span className="text-on-surface">
-              Thông báo Zalo / SMS sẽ tự động gửi khi bưu tá bắt đầu phát hàng.
+              {t("order_complete.shipping.sms_notice")}
             </span>
           </div>
-          <span className="text-primary font-bold shrink-0">Ưu tiên 24/7</span>
+          <span className="text-primary font-bold shrink-0">{t("order_complete.shipping.support_priority")}</span>
         </div>
       </div>
     </section>
@@ -237,4 +260,3 @@ export const OrderShippingBento: React.FC<OrderShippingBentoProps> = ({
 };
 
 export default OrderShippingBento;
-

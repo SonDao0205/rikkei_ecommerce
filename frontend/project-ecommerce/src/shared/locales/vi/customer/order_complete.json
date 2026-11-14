@@ -1,0 +1,112 @@
+{
+  "hero": {
+    "recorded": "Đã ghi nhận đơn hàng ({{paymentMethod}})",
+    "title": "Cảm ơn bạn đã đặt hàng!",
+    "order_code_prefix": "Mã đơn hàng của bạn là",
+    "email_sent_to": ". Một email xác nhận chi tiết và biên nhận điện tử đã được chuyển đến"
+  },
+  "meta": {
+    "order_code": "Mã đơn hàng",
+    "copy_code_tooltip": "Sao chép mã đơn",
+    "copied": "Đã sao chép!",
+    "order_type": "Đơn mua sắm trực tuyến",
+    "order_time": "Thời gian đặt",
+    "timezone": "Múi giờ ICT (GMT+7)",
+    "payment_method": "Phương thức",
+    "cod_note": "Thanh toán khi nhận hàng",
+    "bank_transfer_note": "Chuyển khoản VietQR",
+    "online_note": "Thanh toán trực tuyến",
+    "total_payment": "Tổng thanh toán",
+    "saved": "Đã tiết kiệm {{amount}}",
+    "vat_included": "Đã bao gồm thuế VAT"
+  },
+  "shipping": {
+    "recipient_address": "Địa chỉ nhận hàng",
+    "verified_recipient": "Chính chủ",
+    "note_label": "Ghi chú:",
+    "default_delivery_note": "Giao giờ hành chính, gọi trước 15 phút. Cho kiểm tra hàng trước khi nhận (Đồng kiểm COD chuẩn quy chuẩn).",
+    "transit_insurance": "Bảo hiểm giao vận 100%",
+    "free_returns": "Miễn phí đổi trả 7 ngày",
+    "estimated_delivery": "Dự kiến nhận hàng",
+    "default_estimated_days": "2–4 ngày",
+    "standard_delivery": "Giao hàng tiêu chuẩn",
+    "express_delivery": "Giao hàng nhanh",
+    "tracking_code": "Mã vận đơn: {{code}}",
+    "timeline": {
+      "placed": {
+        "title": "Đơn hàng đã đặt",
+        "time": "Vừa xong",
+        "note": "Hệ thống ghi nhận"
+      },
+      "confirming": {
+        "title": "Chờ xác nhận",
+        "time": "Hôm nay",
+        "note": "Shop đang duyệt"
+      },
+      "picking": {
+        "title": "Chờ lấy đơn hàng",
+        "time": "Dự kiến chiều nay",
+        "note": "Shop đóng gói"
+      },
+      "shipping": {
+        "title": "Đang vận chuyển",
+        "time": "Dự kiến 1-2 ngày",
+        "note": "Bưu tá giao hàng"
+      },
+      "delivered": {
+        "title": "Giao hàng thành công",
+        "time": "2-4 ngày",
+        "note": "Nhận & thanh toán"
+      }
+    },
+    "sms_notice": "Thông báo Zalo / SMS sẽ tự động gửi khi bưu tá bắt đầu phát hàng.",
+    "support_priority": "Ưu tiên 24/7"
+  },
+  "items": {
+    "title": "Chi tiết sản phẩm đã đặt",
+    "subtitle": "{{count}} sản phẩm phân phối bởi các gian hàng chính hãng",
+    "package_count_one": "1 Kiện hàng",
+    "package_count_other": "{{count}} Kiện hàng",
+    "mall_badge": "MALL",
+    "default_warehouse": "Kho xuất hàng: Tổng kho Quận 7, TP. HCM",
+    "warehouse_prefix": "Kho xuất hàng:",
+    "visit_shop": "Ghé thăm gian hàng",
+    "variant_prefix": "Phân loại: {{variant}}",
+    "quantity_prefix": "Số lượng: {{quantity}}",
+    "in_stock": "Còn hàng sẵn sàng xuất kho",
+    "ready_to_ship": "Đã xác nhận & sẵn sàng xuất kho",
+    "warranty_12m": "Bảo hành phụ kiện 12 tháng",
+    "breakdown": {
+      "subtotal": "Tiền hàng ({{count}} sản phẩm)",
+      "shipping_fee": "Phí vận chuyển",
+      "shipping_fee_tooltip": "Giao nhanh toàn quốc",
+      "shipping_discount": "Giảm giá vận chuyển",
+      "shop_discount": "Giảm giá từ Shop",
+      "platform_discount": "Voucher Sàn đã áp dụng",
+      "total_payment": "Tổng thanh toán {{method}}",
+      "courier_collection_note": "Bưu tá thu đúng số tiền này lúc giao hàng"
+    }
+  },
+  "actions": {
+    "print_invoice": "In hoá đơn",
+    "order_detail": "Chi tiết đơn {{code}}",
+    "continue_shopping": "Tiếp tục mua sắm"
+  },
+  "guarantees": {
+    "co_check": {
+      "title": "Đồng kiểm khi nhận hàng",
+      "desc": "Mở hộp kiểm tra ngoại quan cùng bưu tá trước khi thanh toán tiền mặt."
+    },
+    "free_return": {
+      "title": "Đổi trả miễn phí 7 ngày",
+      "desc": "Hỗ trợ đổi size, màu sắc hoặc hoàn tiền nhanh chóng nếu sản phẩm có lỗi."
+    },
+    "support": {
+      "title": "Trợ giúp 24/7 tức thì",
+      "desc_prefix": "Hotline",
+      "hotline": "1900 6868",
+      "desc_suffix": "hoặc bấm để kết nối với bộ phận chăm sóc khách hàng.",
+      "chat_link": "Chat trực tuyến với CSKH"
+    }
+  }
+}

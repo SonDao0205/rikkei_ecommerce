@@ -4,17 +4,75 @@
   "loading": "Đang tải thông tin gian hàng...",
   "not_found_title": "Không tìm thấy gian hàng",
   "not_found_desc": "Gian hàng này không tồn tại hoặc đã tạm ngừng hoạt động trên hệ thống sàn MarketPulse.",
+  "breadcrumb": {
+    "back": "Quay lại",
+    "back_title": "Quay lại trang trước",
+    "home": "Trang chủ",
+    "partners": "Gian hàng & Đối tác"
+  },
   "banner": {
+    "store_active_express": "STORE ACTIVE • GIAO HỎA TỐC 24H",
+    "flagship_partner": "Flagship Marketplace Partner",
     "official_partner": "Official Partner",
+    "default_desc": "Phân phối độc quyền thương hiệu chính hãng, cam kết 100% xuất xứ chuẩn mực và chính sách bảo hành sàn MarketPulse.",
     "shipping_from": "Giao hàng từ: {{location}}",
+    "default_location": "TP. Hồ Chí Minh",
     "hotline": "Hotline: {{phone}}",
     "active_now": "Đang hoạt động",
-    "followers_count": "{{count}} người theo dõi",
-    "chat_response_rate": "98% Phản hồi chat",
-    "products_count": "{{count}} sản phẩm",
+    "stats": {
+      "rating": "Đánh giá",
+      "followers": "Theo dõi",
+      "products": "Sản phẩm",
+      "response": "Phản hồi"
+    },
     "chat_button": "Nhắn tin",
     "follow_button": "Theo dõi",
-    "following_button": "Đang theo dõi"
+    "following_button": "Đang theo dõi",
+    "toast": {
+      "login_required_title": "Yêu cầu đăng nhập",
+      "login_required_msg": "Vui lòng đăng nhập với tài khoản khách hàng để theo dõi gian hàng.",
+      "login_btn": "Đăng nhập ngay",
+      "not_allowed_title": "Không thể thao tác",
+      "buyer_only_msg": "Tính năng theo dõi gian hàng chỉ dành cho tài khoản Người mua.",
+      "followed_title": "Đã theo dõi cửa hàng",
+      "unfollowed_title": "Đã bỏ theo dõi cửa hàng",
+      "followed_msg": "Bạn đã theo dõi thành công gian hàng \"{{name}}\".",
+      "unfollowed_msg": "Bạn đã bỏ theo dõi gian hàng \"{{name}}\".",
+      "view_shop": "Xem gian hàng",
+      "chat_alert": "Bắt đầu kết nối trò chuyện với gian hàng {{name}}"
+    }
+  },
+  "vouchers": {
+    "exclusive_title": "Mã giảm giá độc quyền từ Shop",
+    "exclusive_desc": "Thu thập mã giảm giá để áp dụng ngay tại bước thanh toán của gian hàng {{shopName}}",
+    "view_all": "Xem tất cả ưu đãi",
+    "login_to_claim": "Đăng nhập bằng tài khoản người mua để lưu voucher.",
+    "claim": "Lưu mã",
+    "claimed": "Đã lưu",
+    "modal": {
+      "title": "Tất cả ưu đãi từ {{shopName}}",
+      "subtitle": "Thu thập mã giảm giá độc quyền để tự động áp dụng tại giỏ hàng",
+      "search_placeholder": "Tìm kiếm mã ưu đãi (VD: 30K, FREESHIP, VIP)...",
+      "tabs": {
+        "all": "Tất cả ({{count}})",
+        "money": "Giảm tiền mặt ({{count}})",
+        "percent": "Giảm theo % ({{count}})",
+        "shipping": "Vận chuyển ({{count}})"
+      },
+      "loading": "Đang tải danh sách ưu đãi...",
+      "empty_title": "Không tìm thấy ưu đãi phù hợp",
+      "empty_desc": "Không có mã giảm giá nào khớp với điều kiện tìm kiếm hiện tại. Hãy thử chọn danh mục khác hoặc xóa từ khóa tìm kiếm.",
+      "view_all_btn": "Xem tất cả mã",
+      "used_percent": "Đã dùng {{percent}}%",
+      "copy_code": "Chép mã",
+      "copied": "Đã chép",
+      "copy_tooltip": "Sao chép mã ưu đãi",
+      "conditions": "Điều kiện",
+      "conditions_title": "Điều kiện áp dụng:",
+      "conditions_note": "* Áp dụng tự động tại trang Giỏ hàng / Đặt hàng khi đáp ứng giá trị đơn tối thiểu. Mỗi đơn hàng chỉ áp dụng 1 mã shop voucher.",
+      "footer_tip": "Mã đã lưu sẽ tự động xuất hiện tại trang <strong>Giỏ hàng</strong> để áp dụng giảm giá.",
+      "close": "Đóng"
+    }
   },
   "toolbar": {
     "tabs": {
@@ -24,6 +82,8 @@
       "sale": "Flash Sale & Giảm giá",
       "reviews": "Đánh giá Shop"
     },
+    "search_placeholder": "Tìm kiếm sản phẩm trong shop này...",
+    "sort_label": "Sắp xếp theo:",
     "sort": {
       "popular": "Phổ biến",
       "newest": "Mới nhất",
@@ -31,17 +91,29 @@
       "price_asc": "Giá: Thấp đến Cao",
       "price_desc": "Giá: Cao đến Thấp",
       "price_default": "Giá"
-    },
-    "search_placeholder": "Tìm kiếm sản phẩm trong shop này..."
-  },
-  "vouchers": {
-    "title": "Mã giảm giá từ gian hàng",
-    "claim": "Lưu mã",
-    "claimed": "Đã lưu",
-    "view_more": "Xem thêm mã giảm giá"
+    }
   },
   "grid": {
     "empty": "Không tìm thấy sản phẩm nào trong gian hàng này.",
-    "page": "Trang {{current}} / {{total}}"
+    "sold_count": "{{count}} đã bán",
+    "add_to_cart": "Thêm vào giỏ",
+    "added": "Đã thêm",
+    "add_wishlist_aria": "Thêm vào danh sách yêu thích",
+    "toast": {
+      "login_required_title": "Chưa đăng nhập",
+      "login_required_msg": "Vui lòng đăng nhập để lưu sản phẩm vào danh sách yêu thích.",
+      "removed_title": "Đã bỏ thích sản phẩm",
+      "removed_msg": "\"{{name}}\" đã được xóa khỏi danh sách yêu thích.",
+      "added_title": "Đã thêm vào yêu thích",
+      "added_msg": "\"{{name}}\" đã được lưu vào danh sách yêu thích.",
+      "failed_title": "Thao tác thất bại"
+    },
+    "pagination": {
+      "showing": "Hiển thị",
+      "of": "trên tổng số",
+      "products": "sản phẩm",
+      "prev": "Trước",
+      "next": "Tiếp"
+    }
   }
 }
