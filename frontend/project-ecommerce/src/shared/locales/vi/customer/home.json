@@ -1,0 +1,48 @@
+{
+  "flash_notification": {
+    "tag": "MARKETPLACE",
+    "message": "Khám phá các sản phẩm từ các gian hàng đang hoạt động trên MarketPulse"
+  },
+  "flash_sale": {
+    "title": "Flash Sale đang diễn ra",
+    "subtitle_all": "Săn giá ưu đãi khi chương trình còn số lượng",
+    "subtitle_category": "Ưu đãi giới hạn cho danh mục: {{category}}",
+    "view_catalog": "Xem danh mục",
+    "empty_all": "Hiện chưa có chương trình Flash Sale đang mở.",
+    "empty_category": "Hiện chưa có Flash Sale cho danh mục {{category}}."
+  },
+  "featured": {
+    "title": "Sản phẩm nổi bật",
+    "subtitle_all": "Dữ liệu sản phẩm hiện có trong cửa hàng",
+    "subtitle_category": "Dữ liệu sản phẩm nổi bật thuộc danh mục: {{category}}",
+    "view_catalog": "Xem danh mục",
+    "empty_all": "Chưa có sản phẩm để hiển thị.",
+    "empty_category": "Chưa có sản phẩm nổi bật cho danh mục {{category}}."
+  },
+  "catalog": {
+    "showing_count": "/ {{total}} sản phẩm",
+    "all_catalog": "Toàn bộ danh mục",
+    "sort_label": "Sắp xếp:",
+    "sort_options": {
+      "Relevance": "Phù hợp nhất",
+      "Best Selling": "Bán chạy nhất",
+      "Latest Arrivals": "Mới nhất",
+      "Price: Low → High": "Giá: Thấp → Cao",
+      "Price: High → Low": "Giá: Cao → Thấp"
+    },
+    "load_more": "Tải thêm sản phẩm"
+  },
+  "product_card": {
+    "add_to_cart": "Thêm vào giỏ",
+    "view_wishlist": "Xem yêu thích",
+    "wishlist_unavailable_title": "Không khả dụng",
+    "wishlist_added_title": "Đã thêm vào yêu thích",
+    "wishlist_added_msg": "\"{{name}}\" đã được lưu vào danh sách yêu thích.",
+    "wishlist_removed_title": "Đã bỏ thích sản phẩm",
+    "wishlist_removed_msg": "\"{{name}}\" đã được xóa khỏi danh sách yêu thích.",
+    "wishlist_error_buyer_only": "Danh sách yêu thích chỉ dành cho tài khoản người mua.",
+    "cart_error_buyer_only": "Giỏ hàng chỉ dành cho tài khoản người mua.",
+    "cart_add_failed": "Không thể thêm sản phẩm vào giỏ hàng.",
+    "action_failed": "Thao tác thất bại"
+  }
+}

@@ -1,6 +1,8 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import type { UserOrder, ShopOrderGroup, OrderItem } from '@/domains/order/types';
+import { getShopDefaultLogo } from '@/shared/utils/avatar';
 
 interface OrderDetailShopSectionProps {
   order: UserOrder;
@@ -11,6 +13,7 @@ export const OrderDetailShopSection: React.FC<OrderDetailShopSectionProps> = ({
   order,
   onShowToast,
 }) => {
+  const { t } = useTranslation("customer");
   const navigate = useNavigate();
 
   // Helper format currency
@@ -64,7 +67,7 @@ export const OrderDetailShopSection: React.FC<OrderDetailShopSectionProps> = ({
 
   const handleMessageShop = (shopName: string) => {
     if (onShowToast) {
-      onShowToast(`Đã mở khung chat với gian hàng ${shopName}`);
+      onShowToast(t("profile.orders.detail.shop_section.toast_chat_opened", { name: shopName }));
     }
   };
 
@@ -74,14 +77,6 @@ export const OrderDetailShopSection: React.FC<OrderDetailShopSectionProps> = ({
   return (
     <div className="flex flex-col gap-6">
       {shopGroups.map((shop, sIdx) => {
-        const shopInitials = shop.shopName
-          ? shop.shopName
-              .split(' ')
-              .map((w: string) => w[0])
-              .join('')
-              .slice(0, 2)
-              .toUpperCase()
-          : 'MP';
 
         return (
           <section
@@ -91,17 +86,18 @@ export const OrderDetailShopSection: React.FC<OrderDetailShopSectionProps> = ({
             {/* Shop Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 gap-4 border-b border-surface-container">
               <div className="flex items-center gap-3">
-                {shop.shopAvatar ? (
-                  <img
-                    src={shop.shopAvatar}
-                    alt={shop.shopName}
-                    className="w-12 h-12 rounded-xl object-cover shadow-sm bg-surface-container"
-                  />
-                ) : (
-                  <div className="w-12 h-12 rounded-xl bg-primary-container text-on-primary flex items-center justify-center font-headline-md text-headline-md font-bold shadow-sm">
-                    {shopInitials}
-                  </div>
-                )}
+                <img
+                  src={shop.shopAvatar || getShopDefaultLogo(shop.shopName)}
+                  alt={shop.shopName}
+                  className="w-12 h-12 rounded-xl object-cover shadow-sm bg-surface-container"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    const fallback = getShopDefaultLogo(shop.shopName);
+                    if (target.src !== fallback) {
+                      target.src = fallback;
+                    }
+                  }}
+                />
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <Link
@@ -112,17 +108,20 @@ export const OrderDetailShopSection: React.FC<OrderDetailShopSectionProps> = ({
                     </Link>
                     {shop.isMall && (
                       <span className="px-2 py-0.5 rounded bg-tertiary-container text-on-primary font-label-sm text-label-sm font-bold">
-                        MALL CHÍNH HÃNG
+                        {t("profile.orders.detail.shop_section.official_mall")}
                       </span>
                     )}
                     {shop.isArtisan && (
                       <span className="px-2 py-0.5 rounded bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm font-bold">
-                        ARTISAN
+                        {t("profile.orders.detail.shop_section.artisan")}
                       </span>
                     )}
                   </div>
                   <p className="font-body-sm text-body-sm text-outline mt-0.5">
-                    Tỉ lệ phản hồi {shop.responseRate || 98}% • Đánh giá {shop.rating || 4.9}/5 ★
+                    {t("profile.orders.detail.shop_section.stats", {
+                      rate: shop.responseRate || 98,
+                      rating: shop.rating || 4.9,
+                    })}
                   </p>
                 </div>
               </div>
@@ -133,7 +132,7 @@ export const OrderDetailShopSection: React.FC<OrderDetailShopSectionProps> = ({
                   to={`/shop/${shop.shopId}`}
                   className="px-3.5 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-colors flex items-center gap-1"
                 >
-                  <span>Xem Shop</span>
+                  <span>{t("profile.orders.detail.shop_section.view_shop")}</span>
                   <span className="material-symbols-outlined text-[16px]">arrow_outward</span>
                 </Link>
                 <button
@@ -142,7 +141,7 @@ export const OrderDetailShopSection: React.FC<OrderDetailShopSectionProps> = ({
                   className="px-3.5 py-1.5 rounded-lg bg-primary-container hover:bg-primary text-on-primary font-label-md text-label-md transition-colors flex items-center gap-1 shadow-sm"
                 >
                   <span className="material-symbols-outlined text-[16px]">forum</span>
-                  <span>Nhắn tin Shop</span>
+                  <span>{t("profile.orders.detail.shop_section.message_shop")}</span>
                 </button>
               </div>
             </div>
@@ -152,7 +151,7 @@ export const OrderDetailShopSection: React.FC<OrderDetailShopSectionProps> = ({
               {shop.items.map((item: OrderItem) => {
                 const itemPrice = item.unitPrice ?? 0;
                 const itemTotal = itemPrice * item.quantity;
-                const defaultBadge = item.shopBadge || 'Chính hãng 100%';
+                const defaultBadge = item.shopBadge || t("profile.orders.detail.shop_section.genuine_badge");
                 const itemImage = item.imageUrl || '';
 
                 return (
@@ -181,7 +180,8 @@ export const OrderDetailShopSection: React.FC<OrderDetailShopSectionProps> = ({
                         </Link>
                         {item.variantName && (
                           <p className="font-body-md text-body-md text-outline">
-                            Phân loại: <span className="text-on-surface">{item.variantName}</span>
+                            {t("profile.orders.detail.shop_section.variant_prefix")}{' '}
+                            <span className="text-on-surface">{item.variantName}</span>
                           </p>
                         )}
                         <div className="flex items-center gap-2 mt-1">
@@ -198,7 +198,9 @@ export const OrderDetailShopSection: React.FC<OrderDetailShopSectionProps> = ({
                     {/* Item Right: Total & Item Actions */}
                     <div className="flex flex-row md:flex-col items-end justify-between md:justify-center gap-3">
                       <div className="text-right">
-                        <span className="font-body-sm text-body-sm text-outline block">Thành tiền</span>
+                        <span className="font-body-sm text-body-sm text-outline block">
+                          {t("profile.orders.detail.shop_section.total_item_price")}
+                        </span>
                         <span className="font-headline-md text-headline-md text-on-surface font-bold">
                           {formatCurrency(itemTotal)}
                         </span>
@@ -209,7 +211,7 @@ export const OrderDetailShopSection: React.FC<OrderDetailShopSectionProps> = ({
                           onClick={() => navigate(`/product/${item.productId}`)}
                           className="px-3 py-1.5 rounded-lg bg-surface-container-lowest hover:bg-surface-container text-on-surface font-label-md text-label-md transition-colors shadow-sm"
                         >
-                          Mua lại
+                          {t("profile.orders.detail.shop_section.repurchase")}
                         </button>
                         <div className="relative group/tooltip">
                           <button
@@ -217,7 +219,7 @@ export const OrderDetailShopSection: React.FC<OrderDetailShopSectionProps> = ({
                             disabled={!isOrderCompleted}
                             onClick={() => {
                               if (isOrderCompleted && onShowToast) {
-                                onShowToast(`Mở đánh giá sản phẩm: ${item.productName}`);
+                                onShowToast(t("profile.orders.detail.shop_section.review_toast", { name: item.productName }));
                               }
                             }}
                             className={`px-3 py-1.5 rounded-lg font-label-md text-label-md transition-colors ${
@@ -226,11 +228,11 @@ export const OrderDetailShopSection: React.FC<OrderDetailShopSectionProps> = ({
                                 : 'bg-surface-container text-outline cursor-not-allowed opacity-75'
                             }`}
                           >
-                            Đánh giá sản phẩm
+                            {t("profile.orders.detail.shop_section.review_product")}
                           </button>
                           {!isOrderCompleted && (
                             <div className="absolute bottom-full right-0 mb-2 hidden group-hover/tooltip:block z-30 w-48 p-2 rounded-lg bg-inverse-surface text-inverse-on-surface font-body-sm text-body-sm text-center shadow-lg">
-                              Khả dụng khi nhận hàng thành công
+                              {t("profile.orders.detail.shop_section.review_tooltip")}
                             </div>
                           )}
                         </div>

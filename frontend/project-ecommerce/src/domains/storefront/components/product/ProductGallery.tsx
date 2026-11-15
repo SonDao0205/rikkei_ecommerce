@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { ProductImage } from "@/shared/types";
 
 interface ProductGalleryProps {
@@ -16,8 +17,9 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
   productName,
   isHotSeller = true,
   discountPercent,
-  badgeInfo = "Artisan Crafted • Saigon Lab",
+  badgeInfo,
 }) => {
+  const { t } = useTranslation("customer");
   const [activeImage, setActiveImage] = useState<string>(mainImageUrl);
   const [isZoomed, setIsZoomed] = useState<boolean>(false);
 
@@ -26,6 +28,8 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
 
   // Build full list of image URLs ensuring main image is first
   const allImages = images.length > 0 ? images : [{ id: 0, url: mainImageUrl, sort_order: 0, is_primary: true }];
+
+  const displayBadge = badgeInfo || t("product.gallery.default_badge", { defaultValue: "Artisan Crafted • Saigon Lab" });
 
   return (
     <div className="flex flex-col gap-5">
@@ -36,18 +40,18 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
           {discountPercent ? (
             <span className="px-3 py-1 bg-tertiary-container text-on-primary font-label-sm uppercase rounded-full tracking-wider shadow-sm flex items-center gap-1 font-bold text-xs">
               <span className="material-symbols-outlined text-[13px]">local_fire_department</span>
-              Giảm {discountPercent}%
+              {t("product.gallery.discount", { percent: discountPercent, defaultValue: `Giảm ${discountPercent}%` })}
             </span>
           ) : isHotSeller ? (
             <span className="px-3 py-1 bg-tertiary-container text-on-primary font-label-sm uppercase rounded-full tracking-wider shadow-sm flex items-center gap-1 font-bold text-xs">
               <span className="material-symbols-outlined text-[13px]">local_fire_department</span>
-              Hot Seller
+              {t("product.gallery.hot_seller", { defaultValue: "Hot Seller" })}
             </span>
           ) : null}
 
-          {badgeInfo && (
+          {displayBadge && (
             <span className="px-3 py-1 bg-surface-container-highest/90 text-on-surface font-label-sm rounded-full tracking-wide backdrop-blur-sm text-xs font-semibold shadow-xs">
-              {badgeInfo}
+              {displayBadge}
             </span>
           )}
         </div>
@@ -57,7 +61,7 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
           type="button"
           onClick={() => setIsZoomed(!isZoomed)}
           className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-surface-container-lowest/90 backdrop-blur-md text-on-surface flex items-center justify-center shadow-md hover:bg-surface-container-highest transition-all transform active:scale-95 cursor-pointer"
-          title="Xem ảnh phóng to"
+          title={isZoomed ? t("product.gallery.zoom_out", { defaultValue: "Thu nhỏ ảnh" }) : t("product.gallery.zoom_in", { defaultValue: "Phóng to ảnh" })}
         >
           <span className="material-symbols-outlined text-[20px]">
             {isZoomed ? "zoom_out" : "zoom_in"}
@@ -85,11 +89,11 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
         {/* Bottom Micro-Bar: Image Quality & Authenticity Indicator */}
         <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between pointer-events-none">
           <div className="px-3 py-1 rounded-full bg-inverse-surface/80 text-inverse-on-surface text-label-sm font-label-sm backdrop-blur-sm text-xs">
-            Studio Photography • 100% Raw Item Match
+            {t("product.gallery.studio_badge", { defaultValue: "Studio Photography • 100% Raw Item Match" })}
           </div>
           <div className="flex items-center gap-1 bg-surface-container-lowest/90 px-3 py-1 rounded-full shadow-sm text-body-sm text-on-surface font-label-md text-xs">
             <span className="material-symbols-outlined text-[16px] text-primary">view_in_ar</span>
-            <span>Interactive View</span>
+            <span>{t("product.gallery.interactive_view", { defaultValue: "Interactive View" })}</span>
           </div>
         </div>
       </div>
@@ -129,9 +133,11 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
             <span className="material-symbols-outlined text-[22px]">verified_user</span>
           </div>
           <div className="flex flex-col">
-            <span className="font-label-lg font-bold text-on-surface">100% Chính Hãng</span>
+            <span className="font-label-lg font-bold text-on-surface">
+              {t("product.gallery.guarantees.authentic_title", { defaultValue: "100% Chính Hãng" })}
+            </span>
             <span className="font-body-sm text-body-sm text-on-surface-variant">
-              Kiểm định và xác nhận tem chuẩn sàn MarketPulse.
+              {t("product.gallery.guarantees.authentic_desc", { defaultValue: "Kiểm định và xác nhận tem chuẩn sàn MarketPulse." })}
             </span>
           </div>
         </div>
@@ -142,9 +148,11 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
             <span className="material-symbols-outlined text-[22px]">published_with_changes</span>
           </div>
           <div className="flex flex-col">
-            <span className="font-label-lg font-bold text-on-surface">Đổi Trả 7 Ngày</span>
+            <span className="font-label-lg font-bold text-on-surface">
+              {t("product.gallery.guarantees.return_title", { defaultValue: "Đổi Trả 7 Ngày" })}
+            </span>
             <span className="font-body-sm text-body-sm text-on-surface-variant">
-              Miễn phí đổi kích cỡ hoặc hoàn tiền tận nơi toàn quốc.
+              {t("product.gallery.guarantees.return_desc", { defaultValue: "Miễn phí đổi kích cỡ hoặc hoàn tiền tận nơi toàn quốc." })}
             </span>
           </div>
         </div>
@@ -155,9 +163,11 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
             <span className="material-symbols-outlined text-[22px]">electric_bolt</span>
           </div>
           <div className="flex flex-col">
-            <span className="font-label-lg font-bold text-on-surface">Hỏa Tốc 2 Giờ COD</span>
+            <span className="font-label-lg font-bold text-on-surface">
+              {t("product.gallery.guarantees.shipping_title", { defaultValue: "Hỏa Tốc 2 Giờ COD" })}
+            </span>
             <span className="font-body-sm text-body-sm text-on-surface-variant">
-              Giao nhanh nội thành TP.HCM &amp; Hà Nội nhận hàng thanh toán.
+              {t("product.gallery.guarantees.shipping_desc", { defaultValue: "Giao nhanh nội thành TP.HCM & Hà Nội nhận hàng thanh toán." })}
             </span>
           </div>
         </div>
@@ -178,12 +188,15 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
             </div>
           </div>
           <p className="text-body-sm font-body-sm text-on-surface-variant">
-            <strong className="text-on-surface font-semibold">18 khách hàng</strong> đã thêm sản phẩm này vào giỏ trong hôm nay.
+            <strong className="text-on-surface font-semibold">
+              {t("product.gallery.social_proof.customer_count", { count: 18, defaultValue: "18 khách hàng" })}
+            </strong>{" "}
+            {t("product.gallery.social_proof.added_today", { defaultValue: "đã thêm sản phẩm này vào giỏ trong hôm nay." })}
           </p>
         </div>
         <span className="px-2.5 py-1 rounded-md bg-surface-container text-secondary font-label-md font-semibold flex items-center gap-1.5 text-xs">
           <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-          Sẵn hàng tại Kho
+          {t("product.gallery.social_proof.in_stock_warehouse", { defaultValue: "Sẵn hàng tại Kho" })}
         </span>
       </div>
     </div>

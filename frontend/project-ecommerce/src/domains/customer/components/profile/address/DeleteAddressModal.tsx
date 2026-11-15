@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import type { Address } from "@/domains/customer/types/address.types";
 
 export interface DeleteAddressModalProps {
@@ -16,6 +17,7 @@ export const DeleteAddressModal: React.FC<DeleteAddressModalProps> = ({
   onConfirm,
   isDeleting = false,
 }) => {
+  const { t } = useTranslation("customer");
   const [isRendered, setIsRendered] = useState(false);
 
   const handleClose = useCallback(() => {
@@ -66,10 +68,10 @@ export const DeleteAddressModal: React.FC<DeleteAddressModalProps> = ({
 
   const typeLabel =
     address.address_type === "HOME"
-      ? "Nhà riêng"
+      ? t("profile.address.types.home")
       : address.address_type === "OFFICE"
-      ? "Văn phòng / Công ty"
-      : "Khác";
+      ? t("profile.address.types.office")
+      : t("profile.address.types.other");
 
   const typeIcon =
     address.address_type === "OFFICE"
@@ -107,7 +109,7 @@ export const DeleteAddressModal: React.FC<DeleteAddressModalProps> = ({
           onClick={handleClose}
           disabled={isDeleting}
           className="absolute top-5 right-5 p-1.5 rounded-full text-outline hover:text-on-surface hover:bg-surface-container transition-colors cursor-pointer disabled:opacity-40"
-          aria-label="Đóng"
+          aria-label={t("profile.address.delete_modal.close")}
         >
           <span className="material-symbols-outlined text-[20px]">close</span>
         </button>
@@ -131,11 +133,11 @@ export const DeleteAddressModal: React.FC<DeleteAddressModalProps> = ({
             id="delete-address-modal-title"
             className="text-xl font-headline-md font-bold text-on-surface tracking-tight"
           >
-            Xác nhận xóa địa chỉ
+            {t("profile.address.delete_modal.title")}
           </h3>
 
           <p className="mt-2 text-body-sm text-on-surface-variant leading-relaxed max-w-sm">
-            Bạn có chắc chắn muốn xóa địa chỉ này khỏi sổ địa chỉ không? Thao tác này sẽ không thể hoàn tác.
+            {t("profile.address.delete_modal.desc")}
           </p>
 
           {/* Address Preview Box */}
@@ -151,7 +153,7 @@ export const DeleteAddressModal: React.FC<DeleteAddressModalProps> = ({
                 </span>
                 {address.is_default && (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-primary-fixed text-primary">
-                    Mặc định
+                    {t("profile.address.badge_default")}
                   </span>
                 )}
               </div>
@@ -171,7 +173,7 @@ export const DeleteAddressModal: React.FC<DeleteAddressModalProps> = ({
 
             {address.is_default && (
               <p className="text-[11px] text-amber-700 bg-amber-50 rounded-lg p-2 border border-amber-200 mt-1">
-                Lưu ý: Đây là địa chỉ mặc định của bạn. Khi xóa, hệ thống sẽ tự động gán địa chỉ tiếp theo làm mặc định.
+                {t("profile.address.delete_modal.default_warning")}
               </p>
             )}
           </div>
@@ -184,7 +186,7 @@ export const DeleteAddressModal: React.FC<DeleteAddressModalProps> = ({
               disabled={isDeleting}
               className="w-full py-2.5 px-4 rounded-xl border border-outline-variant text-on-surface font-label-md text-label-md font-semibold hover:bg-surface-container active:scale-95 transition-all cursor-pointer disabled:opacity-50"
             >
-              Hủy bỏ
+              {t("profile.address.delete_modal.cancel_btn")}
             </button>
 
             <button
@@ -196,12 +198,12 @@ export const DeleteAddressModal: React.FC<DeleteAddressModalProps> = ({
               {isDeleting ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Đang xóa...</span>
+                  <span>{t("profile.address.delete_modal.deleting")}</span>
                 </>
               ) : (
                 <>
                   <span className="material-symbols-outlined text-[18px]">delete</span>
-                  <span>Xóa địa chỉ</span>
+                  <span>{t("profile.address.delete_modal.confirm_btn")}</span>
                 </>
               )}
             </button>
@@ -213,4 +215,3 @@ export const DeleteAddressModal: React.FC<DeleteAddressModalProps> = ({
 };
 
 export default DeleteAddressModal;
-

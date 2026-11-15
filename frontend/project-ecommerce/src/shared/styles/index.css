@@ -90,3 +90,32 @@
   --text-headline-xl: 36px;
   --text-headline-xl--line-height: 44px;
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Global Interactive Cursors
+   Ensures all buttons, links, controls, and interactive elements show cursor: pointer
+   ───────────────────────────────────────────────────────────────────────────── */
+button,
+[role="button"],
+a,
+select,
+summary,
+input[type="checkbox"],
+input[type="radio"],
+input[type="submit"],
+input[type="button"],
+input[type="reset"],
+label[for],
+.cursor-pointer {
+  cursor: pointer;
+}
+
+button:disabled,
+[role="button"][aria-disabled="true"],
+button[disabled],
+input:disabled,
+select:disabled,
+textarea:disabled,
+.cursor-not-allowed {
+  cursor: not-allowed;
+}

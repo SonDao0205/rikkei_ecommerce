@@ -1,26 +1,128 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import type { ShopAccountData } from "@/shared/types";
+import type { ShopAccountData, ShopKycData } from "@/shared/types";
 
 interface Step4AccountCardProps {
   account: ShopAccountData;
+  kyc?: ShopKycData;
 }
 
-export const Step4AccountCard: React.FC<Step4AccountCardProps> = ({ account }) => (
-  <section className="rounded-xl border border-outline-variant/30 bg-surface-container-lowest p-space-lg shadow-sm">
-    <div className="mb-space-md flex items-center justify-between border-b border-outline-variant/20 pb-space-sm">
-      <h2 className="font-headline-lg font-bold text-on-surface">Tài khoản chủ shop</h2>
-      <Link to="/register-open-shop" className="text-primary underline">Xem thông tin tài khoản</Link>
+export const Step4AccountCard: React.FC<Step4AccountCardProps> = ({ account, kyc }) => {
+  const bankName = kyc?.bankName ? kyc.bankName.split("-")[0].trim() : "Vietcombank";
+  const accountNumber = kyc?.accountNumber || "1029384756";
+  const accountHolder = kyc?.accountHolder || account.fullName || "NGUYEN VAN AN";
+  const settlementCycle = kyc?.settlementCycle || "T+3";
+
+  return (
+    <div className="p-space-lg rounded-xl bg-surface-container-lowest shadow-sm flex flex-col gap-space-md border border-outline-variant/30">
+      {/* Header */}
+      <div className="flex items-center justify-between pb-space-sm border-b border-outline-variant/20">
+        <div className="flex items-center gap-space-sm">
+          <span className="w-7 h-7 rounded-full bg-primary-fixed text-primary font-label-md text-label-md flex items-center justify-center font-bold">
+            1
+          </span>
+          <h2 className="font-headline-lg text-headline-lg text-on-surface font-bold">
+            Thông tin mô hình &amp; Tài khoản quản trị
+          </h2>
+        </div>
+        <Link
+          to="/register-open-shop"
+          className="px-space-md py-space-xs rounded-lg bg-surface-container-low hover:bg-surface-container text-primary font-label-md text-label-md flex items-center gap-space-xs transition-colors cursor-pointer"
+        >
+          <span className="material-symbols-outlined text-[16px]">edit</span>
+          <span>Chỉnh sửa (Bước 1)</span>
+        </Link>
+      </div>
+
+      {/* Grid of 4 information blocks */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-space-md pt-space-xs">
+        {/* Box 1: Owner Name */}
+        <div className="p-space-md rounded-lg bg-surface-container-low flex flex-col gap-space-xs">
+          <span className="font-body-sm text-body-sm text-on-surface-variant">
+            Họ và tên chủ sở hữu
+          </span>
+          <span className="font-label-lg text-label-lg text-on-surface font-bold">
+            {account.fullName || "Nguyễn Văn An"}
+          </span>
+        </div>
+
+        {/* Box 2: Registered Phone Number */}
+        <div className="p-space-md rounded-lg bg-surface-container-low flex flex-col gap-space-xs">
+          <span className="font-body-sm text-body-sm text-on-surface-variant">
+            Số điện thoại đăng ký
+          </span>
+          <div className="flex items-center justify-between">
+            <span className="font-label-lg text-label-lg text-on-surface font-bold tracking-wide">
+              {account.phone || "0909 123 456"}
+            </span>
+            <span className="inline-flex items-center gap-1 text-[11px] font-label-sm text-secondary bg-surface-container-lowest px-2 py-0.5 rounded-full font-bold shadow-xs">
+              <span className="material-symbols-outlined text-[14px]">check_circle</span>
+              Đã xác thực OTP
+            </span>
+          </div>
+        </div>
+
+        {/* Box 3: Notification Email */}
+        <div className="p-space-md rounded-lg bg-surface-container-low flex flex-col gap-space-xs">
+          <span className="font-body-sm text-body-sm text-on-surface-variant">
+            Email quản trị thông báo
+          </span>
+          <span className="font-label-lg text-label-lg text-on-surface font-bold">
+            {account.email || "nguyen.vana@gmail.com"}
+          </span>
+        </div>
+
+        {/* Box 4: Bank Details */}
+        <div className="p-space-md rounded-lg bg-surface-container-low flex flex-col gap-space-xs">
+          <div className="flex items-center justify-between">
+            <span className="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1">
+              <span className="material-symbols-outlined text-secondary text-[16px]">
+                account_balance
+              </span>
+              Thông tin ngân hàng nhận tiền
+            </span>
+            <span className="text-[11px] font-label-sm text-secondary bg-surface-container-lowest px-2 py-0.5 rounded font-bold shadow-xs">
+              Napas 24/7
+            </span>
+          </div>
+          <div className="flex flex-col gap-0.5 mt-0.5">
+            <div className="flex items-center gap-2">
+              <span className="font-label-lg text-label-lg text-primary font-bold">
+                {bankName}
+              </span>
+              <span className="text-on-surface-variant text-xs">•</span>
+              <span className="font-mono font-bold text-on-surface text-label-md">
+                {accountNumber}
+              </span>
+            </div>
+            <div className="text-body-sm text-body-sm text-on-surface-variant truncate">
+              Chủ TK:{" "}
+              <strong className="text-on-surface uppercase font-medium">
+                {accountHolder}
+              </strong>
+              <span className="ml-2 text-primary font-semibold">({settlementCycle})</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Partner Tier Row */}
+      <div className="mt-space-xs p-space-sm rounded-lg bg-surface-container flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+        <div className="flex items-center gap-space-sm">
+          <span className="material-symbols-outlined text-secondary">workspace_premium</span>
+          <span className="font-body-sm text-body-sm text-on-surface-variant">
+            Hạng đề xuất đối tác khởi tạo:
+          </span>
+          <span className="font-label-md text-label-md text-primary font-bold">
+            Silver Partner Merchant (Cấp độ tiêu chuẩn)
+          </span>
+        </div>
+        <span className="font-label-sm text-label-sm text-secondary uppercase tracking-wider font-bold">
+          Cấp hạn ngạch 100 SKU
+        </span>
+      </div>
     </div>
-    <dl className="grid gap-space-md sm:grid-cols-3">
-      <div><dt className="text-sm text-on-surface-variant">Họ tên</dt><dd className="font-semibold">{account.fullName || "—"}</dd></div>
-      <div><dt className="text-sm text-on-surface-variant">Email</dt><dd className="font-semibold">{account.email || "—"}</dd></div>
-      <div><dt className="text-sm text-on-surface-variant">Điện thoại</dt><dd className="font-semibold">{account.phone || "—"}</dd></div>
-    </dl>
-    <p className="mt-4 text-sm text-on-surface-variant">
-      Đây là tài khoản hiện tại của bạn; hệ thống không tạo tài khoản hoặc mật khẩu seller riêng.
-    </p>
-  </section>
-);
+  );
+};
 
 export default Step4AccountCard;

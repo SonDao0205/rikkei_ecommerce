@@ -1,4 +1,4 @@
-import React, { type ReactNode } from "react";
+import React, { useState, type ReactNode } from "react";
 import { Link, useLocation, Navigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "@/app/state/store";
 import { openLogoutModal } from "@/domains/auth/state/authSlice";
@@ -12,13 +12,25 @@ interface AdminLayoutProps {
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const location = useLocation();
   const dispatch = useAppDispatch();
-  const { user, isAuthenticated, isInitialized } = useAppSelector(
+  const [quickSearch, setQuickSearch] = useState("");
+  const [prevPathname, setPrevPathname] = useState(location.pathname);
+
+  if (location.pathname !== prevPathname) {
+    setPrevPathname(location.pathname);
+    setQuickSearch("");
+  }
+
+  const { user, role, isAuthenticated, isInitialized } = useAppSelector(
     (state) => state.auth
   );
 
   if (isInitialized) {
-    const userRole = (user?.role || "").toLowerCase().trim();
-    if (!isAuthenticated || userRole !== "admin") {
+    const userRoles = new Set(
+      (user?.roles?.length ? user.roles : role || user?.role ? [role || user?.role] : []).map(
+        (value) => String(value).toLowerCase().trim()
+      )
+    );
+    if (!isAuthenticated || !userRoles.has("admin")) {
       return <Navigate to="/" replace />;
     }
   }
@@ -34,7 +46,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { label: "Categories", path: "/admin/categories", icon: "category" },
     { label: "Orders", path: "/admin/orders", icon: "local_shipping" },
     { label: "Shops & Merchants", path: "/admin/shops", icon: "store" },
-    { label: "Customers / Users", path: "/admin/customers", icon: "group" },
+    { label: "Quản lý người dùng", path: "/admin/users", icon: "group" },
+    { label: "Khuyến mãi & đánh giá", path: "/admin/promotions", icon: "campaign" },
     { label: "Settings", path: "/admin/settings", icon: "settings" },
   ];
 
@@ -44,8 +57,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       <aside className="fixed left-0 top-0 h-full w-72 bg-inverse-surface text-inverse-on-surface z-50 flex flex-col justify-between py-6 px-4 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
         <div className="flex flex-col gap-6">
           {/* Brand Logo */}
-          <div className="flex items-center gap-3 px-3 py-2">
-            <div className="w-10 h-10 rounded-xl bg-primary-container flex items-center justify-center text-on-primary shadow-sm">
+          <Link to="/admin/dashboard" className="flex items-center gap-3 px-3 py-2 cursor-pointer group">
+            <div className="w-10 h-10 rounded-xl bg-primary-container flex items-center justify-center text-on-primary shadow-sm transition-transform group-hover:scale-105">
               <BrandIcon className="w-6 h-6 text-on-primary" />
             </div>
             <div>
@@ -56,7 +69,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 {APP_CONFIG.appName} Admin
               </p>
             </div>
-          </div>
+          </Link>
 
           {/* Nav Items */}
           <nav className="flex flex-col gap-1.5">
@@ -161,10 +174,12 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 ? "Categories"
                 : location.pathname.startsWith("/admin/order")
                 ? "Orders"
-                : location.pathname.startsWith("/admin/customer")
-                ? "Customers / Users"
+                : location.pathname.startsWith("/admin/user") || location.pathname.startsWith("/admin/customer")
+                ? "Quản lý người dùng"
                 : location.pathname.startsWith("/admin/setting")
                 ? "Settings"
+                : location.pathname.startsWith("/admin/promotions")
+                ? "Khuyến mãi & đánh giá"
                 : "Dashboard"}
             </span>
           </div>
@@ -178,6 +193,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
               <input
                 type="text"
                 placeholder="Search catalog, orders..."
+                value={quickSearch}
+                onChange={(e) => setQuickSearch(e.target.value)}
                 className="w-full h-10 pl-9 pr-14 bg-surface-container-lowest rounded-xl font-body-sm text-body-sm text-on-surface placeholder:text-outline focus:outline-none shadow-[0_1px_3px_0_rgba(15,23,42,0.04)]"
               />
               <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">

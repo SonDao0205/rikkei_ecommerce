@@ -62,7 +62,7 @@ export interface UserOrder {
   shopDiscount?: number;
   totalAmount: number;
   shippingCarrier?: string;
-  paymentMethod: "COD" | "MOMO" | "VISA" | "ZALOPAY";
+  paymentMethod: "COD" | "BANK_TRANSFER" | "MOMO" | "VISA" | "ZALOPAY";
   paymentStatusText: string;
   shippingInfoText?: string;
   estimatedDeliveryDate?: string;

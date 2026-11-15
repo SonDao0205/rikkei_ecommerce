@@ -60,36 +60,19 @@ func (a *App) register(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 500, "internal_error", "Internal server error")
 		return
 	}
-	tx, e := a.db.BeginTx(r.Context(), nil)
-	if e != nil {
-		a.serverError(w, r, e)
-		return
-	}
-	defer tx.Rollback()
-	res, e := tx.ExecContext(r.Context(), `INSERT INTO users(email,phone,password_hash,full_name,role) VALUES(?,?,?,?, 'client')`, q.Email, q.Phone, string(hash), q.FullName)
-	if e != nil {
-		if strings.Contains(strings.ToLower(e.Error()), "duplicate") {
-			writeError(w, 409, "account_exists", "An account with this email or phone already exists")
+	if err := a.beginEmailVerification(r, q.Email, q.Phone, string(hash), q.FullName); err != nil {
+		if errors.Is(err, errAccountExists) {
+			writeError(w, http.StatusConflict, "account_exists", "An account with this email or phone already exists")
 			return
 		}
-		a.serverError(w, r, e)
+		if errors.Is(err, errEmailDelivery) {
+			writeError(w, http.StatusServiceUnavailable, "email_delivery_unavailable", "We could not send the verification email. Please try again shortly")
+			return
+		}
+		a.serverError(w, r, err)
 		return
 	}
-	id, e := res.LastInsertId()
-	if e != nil {
-		a.serverError(w, r, e)
-		return
-	}
-	if _, e = tx.ExecContext(r.Context(), `INSERT INTO user_roles(user_id,role_code) VALUES(?,'CLIENT')`, id); e != nil {
-		a.serverError(w, r, e)
-		return
-	}
-	if e = tx.Commit(); e != nil {
-		a.serverError(w, r, e)
-		return
-	}
-	u := User{ID: id, Email: q.Email, FullName: q.FullName, Phone: q.Phone, Role: "CLIENT", Roles: []string{"CLIENT"}, Status: "ACTIVE", CreatedAt: time.Now().UTC()}
-	writeJSON(w, 201, map[string]any{"success": true, "data": u, "message": "Account created"})
+	writeJSON(w, http.StatusAccepted, map[string]any{"success": true, "message": "If the address can be registered, a verification code has been sent"})
 }
 
 func (a *App) login(w http.ResponseWriter, r *http.Request) {

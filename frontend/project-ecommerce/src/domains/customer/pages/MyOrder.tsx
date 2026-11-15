@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import CustomerLayout from "@/app/layout/CustomerLayout";
 import ProfileSidebar from "@/domains/customer/components/profile/ProfileSidebar";
 import OrderSearchBar from "@/domains/customer/components/user/order/OrderSearchBar";
 import OrderTabs from "@/domains/customer/components/user/order/OrderTabs";
 import OrderCard from "@/domains/customer/components/user/order/OrderCard";
 import CancelOrderModal from "@/domains/customer/components/user/order/CancelOrderModal";
+import OrderToast from "@/domains/customer/components/user/order/OrderToast";
 import { useAppDispatch, useAppSelector } from "@/app/state/store";
 import {
   getUserOrders,
@@ -22,6 +24,7 @@ import { fetchUserProfile } from "@/domains/customer/state/profileSlice";
 import type { UserOrder, UserOrderStatusTab } from "@/domains/order/types";
 
 export const MyOrder: React.FC = () => {
+  const { t } = useTranslation("customer");
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
@@ -41,10 +44,22 @@ export const MyOrder: React.FC = () => {
   const { profile } = useAppSelector((state) => state.profile);
   const { user } = useAppSelector((state) => state.auth);
 
-  const [localSearch, setLocalSearch] = useState(searchQuery);
+  const [localSearch, setLocalSearch] = useState("");
+  const [toastConfig, setToastConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: "success" | "error";
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "success",
+  });
 
-  // Fetch profile and order counts once
+  // Fetch profile and order counts once & reset search on enter
   useEffect(() => {
+    dispatch(setSearchQuery(""));
     dispatch(fetchUserProfile());
     dispatch(getUserOrderCounts());
   }, [dispatch]);
@@ -73,20 +88,38 @@ export const MyOrder: React.FC = () => {
     dispatch(openCancelModal(order));
   };
 
-  const handleConfirmCancel = async (orderId: number, reason: string) => {
+  const handleConfirmCancel = async (orderId: number | string, reason: string) => {
+    const cancelledCode = selectedOrderForCancel?.orderCode || String(orderId);
     try {
       await dispatch(cancelOrderAction({ orderId, cancelReason: reason })).unwrap();
-    } catch {
-      // Error handled in slice
+      dispatch(closeCancelModal());
+      dispatch(getUserOrderCounts());
+      setToastConfig({
+        isOpen: true,
+        title: t("profile.orders.toast.cancel_success_title"),
+        message: t("profile.orders.toast.cancel_success_msg", { code: cancelledCode }),
+        type: "success",
+      });
+    } catch (err: unknown) {
+      const msg = typeof err === "string" ? err : (err as Error)?.message || "Failed to cancel order.";
+      setToastConfig({
+        isOpen: true,
+        title: t("profile.orders.toast.cancel_failed_title"),
+        message: msg,
+        type: "error",
+      });
     }
   };
 
   const handleConfirmReceived = async (orderId: number) => {
-    if (window.confirm("Bạn xác nhận đã nhận được đầy đủ hàng và hài lòng với kiện hàng?")) {
+    if (window.confirm(t("profile.orders.dialog.confirm_received"))) {
       try {
         await dispatch(confirmReceivedAction(orderId)).unwrap();
-      } catch {
-        // Error handled in slice
+        dispatch(getUserOrderCounts());
+        alert(t("profile.orders.dialog.received_success"));
+      } catch (err: unknown) {
+        const msg = typeof err === "string" ? err : (err as Error)?.message || "Error";
+        alert(msg);
       }
     }
   };
@@ -128,7 +161,7 @@ export const MyOrder: React.FC = () => {
               className="hover:text-primary transition-colors flex items-center gap-1 font-medium"
             >
               <span className="material-symbols-outlined text-[16px]">home</span>
-              <span>Trang chủ</span>
+              <span>{t("profile.orders.breadcrumb.home")}</span>
             </Link>
             <span className="material-symbols-outlined text-[14px] text-outline">
               chevron_right
@@ -137,12 +170,14 @@ export const MyOrder: React.FC = () => {
               to="/profile"
               className="hover:text-primary transition-colors font-medium text-on-surface-variant"
             >
-              Tài khoản của tôi
+              {t("profile.orders.breadcrumb.account")}
             </Link>
             <span className="material-symbols-outlined text-[14px] text-outline">
               chevron_right
             </span>
-            <span className="text-on-surface font-bold">Lịch sử đơn hàng</span>
+            <span className="text-on-surface font-bold">
+              {t("profile.orders.breadcrumb.orders")}
+            </span>
           </nav>
 
           {/* Two-Column Architecture */}
@@ -194,18 +229,18 @@ export const MyOrder: React.FC = () => {
                     </span>
                   </div>
                   <h3 className="font-headline-md text-headline-md font-bold text-on-surface mb-1">
-                    Chưa có đơn hàng nào
+                    {t("profile.orders.empty.title")}
                   </h3>
                   <p className="font-body-md text-body-md text-on-surface-variant max-w-md mx-auto mb-6">
                     {searchQuery
-                      ? `Không tìm thấy đơn hàng nào khớp với từ khóa "${searchQuery}".`
-                      : "Bạn chưa có đơn hàng nào trong trạng thái này. Hãy dạo quanh sàn và chọn cho mình những món đồ yêu thích!"}
+                      ? t("profile.orders.empty.not_found", { query: searchQuery })
+                      : t("profile.orders.empty.no_orders")}
                   </p>
                   <Link
                     to="/"
                     className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-primary text-on-primary font-label-md font-bold shadow-sm hover:bg-primary-container transition-all"
                   >
-                    <span>Khám phá sản phẩm</span>
+                    <span>{t("profile.orders.empty.explore_btn")}</span>
                     <span className="material-symbols-outlined text-lg">
                       arrow_forward
                     </span>
@@ -230,8 +265,7 @@ export const MyOrder: React.FC = () => {
               {total > 0 && (
                 <div className="p-4 bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/40 flex flex-col sm:flex-row items-center justify-between gap-4">
                   <span className="font-body-sm text-body-sm text-on-surface-variant order-2 sm:order-1">
-                    Hiển thị <strong className="text-on-surface">{startIndex} - {endIndex}</strong> trong tổng số{" "}
-                    <strong className="text-on-surface">{total}</strong> đơn hàng
+                    {t("profile.orders.pagination", { start: startIndex, end: endIndex, total })}
                   </span>
 
                   <div className="flex items-center gap-1.5 order-1 sm:order-2">
@@ -289,6 +323,15 @@ export const MyOrder: React.FC = () => {
           onClose={() => dispatch(closeCancelModal())}
           onConfirmCancel={handleConfirmCancel}
           loading={actionLoading}
+        />
+
+        {/* Slide-in Compact Order Toast */}
+        <OrderToast
+          isOpen={toastConfig.isOpen}
+          title={toastConfig.title}
+          message={toastConfig.message}
+          type={toastConfig.type}
+          onClose={() => setToastConfig((prev) => ({ ...prev, isOpen: false }))}
         />
       </main>
     </CustomerLayout>

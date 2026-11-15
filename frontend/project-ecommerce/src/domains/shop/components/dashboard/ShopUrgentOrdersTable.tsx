@@ -60,8 +60,8 @@ export const ShopUrgentOrdersTable: React.FC<ShopUrgentOrdersTableProps> = ({
             <tr className="bg-surface-container-low text-on-surface-variant font-label-md text-[11px] uppercase tracking-wider font-semibold border-b border-outline-variant/30">
               <th className="py-3 px-4 rounded-l-lg">Mã đơn hàng</th>
               <th className="py-3 px-4">Khách hàng</th>
-              <th className="py-3 px-4">Sản phẩm &amp; Qty</th>
-              <th className="py-3 px-4">Tổng tiền &amp; Thanh toán</th>
+              <th className="py-3 px-4">Sản phẩm & Qty</th>
+              <th className="py-3 px-4">Tổng tiền & Thanh toán</th>
               <th className="py-3 px-4">Trạng thái</th>
               <th className="py-3 px-4 rounded-r-lg text-right">Thao tác</th>
             </tr>
@@ -143,7 +143,11 @@ export const ShopUrgentOrdersTable: React.FC<ShopUrgentOrdersTableProps> = ({
                         className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md font-mono text-[11px] font-semibold ${badgeBg}`}
                       >
                         <span className={`w-1.5 h-1.5 rounded-full ${dotBg}`} />
-                        {order.statusLabel}
+                        {isPending
+                          ? "Chờ xác nhận"
+                          : isPacking
+                          ? "Đang đóng gói"
+                          : "Đã bàn giao"}
                       </span>
                     </td>
 
@@ -155,7 +159,7 @@ export const ShopUrgentOrdersTable: React.FC<ShopUrgentOrdersTableProps> = ({
                           onClick={() => onConfirmOrder(order.id)}
                           className="px-3.5 py-1.5 rounded-lg bg-primary text-on-primary font-label-md text-label-md font-semibold hover:bg-primary-container transition-colors shadow-xs cursor-pointer"
                         >
-                          Xác nhận ngay
+                          Xác nhận đơn
                         </button>
                       )}
 
@@ -165,7 +169,7 @@ export const ShopUrgentOrdersTable: React.FC<ShopUrgentOrdersTableProps> = ({
                           onClick={() => onPrintLabel(order.id)}
                           className="px-3.5 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md font-semibold transition-colors border border-outline-variant/30 cursor-pointer"
                         >
-                          In vận đơn
+                          In nhãn gửi hàng
                         </button>
                       )}
 

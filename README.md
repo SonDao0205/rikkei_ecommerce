@@ -37,7 +37,7 @@ docker compose up --build -d
 docker compose ps
 ```
 
-FE ở `http://localhost:5173`; API thường ở `http://localhost:8080` hoặc `http://localhost:18080`; MySQL host port `3307`. Compose khởi tạo schema khi volume DB rỗng. **Không chạy `database/scriptDb.sql` trên DB đã có dữ liệu vì file này tạo lại database.** Seed chỉ dùng cho local/test:
+FE ở `http://localhost:5173`; API thường ở `http://localhost:8080` hoặc `http://localhost:18080`; MySQL host port `3307`. Compose khởi tạo schema khi volume DB rỗng. `database/scriptDb.sql` không xóa database, nhưng chỉ dùng để bootstrap DB mới/rỗng vì chạy lại sẽ gặp bảng đã tồn tại. Seed chỉ dùng cho local/test, xác nhận đúng môi trường/database và yêu cầu nhập `SEED LOCAL`:
 
 ```powershell
 .\database\seed-local.ps1
@@ -79,4 +79,18 @@ Backend CI chạy gofmt check, unit tests, vet và build. Frontend CI chạy lin
 
 ## Trạng thái phạm vi sản phẩm
 
-Backend currently supports auth/RBAC, catalog/categories, shop onboarding, seller products, addresses, cart, wishlist, voucher validation, and checkout quote APIs (shipping/payment options and total calculation). Order creation, stock reservation, payment gateway integration, and reviews are not implemented. Some admin FE screens still use mock fallbacks; see [Backend README](backend/README.md#voucher-validation-and-checkout-quote) for API contracts and limitations.
+Backend currently supports auth/RBAC, catalog/categories, shop onboarding, seller products, addresses, cart, wishlist, platform/shop vouchers, banners, flash sales, verified-purchase reviews, seller replies, moderation, audit logs, checkout quotes, and order creation (multi-shop splitting, atomic stock reservation, COD and bank transfer). See [promotion/review API and workflow notes](backend/README.md#promotions-reviews-and-audit-log) for authorization and lifecycle details.
+
+### Order status workflow (customer and seller)
+
+Order status transitions are persisted as `PENDING -> CONFIRMED -> PACKING -> SHIPPING -> COMPLETED`, with controlled cancellation/return paths. The customer-facing processing tab groups `CONFIRMED` and `PACKING`; the seller's preparation tab uses `status=PREPARING` for those same persisted states. Details still show the exact status. Seller endpoints enforce shop ownership and valid transitions. `ship` requires carrier and tracking code. `POST /api/v1/seller/orders/bulk-confirm` validates 1–50 distinct IDs and confirms all selected pending orders atomically.
+
+See [Backend README](backend/README.md#order-workflow-customer-and-seller) for API/filter contracts and [Frontend README](frontend/project-ecommerce/README.md#order-workflow-api-integration) for UI integration and current mock-data boundaries.
+
+### Media uploads
+
+Avatar, shop branding, product images, and product video files use the authenticated Cloudinary upload API. Configure Cloudinary values in ignored local `.env` files only; the API secret is backend-only. JPG/JPEG/PNG images are capped at 5 MiB and product videos at 20 MiB. See [Backend media API documentation](backend/README.md#media-uploads-cloudinary) and [Frontend integration](frontend/project-ecommerce/README.md#media-upload-integration).
+
+Checkout order creation now requires an `Idempotency-Key`. The FE retains the same key for retries of an unchanged checkout request, and the BE atomically stores the order response with inventory, voucher, payment, and cart changes. Reusing the key with changed input is rejected. Postman order creation requests use a dynamic GUID; reuse that exact key manually to verify replay behavior.
+
+Cart add (`POST /api/v1/cart/items`) and media upload (`POST /api/v1/media`) now require `Idempotency-Key` as well. The cart retries reuse a pending session key; media retries reuse a key derived from the file contents and purpose. The API persists request fingerprints and rejects reuse with changed input. CORS permits this header for configured FE origins.

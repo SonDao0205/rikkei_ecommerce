@@ -16,6 +16,7 @@ import {
   mapBackendCategory,
   type BackendProductRaw,
 } from "@/domains/storefront/utils/catalogAdapters";
+import { promotionApi } from "@/domains/storefront/api/promotionApi";
 
 interface ApiResponse<T> {
   success: boolean;
@@ -69,15 +70,28 @@ export const productApi = {
   },
 
   /**
-   * Lấy danh sách Flash Sale cho trang Home
-   * GET /api/v1/products?sort=best_selling&limit=4
+   * Lấy danh sách Flash Sale / Sản phẩm nổi bật cho trang Home
+   * GET /api/v1/products?sort=best_selling&limit=4[&category_id=...]
    */
-  fetchFlashSaleProducts: async (): Promise<ProductItem[]> => {
-    const response = await axiosClient.get<ApiResponse<{ products: BackendProductRaw[]; total: number }>>("/api/v1/products", {
-      params: { sort: "best_selling", limit: 4 },
-    });
-    const products = response.data?.data?.products || [];
-    return products.map(mapBackendProductToProductItem);
+  fetchFlashSaleProducts: async (categoryId?: number): Promise<ProductItem[]> => {
+    const campaigns = await promotionApi.getFlashSales();
+    const details = await Promise.allSettled(campaigns.map((sale) => productApi.fetchProductDetail(sale.product_id)));
+    return details.flatMap((result, index) => {
+      if (result.status !== "fulfilled") return [];
+      const sale = campaigns[index];
+      const item = result.value.product;
+      if (categoryId && categoryId > 0 && item.category_id !== categoryId) return [];
+      const originalPrice = item.price;
+      return [{
+        ...item,
+        original_price: originalPrice,
+        price: sale.sale_price,
+        discount_percent: originalPrice > 0 ? Math.round((originalPrice - sale.sale_price) * 100 / originalPrice) : 0,
+        is_flash_sale: true,
+        tag: "FLASH SALE",
+        stock_alert: sale.remaining < 10 ? `Còn ${sale.remaining} suất ưu đãi` : undefined,
+      }];
+    }).slice(0, 4);
   },
 
   /**
@@ -191,16 +205,10 @@ export const productApi = {
   approveAdminProduct: async (
     productId: number
   ): Promise<{ id: number; is_active: boolean; status: string }> => {
-    try {
-      const response = await axiosClient.patch<
-        ApiResponse<{ id: number; is_active: boolean; status: string }>
-      >(`/api/v1/admin/products/${productId}/status`, {
-        is_active: true,
-      });
-      return response.data?.data || { id: productId, is_active: true, status: "ACTIVE" };
-    } catch {
-      return { id: productId, is_active: true, status: "ACTIVE" };
-    }
+    const response = await axiosClient.patch<
+      ApiResponse<{ id: number; is_active: boolean; status: string }>
+    >(`/api/v1/admin/products/${productId}/status`, { status: "ACTIVE" });
+    return response.data.data;
   },
 
   /**
@@ -210,22 +218,13 @@ export const productApi = {
     productId: number,
     reason: string
   ): Promise<{ id: number; is_active: boolean; status: string; reject_reason: string }> => {
-    try {
-      const response = await axiosClient.patch<
-        ApiResponse<{ id: number; is_active: boolean; status: string; reject_reason: string }>
-      >(`/api/v1/admin/products/${productId}/status`, {
-        is_active: false,
-      });
-      const data = response.data?.data;
-      return {
-        id: data?.id ?? productId,
-        is_active: false,
-        status: "REJECTED",
-        reject_reason: data?.reject_reason ?? reason,
-      };
-    } catch {
-      return { id: productId, is_active: false, status: "REJECTED", reject_reason: reason };
-    }
+    const response = await axiosClient.patch<
+      ApiResponse<{ id: number; is_active: boolean; status: string; reject_reason: string }>
+    >(`/api/v1/admin/products/${productId}/status`, {
+      status: "REJECTED",
+      reason,
+    });
+    return response.data.data;
   },
 
   /**

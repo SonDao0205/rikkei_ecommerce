@@ -47,7 +47,7 @@ func (a *Handler) listSellerProducts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	rows, err := a.db.QueryContext(r.Context(), `SELECT id,shop_id,category_id,brand_id,name,slug,description,
-		thumbnail_url,price,status,created_at,updated_at FROM products
+		thumbnail_url,video_url,price,status,created_at,updated_at FROM products
 		WHERE shop_id=? AND is_deleted=0 AND (?='' OR status=?) ORDER BY created_at DESC,id DESC LIMIT ? OFFSET ?`,
 		shopID, status, status, limit, (page-1)*limit)
 	if err != nil {
@@ -127,9 +127,9 @@ func (a *Handler) createSellerProduct(w http.ResponseWriter, r *http.Request) {
 	}
 	thumbnail := primaryImage(request.Images)
 	result, err := tx.ExecContext(r.Context(), `INSERT INTO products
-		(shop_id,category_id,brand_id,name,slug,description,thumbnail_url,price,status)
-		VALUES(?,?,?,?,?,?,?,?, 'PENDING')`, shopID, request.CategoryID, request.BrandID, request.Name,
-		slug, nullableText(request.Description), thumbnail, request.Price)
+		(shop_id,category_id,brand_id,name,slug,description,thumbnail_url,video_url,price,status)
+		VALUES(?,?,?,?,?,?,?,?,?, 'PENDING')`, shopID, request.CategoryID, request.BrandID, request.Name,
+		slug, nullableText(request.Description), thumbnail, request.VideoURL, request.Price)
 	if err != nil {
 		if isMySQLDuplicate(err) {
 			writeError(w, http.StatusConflict, "product_conflict", "A product with conflicting unique data already exists")
@@ -241,9 +241,9 @@ func (a *Handler) updateSellerProduct(w http.ResponseWriter, r *http.Request) {
 	}
 	thumbnail := primaryImage(request.Images)
 	if _, err = tx.ExecContext(r.Context(), `UPDATE products SET category_id=?,brand_id=?,name=?,slug=?,
-		description=?,thumbnail_url=?,price=?,status='PENDING',reject_reason=NULL
+		description=?,thumbnail_url=?,video_url=?,price=?,status='PENDING',reject_reason=NULL
 		WHERE id=? AND shop_id=?`, request.CategoryID, request.BrandID, request.Name, slug,
-		nullableText(request.Description), thumbnail, request.Price, productID, shopID); err != nil {
+		nullableText(request.Description), thumbnail, request.VideoURL, request.Price, productID, shopID); err != nil {
 		if isMySQLDuplicate(err) {
 			writeError(w, http.StatusConflict, "product_conflict", "A product with conflicting unique data already exists")
 			return

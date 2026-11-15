@@ -16,8 +16,8 @@ func RegisterRoutes(mux *http.ServeMux, security *auth.App, db *sql.DB, logger *
 
 	mux.Handle("POST /api/v1/shops", security.RequireRole("CLIENT", handler.createShopDraft))
 	mux.Handle("POST /api/v1/me/shop", security.RequireRole("CLIENT", handler.createShopDraft))
-	mux.Handle("GET /api/v1/me/shop", security.RequireRole("CLIENT", handler.myShop))
-	mux.Handle("PUT /api/v1/me/shop", security.RequireRole("CLIENT", handler.updateMyShop))
+	mux.Handle("GET /api/v1/me/shop", security.RequireAuth(handler.myShop))
+	mux.Handle("PUT /api/v1/me/shop", security.RequireAuth(handler.updateMyShop))
 	mux.Handle("POST /api/v1/me/shop/submit", security.RequireRole("CLIENT", handler.submitShop))
 	mux.Handle("GET /api/v1/admin/shops", security.RequireRole("ADMIN", handler.listAdminShops))
 	mux.Handle("PATCH /api/v1/admin/shops/{id}/status", security.RequireRole("ADMIN", handler.updateShopStatus))

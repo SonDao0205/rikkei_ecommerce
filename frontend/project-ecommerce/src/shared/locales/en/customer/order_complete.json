@@ -1,0 +1,113 @@
+{
+  "hero": {
+    "recorded": "Order recorded ({{paymentMethod}})",
+    "title": "Thank you for your order!",
+    "order_code_prefix": "Your order code is",
+    "email_sent_to": ". A detailed confirmation email and electronic receipt have been sent to"
+  },
+  "meta": {
+    "order_code": "Order code",
+    "copy_code_tooltip": "Copy order code",
+    "copied": "Copied!",
+    "order_type": "Online Purchase",
+    "order_time": "Order time",
+    "timezone": "ICT Timezone (GMT+7)",
+    "payment_method": "Payment method",
+    "cod_note": "Cash on Delivery",
+    "bank_transfer_note": "VietQR Bank Transfer",
+    "online_note": "Online Payment",
+    "total_payment": "Total payment",
+    "saved": "Saved {{amount}}",
+    "vat_included": "VAT Included"
+  },
+  "shipping": {
+    "recipient_address": "Delivery Address",
+    "verified_recipient": "Verified",
+    "note_label": "Note:",
+    "default_delivery_note": "Deliver during office hours, call 15 minutes in advance. Allow parcel inspection prior to receiving (Standard COD Co-check).",
+    "transit_insurance": "100% Shipping Insurance",
+    "free_returns": "7-Day Free Returns",
+    "estimated_delivery": "Estimated delivery",
+    "default_estimated_days": "2–4 days",
+    "standard_delivery": "Standard Delivery",
+    "express_delivery": "Express Delivery",
+    "tracking_code": "Tracking No: {{code}}",
+    "timeline": {
+      "placed": {
+        "title": "Order Placed",
+        "time": "Just now",
+        "note": "System confirmed"
+      },
+      "confirming": {
+        "title": "Awaiting Confirmation",
+        "time": "Today",
+        "note": "Shop reviewing"
+      },
+      "picking": {
+        "title": "Awaiting Pickup",
+        "time": "Est. this afternoon",
+        "note": "Shop packing"
+      },
+      "shipping": {
+        "title": "In Transit",
+        "time": "Est. 1-2 days",
+        "note": "Courier delivering"
+      },
+      "delivered": {
+        "title": "Delivery Successful",
+        "time": "2-4 days",
+        "note": "Received & paid"
+      }
+    },
+    "sms_notice": "Zalo / SMS notification will automatically be sent once the courier starts dispatching.",
+    "support_priority": "24/7 Priority"
+  },
+  "items": {
+    "title": "Ordered Items Detail",
+    "subtitle": "{{count}} products distributed by official merchant stores",
+    "package_count_one": "1 Package",
+    "package_count_other": "{{count}} Packages",
+    "mall_badge": "MALL",
+    "default_warehouse": "Dispatch warehouse: Hub District 7, HCMC",
+    "warehouse_prefix": "Dispatch warehouse:",
+    "visit_shop": "Visit Store",
+    "variant_prefix": "Variant: {{variant}}",
+    "quantity_prefix": "Quantity: {{quantity}}",
+    "in_stock": "In stock ready for dispatch",
+    "ready_to_ship": "Confirmed & ready to dispatch",
+    "warranty_12m": "12-month accessory warranty",
+    "breakdown": {
+      "subtotal": "Items Total ({{count}} products)",
+      "shipping_fee": "Shipping Fee",
+      "shipping_fee_tooltip": "Fast nationwide delivery",
+      "shipping_discount": "Shipping Discount",
+      "shop_discount": "Store Discounts",
+      "platform_discount": "Applied Platform Voucher",
+      "total_payment": "Total Payment {{method}}",
+      "courier_collection_note": "Courier will collect this exact amount upon delivery"
+    }
+  },
+  "actions": {
+    "print_invoice": "Print Invoice",
+    "order_detail": "Order Details {{code}}",
+    "continue_shopping": "Continue Shopping"
+  },
+  "guarantees": {
+    "co_check": {
+      "title": "Doorstep Inspection",
+      "desc": "Open the parcel and inspect with courier before paying cash."
+    },
+    "free_return": {
+      "title": "7-Day Free Returns",
+      "desc": "Free size or color exchange, or quick refund if the item has defects."
+    },
+    "support": {
+      "title": "Instant 24/7 Support",
+      "desc_prefix": "Hotline",
+      "hotline": "1900 6868",
+      "desc_suffix": "or click to connect with customer care team.",
+      "chat_link": "Live Chat with Support"
+    }
+  }
+}
+

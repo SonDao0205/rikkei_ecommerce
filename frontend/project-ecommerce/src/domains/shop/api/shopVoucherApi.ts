@@ -1,139 +1,102 @@
-import type { ShopVoucherItem } from "@/domains/shop/types/shopVoucher.types";
+import axiosClient from "@/shared/api/axiosClient";
+import type {
+  ShopVoucherItem,
+  ShopVoucherStats,
+  CreateShopVoucherPayload,
+} from "@/domains/shop/types/shopVoucher.types";
 
-/**
- * Tạo dữ liệu mock mã giảm giá dựa trên thông tin gian hàng
- */
-export const getMockShopVouchers = (_shopId?: number, shopName?: string): ShopVoucherItem[] => {
-  const prefix = shopName
-    ? shopName
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-zA-Z0-9]/g, "")
-        .toUpperCase()
-        .slice(0, 4) || "SHOP"
-    : "SHOP";
+interface VoucherRecord {
+  id: number;
+  code: string;
+  scope: "PLATFORM" | "SHOP";
+  shop_id: number | null;
+  title: string;
+  description: string | null;
+  discount_type: "PERCENT" | "FIXED";
+  discount_value: number;
+  max_discount_amount: number | null;
+  min_order_value: number;
+  usage_limit: number | null;
+  usage_per_user: number;
+  used_count: number;
+  start_at: string;
+  end_at: string;
+  is_active: boolean;
+}
 
-  return [
-    {
-      id: "voucher-1",
-      code: `${prefix}30K`,
-      title: "Giảm trực tiếp 30.000 ₫",
-      type: "money",
-      amountText: "GIẢM 30.000 ₫",
-      minOrderAmount: 300000,
-      minOrderText: "Đơn tối thiểu 300.000 ₫",
-      discountValue: 30000,
-      expiryText: "HSD: 31/12/2026",
-      expiryDate: "2026-12-31",
-      claimedByDefault: false,
-      description: "Áp dụng cho tất cả sản phẩm của gian hàng khi đạt giá trị đơn tối thiểu 300.000 ₫.",
-      badge: "Phổ biến",
-      usagePercent: 68,
-    },
-    {
-      id: "voucher-2",
-      code: `${prefix}10PCT`,
-      title: "Giảm 10% tối đa 50.000 ₫",
-      type: "percent",
-      amountText: "GIẢM 10% Tối đa 50k",
-      minOrderAmount: 500000,
-      minOrderText: "Đơn tối thiểu 500.000 ₫",
-      discountValue: 10,
-      maxDiscountAmount: 50000,
-      expiryText: "HSD: 31/12/2026",
-      expiryDate: "2026-12-31",
-      claimedByDefault: false,
-      description: "Giảm 10% tổng giá trị đơn hàng, giảm tối đa 50.000 ₫ cho đơn từ 500.000 ₫.",
-      badge: "Bán chạy",
-      usagePercent: 82,
-    },
-    {
-      id: "voucher-3",
-      code: "FREESHIP25",
-      title: "Hỗ trợ phí vận chuyển 25.000 ₫",
-      type: "shipping",
-      amountText: "FREESHIP EXTRA 25k",
-      minOrderAmount: 200000,
-      minOrderText: "Đơn tối thiểu 200.000 ₫",
-      discountValue: 25000,
-      expiryText: "HSD: 15/01/2027",
-      expiryDate: "2027-01-15",
-      claimedByDefault: true,
-      description: "Giảm tối đa 25.000 ₫ phí ship cho các đơn giao toàn quốc.",
-      badge: "Freeship",
-      usagePercent: 91,
-    },
-    {
-      id: "voucher-4",
-      code: `${prefix}VIP100`,
-      title: "Ưu đãi khách hàng VIP giảm 100.000 ₫",
-      type: "money",
-      amountText: "GIẢM 100.000 ₫",
-      minOrderAmount: 1200000,
-      minOrderText: "Đơn tối thiểu 1.200.000 ₫",
-      discountValue: 100000,
-      expiryText: "HSD: 28/02/2027",
-      expiryDate: "2027-02-28",
-      claimedByDefault: false,
-      description: "Ưu đãi đặc quyền dành cho đơn hàng giá trị cao từ 1.200.000 ₫ trở lên.",
-      badge: "Độc quyền",
-      usagePercent: 45,
-    },
-    {
-      id: "voucher-5",
-      code: `${prefix}FOLLOW20`,
-      title: "Mã giảm giá cho Người theo dõi gian hàng",
-      type: "percent",
-      amountText: "GIẢM 15% Tối đa 40k",
-      minOrderAmount: 250000,
-      minOrderText: "Đơn tối thiểu 250.000 ₫",
-      discountValue: 15,
-      maxDiscountAmount: 40000,
-      expiryText: "HSD: 30/06/2027",
-      expiryDate: "2027-06-30",
-      claimedByDefault: false,
-      description: "Dành riêng cho khách hàng nhấn 'Theo dõi' gian hàng trên MarketPulse.",
-      badge: "Người theo dõi",
-      usagePercent: 30,
-    },
-    {
-      id: "voucher-6",
-      code: "FREESHIP50",
-      title: "Miễn phí vận chuyển hỏa tốc toàn quốc",
-      type: "shipping",
-      amountText: "FREESHIP HỎA TỐC 50k",
-      minOrderAmount: 600000,
-      minOrderText: "Đơn tối thiểu 600.000 ₫",
-      discountValue: 50000,
-      expiryText: "HSD: 31/03/2027",
-      expiryDate: "2027-03-31",
-      claimedByDefault: false,
-      description: "Hỗ trợ tới 50.000 ₫ phí vận chuyển nhanh cho các đơn hàng từ 600.000 ₫.",
-      badge: "Freeship Extra",
-      usagePercent: 54,
-    },
-  ];
+interface ApiEnvelope<T> { success: boolean; data: T }
+
+const dateOnly = (value: string) => value.slice(0, 10);
+const mapVoucher = (v: VoucherRecord): ShopVoucherItem => {
+  const now = Date.now();
+  const start = new Date(v.start_at).getTime();
+  const end = new Date(v.end_at).getTime();
+  const status = !v.is_active ? "paused" : now < start ? "upcoming" : now >= end ? "expired" : "ongoing";
+  const percent = v.discount_type === "PERCENT";
+  const amountText = percent
+    ? `GIẢM ${v.discount_value}%${v.max_discount_amount ? ` tối đa ${v.max_discount_amount.toLocaleString("vi-VN")} ₫` : ""}`
+    : `GIẢM ${v.discount_value.toLocaleString("vi-VN")} ₫`;
+  return {
+    id: String(v.id), code: v.code, title: v.title, type: percent ? "percent" : "money",
+    amountText, minOrderAmount: v.min_order_value, minOrderText: `Đơn tối thiểu ${v.min_order_value.toLocaleString("vi-VN")} ₫`,
+    discountValue: v.discount_value, maxDiscountAmount: v.max_discount_amount ?? undefined,
+    startDate: dateOnly(v.start_at), expiryDate: dateOnly(v.end_at), expiryText: `HSD: ${dateOnly(v.end_at)}`,
+    description: v.description ?? "", usageCount: v.used_count, maxUsageCount: v.usage_limit ?? undefined,
+    usagePercent: v.usage_limit ? Math.min(100, Math.round(v.used_count * 100 / v.usage_limit)) : 0,
+    status,
+  };
 };
+
+const toPayload = (payload: CreateShopVoucherPayload) => ({
+  code: payload.code.trim().toUpperCase(), title: payload.title.trim(), description: payload.description.trim(),
+  discount_type: payload.type === "percent" ? "PERCENT" : "FIXED",
+  discount_value: payload.discountValue, max_discount_amount: payload.type === "percent" ? payload.maxDiscountAmount ?? null : null,
+  min_order_value: payload.minOrderAmount, usage_limit: payload.maxUsageCount || null, usage_per_user: 1,
+  start_at: `${payload.startDate}T00:00:00Z`, end_at: `${payload.expiryDate}T23:59:59Z`,
+});
 
 export const shopVoucherApi = {
-  /**
-   * Mock API: Lấy tất cả mã giảm giá của gian hàng
-   */
-  async getShopVouchers(shopId?: number, shopName?: string): Promise<ShopVoucherItem[]> {
-    // Giả lập network delay ngắn cho trải nghiệm mượt mà
-    await new Promise((resolve) => setTimeout(resolve, 200));
-    return getMockShopVouchers(shopId, shopName);
+  async getPublicShopVouchers(shopId: number): Promise<ShopVoucherItem[]> {
+    const { data } = await axiosClient.get<ApiEnvelope<VoucherRecord[]>>("/api/v1/vouchers", { params: { scope: "SHOP", shop_id: shopId } });
+    return (data.data ?? []).map(mapVoucher);
   },
-
-  /**
-   * Mock API: Lưu mã giảm giá vào ví voucher của tài khoản
-   */
+  async getClaimedVoucherIDs(): Promise<string[]> {
+    const { data } = await axiosClient.get<ApiEnvelope<VoucherRecord[]>>("/api/v1/me/vouchers");
+    return (data.data ?? []).map((voucher) => String(voucher.id));
+  },
   async claimShopVoucher(voucherId: string): Promise<{ success: boolean; message: string }> {
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    return {
-      success: true,
-      message: `Đã lưu mã giảm giá #${voucherId} thành công vào ví ưu đãi!`,
-    };
+    await axiosClient.post(`/api/v1/me/vouchers/${voucherId}/claim`);
+    return { success: true, message: "Đã lưu voucher vào ví ưu đãi của bạn." };
+  },
+  async getShopVouchers(): Promise<ShopVoucherItem[]> {
+    const { data } = await axiosClient.get<ApiEnvelope<VoucherRecord[]>>("/api/v1/seller/vouchers");
+    return (data.data ?? []).map(mapVoucher);
+  },
+  async getShopVoucherStats(): Promise<ShopVoucherStats> {
+    const { data } = await axiosClient.get<ApiEnvelope<{ active_count: number; total_usage: number; voucher_revenue: number; discount_spent: number }>>("/api/v1/seller/vouchers/stats");
+    return { activeCount: data.data.active_count, totalUsage: data.data.total_usage, voucherRevenue: data.data.voucher_revenue, discountSpent: data.data.discount_spent };
+  },
+  async createShopVoucher(payload: CreateShopVoucherPayload): Promise<ShopVoucherItem> {
+    const { data } = await axiosClient.post<ApiEnvelope<VoucherRecord>>("/api/v1/seller/vouchers", toPayload(payload));
+    return this.getShopVouchers().then((list) => list.find((voucher) => voucher.id === String(data.data.id)) ?? mapVoucher({ ...data.data, scope: "SHOP", shop_id: null, description: payload.description, discount_type: payload.type === "percent" ? "PERCENT" : "FIXED", discount_value: payload.discountValue, max_discount_amount: payload.maxDiscountAmount ?? null, min_order_value: payload.minOrderAmount, usage_limit: payload.maxUsageCount, usage_per_user: 1, used_count: 0, start_at: `${payload.startDate}T00:00:00Z`, end_at: `${payload.expiryDate}T23:59:59Z`, is_active: true }));
+  },
+  async updateShopVoucher(id: string, payload: Partial<ShopVoucherItem>): Promise<ShopVoucherItem> {
+    const current = (await this.getShopVouchers()).find((voucher) => voucher.id === id);
+    if (!current) throw new Error("Không tìm thấy voucher");
+    const full = { ...current, ...payload } as ShopVoucherItem;
+    const body = toPayload({ code: full.code, title: full.title, type: full.type, discountValue: full.discountValue, maxDiscountAmount: full.maxDiscountAmount, minOrderAmount: full.minOrderAmount, startDate: full.startDate ?? "", expiryDate: full.expiryDate ?? "", maxUsageCount: full.maxUsageCount ?? 0, description: full.description });
+    await axiosClient.put(`/api/v1/seller/vouchers/${id}`, body);
+    return (await this.getShopVouchers()).find((voucher) => voucher.id === id)!;
+  },
+  async deleteShopVoucher(id: string): Promise<string> {
+    await axiosClient.patch(`/api/v1/seller/vouchers/${id}/status`, { is_active: false });
+    return id;
+  },
+  async toggleShopVoucherStatus(id: string): Promise<ShopVoucherItem> {
+    const current = (await this.getShopVouchers()).find((voucher) => voucher.id === id);
+    if (!current) throw new Error("Không tìm thấy voucher");
+    const active = current.status === "paused";
+    await axiosClient.patch(`/api/v1/seller/vouchers/${id}/status`, { is_active: active });
+    return { ...current, status: active ? "ongoing" : "paused" };
   },
 };
-

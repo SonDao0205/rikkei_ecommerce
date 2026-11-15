@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 )
@@ -166,6 +167,34 @@ func TestOTPFormatAndPhoneNormalization(t *testing.T) {
 	}
 }
 
+func TestGeneratedOTPIsSixDigits(t *testing.T) {
+	for range 100 {
+		code, err := newOTP()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !validOTP(code) {
+			t.Fatalf("generated malformed OTP %q", code)
+		}
+	}
+}
+
+func TestEmailVerificationRoutesValidateOTPBeforeDatabase(t *testing.T) {
+	a := testApp()
+	for _, tc := range []struct{ path, body string }{
+		{"/api/v1/auth/verify-email-otp", `{"email":"new@example.test","otp":"12x456"}`},
+		{"/api/v1/auth/verify-email-otp", `{"email":"","otp":"123456"}`},
+	} {
+		req := httptest.NewRequest(http.MethodPost, tc.path, bytes.NewBufferString(tc.body))
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		a.Handler().ServeHTTP(rec, req)
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("%s returned %d, expected 400 before DB access", tc.path, rec.Code)
+		}
+	}
+}
+
 func TestCORSRejectsUnknownOrigin(t *testing.T) {
 	a := testApp()
 	a.cfg.Origins = []string{"https://shop.example"}
@@ -175,6 +204,26 @@ func TestCORSRejectsUnknownOrigin(t *testing.T) {
 	a.Handler().ServeHTTP(rec, req)
 	if rec.Code != http.StatusForbidden {
 		t.Fatalf("status=%d body=%s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestCORSAllowsIdempotencyHeadersForConfiguredOrigin(t *testing.T) {
+	a := testApp()
+	a.cfg.Origins = []string{"https://shop.example"}
+	req := httptest.NewRequest(http.MethodOptions, "/api/v1/cart/items", nil)
+	req.Header.Set("Origin", "https://shop.example")
+	req.Header.Set("Access-Control-Request-Method", "POST")
+	req.Header.Set("Access-Control-Request-Headers", "authorization,content-type,idempotency-key")
+	rec := httptest.NewRecorder()
+	a.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("preflight status=%d body=%s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(strings.ToLower(rec.Header().Get("Access-Control-Allow-Headers")), "idempotency-key") {
+		t.Fatalf("preflight did not allow Idempotency-Key: %q", rec.Header().Get("Access-Control-Allow-Headers"))
+	}
+	if !strings.Contains(rec.Header().Get("Access-Control-Expose-Headers"), "Idempotency-Replayed") {
+		t.Fatalf("replay indicator is not exposed: %q", rec.Header().Get("Access-Control-Expose-Headers"))
 	}
 }
 

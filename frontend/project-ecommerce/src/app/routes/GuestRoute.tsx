@@ -32,12 +32,20 @@ export const GuestRoute: React.FC<GuestRouteProps> = ({ children }) => {
 
   // Nếu đã đăng nhập thành công, không cho phép vào lại trang login/register
   if (isAuthenticated) {
-    const roles = user?.roles || (user?.role ? [user.role] : []);
-    const isAdmin = roles.includes("admin") || (role || "").toLowerCase() === "admin";
-    const isSeller = roles.includes("seller") || (role || "").toLowerCase() === "seller";
+    const userRoles = new Set(
+      (user?.roles?.length ? user.roles : role || user?.role ? [role || user?.role] : []).map(
+        (value) => String(value).toLowerCase().trim()
+      )
+    );
+    const isAdmin = userRoles.has("admin");
+    const isCustomer = userRoles.has("client") || userRoles.has("customer");
+    const isSeller = userRoles.has("seller");
 
     if (isAdmin) {
       return <Navigate to="/admin/dashboard" replace />;
+    }
+    if (isCustomer) {
+      return <Navigate to="/home" replace />;
     }
     if (isSeller && user?.shop_status === "ACTIVE") {
       return <Navigate to="/shop/dashboard" replace />;

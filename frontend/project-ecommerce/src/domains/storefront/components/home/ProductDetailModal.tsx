@@ -7,6 +7,7 @@ import {
   setFollowState,
 } from "@/domains/shop/state/publicShopSlice";
 import type { ProductVariant } from "@/shared/types";
+import { getShopDefaultLogo } from "@/shared/utils/avatar";
 
 interface ProductDetailModalProps {
   productId: number | null;
@@ -311,12 +312,19 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                         className="flex items-center gap-2.5 cursor-pointer hover:opacity-80 transition-opacity"
                         onClick={() => onOpenShop?.(shop.id)}
                       >
-                        <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center font-bold text-primary overflow-hidden">
-                          {shop.logo_url ? (
-                            <img src={shop.logo_url} alt={shop.name} className="w-full h-full object-cover" />
-                          ) : (
-                            shop.name.charAt(0).toUpperCase()
-                          )}
+                        <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center font-bold text-primary overflow-hidden shrink-0">
+                          <img
+                            src={shop.logo_url || getShopDefaultLogo(shop.name)}
+                            alt={shop.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              const target = e.currentTarget;
+                              const fallback = getShopDefaultLogo(shop.name);
+                              if (target.src !== fallback) {
+                                target.src = fallback;
+                              }
+                            }}
+                          />
                         </div>
                         <div>
                           <div className="flex items-center gap-1">

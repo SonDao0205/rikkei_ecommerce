@@ -73,3 +73,11 @@ func CurrentUser(r *http.Request) Identity {
 	user := current(r)
 	return Identity{ID: user.ID, Role: user.Role, Roles: append([]string(nil), user.Roles...), SessionID: user.SessionID}
 }
+
+func WithUser(ctx context.Context, id, role string) context.Context {
+	return context.WithValue(ctx, ctxKey{}, contextUser{
+		ID:    id,
+		Role:  role,
+		Roles: []string{role},
+	})
+}

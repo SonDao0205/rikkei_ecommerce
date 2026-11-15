@@ -1,0 +1,86 @@
+{
+  "breadcrumb": {
+    "home": "Home",
+    "account": "My Account",
+    "wishlist": "Wishlist",
+    "realtime_sync": "Real-time sync with account"
+  },
+  "toolbar": {
+    "back": "Back",
+    "back_title": "Back to previous page",
+    "title": "Wishlist",
+    "saved_count": "{{count}} saved item(s)",
+    "desc": "Products you are interested in and saved for later. Move them to your cart quickly before promotional deals or warehouse stock run out!",
+    "add_all_in_stock": "Add all in-stock to cart ({{count}})",
+    "clear_all": "Clear all"
+  },
+  "filter": {
+    "all": "All",
+    "sale": "On Sale",
+    "in_stock": "In Stock",
+    "out_of_stock": "Out of Stock",
+    "search_placeholder": "Search in wishlist...",
+    "no_results": "No wishlist items match your current filter."
+  },
+  "sort": {
+    "recent": "Sort: Recently added",
+    "price_asc": "Price: Low to high",
+    "price_desc": "Price: High to low",
+    "discount": "Biggest discount"
+  },
+  "card": {
+    "out_of_stock_badge": "OUT OF STOCK",
+    "remove_tooltip": "Remove from wishlist",
+    "variant_prefix": "Variant:",
+    "add_to_cart": "Add to Cart",
+    "out_of_stock_btn": "Temporarily out of stock",
+    "notify_restock": "Notify me when back in stock"
+  },
+  "empty": {
+    "title": "Your wishlist is empty",
+    "desc": "You have not saved any items yet. Explore curated craft, fashion, and home goods to find something you love!",
+    "explore_btn": "Explore today's hot items",
+    "back_btn": "Back to saved items"
+  },
+  "auth": {
+    "login_required_title": "Sign in to view your wishlist",
+    "login_required_desc": "Please log in to your account to view your saved products and get notifications on special offers.",
+    "login_btn": "Sign In Now"
+  },
+  "recommendations": {
+    "title": "Similar recommendations for you",
+    "view_all": "View all recommendations",
+    "add_tooltip": "Save to wishlist"
+  },
+  "trust": {
+    "price_alert_title": "Automatic Price-Drop Alert",
+    "price_alert_desc": "Saved products will trigger notifications whenever merchants apply discount vouchers or Flash Sales.",
+    "save_cloud_title": "30-Day Cloud Storage",
+    "save_cloud_desc": "Your favorites are saved to your account cloud, syncing smoothly across mobile app and web.",
+    "verified_shops_title": "100% Verified Stores",
+    "verified_shops_desc": "Every product from local artisans and brands passes through a strict 5-step quality verification."
+  },
+  "toast": {
+    "view_wishlist": "View Wishlist",
+    "view_cart": "View Cart",
+    "removed_title": "Removed from wishlist",
+    "removed_msg": "\"{{name}}\" has been removed from your wishlist.",
+    "added_to_cart_title": "Added to cart",
+    "added_to_cart_msg": "\"{{name}}\" has been added to your cart.",
+    "added_all_title": "Added to cart",
+    "added_all_msg": "Moved {{count}} in-stock item(s) to your cart.",
+    "clear_confirm": "Are you sure you want to remove all items from your wishlist?",
+    "cleared_title": "Cleared all",
+    "cleared_msg": "Your wishlist is now empty.",
+    "notify_restock_alert": "The system will notify you via Zalo/Email as soon as \"{{name}}\" is back in stock!",
+    "added_wishlist_title": "Added to wishlist!",
+    "added_wishlist_msg": "\"{{name}}\" has been saved to your wishlist.",
+    "choose_variant_title": "Opening product page",
+    "choose_variant_msg": "Please select the size/color for \"{{name}}\".",
+    "error_title": "Error",
+    "error_remove": "Unable to remove item from wishlist.",
+    "error_clear": "Unable to clear wishlist.",
+    "error_add": "Unable to add to wishlist."
+  }
+}
+

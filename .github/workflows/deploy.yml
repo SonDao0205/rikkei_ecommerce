@@ -1,0 +1,73 @@
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: ["Frontend CI/CD", "Backend CI/CD"]
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy ${{ github.event.workflow_run.name }}
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Chọn service cần deploy
+        id: svc
+        env:
+          WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
+        run: |
+          case "$WORKFLOW_NAME" in
+            "Frontend CI/CD") echo "name=frontend" >> "$GITHUB_OUTPUT" ;;
+            "Backend CI/CD")  echo "name=backend"  >> "$GITHUB_OUTPUT" ;;
+            *) echo "Workflow không hỗ trợ: $WORKFLOW_NAME"; exit 1 ;;
+          esac
+
+      - name: Setup SSH
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          echo "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      - name: Pull và restart service
+        env:
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          SERVICE: ${{ steps.svc.outputs.name }}
+        run: |
+          ssh "$DEPLOY_USER@$DEPLOY_HOST" "cd $DEPLOY_PATH && SERVICE=$SERVICE bash -s" <<'EOF'
+          set -e
+          docker compose pull "$SERVICE"
+          docker compose up -d --no-deps "$SERVICE"
+
+          # Chỉ backend có healthcheck thì mới chờ
+          if [ "$SERVICE" = "backend" ]; then
+            for i in $(seq 1 30); do
+              status=$(docker inspect -f '{{.State.Health.Status}}' "$(docker compose ps -q backend)")
+              [ "$status" = "healthy" ] && echo "backend healthy" && break
+              if [ "$i" = 30 ]; then
+                echo "backend không healthy"
+                docker compose logs --tail=50 backend
+                exit 1
+              fi
+              sleep 5
+            done
+          fi
+
+          docker image prune -f
+          EOF

@@ -1,5 +1,8 @@
-import React from "react";
+import React, { useRef } from "react";
 import type { ShopStoreData } from "@/shared/types";
+import { toSlug } from "@/shared/utils/slug";
+import { uploadMedia } from "@/shared/api/mediaUpload";
+import { getShopDefaultLogo, DEFAULT_SHOP_BANNER } from "@/shared/utils/avatar";
 
 interface Step2StoreBrandingProps {
   data: ShopStoreData;
@@ -19,8 +22,34 @@ export const Step2StoreBranding: React.FC<Step2StoreBrandingProps> = ({
   data,
   onChange,
 }) => {
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const result = await uploadMedia(file, "shop-image");
+      onChange({ logoUrl: result.url });
+    } catch { /* the global upload status displays the failure */ }
+  };
+
+  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const result = await uploadMedia(file, "shop-image");
+      onChange({ bannerUrl: result.url, bannerName: file.name });
+    } catch { /* the global upload status displays the failure */ }
+  };
+
   const handleRemoveLogo = () => {
     onChange({ logoUrl: "" });
+    if (logoInputRef.current) {
+      logoInputRef.current.value = "";
+    }
   };
 
   const handleRemoveBanner = () => {
@@ -28,6 +57,9 @@ export const Step2StoreBranding: React.FC<Step2StoreBrandingProps> = ({
       bannerUrl: "",
       bannerName: "",
     });
+    if (bannerInputRef.current) {
+      bannerInputRef.current.value = "";
+    }
   };
 
   return (
@@ -64,7 +96,14 @@ export const Step2StoreBranding: React.FC<Step2StoreBrandingProps> = ({
               type="text"
               maxLength={50}
               value={data.shopName}
-              onChange={(e) => onChange({ shopName: e.target.value })}
+              onChange={(e) => {
+                const name = e.target.value;
+                onChange({
+                  shopName: name,
+                  slug: toSlug(name),
+                  customStoreUrl: toSlug(name),
+                });
+              }}
             />
             {data.shopName && (
               <span className="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-secondary text-[22px]">
@@ -123,25 +162,50 @@ export const Step2StoreBranding: React.FC<Step2StoreBrandingProps> = ({
 
         {/* Logo gian hàng (Shop Logo Upload) */}
         <div className="md:col-span-12 flex flex-col sm:flex-row items-start sm:items-center gap-space-md bg-surface-container-low p-space-md rounded-xl">
-          <div className="relative group shrink-0">
-            <div className="w-24 h-24 rounded-2xl bg-primary-container text-on-primary flex flex-col items-center justify-center shadow-md overflow-hidden relative">
-              {data.logoUrl ? (
-                <>
-                  <img
-                    className="w-full h-full object-cover"
-                    alt="Logo Gian hàng"
-                    src={data.logoUrl}
-                  />
-                </>
-              ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center text-on-primary">
-                  <span className="material-symbols-outlined text-[32px]">storefront</span>
-                  <span className="text-[10px] uppercase font-bold tracking-wider mt-1">
-                    Logo gian hàng
-                  </span>
+          <input
+            type="file"
+            ref={logoInputRef}
+            accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+            className="hidden"
+            onChange={handleLogoUpload}
+          />
+          <div
+            onClick={() => logoInputRef.current?.click()}
+            className="relative group shrink-0 w-28 h-28 sm:w-32 sm:h-32 rounded-2xl bg-surface-container text-on-surface flex flex-col items-center justify-center shadow-md overflow-hidden border border-outline-variant/30 cursor-pointer hover:border-primary transition-all"
+            title="Nhấp để tải ảnh logo"
+          >
+            {data.logoUrl ? (
+              <>
+                <img
+                  className="w-full h-full object-cover"
+                  alt="Logo Gian hàng"
+                  src={data.logoUrl}
+                />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white gap-1">
+                  <span className="material-symbols-outlined text-[24px]">photo_camera</span>
+                  <span className="text-[10px] font-semibold">Đổi ảnh</span>
                 </div>
-              )}
-            </div>
+              </>
+            ) : data.shopName?.trim() ? (
+              <>
+                <img
+                  className="w-full h-full object-cover"
+                  alt="Logo mặc định"
+                  src={getShopDefaultLogo(data.shopName)}
+                />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white gap-1">
+                  <span className="material-symbols-outlined text-[24px]">photo_camera</span>
+                  <span className="text-[10px] font-semibold">Tải ảnh tùy chỉnh</span>
+                </div>
+              </>
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center text-primary text-center p-2">
+                <span className="material-symbols-outlined text-[32px]">storefront</span>
+                <span className="text-[10px] uppercase font-bold tracking-wider mt-1 text-center">
+                  Logo gian hàng
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col gap-1.5 flex-1">
@@ -152,14 +216,23 @@ export const Step2StoreBranding: React.FC<Step2StoreBrandingProps> = ({
               <span className="text-error font-bold">*</span>
             </div>
             <p className="font-body-sm text-body-sm text-on-surface-variant">
-              Nhập URL HTTPS công khai của ảnh logo (khuyến nghị ảnh vuông). Đường dẫn được lưu cùng hồ sơ shop.
+              Tải ảnh logo đại diện cho gian hàng (khuyến nghị ảnh vuông tỉ lệ 1:1, tối đa 5MB).
             </p>
-            <div className="flex flex-col gap-3 mt-1">
-              <input type="url" value={data.logoUrl || ""} onChange={(e) => onChange({ logoUrl: e.target.value })} placeholder="https://... (URL ảnh công khai)" className="w-full rounded-lg border border-outline-variant/40 bg-surface-container-lowest px-3 py-2 text-sm" />
+            <div className="flex items-center gap-3 mt-1 flex-wrap">
+              <button
+                type="button"
+                onClick={() => logoInputRef.current?.click()}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-on-primary font-label-md text-xs font-bold transition-all shadow-xs cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[18px]">
+                  {data.logoUrl ? "cached" : "upload"}
+                </span>
+                <span>{data.logoUrl ? "Thay đổi logo" : "Tải ảnh logo"}</span>
+              </button>
               {data.logoUrl && (
                 <button
                   onClick={handleRemoveLogo}
-                  className="px-3 py-2 rounded-lg text-on-surface-variant hover:text-error transition-colors font-label-md text-label-md flex items-center gap-1 cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-surface-container hover:bg-error-container/40 text-on-surface-variant hover:text-error transition-colors font-label-md text-xs font-semibold cursor-pointer border border-outline-variant/30"
                   type="button"
                 >
                   <span className="material-symbols-outlined text-[18px]">delete</span>
@@ -172,7 +245,18 @@ export const Step2StoreBranding: React.FC<Step2StoreBrandingProps> = ({
 
         {/* Ảnh bìa gian hàng (Shop Banner / Cover) */}
         <div className="md:col-span-12 flex flex-col md:flex-row items-start md:items-center gap-space-md bg-surface-container-low p-space-md rounded-xl">
-          <div className="relative group w-full sm:w-80 md:w-88 h-28 sm:h-32 rounded-2xl bg-surface-container text-on-surface flex flex-col items-center justify-center shadow-md overflow-hidden relative border border-outline-variant/30 shrink-0">
+          <input
+            type="file"
+            ref={bannerInputRef}
+            accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+            className="hidden"
+            onChange={handleBannerUpload}
+          />
+          <div
+            onClick={() => bannerInputRef.current?.click()}
+            className="relative group w-full sm:w-80 md:w-88 h-28 sm:h-32 rounded-2xl bg-surface-container text-on-surface flex flex-col items-center justify-center shadow-md overflow-hidden border border-outline-variant/30 shrink-0 cursor-pointer hover:border-primary transition-all"
+            title="Nhấp để tải ảnh bìa"
+          >
             {data.bannerUrl ? (
               <>
                 <img
@@ -180,12 +264,22 @@ export const Step2StoreBranding: React.FC<Step2StoreBrandingProps> = ({
                   alt="Ảnh bìa Gian hàng"
                   src={data.bannerUrl}
                 />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white gap-1">
+                  <span className="material-symbols-outlined text-[24px]">photo_camera</span>
+                  <span className="text-[10px] font-semibold">Đổi ảnh bìa</span>
+                </div>
               </>
             ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center text-primary">
-                <span className="material-symbols-outlined text-[32px]">panorama</span>
-                <span className="text-[10px] uppercase font-bold tracking-wider mt-1">
-                  Banner gian hàng
+              <div className="relative w-full h-full flex flex-col items-center justify-center text-white text-center p-2 overflow-hidden">
+                <img
+                  className="absolute inset-0 w-full h-full object-cover opacity-75"
+                  alt="Ảnh bìa mặc định"
+                  src={DEFAULT_SHOP_BANNER}
+                />
+                <div className="absolute inset-0 bg-black/40" />
+                <span className="relative z-10 material-symbols-outlined text-[32px]">panorama</span>
+                <span className="relative z-10 text-[10px] uppercase font-bold tracking-wider mt-1 text-center">
+                  Ảnh bìa mặc định (Nhấp để đổi)
                 </span>
               </div>
             )}
@@ -206,14 +300,23 @@ export const Step2StoreBranding: React.FC<Step2StoreBrandingProps> = ({
               )}
             </div>
             <p className="font-body-sm text-body-sm text-on-surface-variant">
-              Nhập URL HTTPS công khai của ảnh bìa. Ảnh bìa là tùy chọn.
+              Tải ảnh bìa quảng bá thương hiệu gian hàng (khuyến nghị tỉ lệ 16:9 hoặc 3:1, tối đa 5MB).
             </p>
-            <div className="flex flex-col gap-3 mt-1">
-              <input type="url" value={data.bannerUrl || ""} onChange={(e) => onChange({ bannerUrl: e.target.value })} placeholder="https://... (URL ảnh công khai, tùy chọn)" className="w-full rounded-lg border border-outline-variant/40 bg-surface-container-lowest px-3 py-2 text-sm" />
+            <div className="flex items-center gap-3 mt-1 flex-wrap">
+              <button
+                type="button"
+                onClick={() => bannerInputRef.current?.click()}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-primary font-label-md text-xs font-bold border border-outline-variant/30 transition-all shadow-xs cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[18px]">
+                  {data.bannerUrl ? "cached" : "upload"}
+                </span>
+                <span>{data.bannerUrl ? "Thay đổi ảnh bìa" : "Tải ảnh bìa lên"}</span>
+              </button>
               {data.bannerUrl && (
                 <button
                   onClick={handleRemoveBanner}
-                  className="px-3 py-2 rounded-lg text-on-surface-variant hover:text-error transition-colors font-label-md text-label-md flex items-center gap-1 cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-surface-container hover:bg-error-container/40 text-on-surface-variant hover:text-error transition-colors font-label-md text-xs font-semibold cursor-pointer border border-outline-variant/30"
                   type="button"
                 >
                   <span className="material-symbols-outlined text-[18px]">delete</span>

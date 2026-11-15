@@ -498,7 +498,7 @@ export const mockUserOrders: UserOrder[] = [
 ];
 
 // User order endpoints are not implemented by the backend; keep this client mock-only.
-export const userOrderApi = {
+export const mockUserOrderApi = {
   /**
    * Lấy danh sách đơn hàng của người dùng hiện tại (lọc theo tab, tìm kiếm, phân trang)
    */

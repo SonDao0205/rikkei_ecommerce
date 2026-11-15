@@ -1,0 +1,518 @@
+{
+  "breadcrumb": {
+    "home": "Trang chủ",
+    "account": "Tài khoản của tôi",
+    "profile": "Hồ sơ cá nhân"
+  },
+  "header": {
+    "badge": "Quản lý tài khoản",
+    "hub": "Trung tâm MarketPulse",
+    "title": "Hồ sơ cá nhân",
+    "desc": "Quản lý thông tin xác thực cá nhân, xác minh liên hệ, ảnh đại diện và chi tiết tài khoản của bạn."
+  },
+  "sidebar": {
+    "avatar_tooltip": "Bấm để thay đổi ảnh đại diện",
+    "update_photo": "Cập nhật ảnh đại diện",
+    "membership_tier": "Thành Viên Thân Thiết",
+    "nav": {
+      "profile": "Hồ sơ của tôi",
+      "change_password": "Đổi mật khẩu",
+      "change_password_sub": "Đổi MK",
+      "address_book": "Sổ địa chỉ",
+      "address_book_sub": "Địa chỉ",
+      "my_orders": "Đơn hàng của tôi",
+      "orders_active": "6 Đang xử lý",
+      "voucher_wallet": "Ví Voucher",
+      "vouchers_available": "4 Có sẵn",
+      "notifications": "Thông báo",
+      "logout": "Đăng xuất"
+    }
+  },
+  "shop_status": {
+    "refresh": "Làm mới trạng thái shop",
+    "refreshing": "Đang cập nhật...",
+    "refresh_failed": "Không thể cập nhật trạng thái. Vui lòng thử lại sau.",
+    "load_error": "Không thể tải trạng thái shop. Hồ sơ của bạn chưa được xác nhận là chưa có shop.",
+    "retry_btn": "Thử tải lại",
+    "no_shop": {
+      "title": "Bạn muốn mở gian hàng kinh doanh?",
+      "desc": "Đăng ký mở gian hàng để tiếp cận hàng triệu khách hàng trên toàn quốc.",
+      "btn": "Đăng ký mở Shop ngay"
+    },
+    "pending": {
+      "badge": "Hồ sơ đang chờ duyệt",
+      "code": "Mã:",
+      "desc": "Hồ sơ đã được gửi lên hệ thống. Đội ngũ kiểm duyệt sẽ xử lý trong 24–48h làm việc.",
+      "edit_btn": "Chỉnh sửa hồ sơ"
+    },
+    "rejected": {
+      "badge": "Hồ sơ bị từ chối",
+      "code": "Mã:",
+      "reason_prefix": "Lý do từ chối:",
+      "default_reason": "Hồ sơ chưa đạt tiêu chuẩn phê duyệt của sàn MarketPulse."
+    },
+    "needs_info": {
+      "badge": "Cần bổ sung thông tin",
+      "code": "Mã:",
+      "request_prefix": "Yêu cầu cập nhật:",
+      "default_request": "Vui lòng bổ sung thông tin hồ sơ theo yêu cầu.",
+      "btn": "Bổ sung thông tin"
+    },
+    "active": {
+      "badge": "Gian hàng chính thức • Đang hoạt động",
+      "code": "Mã:",
+      "followers": "Người theo dõi:",
+      "portal_btn": "Kênh Người Bán"
+    },
+    "suspended": {
+      "badge": "Gian hàng tạm ngưng",
+      "reason_prefix": "Lý do:",
+      "default_reason": "Tạm ngưng hoạt động theo chính sách sàn.",
+      "view_btn": "Xem hồ sơ"
+    },
+    "modal": {
+      "title_resubmit": "Sửa & Nộp lại hồ sơ gian hàng",
+      "title_edit": "Cập nhật hồ sơ gian hàng",
+      "shop_name": "Tên gian hàng",
+      "shop_name_placeholder": "Ví dụ: UrbanStep Official Store",
+      "phone": "Số điện thoại liên hệ",
+      "phone_placeholder": "Ví dụ: 0912345678",
+      "warehouse": "Địa chỉ kho lấy hàng",
+      "warehouse_placeholder": "Số nhà, tên đường, Phường, Quận, Tỉnh/TP",
+      "description": "Mô tả gian hàng",
+      "description_placeholder": "Giới thiệu đôi nét về thương hiệu hoặc sản phẩm của bạn...",
+      "logo_url": "Logo URL (HTTPS)",
+      "banner_url": "Banner URL (HTTPS)",
+      "terms_legend": "Xác nhận điều khoản để gửi lại hồ sơ",
+      "terms_service": "Tôi đồng ý quy chế hoạt động và chính sách của sàn.",
+      "terms_authenticity": "Tôi xác nhận thông tin hồ sơ là chính xác.",
+      "terms_anti_counterfeit": "Tôi cam kết không kinh doanh hàng giả hoặc hàng cấm.",
+      "cancel_btn": "Hủy",
+      "resubmit_btn": "Nộp lại xét duyệt",
+      "save_btn": "Lưu thay đổi",
+      "errors": {
+        "name_length": "Tên gian hàng phải từ 2 đến 150 ký tự",
+        "invalid_phone": "Số điện thoại không hợp lệ theo định dạng Việt Nam (VD: 0912 345 678)",
+        "warehouse_length": "Địa chỉ kho hàng phải từ 5 đến 500 ký tự",
+        "terms_required": "Xác nhận cả ba điều khoản trước khi gửi lại hồ sơ.",
+        "update_failed": "Cập nhật hồ sơ thất bại"
+      }
+    }
+  },
+  "form": {
+    "header_title": "Ảnh đại diện & Định danh cơ bản",
+    "header_desc": "Cập nhật ảnh đại diện công khai và thông tin định danh chính thức của bạn.",
+    "avatar_title": "Ảnh đại diện",
+    "avatar_hint": "Chỉ nhận JPG/JPEG/PNG, tối đa 5 MB. Ảnh được tải nền nên bạn có thể tiếp tục sử dụng hệ thống.",
+    "change_avatar_title": "Đổi ảnh đại diện",
+    "upload_btn": "Tải ảnh mới",
+    "uploading_btn": "Đang tải ảnh...",
+    "remove_btn": "Xóa ảnh",
+    "confirm_remove_avatar": "Bạn có chắc chắn muốn xóa ảnh đại diện hiện tại?",
+    "close_alert": "Đóng thông báo",
+    "close_alert_error": "Đóng thông báo lỗi",
+    "full_name": "Họ và Tên",
+    "diacritics_hint": "Hỗ trợ tiếng Việt có dấu",
+    "full_name_placeholder": "Nguyễn Văn A",
+    "username": "Tên hiển thị / Tên người dùng",
+    "unique_handle_hint": "Định danh duy nhất",
+    "username_placeholder": "nguyenvana_vn",
+    "email": "Địa chỉ Email",
+    "email_placeholder": "name@example.com",
+    "verified": "Đã xác thực",
+    "unverified": "Chưa xác thực",
+    "phone": "Số điện thoại",
+    "phone_placeholder": "0909 123 456",
+    "dob": "Ngày sinh",
+    "gender": "Giới tính",
+    "genders": {
+      "male": "Nam (Male)",
+      "female": "Nữ (Female)",
+      "other": "Khác"
+    },
+    "saving": "Đang lưu...",
+    "save_btn": "Lưu thông tin hồ sơ",
+    "month_prefix": "Tháng {{month}}",
+    "errors": {
+      "restricted_fields": "Bạn chỉ được cập nhật Full Name và Phone Number",
+      "invalid_phone": "Số điện thoại không đúng định dạng số di động Việt Nam (VD: 0912 345 678)",
+      "avatar_upload_failed": "Không thể tải ảnh đại diện lên."
+    }
+  },
+  "change_password": {
+    "breadcrumb": {
+      "home": "Trang chủ",
+      "account": "Tài khoản của tôi",
+      "change_password": "Đổi mật khẩu"
+    },
+    "header": {
+      "badge": "Bảo mật tài khoản",
+      "hub": "Trung tâm MarketPulse",
+      "title": "Đổi mật khẩu",
+      "desc": "Đảm bảo tài khoản của bạn luôn an toàn với mật khẩu mạnh và được cập nhật định kỳ."
+    },
+    "form": {
+      "title": "Bảo mật & Mật khẩu",
+      "desc": "Đảm bảo tài khoản của bạn luôn an toàn với mật khẩu mạnh và được cập nhật định kỳ.",
+      "last_changed": "Thay đổi lần cuối 3 tháng trước",
+      "sessions_revoked": "Các phiên đăng nhập trên thiết bị khác đã được thu hồi an toàn.",
+      "relogin_btn": "Đăng nhập lại",
+      "current_password": "Mật khẩu hiện tại",
+      "toggle_visibility": "Hiện/ẩn mật khẩu",
+      "new_password": "Mật khẩu mới",
+      "new_password_placeholder": "Tối thiểu 10 ký tự",
+      "strength": {
+        "weak": "Yếu",
+        "medium": "Trung bình",
+        "strong": "Mạnh",
+        "very_strong": "Rất mạnh"
+      },
+      "confirm_password": "Xác nhận mật khẩu mới",
+      "confirm_password_placeholder": "Nhập lại mật khẩu mới",
+      "submitting": "Đang xử lý...",
+      "submit_btn": "Xác nhận đổi mật khẩu",
+      "success_title": "Đổi mật khẩu thành công, bạn có thể đăng nhập lại bằng mật khẩu mới"
+    },
+    "errors": {
+      "current_required": "Vui lòng nhập mật khẩu hiện tại.",
+      "min_length": "Mật khẩu mới phải có tối thiểu 10 ký tự.",
+      "letter_and_number": "Mật khẩu mới phải chứa ít nhất một chữ cái và một chữ số.",
+      "must_be_different": "Mật khẩu mới không được trùng với mật khẩu hiện tại.",
+      "mismatch": "Mật khẩu xác nhận không khớp với mật khẩu mới.",
+      "current_incorrect": "Mật khẩu hiện tại không chính xác.",
+      "failed": "Đổi mật khẩu thất bại."
+    }
+  },
+  "address": {
+    "breadcrumb": {
+      "home": "Trang chủ",
+      "account": "Tài khoản của tôi",
+      "address_book": "Sổ địa chỉ"
+    },
+    "header": {
+      "badge": "Quản lý tài khoản",
+      "hub": "Trung tâm MarketPulse",
+      "title": "Sổ địa chỉ",
+      "desc": "Quản lý các điểm giao nhận hàng hóa của bạn để trải nghiệm thanh toán 1-chạm nhanh chóng và an toàn.",
+      "saved_addresses": "Địa chỉ đã lưu",
+      "access_role": "Quyền thao tác",
+      "account_owner": "Chủ tài khoản"
+    },
+    "alerts": {
+      "close_error": "Đóng thông báo lỗi"
+    },
+    "messages": {
+      "add_success": "Thêm địa chỉ mới thành công!",
+      "update_success": "Cập nhật địa chỉ thành công!",
+      "delete_success": "Đã xóa địa chỉ thành công!",
+      "set_default_success": "Đã đặt làm địa chỉ mặc định!"
+    },
+    "types": {
+      "home": "Nhà riêng",
+      "office": "Văn phòng / Công ty",
+      "other": "Khác"
+    },
+    "badge_default": "Mặc định",
+    "list": {
+      "title": "Danh sách địa chỉ nhận hàng",
+      "desc": "Chọn địa chỉ nhận hàng mặc định hoặc bổ sung địa chỉ giao tận nơi mới.",
+      "add_new_btn": "+ Thêm địa chỉ mới",
+      "limit_reached": "Đã đạt giới hạn 20 địa chỉ",
+      "empty_title": "Chưa có địa chỉ giao hàng",
+      "empty_desc": "Thêm địa chỉ giao hàng để trải nghiệm mua sắm và thanh toán 1-chạm thuận tiện nhất trên MarketPulse.",
+      "add_first_btn": "Thêm địa chỉ đầu tiên",
+      "load_error_title": "Không thể tải sổ địa chỉ",
+      "retry_btn": "Thử lại"
+    },
+    "actions": {
+      "edit": "Sửa",
+      "edit_tooltip": "Chỉnh sửa địa chỉ",
+      "delete": "Xóa",
+      "delete_tooltip": "Xóa địa chỉ",
+      "set_default": "Đặt mặc định",
+      "set_default_tooltip": "Thiết lập làm địa chỉ mặc định",
+      "confirm_delete_fallback": "Bạn có chắc chắn muốn xóa địa chỉ của \"{{name}}\" ({{street}}) không?"
+    },
+    "form": {
+      "badge_add": "Thêm địa chỉ giao hàng mới",
+      "badge_edit": "Chỉnh sửa địa chỉ",
+      "max_limit": "Tối đa 20 địa chỉ",
+      "title_add": "Thêm địa chỉ nhận hàng mới",
+      "title_edit": "Chỉnh sửa địa chỉ nhận hàng",
+      "desc_add": "Thêm địa chỉ giao hàng nhận bưu kiện mới",
+      "desc_edit": "Cập nhật địa chỉ nhận hàng của bạn",
+      "close_tooltip": "Đóng form",
+      "recipient_label": "Họ và tên người nhận",
+      "recipient_placeholder": "Ví dụ: Nguyễn Văn A",
+      "phone_label": "Số điện thoại",
+      "admin_area_label": "Khu vực hành chính (Tỉnh / Thành phố, Quận / Huyện, Phường / Xã)",
+      "province_placeholder": "Tỉnh / Thành phố",
+      "district_placeholder": "Quận / Huyện",
+      "ward_placeholder": "Phường / Xã",
+      "street_label": "Số nhà, tên đường, toà nhà",
+      "street_placeholder": "Ví dụ: Tầng 4, Tòa nhà Bitexco Financial Tower, số 2 Hải Triều...",
+      "type_label": "Loại địa chỉ",
+      "set_default_checkbox": "Đặt làm địa chỉ giao hàng mặc định",
+      "cancel_btn": "Hủy",
+      "saving": "Đang lưu...",
+      "save_address_btn": "Lưu địa chỉ",
+      "save_changes_btn": "Lưu thay đổi"
+    },
+    "errors": {
+      "recipient_required": "Vui lòng nhập họ và tên người nhận",
+      "invalid_phone": "Vui lòng nhập số điện thoại Việt Nam hợp lệ (VD: 0912 345 678)",
+      "location_required": "Vui lòng nhập đầy đủ tỉnh/thành phố, quận/huyện và phường/xã",
+      "street_required": "Vui lòng nhập địa chỉ chi tiết (số nhà, tên đường, toà nhà)"
+    },
+    "delete_modal": {
+      "title": "Xác nhận xóa địa chỉ",
+      "desc": "Bạn có chắc chắn muốn xóa địa chỉ này khỏi sổ địa chỉ không? Thao tác này sẽ không thể hoàn tác.",
+      "default_warning": "Lưu ý: Đây là địa chỉ mặc định của bạn. Khi xóa, hệ thống sẽ tự động gán địa chỉ tiếp theo làm mặc định.",
+      "cancel_btn": "Hủy bỏ",
+      "confirm_btn": "Xóa địa chỉ",
+      "deleting": "Đang xóa...",
+      "close": "Đóng"
+    }
+  },
+  "orders": {
+    "breadcrumb": {
+      "home": "Trang chủ",
+      "account": "Tài khoản của tôi",
+      "orders": "Lịch sử đơn hàng"
+    },
+    "header": {
+      "badge": "ACCOUNT MANAGEMENT • ĐƠN HÀNG CỦA BẠN",
+      "title": "Đơn hàng của tôi",
+      "total_orders": "{{count}} Đơn hàng",
+      "desc": "Theo dõi, quản lý và kiểm tra tiến độ giao nhận của các đơn hàng đa gian hàng trên toàn quốc.",
+      "carrier_label": "Đơn vị vận chuyển:"
+    },
+    "search": {
+      "placeholder": "Tìm kiếm theo Mã đơn hàng, Tên sản phẩm hoặc Tên shop...",
+      "button": "Tìm kiếm"
+    },
+    "tabs": {
+      "all": "Tất cả",
+      "pending": "Chờ xác nhận",
+      "packing": "Shop đang xử lý",
+      "shipping": "Đang vận chuyển",
+      "completed": "Hoàn thành",
+      "cancelled": "Đã hủy",
+      "returned": "Trả hàng / Hoàn tiền"
+    },
+    "statuses": {
+      "pending": "CHỜ XÁC NHẬN",
+      "packing": "SHOP ĐANG XỬ LÝ",
+      "shipping": "ĐANG VẬN CHUYỂN",
+      "completed": "HOÀN THÀNH",
+      "cancelled": "ĐÃ HỦY",
+      "returned": "TRẢ HÀNG / HOÀN TIỀN"
+    },
+    "payment_cod": "Thanh toán khi nhận hàng",
+    "payment_online": "Thanh toán trực tuyến",
+    "unpaid": "Chưa thanh toán",
+    "paid": "Đã thanh toán",
+    "shipping_in_transit": "Đơn hàng đang trên đường giao tới bạn",
+    "shipping_delivered": "Giao hàng thành công",
+    "empty": {
+      "title": "Chưa có đơn hàng nào",
+      "not_found": "Không tìm thấy đơn hàng nào khớp với từ khóa \"{{query}}\".",
+      "no_orders": "Bạn chưa có đơn hàng nào trong trạng thái này. Hãy dạo quanh sàn và chọn cho mình những món đồ yêu thích!",
+      "explore_btn": "Khám phá sản phẩm"
+    },
+    "pagination": "Hiển thị {{start}} - {{end}} trong tổng số {{total}} đơn hàng",
+    "toast": {
+      "cancel_success_title": "Đã hủy đơn hàng thành công",
+      "cancel_success_msg": "Đơn hàng {{code}} đã được hủy theo yêu cầu của bạn.",
+      "cancel_failed_title": "Hủy đơn hàng thất bại"
+    },
+    "dialog": {
+      "confirm_received": "Bạn xác nhận đã nhận được đầy đủ hàng và hài lòng với kiện hàng?",
+      "received_success": "Xác nhận đã nhận hàng thành công!"
+    },
+    "card": {
+      "multi_shop": "Đơn đa gian hàng ({{count}} Shops)",
+      "chat": "Chat ngay",
+      "view_shop": "Xem Shop",
+      "partner_shop": "Gian hàng đối tác",
+      "see_more": "Xem thêm ({{count}} sản phẩm khác của đơn hàng này)",
+      "collapse": "Thu gọn danh sách",
+      "cancel_reason_prefix": "Lý do hủy:",
+      "cancelled_by_buyer": "Hủy bởi Người mua lúc {{time}} • Đơn chưa bị trừ tiền.",
+      "cancelled_recorded": "Đơn hàng đã được ghi nhận hủy thành công.",
+      "payment_prefix": "Thanh toán:",
+      "order_code_prefix": "Mã đơn:",
+      "total_prefix": "Thành tiền:",
+      "order_code_tooltip": "Bấm để xem chi tiết đơn hàng này",
+      "seller_preparing": "Người bán đang chuẩn bị đóng gói hàng",
+      "ordered_at": "Đặt hàng lúc: {{time}}",
+      "track_order": "Theo dõi đơn hàng",
+      "contact_shop": "Liên hệ Shop",
+      "received_btn": "Đã nhận được hàng",
+      "view_vat_invoice": "Xem chi tiết hóa đơn VAT & đơn hàng",
+      "review_btn": "Đánh giá 5★",
+      "repurchase": "Mua lại",
+      "change_address": "Thay đổi địa chỉ nhận",
+      "cancel_order": "Hủy đơn hàng",
+      "order_details": "Chi tiết đơn hàng",
+      "view_details": "Xem chi tiết"
+    },
+    "item": {
+      "view_shop": "Xem Shop",
+      "variant": "Phân loại: {{name}}",
+      "quantity": "Số lượng: x{{qty}}",
+      "unit_price": "Đơn giá: {{price}}"
+    },
+    "cancel_modal": {
+      "title": "Hủy đơn hàng {{code}}",
+      "subtitle": "Vui lòng chọn lý do để sàn và người bán hoàn thiện dịch vụ",
+      "reason_label": "Lý do hủy đơn:",
+      "custom_placeholder": "Nhập chi tiết lý do của bạn...",
+      "warning_note": "Lưu ý: Đơn hàng sau khi hủy sẽ không thể khôi phục lại. Bạn có thể chọn sản phẩm và đặt lại đơn mới bất cứ lúc nào.",
+      "keep_order": "Giữ lại đơn",
+      "confirm_cancel": "Xác nhận hủy",
+      "cancelling": "Đang hủy...",
+      "reasons": {
+        "change_mind": "Đổi ý không muốn mua nữa",
+        "change_address": "Muốn thay đổi địa chỉ nhận hàng",
+        "change_product": "Muốn đổi sản phẩm, kích thước hoặc màu sắc khác",
+        "found_cheaper": "Tìm thấy giá tốt hơn ở nơi khác",
+        "delivery_too_long": "Thời gian giao hàng dự kiến quá lâu",
+        "other": "Lý do khác"
+      }
+    },
+    "detail": {
+      "not_found_title": "Không tìm thấy đơn hàng",
+      "not_found_desc": "Đơn hàng bạn đang tìm kiếm không tồn tại hoặc đã bị xóa khỏi hệ thống.",
+      "back_to_list": "Quay lại danh sách đơn",
+      "back_to_orders": "Quay lại danh sách đơn hàng",
+      "breadcrumb_detail": "Chi tiết đơn {{code}}",
+      "page_title": "Chi tiết đơn hàng {{code}}",
+      "ordered_at": "Đặt lúc {{time}}",
+      "updated_recent": "Cập nhật gần đây",
+      "print_vat": "In hóa đơn VAT",
+      "chat_with_shop": "Chat với Shop",
+      "chat_alert_fallback": "Bắt đầu kết nối trò chuyện với người bán của đơn hàng {{code}}",
+      "stepper": {
+        "title": "Tiến độ giao hàng",
+        "subtitle": "Bưu kiện đang di chuyển tới điểm giao nhận gần nhất",
+        "estimated_arrival": "Dự kiến nhận: {{date}} (Còn 1-2 ngày)",
+        "step_order_placed": "Đơn hàng đã đặt",
+        "step_pending": "Chờ xác nhận",
+        "step_packing": "Chờ lấy đơn hàng",
+        "step_shipping": "Đang vận chuyển",
+        "step_completed": "Giao hàng thành công",
+        "est_prefix": "Dự kiến {{date}}",
+        "carrier_express": "Express",
+        "tracking_code": "Mã vận đơn:",
+        "copy_code": "Sao chép mã",
+        "copied_success": "Đã sao chép mã vận đơn: {{code}}",
+        "track_on_website": "Tra cứu trên website {{carrier}}",
+        "view_details": "Xem chi tiết",
+        "collapse": "Thu gọn",
+        "latest": "Mới nhất",
+        "timeline": {
+          "delivered_title": "Giao hàng thành công",
+          "delivered_subtitle": "Người nhận đã ký nhận kiện hàng",
+          "shipping_title": "Đang vận chuyển",
+          "shipping_subtitle_delivered_today": "Bưu tá phụ trách: Trần Minh Quân - Dự kiến giao hôm nay",
+          "shipping_subtitle": "Bưu tá phụ trách: Trần Minh Quân",
+          "packing_title": "Chờ lấy đơn hàng",
+          "packing_subtitle": "Shop đã đóng gói và chuẩn bị bàn giao cho bưu tá",
+          "pending_title": "Chờ xác nhận",
+          "pending_subtitle": "Người bán đang kiểm tra và xác nhận đơn hàng",
+          "placed_title": "Đơn hàng đã đặt",
+          "placed_subtitle": "Hệ thống ghi nhận đơn hàng thành công",
+          "cancelled_title": "Đơn hàng đã được hủy",
+          "cancel_reason_prefix": "Lý do: {{reason}}",
+          "default_cancel_reason": "Đổi ý không muốn mua nữa"
+        }
+      },
+      "delivery_grid": {
+        "address_title": "Địa chỉ nhận hàng",
+        "notes_prefix": "Ghi chú:",
+        "shipping_method_title": "Hình thức giao hàng",
+        "default_carrier": "GHN Giao Nhanh - Tiêu chuẩn",
+        "est_delivery_title": "Thời gian dự kiến nhận:",
+        "insurance_title": "Bảo hiểm MarketPulse Protect",
+        "insurance_desc": "Bồi thường 100% khi thất lạc hoặc hư hỏng",
+        "payment_method_title": "Phương thức thanh toán",
+        "payment_cod": "Thanh toán khi nhận hàng (COD)",
+        "payment_momo": "Ví điện tử MoMo",
+        "payment_visa": "Visa",
+        "payment_zalopay": "ZaloPay",
+        "paid": "Đã thanh toán",
+        "unpaid": "Chưa thanh toán",
+        "cod_desc": "Bưu tá sẽ thu tiền mặt khi giao kiện hàng.",
+        "online_desc": "Thanh toán đã được xử lý qua cổng thanh toán bảo mật.",
+        "prepare_cash_title": "Cần chuẩn bị tiền mặt",
+        "prepare_cash_hint": "Bưu tá thu đúng số tiền này, không phụ phí"
+      },
+      "shop_section": {
+        "official_mall": "MALL CHÍNH HÃNG",
+        "artisan": "ARTISAN",
+        "stats": "Tỉ lệ phản hồi {{rate}}% • Đánh giá {{rating}}/5 ★",
+        "view_shop": "Xem Shop",
+        "message_shop": "Nhắn tin Shop",
+        "toast_chat_opened": "Đã mở khung chat với gian hàng {{name}}",
+        "genuine_badge": "Chính hãng 100%",
+        "variant_prefix": "Phân loại:",
+        "total_item_price": "Thành tiền",
+        "repurchase": "Mua lại",
+        "review_product": "Đánh giá sản phẩm",
+        "review_tooltip": "Khả dụng khi nhận hàng thành công",
+        "review_toast": "Mở đánh giá sản phẩm: {{name}}"
+      },
+      "price_summary": {
+        "buyer_rights_title": "Quyền lợi người mua MarketPulse",
+        "right_inspection_title": "Đồng kiểm khi nhận:",
+        "right_inspection_desc": "Quý khách được mở hộp kiểm tra số lượng và mẫu mã trước khi thanh toán cho shipper.",
+        "right_returns_title": "15 ngày đổi trả miễn phí:",
+        "right_returns_desc": "Đổi trả nhanh chóng nếu sản phẩm có lỗi từ nhà sản xuất hoặc không vừa kích cỡ.",
+        "right_authentic_title": "100% Chính hãng:",
+        "right_authentic_desc": "Bồi thường gấp đôi nếu phát hiện hàng giả, hàng nhái từ gian hàng Official Mall.",
+        "need_help": "Cần hỗ trợ đơn này?",
+        "contact_support_agent": "Liên hệ tổng đài viên →",
+        "payment_details_title": "Chi tiết thanh toán",
+        "subtotal": "Tổng tiền hàng ({{count}} sản phẩm)",
+        "shipping_fee": "Phí vận chuyển ({{carrier}})",
+        "default_shipping_carrier": "GHN Tiêu chuẩn",
+        "shipping_discount": "Giảm giá vận chuyển (Freeship Extra)",
+        "shop_discount": "Voucher giảm giá gian hàng",
+        "total_cod": "Tổng thanh toán COD:",
+        "total_order": "Tổng giá trị đơn hàng:",
+        "vat_included": "Đã bao gồm VAT và không phát sinh thêm phụ phí"
+      },
+      "footer_bar": {
+        "support_prefix": "Cần trợ giúp? Hotline:",
+        "support_suffix": "(24/7)",
+        "support_text": "Cần trợ giúp? Hotline: {{phone}} (24/7)",
+        "complaints_center": "Trung tâm giải quyết khiếu nại",
+        "request_cancel": "Yêu cầu Hủy đơn",
+        "cancel_disabled_tooltip": "Đơn hàng đã bàn giao cho GHN, không thể hủy trực tiếp. Vui lòng liên hệ hỗ trợ hoặc từ chối nhận khi shipper liên hệ.",
+        "request_return": "Yêu cầu Trả hàng / Hoàn tiền",
+        "received_order": "Đã nhận được hàng",
+        "delivered_success": "Đã giao thành công",
+        "order_cancelled": "Đã hủy đơn hàng"
+      },
+      "confirm_receive_modal": {
+        "title": "Xác nhận đã nhận hàng?",
+        "desc": "Vui lòng chỉ bấm xác nhận khi bạn đã nhận được kiện hàng từ bưu tá GHN và kiểm tra tình trạng sản phẩm nguyên vẹn.",
+        "btn_later": "Để sau",
+        "btn_confirm": "Tôi đã nhận đủ hàng",
+        "submitting": "Đang xử lý..."
+      },
+      "toasts": {
+        "connecting_chat": "Đang kết nối trung tâm chat với nhà bán hàng...",
+        "received_success": "Đã xác nhận nhận hàng thành công!",
+        "received_error": "Có lỗi xảy ra khi xác nhận nhận hàng.",
+        "cancel_success": "Đơn hàng {{code}} đã được hủy thành công.",
+        "cancel_success_title": "Đã hủy đơn hàng",
+        "cancel_error_title": "Hủy đơn hàng thất bại",
+        "cancel_error": "Có lỗi xảy ra khi hủy đơn hàng.",
+        "return_requested": "Yêu cầu Trả hàng / Hoàn tiền đã được ghi nhận. Đang chuyển hướng...",
+        "hotline_ready": "Tổng đài hỗ trợ 1900 6868 sẵn sàng 24/7"
+      }
+    }
+  }
+}

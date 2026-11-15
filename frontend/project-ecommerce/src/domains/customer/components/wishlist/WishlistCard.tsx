@@ -1,5 +1,6 @@
-﻿import React from "react";
-import { Link } from "react-router-dom";
+import React from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { WishlistItem } from "@/domains/customer/types/wishlist.types";
 import { formatCurrencyVND } from "@/shared/utils/currency";
 
@@ -16,16 +17,27 @@ export const WishlistCard: React.FC<WishlistCardProps> = ({
   onAddToCart,
   onNotifyRestock,
 }) => {
+  const navigate = useNavigate();
+  const { t } = useTranslation("customer");
   const isOutOfStock = item.status === "out-of-stock";
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest("button") || target.closest("a") || target.closest("input")) {
+      return;
+    }
+    navigate(`/product/${item.product_id}`);
+  };
 
   return (
     <div
-      className={`group relative flex flex-col rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-2xl hover:-translate-y-2 border border-outline-variant/30 hover:border-primary/40 transition-all duration-300 ease-out overflow-hidden will-change-transform ${
+      onClick={handleCardClick}
+      className={`group relative flex flex-col rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-2xl hover:-translate-y-2 border border-outline-variant/30 hover:border-primary/40 transition-all duration-300 ease-out overflow-hidden will-change-transform cursor-pointer ${
         isOutOfStock ? "opacity-90" : ""
       }`}
     >
       {/* Product Image & Floating Badges */}
-      <div className="relative aspect-[4/5] w-full overflow-hidden bg-surface-container-low">
+      <div className="relative aspect-[4/5] w-full overflow-hidden bg-surface-container-low cursor-pointer">
         <img
           src={item.image_url}
           alt={item.alt_text || item.name}
@@ -63,7 +75,7 @@ export const WishlistCard: React.FC<WishlistCardProps> = ({
         {isOutOfStock && (
           <div className="absolute inset-0 bg-on-surface/40 backdrop-blur-[2px] flex items-center justify-center">
             <span className="px-3.5 py-1.5 rounded-lg bg-surface-container-lowest text-on-surface text-xs font-bold shadow-md tracking-wider">
-              TẠM HẾT HÀNG
+              {t("wishlist.card.out_of_stock_badge")}
             </span>
           </div>
         )}
@@ -71,8 +83,11 @@ export const WishlistCard: React.FC<WishlistCardProps> = ({
         {/* Floating Heart Button to Remove from Wishlist */}
         <button
           type="button"
-          onClick={() => onRemove(item.id)}
-          title="Bỏ thích"
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove(item.id);
+          }}
+          title={t("wishlist.card.remove_tooltip")}
           aria-label="Remove from wishlist"
           className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/95 backdrop-blur-sm text-tertiary shadow-sm hover:scale-110 active:scale-95 transition-all flex items-center justify-center cursor-pointer z-10"
         >
@@ -104,14 +119,14 @@ export const WishlistCard: React.FC<WishlistCardProps> = ({
           {/* Product Name */}
           <Link
             to={`/product/${item.product_id}`}
-            className="font-headline-md text-sm sm:text-[15px] leading-snug text-on-surface font-bold hover:text-primary transition-colors line-clamp-2"
+            className="font-headline-md text-sm sm:text-[15px] leading-snug text-on-surface font-bold hover:text-primary transition-colors line-clamp-2 cursor-pointer"
           >
             {item.name}
           </Link>
 
           {/* Variant label */}
           <div className="text-xs text-on-surface-variant flex items-center gap-1">
-            <span>Phân loại:</span>
+            <span>{t("wishlist.card.variant_prefix")}</span>
             <span className="font-medium text-on-surface truncate">
               {item.variant_label}
             </span>
@@ -134,13 +149,16 @@ export const WishlistCard: React.FC<WishlistCardProps> = ({
           {!isOutOfStock ? (
             <button
               type="button"
-              onClick={() => onAddToCart(item)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddToCart(item);
+              }}
               className="w-full h-11 rounded-lg bg-primary-container text-on-primary hover:bg-primary transition-colors text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-sm active:scale-[0.98] cursor-pointer"
             >
               <span className="material-symbols-outlined text-[18px]">
                 shopping_bag
               </span>
-              <span>Thêm vào giỏ hàng</span>
+              <span>{t("wishlist.card.add_to_cart")}</span>
             </button>
           ) : (
             <div className="flex flex-col gap-1.5">
@@ -152,18 +170,21 @@ export const WishlistCard: React.FC<WishlistCardProps> = ({
                 <span className="material-symbols-outlined text-[18px]">
                   remove_shopping_cart
                 </span>
-                <span>Hết hàng tạm thời</span>
+                <span>{t("wishlist.card.out_of_stock_btn")}</span>
               </button>
 
               <button
                 type="button"
-                onClick={() => onNotifyRestock && onNotifyRestock(item)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onNotifyRestock?.(item);
+                }}
                 className="text-center text-xs text-primary hover:underline py-0.5 flex items-center justify-center gap-1 cursor-pointer font-semibold"
               >
                 <span className="material-symbols-outlined text-[14px]">
                   notifications
                 </span>
-                <span>Báo cho tôi khi có hàng lại</span>
+                <span>{t("wishlist.card.notify_restock")}</span>
               </button>
             </div>
           )}
@@ -174,4 +195,3 @@ export const WishlistCard: React.FC<WishlistCardProps> = ({
 };
 
 export default WishlistCard;
-

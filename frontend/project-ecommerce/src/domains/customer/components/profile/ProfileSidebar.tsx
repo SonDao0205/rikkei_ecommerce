@@ -1,8 +1,11 @@
 import React, { useRef } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAppDispatch } from "@/app/state/store";
 import { openLogoutModal } from "@/domains/auth/state/authSlice";
 import { setLocalAvatarPreview } from "@/domains/customer/state/profileSlice";
+import { profileApi } from "@/domains/customer/api/profileApi";
+import { uploadMedia } from "@/shared/api/mediaUpload";
 import { getDefaultAvatar } from "@/shared/utils/avatar";
 import type { UserProfileDetails } from "@/shared/types";
 
@@ -27,6 +30,7 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
   activeTab = "personal-profile",
   onTabChange,
 }) => {
+  const { t } = useTranslation("customer");
   const dispatch = useAppDispatch();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -35,60 +39,65 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
   const navItems: NavItem[] = [
     {
       id: "personal-profile",
-      label: "My Profile",
+      label: t("profile.sidebar.nav.profile"),
       icon: "person",
       href: "/profile",
       badgeType: "dot",
     },
     {
       id: "change-password",
-      label: "Change Password",
+      label: t("profile.sidebar.nav.change_password"),
       icon: "lock_reset",
       href: "/profile/change-password",
-      subtext: "Đổi MK",
+      subtext: t("profile.sidebar.nav.change_password_sub"),
     },
     {
       id: "address-book",
-      label: "Address Book",
+      label: t("profile.sidebar.nav.address_book"),
       icon: "location_on",
       href: "/profile/address",
-      subtext: "Địa chỉ",
+      subtext: t("profile.sidebar.nav.address_book_sub"),
     },
     {
       id: "my-orders",
-      label: "My Orders",
+      label: t("profile.sidebar.nav.my_orders"),
       icon: "shopping_bag",
       href: "/profile/orders",
-      badge: "6 Active",
+      badge: t("profile.sidebar.nav.orders_active"),
       badgeType: "primary",
     },
     {
       id: "voucher-wallet",
-      label: "Voucher Wallet",
+      label: t("profile.sidebar.nav.voucher_wallet"),
       icon: "confirmation_number",
       href: "#voucher-wallet",
-      badge: "4 Có sẵn",
+      badge: t("profile.sidebar.nav.vouchers_available"),
       badgeType: "tertiary",
     },
     {
       id: "notifications",
-      label: "Notifications",
+      label: t("profile.sidebar.nav.notifications"),
       icon: "notifications",
       href: "#notifications",
       badgeType: "dot",
     },
   ];
 
-  const handleAvatarFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (typeof reader.result === "string") {
-          dispatch(setLocalAvatarPreview(reader.result));
-        }
-      };
-      reader.readAsDataURL(file);
+    e.target.value = "";
+    if (!file) return;
+    const previous = profile?.avatar_url || null;
+    const preview = URL.createObjectURL(file);
+    dispatch(setLocalAvatarPreview(preview));
+    try {
+      const upload = await uploadMedia(file, "avatar");
+      const updated = await profileApi.setAvatar(upload.url);
+      dispatch(setLocalAvatarPreview(updated.avatar_url || upload.url));
+    } catch {
+      dispatch(setLocalAvatarPreview(previous));
+    } finally {
+      URL.revokeObjectURL(preview);
     }
   };
 
@@ -103,7 +112,7 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/png, image/jpeg, image/gif"
+        accept=".jpg,.jpeg,.png,image/jpeg,image/png"
         className="hidden"
         onChange={handleAvatarFileSelect}
       />
@@ -116,7 +125,7 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
         <div
           className="relative mb-5 group cursor-pointer"
           onClick={() => fileInputRef.current?.click()}
-          title="Bấm để thay đổi ảnh đại diện"
+          title={t("profile.sidebar.avatar_tooltip")}
         >
           <div className="w-20 h-20 rounded-full ring-4 ring-primary-fixed overflow-hidden bg-surface-container flex items-center justify-center shadow-md">
             <img
@@ -127,7 +136,7 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
           </div>
           <button
             className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-primary text-on-primary flex items-center justify-center shadow hover:bg-primary-container transition-transform active:scale-95 cursor-pointer z-10"
-            title="Update profile picture"
+            title={t("profile.sidebar.update_photo")}
             type="button"
           >
             <span className="material-symbols-outlined text-[15px]">photo_camera</span>
@@ -145,7 +154,13 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
         {/* Membership Tier Badge */}
         <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm font-semibold">
           <span className="material-symbols-outlined text-[14px]">stars</span>
-          <span>{profile?.membership_tier || "Thành Viên Thân Thiết"}</span>
+          <span>
+            {!profile?.membership_tier ||
+            profile.membership_tier === "Thành Viên Thân Thiết" ||
+            profile.membership_tier === "Loyal Member"
+              ? t("profile.sidebar.membership_tier")
+              : profile.membership_tier}
+          </span>
         </div>
 
         {/* Navigation Links using .map() */}
@@ -228,7 +243,7 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
               type="button"
             >
               <span className="material-symbols-outlined text-[20px]">logout</span>
-              <span>Log Out</span>
+              <span>{t("profile.sidebar.nav.logout")}</span>
             </button>
           </div>
         </nav>

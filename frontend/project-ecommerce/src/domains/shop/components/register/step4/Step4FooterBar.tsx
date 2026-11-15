@@ -79,10 +79,10 @@ export const Step4FooterBar: React.FC<Step4FooterBarProps> = ({
         <button
           onClick={onSubmit}
           disabled={isSubmitting || !canSubmit}
-          className={`px-7 py-3 rounded-xl font-label-lg text-label-lg font-bold shadow-md transition-all flex items-center gap-2 cursor-pointer ${
+          className={`px-7 py-3 rounded-xl font-label-lg text-label-lg font-bold shadow-md transition-all flex items-center gap-2 cursor-pointer active:scale-95 ${
             !canSubmit
               ? "bg-surface-container-high text-outline cursor-not-allowed opacity-70"
-              : "bg-primary hover:bg-primary-container text-on-primary active:scale-95 shadow-lg"
+              : "bg-primary hover:bg-primary-container text-on-primary shadow-lg"
           }`}
           type="button"
         >

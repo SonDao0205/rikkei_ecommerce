@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import CustomerLayout from "@/app/layout/CustomerLayout";
 import ProfileSidebar from "@/domains/customer/components/profile/ProfileSidebar";
 import ProfileSecurityForm from "@/domains/customer/components/profile/ProfileSecurityForm";
@@ -7,6 +8,7 @@ import { useAppDispatch, useAppSelector } from "@/app/state/store";
 import { fetchUserProfile } from "@/domains/customer/state/profileSlice";
 
 export const ChangePassword: React.FC = () => {
+  const { t } = useTranslation("customer");
   const dispatch = useAppDispatch();
   const { profile, loading } = useAppSelector((state) => state.profile);
   const { user } = useAppSelector((state) => state.auth);
@@ -36,18 +38,20 @@ export const ChangePassword: React.FC = () => {
             className="hover:text-primary transition-colors flex items-center gap-1"
           >
             <span className="material-symbols-outlined text-[16px]">home</span>
-            <span>Home</span>
+            <span>{t("profile.change_password.breadcrumb.home")}</span>
           </Link>
           <span className="material-symbols-outlined text-outline text-[14px]">
             chevron_right
           </span>
           <Link to="/profile" className="hover:text-primary transition-colors">
-            My Account
+            {t("profile.change_password.breadcrumb.account")}
           </Link>
           <span className="material-symbols-outlined text-outline text-[14px]">
             chevron_right
           </span>
-          <span className="text-on-surface font-semibold">Change Password</span>
+          <span className="text-on-surface font-semibold">
+            {t("profile.change_password.breadcrumb.change_password")}
+          </span>
         </nav>
 
         {/* Page Header */}
@@ -55,17 +59,17 @@ export const ChangePassword: React.FC = () => {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="px-2.5 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-label-sm uppercase tracking-wider font-bold">
-                Account Security
+                {t("profile.change_password.header.badge")}
               </span>
               <span className="text-outline text-body-sm">
-                • Vietnam Marketplace Hub
+                • {t("profile.change_password.header.hub")}
               </span>
             </div>
             <h1 className="font-headline-xl text-headline-xl text-on-surface tracking-tight">
-              Change Password (Đổi mật khẩu)
+              {t("profile.change_password.header.title")}
             </h1>
             <p className="font-body-md text-body-md text-on-surface-variant mt-1">
-              Ensure your account remains safe with strong, periodically renewed credentials.
+              {t("profile.change_password.header.desc")}
             </p>
           </div>
         </div>

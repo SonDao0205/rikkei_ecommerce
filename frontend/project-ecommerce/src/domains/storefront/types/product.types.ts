@@ -9,6 +9,7 @@ export interface Product {
   slug: string;
   description: string | null;
   thumbnail_url: string | null;
+  video_url?: string | null;
   price: number;
   sold_count: number;
   rating_avg: number;

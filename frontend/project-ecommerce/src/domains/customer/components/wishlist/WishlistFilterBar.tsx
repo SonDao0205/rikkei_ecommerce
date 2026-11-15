@@ -1,4 +1,5 @@
-﻿import React from "react";
+import React from "react";
+import { useTranslation } from "react-i18next";
 import type {
   WishlistFilterType,
   WishlistSortType,
@@ -28,6 +29,8 @@ export const WishlistFilterBar: React.FC<WishlistFilterBarProps> = ({
   sortBy,
   onSortChange,
 }) => {
+  const { t } = useTranslation("customer");
+
   return (
     <div className="p-2 sm:p-3 rounded-xl bg-surface-container-lowest shadow-sm flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 border border-outline-variant/60">
       {/* Filter Tabs */}
@@ -41,7 +44,7 @@ export const WishlistFilterBar: React.FC<WishlistFilterBarProps> = ({
               : "bg-surface-container-low text-on-surface hover:bg-surface-container"
           }`}
         >
-          <span>Tất cả</span>
+          <span>{t("wishlist.filter.all")}</span>
           <span
             className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
               activeFilter === "all"
@@ -65,7 +68,7 @@ export const WishlistFilterBar: React.FC<WishlistFilterBarProps> = ({
           <span className="material-symbols-outlined text-[16px] text-tertiary">
             local_fire_department
           </span>
-          <span>Đang giảm giá</span>
+          <span>{t("wishlist.filter.sale")}</span>
           <span
             className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
               activeFilter === "sale"
@@ -87,7 +90,7 @@ export const WishlistFilterBar: React.FC<WishlistFilterBarProps> = ({
           }`}
         >
           <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-          <span>Còn hàng</span>
+          <span>{t("wishlist.filter.in_stock")}</span>
           <span
             className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
               activeFilter === "in-stock"
@@ -109,7 +112,7 @@ export const WishlistFilterBar: React.FC<WishlistFilterBarProps> = ({
           }`}
         >
           <span className="w-2 h-2 rounded-full bg-outline"></span>
-          <span>Tạm hết</span>
+          <span>{t("wishlist.filter.out_of_stock")}</span>
           <span
             className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
               activeFilter === "out-of-stock"
@@ -132,7 +135,7 @@ export const WishlistFilterBar: React.FC<WishlistFilterBarProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Tìm kiếm trong mục yêu thích..."
+            placeholder={t("wishlist.filter.search_placeholder")}
             className="w-full bg-transparent pl-2 pr-3 text-xs sm:text-sm text-on-surface placeholder:text-outline focus:outline-none"
           />
           {searchQuery && (
@@ -152,10 +155,10 @@ export const WishlistFilterBar: React.FC<WishlistFilterBarProps> = ({
             onChange={(e) => onSortChange(e.target.value as WishlistSortType)}
             className="h-10 pl-3 pr-8 rounded-lg bg-surface-container-low text-on-surface text-xs sm:text-sm font-bold appearance-none focus:outline-none cursor-pointer w-full hover:bg-surface-container transition-colors border border-outline-variant/60"
           >
-            <option value="recent">Sắp xếp: Mới thêm gần đây</option>
-            <option value="price-asc">Giá: Thấp đến cao</option>
-            <option value="price-desc">Giá: Cao đến thấp</option>
-            <option value="discount">Mức giảm giá nhiều nhất</option>
+            <option value="recent">{t("wishlist.sort.recent")}</option>
+            <option value="price-asc">{t("wishlist.sort.price_asc")}</option>
+            <option value="price-desc">{t("wishlist.sort.price_desc")}</option>
+            <option value="discount">{t("wishlist.sort.discount")}</option>
           </select>
           <span className="material-symbols-outlined absolute right-2.5 top-2.5 pointer-events-none text-[18px] text-outline">
             expand_more
@@ -167,4 +170,3 @@ export const WishlistFilterBar: React.FC<WishlistFilterBarProps> = ({
 };
 
 export default WishlistFilterBar;
-

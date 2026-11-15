@@ -4,6 +4,7 @@ import {
   sendPasswordResetOtp,
   clearPasswordResetState,
 } from "@/domains/auth/state/authSlice";
+import { isValidEmail, isValidVietnamesePhone } from "@/shared/utils/validation";
 
 interface ForgotPasswordStep1Props {
   onSuccessStep?: (identity: string, mode: "email" | "phone") => void;
@@ -39,9 +40,9 @@ export const ForgotPasswordStep1 = ({ onSuccessStep }: ForgotPasswordStep1Props)
     const val = identity.trim();
     if (!val) return false;
     if (mode === "email") {
-      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+      return isValidEmail(val);
     } else {
-      return /^[0-9\s\-+()]{9,15}$/.test(val);
+      return isValidVietnamesePhone(val);
     }
   };
 
@@ -63,13 +64,13 @@ export const ForgotPasswordStep1 = ({ onSuccessStep }: ForgotPasswordStep1Props)
       return;
     }
 
-    if (mode === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
+    if (mode === "email" && !isValidEmail(val)) {
       setInputError("Địa chỉ email không đúng định dạng. Ví dụ: nguyenvana@gmail.com");
       return;
     }
 
-    if (mode === "phone" && !/^[0-9\s\-+()]{9,15}$/.test(val)) {
-      setInputError("Số điện thoại không hợp lệ (từ 9 đến 15 chữ số).");
+    if (mode === "phone" && !isValidVietnamesePhone(val)) {
+      setInputError("Số điện thoại không đúng định dạng số di động Việt Nam. Ví dụ: 0909 123 456");
       return;
     }
 

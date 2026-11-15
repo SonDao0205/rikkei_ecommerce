@@ -1,4 +1,5 @@
 export * from '@/domains/admin/types/dashboard.types';
+export * from '@/domains/admin/types/adminUser.types';
 export type {
   AdminProductItem,
   AdminProductSortOption,

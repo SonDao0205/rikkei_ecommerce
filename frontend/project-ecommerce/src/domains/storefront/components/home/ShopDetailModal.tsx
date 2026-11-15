@@ -9,6 +9,7 @@ import {
 } from "@/domains/shop/state/publicShopSlice";
 import ProductCard from "@/domains/storefront/components/home/ProductCard";
 import type { ProductItem } from "@/shared/types";
+import { DEFAULT_SHOP_BANNER, getShopDefaultLogo } from "@/shared/utils/avatar";
 
 interface ShopDetailModalProps {
   shopId: number | null;
@@ -77,13 +78,11 @@ const ShopDetailModal: React.FC<ShopDetailModalProps> = ({
       >
         {/* Banner Section */}
         <div className="relative h-36 md:h-48 w-full bg-gradient-to-r from-primary to-primary-container overflow-hidden">
-          {currentShop?.banner_url && (
-            <img
-              src={currentShop.banner_url}
-              alt="Shop Banner"
-              className="w-full h-full object-cover"
-            />
-          )}
+          <img
+            src={currentShop?.banner_url || DEFAULT_SHOP_BANNER}
+            alt="Shop Banner"
+            className="w-full h-full object-cover"
+          />
           <button
             onClick={onClose}
             className="absolute top-4 right-4 p-2 rounded-full bg-black/40 text-white hover:bg-black/60 transition-colors cursor-pointer"
@@ -98,15 +97,18 @@ const ShopDetailModal: React.FC<ShopDetailModalProps> = ({
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-12 sm:-mt-10 mb-2">
             <div className="flex items-end gap-3.5">
               <div className="w-20 h-20 rounded-2xl border-4 border-surface-container-lowest bg-surface-container-low shadow-md overflow-hidden flex items-center justify-center font-bold text-2xl text-primary shrink-0">
-                {currentShop?.logo_url ? (
-                  <img
-                    src={currentShop.logo_url}
-                    alt={currentShop.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  currentShop?.name?.charAt(0).toUpperCase() || "S"
-                )}
+                <img
+                  src={currentShop?.logo_url || getShopDefaultLogo(currentShop?.name)}
+                  alt={currentShop?.name || "Shop"}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    const fallback = getShopDefaultLogo(currentShop?.name);
+                    if (target.src !== fallback) {
+                      target.src = fallback;
+                    }
+                  }}
+                />
               </div>
               <div className="pb-1">
                 <div className="flex items-center gap-1.5">

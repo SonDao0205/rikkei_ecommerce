@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import type { ShopVoucherItem } from "@/domains/shop/types/shopVoucher.types";
-import { shopVoucherApi, getMockShopVouchers } from "@/domains/shop/api/shopVoucherApi";
+import { shopVoucherApi } from "@/domains/shop/api/shopVoucherApi";
 import ShopVouchersModal from "./ShopVouchersModal";
+import { useAppSelector } from "@/app/state/store";
 
 interface ShopVoucherStripProps {
   shopId?: number;
@@ -12,14 +14,15 @@ export const ShopVoucherStrip: React.FC<ShopVoucherStripProps> = ({
   shopId,
   shopName = "Gian hàng",
 }) => {
-  const [vouchers, setVouchers] = useState<ShopVoucherItem[]>(() =>
-    getMockShopVouchers(shopId, shopName)
-  );
-  const [loading, setLoading] = useState(false);
+  const { t } = useTranslation("customer");
+  const [vouchers, setVouchers] = useState<ShopVoucherItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [claimedMap, setClaimedMap] = useState<Record<string, boolean>>({
-    "voucher-3": true,
-  });
+  const [claimedMap, setClaimedMap] = useState<Record<string, boolean>>({});
+  const [claimError, setClaimError] = useState("");
+  const { isAuthenticated, user } = useAppSelector((state) => state.auth);
+  const roles = user?.roles?.map((role) => role.toUpperCase()) ?? (user?.role ? [user.role.toUpperCase()] : []);
+  const isBuyer = roles.includes("CLIENT");
 
   // Tải danh sách voucher thông qua Mock API của shop
   useEffect(() => {
@@ -27,18 +30,16 @@ export const ShopVoucherStrip: React.FC<ShopVoucherStripProps> = ({
 
     const loadVouchers = async () => {
       try {
-        const data = await shopVoucherApi.getShopVouchers(shopId, shopName);
+        if (!shopId) { setVouchers([]); return; }
+        const data = await shopVoucherApi.getPublicShopVouchers(shopId);
         if (!isMounted) return;
         setVouchers(data);
-        setClaimedMap((prev) => {
-          const next = { ...prev };
-          data.forEach((v) => {
-            if (v.claimedByDefault && next[v.id] === undefined) {
-              next[v.id] = true;
-            }
-          });
-          return next;
-        });
+        if (isAuthenticated && isBuyer) {
+          const ids = await shopVoucherApi.getClaimedVoucherIDs();
+          if (isMounted) setClaimedMap(Object.fromEntries(ids.map((id) => [id, true])));
+        } else setClaimedMap({});
+      } catch {
+        if (isMounted) setVouchers([]);
       } finally {
         if (isMounted) {
           setLoading(false);
@@ -51,14 +52,16 @@ export const ShopVoucherStrip: React.FC<ShopVoucherStripProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [shopId, shopName]);
+  }, [shopId, isAuthenticated, isBuyer, user?.role, user?.roles]);
 
-  const handleClaim = (id: string) => {
-    setClaimedMap((prev) => ({
-      ...prev,
-      [id]: true,
-    }));
-    void shopVoucherApi.claimShopVoucher(id);
+  const handleClaim = async (id: string) => {
+    setClaimError("");
+    try {
+      await shopVoucherApi.claimShopVoucher(id);
+      setClaimedMap((prev) => ({ ...prev, [id]: true }));
+    } catch {
+      setClaimError(t("public_shop.vouchers.login_to_claim"));
+    }
   };
 
   // 3 mã nổi bật hiển thị ở dải banner trang shop
@@ -75,11 +78,10 @@ export const ShopVoucherStrip: React.FC<ShopVoucherStripProps> = ({
           </div>
           <div>
             <h3 className="font-headline-md text-headline-md font-bold text-on-surface">
-              Mã giảm giá độc quyền từ Shop
+              {t("public_shop.vouchers.exclusive_title")}
             </h3>
             <p className="font-body-sm text-body-sm text-on-surface-variant">
-              Thu thập mã giảm giá để áp dụng ngay tại bước thanh toán của gian hàng{" "}
-              {shopName}
+              {t("public_shop.vouchers.exclusive_desc", { shopName })}
             </p>
           </div>
         </div>
@@ -90,12 +92,13 @@ export const ShopVoucherStrip: React.FC<ShopVoucherStripProps> = ({
           onClick={() => setIsModalOpen(true)}
           className="flex items-center gap-1 font-label-md text-label-md text-primary hover:text-primary-container cursor-pointer transition-colors self-start sm:self-auto group"
         >
-          <span>Xem tất cả ưu đãi</span>
+          <span>{t("public_shop.vouchers.view_all")}</span>
           <span className="material-symbols-outlined text-[16px] group-hover:translate-x-0.5 transition-transform">
             chevron_right
           </span>
         </button>
       </div>
+      {claimError && <p role="alert" className="text-sm text-error">{claimError}</p>}
 
       {/* Voucher Cards Grid (Hiển thị 3 mã hàng đầu) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -160,7 +163,7 @@ export const ShopVoucherStrip: React.FC<ShopVoucherStripProps> = ({
                   <span className="material-symbols-outlined text-[16px]">
                     check_circle
                   </span>
-                  <span>Đã lưu</span>
+                  <span>{t("public_shop.vouchers.claimed")}</span>
                 </button>
               ) : (
                 <button
@@ -168,7 +171,7 @@ export const ShopVoucherStrip: React.FC<ShopVoucherStripProps> = ({
                   onClick={() => handleClaim(voucher.id)}
                   className="shrink-0 h-9 px-4 rounded-lg bg-primary-container text-on-primary hover:bg-primary font-label-md text-label-md transition-all cursor-pointer shadow-xs active:scale-95"
                 >
-                  Lưu mã
+                  {t("public_shop.vouchers.claim")}
                 </button>
               )}
             </div>

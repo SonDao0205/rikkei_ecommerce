@@ -20,6 +20,15 @@ foreach ($name in @('DB_USERNAME', 'DB_PASSWORD', 'DB_NAME')) {
   }
 }
 
+if ($settings['APP_ENV'] -ne 'development') {
+  throw 'Seed chỉ được phép chạy khi APP_ENV=development.'
+}
+if ($settings['DB_NAME'] -ne 'rikkei_ecommerce') {
+  throw 'Seed chỉ được phép chạy với DB_NAME=rikkei_ecommerce.'
+}
+$confirmation = Read-Host 'Seed sẽ upsert các fixture ID cố định trong database local rikkei_ecommerce. Nhập SEED LOCAL để tiếp tục'
+if ($confirmation -cne 'SEED LOCAL') { throw 'Đã hủy seed.' }
+
 $docker = Get-Command docker -ErrorAction SilentlyContinue
 if ($docker) {
   $dockerPath = $docker.Source

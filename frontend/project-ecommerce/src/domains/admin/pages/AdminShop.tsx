@@ -60,7 +60,8 @@ export const AdminShop: React.FC = () => {
   const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
 
   useEffect(() => {
-    dispatch(getAdminShops());
+    dispatch(clearFilters());
+    dispatch(getAdminShops({ search: "", page: 1 }));
   }, [dispatch]);
 
   // Handle Tab Change
@@ -213,15 +214,6 @@ export const AdminShop: React.FC = () => {
                   {isExporting ? "sync" : "download"}
                 </span>
                 <span>{isExporting ? "Exporting..." : "Export CSV"}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setIsOnboardingModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary-container hover:bg-primary text-on-primary font-label-md text-label-md transition-all shadow-md cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[18px]">add_business</span>
-                <span>+ Onboard New Merchant</span>
               </button>
             </div>
           </div>

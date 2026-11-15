@@ -4,3 +4,5 @@
 **/.verify-gocache
 **/.npm-cache
 .env
+**/.env
+backend/.env

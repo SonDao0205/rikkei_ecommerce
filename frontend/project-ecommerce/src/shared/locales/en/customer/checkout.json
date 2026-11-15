@@ -1,0 +1,114 @@
+{
+  "header": {
+    "back": "Back",
+    "back_title": "Go back to previous page",
+    "title": "Order Checkout",
+    "subtitle": "(Checkout)",
+    "desc": "Review shipping details, choose payment method, and apply available promo vouchers."
+  },
+  "loading": "Preparing checkout information...",
+  "empty_selected": {
+    "title": "No products selected",
+    "desc": "Please return to your cart and select at least one available item to proceed to checkout.",
+    "back_to_cart": "Back to Cart"
+  },
+  "shop_items": {
+    "title": "Review Products & Stores",
+    "subtitle": "List of selected items for checkout",
+    "summary_count": "{{shops}} Stores • {{items}} Items",
+    "official_badge": "Official",
+    "shop_subtotal": "Store subtotal:",
+    "variant": "Variant: {{variant}} • Qty: {{quantity}}",
+    "default_variant": "Default",
+    "shop_voucher": "Store Voucher:",
+    "discounted": "Discounted {{amount}}",
+    "enter_code": "+ Enter promo code",
+    "shop_voucher_placeholder": "Store voucher code",
+    "apply_voucher_failed": "Invalid promo code"
+  },
+  "address": {
+    "title": "Delivery Address",
+    "change": "Change",
+    "manage": "Manage Addresses",
+    "no_address_notice": "You do not have any delivery addresses yet. Please add an address in your profile.",
+    "add_address": "Add Address Now",
+    "modal_title": "Select Delivery Address",
+    "modal_close": "Close",
+    "default_badge": "Default",
+    "confirm_select": "Confirm Address"
+  },
+  "shipping": {
+    "title": "Shipping Method",
+    "nationwide_badge": "Nationwide Delivery",
+    "estimated_prefix": "Estimated:",
+    "standard": {
+      "name": "Standard Delivery",
+      "estimated": "2–4 days",
+      "note": "Cost-effective, reliable"
+    },
+    "express": {
+      "name": "Express Delivery",
+      "estimated": "1–2 days",
+      "note": "Priority handling & rapid delivery"
+    }
+  },
+  "payment": {
+    "title": "Payment Method",
+    "safe_badge": "100% Secure",
+    "recommended": "Recommended",
+    "coming_soon": "Coming Soon",
+    "methods": {
+      "cod": {
+        "name": "Cash on Delivery (COD)",
+        "desc": "Pay in cash upon doorstep delivery. Inspect the package before payment, 100% worry-free.",
+        "co_check": "Doorstep co-inspection with shipper (Co-Check)",
+        "vat_invoice": "Full VAT invoice provided"
+      },
+      "bank_transfer": {
+        "name": "Bank Transfer",
+        "desc": "Transfer via local bank or scan VietQR for automatic fast order confirmation."
+      },
+      "cards_wallets": {
+        "name": "Credit / Debit Card & E-Wallets (MoMo, VNPay-QR, ZaloPay)",
+        "desc": "Online payment gateway with Visa/Mastercard, MoMo, ZaloPay, and VNPay is being integrated."
+      }
+    }
+  },
+  "summary": {
+    "title": "Order Summary",
+    "subtitle": "Payment Details & Discounts",
+    "platform_vouchers": "Platform Vouchers",
+    "applied_badge": "Applied",
+    "min_order": "Orders from {{amount}}",
+    "remove_voucher": "Remove",
+    "apply_btn": "Apply",
+    "not_eligible": "Ineligible",
+    "ineligible_tooltip": "Order must reach minimum {{amount}}",
+    "custom_voucher_placeholder": "Enter promo code",
+    "voucher_applied": "Code '{{code}}' applied:",
+    "subtotal": "Items Subtotal",
+    "shipping_fee": "Shipping Fee",
+    "shop_discount": "Store Discounts",
+    "platform_voucher": "Platform Voucher ({{code}})",
+    "total_payment": "Total Payment",
+    "cod_note": "Cash on Delivery • VAT Included",
+    "transfer_note": "Bank Transfer • VAT Included",
+    "updating_quote": "Updating checkout quote...",
+    "place_order_btn": "Place Order ({{method}}) — {{amount}}",
+    "submitting": "Processing order...",
+    "terms_agreement": "By clicking place order, you agree to our terms of service and inspecting the parcel prior to payment to courier.",
+    "authentic_badge": "100% Genuine",
+    "returns_badge": "7-Day Returns",
+    "inspect_badge": "VIP Co-Check"
+  },
+  "success_modal": {
+    "title": "Order Placed Successfully!",
+    "order_code_label": "Order Code:",
+    "description": "The system has notified {{shops}}. Your order will soon be packaged and handed over to {{carrier}}.",
+    "amount_to_collect": "Amount due upon delivery:",
+    "amount_to_transfer": "Amount to transfer:",
+    "transfer_ref": "Payment reference:",
+    "view_orders_btn": "View My Orders",
+    "continue_shopping_btn": "Continue Shopping"
+  }
+}

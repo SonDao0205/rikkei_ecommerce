@@ -240,9 +240,7 @@ export const ForgotPasswordStep2 = ({
         </div>
       </div>
 
-      <p className="rounded-lg bg-amber-50 p-3 text-xs text-amber-800">
-        Khi chạy local, mã OTP được ghi trong log backend. Mở `docker compose logs -f backend` để lấy mã mới nhất.
-      </p>
+      <p className="rounded-lg bg-indigo-50 p-3 text-xs text-indigo-800">Mã OTP sẽ được gửi qua email. Hãy kiểm tra cả thư mục spam. Nếu chưa cấu hình SMTP ở local, mã chỉ xuất hiện trong log backend development.</p>
 
       {formError && <p role="alert" className="rounded-lg bg-red-50 p-3 text-xs text-red-700">{formError}</p>}
 
@@ -421,8 +419,7 @@ export const ForgotPasswordStep2 = ({
           <div className="flex items-center justify-center gap-1.5 text-on-surface-variant pt-1 text-xs">
             <span className="material-symbols-outlined text-[16px] text-secondary">verified</span>
             <span className="font-body-sm">
-              Mã OTP có hiệu lực trong vòng 5 phút kể từ thời điểm phát hành.
-            </span>
+              Mã OTP có hiệu lực trong 10 phút.</span>
           </div>
         </div>
       </form>

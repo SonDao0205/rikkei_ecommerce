@@ -4,6 +4,7 @@ import { useAppDispatch, useAppSelector } from "@/app/state/store";
 import { loginUser, clearAuthError } from "@/domains/auth/state/authSlice";
 import { APP_CONFIG } from "@/shared/config/appConfig";
 import { BrandIcon } from "@/shared/components/common/BrandLogo";
+import { isValidEmail, isValidVietnamesePhone } from "@/shared/utils/validation";
 
 // ─── Icons ──────────────────────────────────────────────────────────────────────
 
@@ -52,8 +53,8 @@ const validate = (data: LoginFormData): FormErrors => {
   if (!data.identifier.trim()) {
     errors.identifier = "Vui lòng nhập email hoặc số điện thoại.";
   } else {
-    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.identifier.trim());
-    const isPhone = /^[0-9\s\-+()]{9,15}$/.test(data.identifier.trim());
+    const isEmail = isValidEmail(data.identifier.trim());
+    const isPhone = isValidVietnamesePhone(data.identifier.trim());
     if (!isEmail && !isPhone) {
       errors.identifier = "Vui lòng nhập email hoặc số điện thoại hợp lệ.";
     }
@@ -94,7 +95,6 @@ const LoginForm = () => {
   const [errors, setErrors] = useState<FormErrors>({});
   const [showPassword, setShowPassword] = useState(false);
   const [loginErrorMessage, setLoginErrorMessage] = useState<string | null>(null);
-  const [selectedRole, setSelectedRole] = useState<"customer" | "seller">("customer");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -130,13 +130,41 @@ const LoginForm = () => {
     const resultAction = await dispatch(loginUser(formData));
     if (loginUser.fulfilled.match(resultAction)) {
       const user = resultAction.payload.user;
-      const roles = user.roles || (user.role ? [user.role] : []);
-      const isAdmin = roles.includes("admin") || user.role === "admin";
-      const isSeller = roles.includes("seller") || user.role === "seller";
+      const roles = (user.roles?.length ? user.roles : user.role ? [user.role] : []).map((r) =>
+        r.toLowerCase().trim()
+      );
+      const isAdmin = roles.includes("admin");
+      const isCustomer = roles.includes("client") || roles.includes("customer");
+      const isSeller = roles.includes("seller");
 
-      const requestedPath = (
+      const stateRequestedPath = (
         location.state as { from?: { pathname?: string } } | null
       )?.from?.pathname;
+      const queryRequestedPath = searchParams.get("next") || undefined;
+      const requestedPath = stateRequestedPath || (
+        queryRequestedPath?.startsWith("/") && !queryRequestedPath.startsWith("//")
+          ? queryRequestedPath
+          : undefined
+      );
+
+      const allowedRequestedPath =
+        requestedPath?.startsWith("/") &&
+        !requestedPath.startsWith("//") &&
+        ((requestedPath.startsWith("/admin") && isAdmin) ||
+          (requestedPath.startsWith("/shop") && isSeller && user.shop_status === "ACTIVE") ||
+          (!requestedPath.startsWith("/admin") &&
+            !requestedPath.startsWith("/shop") &&
+            isCustomer));
+      if (allowedRequestedPath) {
+        navigate(requestedPath!, { replace: true });
+        return;
+      }
+
+      const workspaceCount = [isAdmin, isSeller, isCustomer].filter(Boolean).length;
+      if (workspaceCount > 1) {
+        navigate("/select-role", { replace: true });
+        return;
+      }
 
       // 1. Tài khoản Quản trị viên -> Chuyển hướng thẳng vào /admin/dashboard
       if (isAdmin) {
@@ -148,33 +176,37 @@ const LoginForm = () => {
         return;
       }
 
-      // 2. Người dùng chọn đăng nhập "Chủ gian hàng"
-      if (selectedRole === "seller") {
-        if (isSeller) {
-          if (requestedPath?.startsWith("/shop")) {
-            navigate(requestedPath, { replace: true });
-          } else {
-            navigate("/shop/dashboard", { replace: true });
-          }
+      // 2. Tài khoản có vai trò Customer (Khách hàng)
+      if (isCustomer) {
+        if (
+          requestedPath?.startsWith("/") &&
+          !requestedPath.startsWith("//") &&
+          !requestedPath.startsWith("/admin") &&
+          !requestedPath.startsWith("/shop")
+        ) {
+          navigate(requestedPath, { replace: true });
         } else {
-          navigate("/register-open-shop", { replace: true });
+          navigate("/home", { replace: true });
         }
         return;
       }
 
-      // 3. Người dùng chọn đăng nhập "Khách hàng"
-      if (
-        requestedPath?.startsWith("/") &&
-        !requestedPath.startsWith("//") &&
-        !requestedPath.startsWith("/admin") &&
-        !requestedPath.startsWith("/shop")
-      ) {
-        navigate(requestedPath, { replace: true });
-      } else {
-        navigate("/home", { replace: true });
+      // 3. Tài khoản chỉ có vai trò Seller (Chủ gian hàng)
+      if (isSeller) {
+        if (requestedPath?.startsWith("/shop")) {
+          navigate(requestedPath, { replace: true });
+        } else {
+          navigate("/shop/dashboard", { replace: true });
+        }
+        return;
       }
+
+      // 4. Mặc định chuyển hướng về trang chủ
+      navigate("/home", { replace: true });
     } else if (loginUser.rejected.match(resultAction)) {
-      const errorMsg = "Tài khoản hoặc mật khẩu không chính xác.";
+      const errorMsg = typeof resultAction.payload === "string"
+        ? resultAction.payload
+        : "Không thể đăng nhập lúc này. Vui lòng thử lại.";
       setLoginErrorMessage(errorMsg);
     }
   };
@@ -244,42 +276,6 @@ const LoginForm = () => {
             Or continue with email
           </span>
           <div className="flex-grow border-t border-slate-200" />
-        </div>
-
-        {/* Role Selection Buttons (Khách hàng / Chủ gian hàng) */}
-        <div className="grid grid-cols-2 gap-3 -mt-2">
-          <button
-            type="button"
-            onClick={() => setSelectedRole("customer")}
-            className={`w-full inline-flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-[11px] text-xs sm:text-sm font-semibold shadow-sm border transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 cursor-pointer ${selectedRole === "customer"
-                ? "bg-indigo-50/80 border-indigo-600 text-indigo-700 ring-1 ring-indigo-600"
-                : "bg-white hover:bg-slate-50 active:bg-slate-100 border-slate-200 hover:border-slate-300 text-slate-700"
-              }`}
-          >
-            <span
-              className={`material-symbols-outlined text-[18px] transition-colors ${selectedRole === "customer" ? "text-indigo-600" : "text-slate-500"
-                }`}
-            >
-              person
-            </span>
-            <span>Khách hàng</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setSelectedRole("seller")}
-            className={`w-full inline-flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-[11px] text-xs sm:text-sm font-semibold shadow-sm border transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 cursor-pointer ${selectedRole === "seller"
-                ? "bg-indigo-50/80 border-indigo-600 text-indigo-700 ring-1 ring-indigo-600"
-                : "bg-white hover:bg-slate-50 active:bg-slate-100 border-slate-200 hover:border-slate-300 text-slate-700"
-              }`}
-          >
-            <span
-              className={`material-symbols-outlined text-[18px] transition-colors ${selectedRole === "seller" ? "text-indigo-600" : "text-slate-500"
-                }`}
-            >
-              storefront
-            </span>
-            <span>Chủ gian hàng</span>
-          </button>
         </div>
 
         {/* Login Form */}

@@ -29,15 +29,15 @@ Khi các container đã chạy, nạp dữ liệu mẫu bằng PowerShell tại 
 
 Seed dùng các ID cố định khai báo trong file và có thể chạy lại; nó cập nhật lại các hàng mẫu đó, không xóa dữ liệu khác trong database. Tài khoản kiểm thử dùng chung mật khẩu `LocalTest123!`:
 
-| Tài khoản | Email | Vai trò/trạng thái |
-|---|---|---|
-| Quản trị | `seed-admin@local.test` | admin, hoạt động |
-| Người bán A | `seed-seller-a@local.test` | seller, shop hoạt động |
-| Người mua | `seed-buyer@local.test` | client, hoạt động |
-| Người đăng ký shop B | `seed-seller-b@local.test` | client, shop chờ duyệt; chưa có role seller |
-| Người bán công nghệ | `seed-seller-tech@local.test` | seller, shop Tech An Việt hoạt động |
-| Tài khoản khóa | `seed-locked@local.test` | client, bị khóa để thử đăng nhập |
-| Chưa xác minh email | `seed-unverified@local.test` | client, `email_verified=0` |
+| Tài khoản            | Email                         | Vai trò/trạng thái                          |
+| -------------------- | ----------------------------- | ------------------------------------------- |
+| Quản trị             | `seed-admin@local.test`       | admin, hoạt động                            |
+| Người bán A          | `seed-seller-a@local.test`    | seller, shop hoạt động                      |
+| Người mua            | `seed-buyer@local.test`       | client, hoạt động                           |
+| Người đăng ký shop B | `seed-seller-b@local.test`    | client, shop chờ duyệt; chưa có role seller |
+| Người bán công nghệ  | `seed-seller-tech@local.test` | seller, shop Tech An Việt hoạt động         |
+| Tài khoản khóa       | `seed-locked@local.test`      | client, bị khóa để thử đăng nhập            |
+| Chưa xác minh email  | `seed-unverified@local.test`  | client, `email_verified=0`                  |
 
 Seed tạo dữ liệu liên kết cho địa chỉ, shop, danh mục, thương hiệu, thuộc tính, sản phẩm/biến thể, kho, giỏ hàng, wishlist, voucher, phương thức giao hàng/thanh toán, đơn hàng, thanh toán, hoàn tiền, đánh giá, thông báo và audit log. Script không chèn vào `refresh_tokens`, `auth_refresh_history`, `password_reset_otps` vì đây là trạng thái phiên/OTP sống; không nên seed token giả.
 
@@ -51,7 +51,7 @@ FE storefront gọi trực tiếp BE để tải danh mục, danh sách/tìm ki�
 
 Postman/Newman có collection kiểm thử các luồng API chính, không kiểm thử đầy đủ mọi route/nhánh. Folder **Cart and Wishlist** chạy sau folder **Authentication** để dùng CLIENT vừa đăng ký; nó kiểm tra cart rỗng, thêm/cộng dồn/cập nhật/xóa, giới hạn tồn kho, wishlist idempotent và xóa. Collection dùng fixture inventory `960009`; nạp lại seed sau khi chạy để khôi phục fixture. Collection cũng tạo user/shop test và một số dữ liệu không tự dọn, vì vậy chỉ chạy trên database local/test riêng. Xem phạm vi tác động, cách chạy và giới hạn trong [`postman/README.md`](../postman/README.md).
 
-FE storefront hiện lấy danh mục và sản phẩm từ `GET /api/v1/categories` và `GET /api/v1/products`. Hồ sơ auth dùng `GET /api/v1/auth/me` và `PUT /api/v1/auth/profile`; đổi mật khẩu dùng `PUT /api/v1/auth/password`. Shop onboarding, duyệt shop, seller product CRUD và address book có API; seller API chỉ hoạt động khi shop ACTIVE. Trang quản trị inventory dùng `/api/v1/admin/products` và các route liên quan, yêu cầu role `ADMIN`. Backend cũng cung cấp cart (`/api/v1/cart`) và wishlist (`/api/v1/wishlist`) cho CLIENT đã đăng nhập; xem contract và giới hạn trong [Backend README](../backend/README.md#giỏ-hàng-và-wishlist). Tuy nhiên trang giỏ hàng/wishlist của FE và checkout/đơn hàng chưa hoàn chỉnh để demo end-to-end.
+FE storefront hiện lấy danh mục và sản phẩm từ `GET /api/v1/categories` và `GET /api/v1/products`. Hồ sơ auth dùng `GET /api/v1/auth/me` và `PUT /api/v1/auth/profile`; đổi mật khẩu dùng `PUT /api/v1/auth/password`. Shop onboarding, duyệt shop, seller product CRUD và address book có API; seller API chỉ hoạt động khi shop ACTIVE. Trang quản trị inventory dùng `/api/v1/admin/products` và các route liên quan, yêu cầu role `ADMIN`. Backend cũng cung cấp cart (`/api/v1/cart`) và wishlist (`/api/v1/wishlist`) cho CLIENT đã đăng nhập; xem contract và giới hạn trong [Backend README](../backend/README.md#giỏ-hàng-và-wishlist). Luồng tính phí checkout và tạo đơn hàng (`POST /api/v1/checkout/orders` - tách đơn theo shop, trừ tồn kho chống oversell, hỗ trợ COD và chuyển khoản ngân hàng) đã được hoàn thiện trên cả Backend và Frontend giỏ hàng.
 
 Seed chỉ thay đổi dữ liệu DB local; các workflow CI/CD không theo dõi `database/**` hay `docs/**`. Các thay đổi code BE và FE vẫn kích hoạt workflow tương ứng khi push vào nhánh `build`.
 

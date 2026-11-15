@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { useAppDispatch, useAppSelector } from "@/app/state/store";
 import {
   openEditForm,
@@ -14,6 +15,7 @@ interface AddressListProps {
 }
 
 export const AddressList: React.FC<AddressListProps> = ({ onAddNewClick, onRetry, onDeleteClick }) => {
+  const { t } = useTranslation("customer");
   const dispatch = useAppDispatch();
   const { addresses, loading, saving, error } = useAppSelector((state) => state.address);
 
@@ -24,7 +26,10 @@ export const AddressList: React.FC<AddressListProps> = ({ onAddNewClick, onRetry
     }
     // Fallback nếu không truyền handler mở popup
     const isConfirmed = window.confirm(
-      `Bạn có chắc chắn muốn xóa địa chỉ của "${addr.recipient_name}" (${addr.street_detail}) không?`
+      t("profile.address.actions.confirm_delete_fallback", {
+        name: addr.recipient_name,
+        street: addr.street_detail,
+      })
     );
     if (isConfirmed) {
       dispatch(deleteAddressThunk(addr.id));
@@ -56,7 +61,7 @@ export const AddressList: React.FC<AddressListProps> = ({ onAddNewClick, onRetry
     return (
       <div className="bg-surface-container-lowest rounded-2xl border border-error/30 p-8 text-center shadow-sm">
         <h3 className="text-on-surface font-headline-md text-headline-md font-bold mb-2">
-          Không thể tải sổ địa chỉ
+          {t("profile.address.list.load_error_title")}
         </h3>
         <p role="alert" className="text-error font-body-md text-body-md mb-6">{error}</p>
         <button
@@ -65,7 +70,7 @@ export const AddressList: React.FC<AddressListProps> = ({ onAddNewClick, onRetry
           className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-primary text-on-primary font-bold hover:bg-primary-container transition-all"
         >
           <span className="material-symbols-outlined text-[20px]">refresh</span>
-          <span>Thử lại</span>
+          <span>{t("profile.address.list.retry_btn")}</span>
         </button>
       </div>
     );
@@ -78,10 +83,10 @@ export const AddressList: React.FC<AddressListProps> = ({ onAddNewClick, onRetry
           <span className="material-symbols-outlined text-[32px]">location_off</span>
         </div>
         <h3 className="text-on-surface font-headline-md text-headline-md font-bold mb-2">
-          Chưa có địa chỉ giao hàng
+          {t("profile.address.list.empty_title")}
         </h3>
         <p className="text-on-surface-variant font-body-md text-body-md max-w-md mx-auto mb-6">
-          Thêm địa chỉ giao hàng để trải nghiệm mua sắm và thanh toán 1-chạm thuận tiện nhất trên MarketPulse.
+          {t("profile.address.list.empty_desc")}
         </p>
         <button
           type="button"
@@ -89,7 +94,7 @@ export const AddressList: React.FC<AddressListProps> = ({ onAddNewClick, onRetry
           className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-primary text-on-primary font-bold hover:bg-primary-container transition-all shadow-md active:scale-95 cursor-pointer"
         >
           <span className="material-symbols-outlined text-[20px]">add_location_alt</span>
-          <span>Thêm địa chỉ đầu tiên</span>
+          <span>{t("profile.address.list.add_first_btn")}</span>
         </button>
       </div>
     );
@@ -105,10 +110,10 @@ export const AddressList: React.FC<AddressListProps> = ({ onAddNewClick, onRetry
 
         const typeLabel =
           addr.address_type === "HOME"
-            ? "Nhà riêng"
+            ? t("profile.address.types.home")
             : addr.address_type === "OFFICE"
-            ? "Văn phòng / Công ty"
-            : "Khác";
+            ? t("profile.address.types.office")
+            : t("profile.address.types.other");
 
         const typeIcon =
           addr.address_type === "OFFICE"
@@ -148,7 +153,7 @@ export const AddressList: React.FC<AddressListProps> = ({ onAddNewClick, onRetry
                   {isDefault && (
                     <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary-fixed text-primary">
                       <span className="material-symbols-outlined text-[14px]">check_circle</span>
-                      <span>Mặc định</span>
+                      <span>{t("profile.address.badge_default")}</span>
                     </span>
                   )}
                 </div>
@@ -170,10 +175,10 @@ export const AddressList: React.FC<AddressListProps> = ({ onAddNewClick, onRetry
                   onClick={() => dispatch(openEditForm(addr))}
                   disabled={saving}
                   className="flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary-container px-2.5 py-1.5 rounded-lg hover:bg-primary-fixed/30 transition-colors cursor-pointer"
-                  title="Chỉnh sửa địa chỉ"
+                  title={t("profile.address.actions.edit_tooltip")}
                 >
                   <span className="material-symbols-outlined text-[18px]">edit</span>
-                  <span>Sửa</span>
+                  <span>{t("profile.address.actions.edit")}</span>
                 </button>
 
                 <button
@@ -181,10 +186,10 @@ export const AddressList: React.FC<AddressListProps> = ({ onAddNewClick, onRetry
                   onClick={() => handleDelete(addr)}
                   disabled={saving}
                   className="flex items-center gap-1 text-sm font-semibold text-error hover:text-on-error-container px-2.5 py-1.5 rounded-lg hover:bg-error-container/40 transition-colors cursor-pointer"
-                  title="Xóa địa chỉ"
+                  title={t("profile.address.actions.delete_tooltip")}
                 >
                   <span className="material-symbols-outlined text-[18px]">delete</span>
-                  <span>Xóa</span>
+                  <span>{t("profile.address.actions.delete")}</span>
                 </button>
 
                 {!isDefault && (
@@ -192,10 +197,11 @@ export const AddressList: React.FC<AddressListProps> = ({ onAddNewClick, onRetry
                     type="button"
                     onClick={() => handleSetDefault(addr.id)}
                     disabled={saving}
-                    title="Thiết lập làm địa chỉ mặc định"
+                    className="flex items-center gap-1 text-sm font-semibold text-on-surface-variant hover:text-primary px-2.5 py-1.5 rounded-lg hover:bg-surface-container transition-colors cursor-pointer"
+                    title={t("profile.address.actions.set_default_tooltip")}
                   >
                     <span className="material-symbols-outlined text-[18px]">bookmark_border</span>
-                    <span className="hidden md:inline">Đặt mặc định</span>
+                    <span className="hidden md:inline">{t("profile.address.actions.set_default")}</span>
                   </button>
                 )}
               </div>

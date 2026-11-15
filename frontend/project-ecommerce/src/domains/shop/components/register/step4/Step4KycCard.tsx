@@ -40,7 +40,7 @@ export const Step4KycCard: React.FC<Step4KycCardProps> = ({
               <span className="material-symbols-outlined text-primary text-[18px]">badge</span>
               Dữ liệu Căn cước công dân (CCCD)
             </span>
-            <span className="font-label-sm text-label-sm text-secondary bg-surface-container-lowest px-2 py-0.5 rounded font-bold shadow-xs">
+            <span className="font-label-sm text-label-sm text-secondary bg-surface-container-lowest px-2 py-0.5 rounded font-bold">
               OCR 100% Hợp lệ
             </span>
           </div>
@@ -65,7 +65,7 @@ export const Step4KycCard: React.FC<Step4KycCardProps> = ({
 
           <div className="flex justify-between items-center border-b border-outline-variant/20 pb-1.5">
             <span className="font-body-sm text-body-sm text-on-surface-variant">
-              Xác thực khuôn mặt &amp; MRZ:
+              Xác thực khuôn mặt:
             </span>
             <span className="font-label-sm text-label-sm text-secondary font-bold flex items-center gap-1">
               <span className="material-symbols-outlined text-[14px]">face</span>
@@ -93,7 +93,7 @@ export const Step4KycCard: React.FC<Step4KycCardProps> = ({
               </span>
               Tài khoản nhận tiền (Payout)
             </span>
-            <span className="font-label-sm text-label-sm text-secondary bg-surface-container-lowest px-2 py-0.5 rounded font-bold shadow-xs">
+            <span className="font-label-sm text-label-sm text-secondary bg-surface-container-lowest px-2 py-0.5 rounded font-bold">
               Napas 24/7 Checked
             </span>
           </div>
@@ -103,7 +103,7 @@ export const Step4KycCard: React.FC<Step4KycCardProps> = ({
               Ngân hàng thụ hưởng:
             </span>
             <span className="font-label-md text-label-md text-on-surface font-bold">
-              {kyc.bankName || "Vietcombank (Ngoại Thương)"}
+              {kyc.bankName || "Vietcombank"}
             </span>
           </div>
 
@@ -131,7 +131,7 @@ export const Step4KycCard: React.FC<Step4KycCardProps> = ({
               Chu kỳ thanh toán đối soát:
             </span>
             <span className="font-label-sm text-label-sm text-primary font-bold">
-              {kyc.settlementCycle || "T+3"} (Thứ 2, 4, 6 hằng tuần)
+              {kyc.settlementCycle || "T+3 (Thứ 2, 4, 6 hằng tuần)"}
             </span>
           </div>
         </div>

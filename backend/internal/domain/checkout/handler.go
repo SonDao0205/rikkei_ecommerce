@@ -163,7 +163,7 @@ func (h *Handler) quote(w http.ResponseWriter, r *http.Request) {
 	for _, id := range req.CartItemIDs {
 		args = append(args, id)
 	}
-	rows, err := h.db.QueryContext(r.Context(), `SELECT ci.id,p.id,p.name,v.id,s.id,s.name,ci.quantity,v.price,v.stock,
+	rows, err := h.db.QueryContext(r.Context(), `SELECT ci.id,p.id,p.name,v.id,s.id,s.name,ci.quantity,COALESCE((SELECT fs.sale_price FROM flash_sales fs WHERE fs.product_id=p.id AND fs.is_active=1 AND fs.start_at<=UTC_TIMESTAMP() AND fs.end_at>UTC_TIMESTAMP() AND fs.quantity_limit-fs.quantity_sold>=ci.quantity ORDER BY fs.sale_price,fs.id LIMIT 1),v.price),v.stock,
 		(p.status='ACTIVE' AND p.is_deleted=0 AND s.status='ACTIVE' AND c.is_active=1 AND v.status='ACTIVE')
 		FROM carts ca JOIN cart_items ci ON ci.cart_id=ca.id JOIN product_variants v ON v.id=ci.variant_id
 		JOIN products p ON p.id=v.product_id JOIN shops s ON s.id=p.shop_id JOIN categories c ON c.id=p.category_id

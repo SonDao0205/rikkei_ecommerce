@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface ConfirmReceiveModalProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ export const ConfirmReceiveModal: React.FC<ConfirmReceiveModalProps> = ({
   onConfirm,
   isSubmitting = false,
 }) => {
+  const { t } = useTranslation("customer");
   if (!isOpen) return null;
 
   return (
@@ -23,10 +25,10 @@ export const ConfirmReceiveModal: React.FC<ConfirmReceiveModalProps> = ({
         </div>
         <div>
           <h3 className="font-headline-md text-headline-md text-on-surface font-bold">
-            Xác nhận đã nhận hàng?
+            {t("profile.orders.detail.confirm_receive_modal.title")}
           </h3>
           <p className="font-body-md text-body-md text-outline mt-1.5 leading-relaxed">
-            Vui lòng chỉ bấm xác nhận khi bạn đã nhận được kiện hàng từ bưu tá GHN và kiểm tra tình trạng sản phẩm nguyên vẹn.
+            {t("profile.orders.detail.confirm_receive_modal.desc")}
           </p>
         </div>
         <div className="flex items-center justify-end gap-3 mt-2">
@@ -34,23 +36,23 @@ export const ConfirmReceiveModal: React.FC<ConfirmReceiveModalProps> = ({
             type="button"
             disabled={isSubmitting}
             onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-surface-container text-on-surface font-label-md text-label-md hover:bg-surface-container-high transition-colors disabled:opacity-50"
+            className="px-4 py-2 rounded-xl bg-surface-container text-on-surface font-label-md text-label-md hover:bg-surface-container-high transition-colors disabled:opacity-50 cursor-pointer"
           >
-            Để sau
+            {t("profile.orders.detail.confirm_receive_modal.btn_later")}
           </button>
           <button
             type="button"
             disabled={isSubmitting}
             onClick={onConfirm}
-            className="px-4 py-2 rounded-xl bg-primary-container hover:bg-primary text-on-primary font-label-md text-label-md transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2"
+            className="px-4 py-2 rounded-xl bg-primary-container hover:bg-primary text-on-primary font-label-md text-label-md transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2 cursor-pointer"
           >
             {isSubmitting ? (
               <>
                 <span className="inline-block w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin" />
-                <span>Đang xử lý...</span>
+                <span>{t("profile.orders.detail.confirm_receive_modal.submitting")}</span>
               </>
             ) : (
-              <span>Tôi đã nhận đủ hàng</span>
+              <span>{t("profile.orders.detail.confirm_receive_modal.btn_confirm")}</span>
             )}
           </button>
         </div>

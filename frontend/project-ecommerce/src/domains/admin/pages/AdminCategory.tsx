@@ -35,7 +35,8 @@ const AdminCategory: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [pageError, setPageError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
@@ -44,13 +45,35 @@ const AdminCategory: React.FC = () => {
   const [form, setForm] = useState<CategoryForm>(emptyForm);
   const [slugTouched, setSlugTouched] = useState(false);
 
+  const slugError = useMemo(() => {
+    if (!formError) return null;
+    const lower = formError.toLowerCase();
+    if (lower.includes("slug")) return formError;
+    return null;
+  }, [formError]);
+
+  const nameError = useMemo(() => {
+    if (!formError) return null;
+    const lower = formError.toLowerCase();
+    if (!lower.includes("slug") && (lower.includes("name") || lower.includes("tên"))) {
+      return formError;
+    }
+    return null;
+  }, [formError]);
+
+  const generalError = useMemo(() => {
+    if (!formError) return null;
+    if (slugError || nameError) return null;
+    return formError;
+  }, [formError, slugError, nameError]);
+
   const loadCategories = useCallback(async () => {
     setLoading(true);
-    setError(null);
+    setPageError(null);
     try {
       setCategories(await adminCategoryApi.list());
     } catch (loadError: unknown) {
-      setError(loadError instanceof Error ? loadError.message : "Không thể tải danh mục.");
+      setPageError(loadError instanceof Error ? loadError.message : "Không thể tải danh mục.");
     } finally {
       setLoading(false);
     }
@@ -94,7 +117,8 @@ const AdminCategory: React.FC = () => {
     setEditing(null);
     setForm(emptyForm);
     setSlugTouched(false);
-    setError(null);
+    setFormError(null);
+    setPageError(null);
     setIsFormOpen(true);
   };
 
@@ -109,21 +133,44 @@ const AdminCategory: React.FC = () => {
       isActive: Boolean(item.is_active),
     });
     setSlugTouched(true);
-    setError(null);
+    setFormError(null);
+    setPageError(null);
     setIsFormOpen(true);
   };
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setSaving(true);
-    setError(null);
+    setFormError(null);
     setNotice(null);
+
+    const name = form.name.trim();
+    const slug = form.slug.trim();
+
+    if (!name) {
+      setFormError("Vui lòng điền tên danh mục.");
+      return;
+    }
+    if (name.length < 2) {
+      setFormError("Tên danh mục phải có ít nhất 2 ký tự.");
+      return;
+    }
+    if (!slug) {
+      setFormError("Vui lòng điền slug cho danh mục.");
+      return;
+    }
+    const slugPattern = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+    if (!slugPattern.test(slug)) {
+      setFormError("Slug chỉ được chứa chữ thường không dấu, số và dấu gạch ngang.");
+      return;
+    }
+
+    setSaving(true);
     const payload: AdminCategoryPayload = {
       parent_id: form.parentId ? Number(form.parentId) : null,
-      name: form.name.trim(),
-      slug: form.slug.trim(),
+      name,
+      slug,
       image_url: form.imageUrl.trim() || null,
-      sort_order: Number(form.sortOrder),
+      sort_order: Number(form.sortOrder) || 0,
       is_active: form.isActive,
     };
     try {
@@ -132,37 +179,38 @@ const AdminCategory: React.FC = () => {
       setNotice(editing ? "Đã cập nhật danh mục." : "Đã tạo danh mục.");
       setEditing(null);
       setForm(emptyForm);
+      setFormError(null);
       setIsFormOpen(false);
       await loadCategories();
     } catch (saveError: unknown) {
-      setError(saveError instanceof Error ? saveError.message : "Không thể lưu danh mục.");
+      setFormError(saveError instanceof Error ? saveError.message : "Không thể lưu danh mục.");
     } finally {
       setSaving(false);
     }
   };
 
   const toggleStatus = async (item: Category) => {
-    setError(null);
+    setPageError(null);
     setNotice(null);
     try {
       const updated = await adminCategoryApi.setActive(item.id, item.is_active !== 1);
       setCategories((current) => current.map((category) => category.id === updated.id ? updated : category));
       setNotice(updated.is_active ? "Đã kích hoạt danh mục." : "Đã ngừng danh mục.");
     } catch (statusError: unknown) {
-      setError(statusError instanceof Error ? statusError.message : "Không thể đổi trạng thái danh mục.");
+      setPageError(statusError instanceof Error ? statusError.message : "Không thể đổi trạng thái danh mục.");
     }
   };
 
   const deactivate = async (item: Category) => {
     if (!window.confirm(`Ngừng danh mục “${item.name}”? Danh mục và sản phẩm cũ vẫn được giữ trong dữ liệu.`)) return;
-    setError(null);
+    setPageError(null);
     setNotice(null);
     try {
       const updated = await adminCategoryApi.deactivate(item.id);
       setCategories((current) => current.map((category) => category.id === updated.id ? updated : category));
       setNotice("Đã ngừng danh mục. Dữ liệu sản phẩm liên quan vẫn được giữ.");
     } catch (deleteError: unknown) {
-      setError(deleteError instanceof Error ? deleteError.message : "Không thể ngừng danh mục.");
+      setPageError(deleteError instanceof Error ? deleteError.message : "Không thể ngừng danh mục.");
     }
   };
 
@@ -178,7 +226,7 @@ const AdminCategory: React.FC = () => {
           <button type="button" onClick={openCreate} className="rounded-xl bg-primary px-4 py-2.5 font-semibold text-on-primary shadow-sm hover:opacity-90">+ Thêm danh mục</button>
         </header>
 
-        {error && <div role="alert" className="rounded-xl border border-error/30 bg-error-container/30 p-3 text-sm text-error">{error}</div>}
+        {!isFormOpen && pageError && <div role="alert" className="rounded-xl border border-error/30 bg-error-container/30 p-3 text-sm text-error">{pageError}</div>}
         {notice && <div role="status" className="rounded-xl border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-900">{notice}</div>}
 
         <section className="rounded-2xl border border-outline-variant/50 bg-surface-container-lowest p-4 shadow-sm">
@@ -214,18 +262,48 @@ const AdminCategory: React.FC = () => {
         {isFormOpen && (
           <div className="fixed inset-0 z-[70] grid place-items-center bg-black/45 p-4" role="presentation">
             <section role="dialog" aria-modal="true" aria-labelledby="category-form-title" className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-2xl bg-surface p-6 shadow-2xl">
-              <div className="mb-5 flex items-start justify-between gap-4"><div><h2 id="category-form-title" className="text-xl font-bold">{editing ? "Sửa danh mục" : "Thêm danh mục"}</h2><p className="mt-1 text-sm text-on-surface-variant">Slug là mã định danh ổn định dùng trong URL.</p></div><button type="button" onClick={() => { setIsFormOpen(false); setEditing(null); setForm(emptyForm); }} aria-label="Đóng" className="rounded-lg p-2 hover:bg-surface-container">✕</button></div>
-              <form className="space-y-4" onSubmit={(event) => void submit(event)}>
-                <label className="block text-sm font-semibold">Tên danh mục<input required minLength={2} maxLength={120} value={form.name} onChange={(event) => { const name = event.target.value; setForm((current) => ({ ...current, name, slug: slugTouched ? current.slug : slugFromName(name) })); }} className={fieldClass} /></label>
-                <label className="block text-sm font-semibold">Slug<input required maxLength={150} pattern="[a-z0-9]+(-[a-z0-9]+)*" value={form.slug} onChange={(event) => { setSlugTouched(true); setForm((current) => ({ ...current, slug: event.target.value })); }} className={fieldClass} /><span className="mt-1 block text-xs font-normal text-on-surface-variant">Chỉ chữ thường không dấu, số và dấu gạch ngang.</span></label>
+              <div className="mb-5 flex items-start justify-between gap-4"><div><h2 id="category-form-title" className="text-xl font-bold">{editing ? "Sửa danh mục" : "Thêm danh mục"}</h2><p className="mt-1 text-sm text-on-surface-variant">Slug là mã định danh ổn định dùng trong URL.</p></div><button type="button" onClick={() => { setIsFormOpen(false); setEditing(null); setForm(emptyForm); setFormError(null); }} aria-label="Đóng" className="rounded-lg p-2 hover:bg-surface-container">✕</button></div>
+              <form noValidate className="space-y-4" onSubmit={(event) => void submit(event)}>
+                <label className="block text-sm font-semibold">
+                  Tên danh mục
+                  <input
+                    maxLength={120}
+                    value={form.name}
+                    onChange={(event) => {
+                      const name = event.target.value;
+                      if (formError) setFormError(null);
+                      setForm((current) => ({ ...current, name, slug: slugTouched ? current.slug : slugFromName(name) }));
+                    }}
+                    className={`${fieldClass} ${nameError ? "border-error focus:border-error focus:ring-error/15" : ""}`}
+                  />
+                  {nameError && (
+                    <p className="mt-1 text-xs text-error font-medium">{nameError}</p>
+                  )}
+                </label>
+                <label className="block text-sm font-semibold">
+                  Slug
+                  <input
+                    maxLength={150}
+                    value={form.slug}
+                    onChange={(event) => {
+                      setSlugTouched(true);
+                      if (formError) setFormError(null);
+                      setForm((current) => ({ ...current, slug: event.target.value }));
+                    }}
+                    className={`${fieldClass} ${slugError ? "border-error focus:border-error focus:ring-error/15" : ""}`}
+                  />
+                  {slugError && (
+                    <p className="mt-1 text-xs text-error font-medium">{slugError}</p>
+                  )}
+                </label>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="block text-sm font-semibold">Danh mục cha<select value={form.parentId} onChange={(event) => setForm((current) => ({ ...current, parentId: event.target.value }))} className={fieldClass}><option value="">Không có (danh mục gốc)</option>{categories.filter((item) => item.is_active && item.id !== editing?.id && !descendantsOf(editing?.id || 0).has(item.id)).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
-                  <label className="block text-sm font-semibold">Thứ tự hiển thị<input required type="number" min={0} max={100000} value={form.sortOrder} onChange={(event) => setForm((current) => ({ ...current, sortOrder: event.target.value }))} className={fieldClass} /></label>
+                  <label className="block text-sm font-semibold">Thứ tự hiển thị<input type="number" min={0} max={100000} value={form.sortOrder} onChange={(event) => setForm((current) => ({ ...current, sortOrder: event.target.value }))} className={fieldClass} /></label>
                 </div>
-                <label className="block text-sm font-semibold">Ảnh danh mục (URL HTTPS)<input type="url" value={form.imageUrl} onChange={(event) => setForm((current) => ({ ...current, imageUrl: event.target.value }))} placeholder="https://..." className={fieldClass} /></label>
+                <label className="block text-sm font-semibold">Ảnh danh mục (URL HTTPS)<input type="text" value={form.imageUrl} onChange={(event) => setForm((current) => ({ ...current, imageUrl: event.target.value }))} placeholder="https://..." className={fieldClass} /></label>
                 <label className="flex items-center gap-2 text-sm font-medium"><input type="checkbox" checked={form.isActive} onChange={(event) => setForm((current) => ({ ...current, isActive: event.target.checked }))} />Danh mục đang hoạt động</label>
-                {error && <p role="alert" className="rounded-lg bg-error-container/30 p-3 text-sm text-error">{error}</p>}
-                <div className="flex justify-end gap-3 border-t border-outline-variant pt-4"><button type="button" onClick={() => { setIsFormOpen(false); setEditing(null); setForm(emptyForm); }} className="rounded-xl border border-outline-variant px-4 py-2.5 text-sm font-semibold">Hủy</button><button type="submit" disabled={saving} className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-on-primary disabled:opacity-60">{saving ? "Đang lưu..." : "Lưu danh mục"}</button></div>
+                {generalError && <p role="alert" className="rounded-lg bg-error-container/30 p-3 text-xs text-error font-medium">{generalError}</p>}
+                <div className="flex justify-end gap-3 border-t border-outline-variant pt-4"><button type="button" onClick={() => { setIsFormOpen(false); setEditing(null); setForm(emptyForm); setFormError(null); }} className="rounded-xl border border-outline-variant px-4 py-2.5 text-sm font-semibold">Hủy</button><button type="submit" disabled={saving} className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-on-primary disabled:opacity-60">{saving ? "Đang lưu..." : "Lưu danh mục"}</button></div>
               </form>
             </section>
           </div>

@@ -5,7 +5,7 @@ services:
       dockerfile: frontend/project-ecommerce/Dockerfile
       args:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
-        VITE_BACKEND_HOST: ${VITE_BACKEND_HOST:-http://localhost:8080}
+        VITE_BACKEND_HOST: ${VITE_BACKEND_HOST:-http://localhost:${BACKEND_HOST_PORT:-8080}}
         VITE_APP_NAME: ${VITE_APP_NAME:-MarketPulse}
         VITE_APP_ENV: ${VITE_APP_ENV:-development}
         VITE_DEFAULT_AVATAR_SERVICE_URL: ${VITE_DEFAULT_AVATAR_SERVICE_URL:-https://ui-avatars.com/api/}
@@ -37,9 +37,14 @@ services:
       AUTO_MIGRATE: ${AUTO_MIGRATE:-true}
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_PASS: ${SMTP_PASS:-}
       SMTP_FROM: ${SMTP_FROM:-}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
     ports:
       - "127.0.0.1:${BACKEND_HOST_PORT:-8080}:8080"
     healthcheck:

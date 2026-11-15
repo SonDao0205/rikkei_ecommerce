@@ -1,4 +1,5 @@
-﻿import React from "react";
+import React from "react";
+import { useTranslation } from "react-i18next";
 
 export interface CartBreadcrumbStepperProps {
   currentStep?: 1 | 2 | 3;
@@ -7,10 +8,11 @@ export interface CartBreadcrumbStepperProps {
 export const CartBreadcrumbStepper: React.FC<CartBreadcrumbStepperProps> = ({
   currentStep = 1,
 }) => {
+  const { t } = useTranslation("customer");
   const steps = [
-    { step: 1, label: "Giỏ hàng", icon: "shopping_cart", path: "/cart" },
-    { step: 2, label: "Thanh toán", icon: "credit_card", path: "/checkout" },
-    { step: 3, label: "Hoàn tất đơn", icon: "task_alt", path: "#" },
+    { step: 1, label: t("cart.stepper.cart"), icon: "shopping_cart", path: "/cart" },
+    { step: 2, label: t("cart.stepper.checkout"), icon: "credit_card", path: "/checkout" },
+    { step: 3, label: t("cart.stepper.complete"), icon: "task_alt", path: "#" },
   ];
 
   return (

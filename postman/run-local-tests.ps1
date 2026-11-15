@@ -14,6 +14,14 @@ $apiUri = $null
 if (-not [uri]::TryCreate($baseUrl, [System.UriKind]::Absolute, [ref]$apiUri) -or -not $apiUri.IsLoopback) {
   throw 'This destructive test collection may only target localhost or a loopback IP.'
 }
+$testEmailValue = ($environmentConfig.values | Where-Object { $_.key -eq 'testEmail' } | Select-Object -First 1).value
+$emailOtpValue = ($environmentConfig.values | Where-Object { $_.key -eq 'emailOTP' } | Select-Object -First 1).value
+if ([string]::IsNullOrWhiteSpace($testEmailValue) -or $testEmailValue -notmatch '^[^@\s]+@[^@\s]+\.[^@\s]+$') {
+  throw 'Set testEmail to a reachable disposable mailbox, register it once, then read the verification code.'
+}
+if ([string]::IsNullOrWhiteSpace($emailOtpValue)) {
+  throw 'Set emailOTP in the selected Postman environment to the current 6-digit email verification code before running Newman.'
+}
 if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
   throw 'Docker CLI is required. Start Docker Desktop and install the Docker CLI.'
 }

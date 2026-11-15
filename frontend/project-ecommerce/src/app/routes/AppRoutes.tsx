@@ -3,6 +3,7 @@ import RegisterPage from "@/domains/auth/pages/RegisterPage";
 import LoginPage from "@/domains/auth/pages/LoginPage";
 import RoleSelectionPage from "@/domains/auth/pages/RoleSelectionPage";
 import ForgotPassword from "@/domains/auth/pages/ForgotPassword";
+import VerifyEmailPage from "@/domains/auth/pages/VerifyEmailPage";
 import HomePage from "@/domains/storefront/pages/home/HomePage";
 import ProductDetail from "@/domains/storefront/pages/product/ProductDetail";
 import InforShop from "@/domains/shop/pages/InforShop";
@@ -12,12 +13,20 @@ import RegisterOpenShopStep3 from "@/domains/shop/pages/RegisterOpenShopStep3";
 import RegisterOpenShopStep4 from "@/domains/shop/pages/RegisterOpenShopStep4";
 import ShopDashboard from "@/domains/shop/pages/ShopDashboard";
 import ShopProductManagement from "@/domains/shop/pages/ShopProductManagement";
+import ShopAddProduct from "@/domains/shop/pages/ShopAddProduct";
+import ShopOrderManagement from "@/domains/shop/pages/ShopOrderManagement";
+import ShopOrderDetail from "@/domains/shop/pages/ShopOrderDetail";
+import ShopVoucherManagement from "@/domains/shop/pages/ShopVoucherManagement";
+import ShopSettings from "@/domains/shop/pages/ShopSettings";
 import AdminProduct from "@/domains/admin/pages/AdminProduct";
 import AdminCategory from "@/domains/admin/pages/AdminCategory";
 import AdminDashBoard from "@/domains/admin/pages/AdminDashBoard";
 import AdminOrder from "@/domains/admin/pages/AdminOrder";
 import AdminOrderDetail from "@/domains/admin/pages/AdminOrderDetail";
 import AdminShop from "@/domains/admin/pages/AdminShop";
+import AdminUser from "@/domains/admin/pages/AdminUser";
+import AdminPromotionReview from "@/domains/admin/pages/AdminPromotionReview";
+import ShopReviewManagement from "@/domains/shop/pages/ShopReviewManagement";
 import MyProfile from "@/domains/customer/pages/MyProfile";
 import ChangePassword from "@/domains/customer/pages/ChangePassword";
 import Address from "@/domains/customer/pages/Address";
@@ -25,13 +34,15 @@ import MyOrder from "@/domains/customer/pages/MyOrder";
 import MyOrderDetail from "@/domains/customer/pages/MyOrderDetail";
 import ShoppingCart from "@/domains/customer/pages/ShoppingCart";
 import Wishlist from "@/domains/customer/pages/Wishlist";
+import Checkout from "@/domains/order/pages/Checkout";
+import CompleteOrder from "@/domains/order/pages/CompleteOrder";
 import ProtectedRoute from "@/app/routes/ProtectedRoute";
 import GuestRoute from "@/app/routes/GuestRoute";
 import StorefrontRoute from "@/app/routes/StorefrontRoute";
 import WildcardRoute from "@/app/routes/WildcardRoute";
 
 /**
- * router – Cấu hình toàn bộ routing của ứng dụng bằng createBrowserRouter.
+ * router - Cau hinh toan bo routing cua ung dung bang createBrowserRouter.
  */
 const router = createBrowserRouter([
   {
@@ -63,6 +74,46 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute allowedRoles={["client"]}>
         <ShoppingCart />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/checkout",
+    element: (
+      <ProtectedRoute allowedRoles={["client", "CLIENT"]}>
+        <Checkout />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/order/checkout",
+    element: (
+      <ProtectedRoute allowedRoles={["client", "CLIENT"]}>
+        <Checkout />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/complete-order",
+    element: (
+      <ProtectedRoute allowedRoles={["client", "CLIENT"]}>
+        <CompleteOrder />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/order/complete",
+    element: (
+      <ProtectedRoute allowedRoles={["client", "CLIENT"]}>
+        <CompleteOrder />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/order-complete",
+    element: (
+      <ProtectedRoute allowedRoles={["client", "CLIENT"]}>
+        <CompleteOrder />
       </ProtectedRoute>
     ),
   },
@@ -113,10 +164,6 @@ const router = createBrowserRouter([
         <InforShop />
       </StorefrontRoute>
     ),
-  },
-  {
-    path: "/select-role",
-    element: <Navigate to="/home" replace />,
   },
   {
     path: "/register-open-shop",
@@ -271,6 +318,126 @@ const router = createBrowserRouter([
     ),
   },
   {
+    path: "/shop/products/add",
+    element: (
+      <ProtectedRoute allowedRoles={["seller", "SELLER"]}>
+        <ShopAddProduct />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/shop/product/add",
+    element: (
+      <ProtectedRoute allowedRoles={["seller", "SELLER"]}>
+        <ShopAddProduct />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/shop/add-product",
+    element: (
+      <ProtectedRoute allowedRoles={["seller", "SELLER"]}>
+        <ShopAddProduct />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/shop/orders",
+    element: (
+      <ProtectedRoute allowedRoles={["seller", "SELLER"]}>
+        <ShopOrderManagement />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/shop/order",
+    element: (
+      <ProtectedRoute allowedRoles={["seller", "SELLER"]}>
+        <ShopOrderManagement />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/shop/orders/:id",
+    element: (
+      <ProtectedRoute allowedRoles={["seller", "SELLER"]}>
+        <ShopOrderDetail />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/shop/order/:id",
+    element: (
+      <ProtectedRoute allowedRoles={["seller", "SELLER"]}>
+        <ShopOrderDetail />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/shop/vouchers",
+    element: (
+      <ProtectedRoute allowedRoles={["seller", "SELLER"]}>
+        <ShopVoucherManagement />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/shop/reviews",
+    element: (
+      <ProtectedRoute allowedRoles={["seller", "SELLER"]}>
+        <ShopReviewManagement />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/shop/voucher",
+    element: (
+      <ProtectedRoute allowedRoles={["seller", "SELLER"]}>
+        <ShopVoucherManagement />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/shop/promotions",
+    element: (
+      <ProtectedRoute allowedRoles={["seller", "SELLER"]}>
+        <ShopVoucherManagement />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/shop/promotion",
+    element: (
+      <ProtectedRoute allowedRoles={["seller", "SELLER"]}>
+        <ShopVoucherManagement />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/shop/settings",
+    element: (
+      <ProtectedRoute allowedRoles={["seller", "SELLER"]}>
+        <ShopSettings />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/shop/setting",
+    element: (
+      <ProtectedRoute allowedRoles={["seller", "SELLER"]}>
+        <ShopSettings />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/seller/settings",
+    element: (
+      <ProtectedRoute allowedRoles={["seller", "SELLER"]}>
+        <ShopSettings />
+      </ProtectedRoute>
+    ),
+  },
+  {
     path: "/shop/*",
     element: (
       <ProtectedRoute allowedRoles={["seller", "SELLER"]}>
@@ -307,6 +474,14 @@ const router = createBrowserRouter([
     element: (
       <GuestRoute>
         <ForgotPassword />
+      </GuestRoute>
+    ),
+  },
+  {
+    path: "/verify-email",
+    element: (
+      <GuestRoute>
+        <VerifyEmailPage />
       </GuestRoute>
     ),
   },
@@ -499,6 +674,46 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute allowedRoles={["admin", "ADMIN"]}>
         <AdminShop />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/admin/users",
+    element: (
+      <ProtectedRoute allowedRoles={["admin", "ADMIN"]}>
+        <AdminUser />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/admin/promotions",
+    element: (
+      <ProtectedRoute allowedRoles={["admin", "ADMIN"]}>
+        <AdminPromotionReview />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/admin/user",
+    element: (
+      <ProtectedRoute allowedRoles={["admin", "ADMIN"]}>
+        <AdminUser />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/admin/customers",
+    element: (
+      <ProtectedRoute allowedRoles={["admin", "ADMIN"]}>
+        <AdminUser />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/admin/customer",
+    element: (
+      <ProtectedRoute allowedRoles={["admin", "ADMIN"]}>
+        <AdminUser />
       </ProtectedRoute>
     ),
   },

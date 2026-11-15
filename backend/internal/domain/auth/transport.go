@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/mail"
 	"net/smtp"
 	"strconv"
 	"strings"
@@ -40,8 +41,8 @@ func (a *App) cors(next http.Handler) http.Handler {
 				return
 			}
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Request-ID")
-			w.Header().Set("Access-Control-Expose-Headers", "X-Request-ID")
+			w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Request-ID, Idempotency-Key")
+			w.Header().Set("Access-Control-Expose-Headers", "X-Request-ID, Idempotency-Replayed, Retry-After")
 			w.WriteHeader(204)
 			return
 		}
@@ -117,9 +118,15 @@ func (a *App) clientIP(r *http.Request) string {
 	return remote.String()
 }
 
-func (a *App) sendOTP(to, otp string) error {
+func (a *App) sendOTP(to, otp, purpose string) error {
 	addr := net.JoinHostPort(a.cfg.SMTPHost, strconv.Itoa(a.cfg.SMTPPort))
-	conn, e := net.DialTimeout("tcp", addr, 8*time.Second)
+	var conn net.Conn
+	var e error
+	if a.cfg.SMTPSecure {
+		conn, e = tls.DialWithDialer(&net.Dialer{Timeout: 8 * time.Second}, "tcp", addr, &tls.Config{ServerName: a.cfg.SMTPHost, MinVersion: tls.VersionTLS12})
+	} else {
+		conn, e = net.DialTimeout("tcp", addr, 8*time.Second)
+	}
 	if e != nil {
 		return e
 	}
@@ -130,20 +137,25 @@ func (a *App) sendOTP(to, otp string) error {
 		return e
 	}
 	defer c.Close()
-	ok, _ := c.Extension("STARTTLS")
-	if !ok {
-		return fmt.Errorf("SMTP server does not offer STARTTLS")
-	}
-	if e = c.StartTLS(&tls.Config{ServerName: a.cfg.SMTPHost, MinVersion: tls.VersionTLS12}); e != nil {
-		return e
+	if !a.cfg.SMTPSecure {
+		ok, _ := c.Extension("STARTTLS")
+		if !ok {
+			return fmt.Errorf("SMTP server does not offer STARTTLS")
+		}
+		if e = c.StartTLS(&tls.Config{ServerName: a.cfg.SMTPHost, MinVersion: tls.VersionTLS12}); e != nil {
+			return e
+		}
 	}
 	if a.cfg.SMTPUser != "" {
 		if e = c.Auth(smtp.PlainAuth("", a.cfg.SMTPUser, a.cfg.SMTPPassword, a.cfg.SMTPHost)); e != nil {
 			return e
 		}
 	}
-	from := a.cfg.SMTPFrom
-	if e = c.Mail(from); e != nil {
+	from, e := mail.ParseAddress(a.cfg.SMTPFrom)
+	if e != nil {
+		return fmt.Errorf("invalid SMTP_FROM")
+	}
+	if e = c.Mail(from.Address); e != nil {
 		return e
 	}
 	if e = c.Rcpt(to); e != nil {
@@ -153,7 +165,11 @@ func (a *App) sendOTP(to, otp string) error {
 	if e != nil {
 		return e
 	}
-	_, e = fmt.Fprintf(w, "From: %s\r\nTo: %s\r\nSubject: Rikkei E-Commerce password reset code\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\nYour verification code is %s. It expires in %d minutes.\r\n", from, to, otp, int(a.cfg.OTPTTL.Minutes()))
+	subject := "Rikkei E-Commerce email verification code"
+	if purpose == "password reset" {
+		subject = "Rikkei E-Commerce password reset code"
+	}
+	_, e = fmt.Fprintf(w, "From: %s\r\nTo: %s\r\nSubject: %s\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\nYour verification code is %s. It expires in %d minutes. If you did not request this code, you can ignore this email.\r\n", from.String(), to, subject, otp, int(a.cfg.OTPTTL.Minutes()))
 	if e != nil {
 		_ = w.Close()
 		return e

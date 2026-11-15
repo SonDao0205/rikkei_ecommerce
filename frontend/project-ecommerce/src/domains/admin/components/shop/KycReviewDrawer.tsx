@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import type { AdminShopItem, ShopTier } from "@/domains/shop/types";
+import { getShopDefaultLogo } from "@/shared/utils/avatar";
 
 interface KycReviewDrawerProps {
   isOpen: boolean;
@@ -97,9 +98,12 @@ export const KycReviewDrawer: React.FC<KycReviewDrawerProps> = ({
             <div className="flex items-start gap-4">
               <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-primary-fixed shadow-sm">
                 <img
-                  src={shop.logo_url || undefined}
+                  src={shop.logo_url || getShopDefaultLogo(shop.name)}
                   alt={shop.name}
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = getShopDefaultLogo(shop.name);
+                  }}
                 />
               </div>
               <div className="flex flex-col flex-1">

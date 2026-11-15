@@ -5,6 +5,7 @@ import type { Category, ProductItem, CatalogQueryParams, ProductDetailData } fro
 interface ProductState {
   categories: Category[];
   flashSaleProducts: ProductItem[];
+  flashSaleLoading: boolean;
   catalogProducts: ProductItem[];
   totalCatalogProducts: number;
   selectedCategoryId: number;
@@ -19,6 +20,7 @@ interface ProductState {
 const initialState: ProductState = {
   categories: [],
   flashSaleProducts: [],
+  flashSaleLoading: false,
   catalogProducts: [],
   totalCatalogProducts: 0,
   selectedCategoryId: 0,
@@ -43,9 +45,9 @@ export const getCategories = createAsyncThunk(
 
 export const getFlashSaleProducts = createAsyncThunk(
   "products/getFlashSaleProducts",
-  async (_, { rejectWithValue }) => {
+  async (categoryId: number | undefined, { rejectWithValue }) => {
     try {
-      return await productApi.fetchFlashSaleProducts();
+      return await productApi.fetchFlashSaleProducts(categoryId);
     } catch (err: unknown) {
       return rejectWithValue(err instanceof Error ? err.message : "Failed to load flash sale products");
     }
@@ -100,8 +102,15 @@ export const productSlice = createSlice({
         state.categories = action.payload;
       })
       // Flash Sale
+      .addCase(getFlashSaleProducts.pending, (state) => {
+        state.flashSaleLoading = true;
+      })
       .addCase(getFlashSaleProducts.fulfilled, (state, action) => {
+        state.flashSaleLoading = false;
         state.flashSaleProducts = action.payload;
+      })
+      .addCase(getFlashSaleProducts.rejected, (state) => {
+        state.flashSaleLoading = false;
       })
       // Catalog
       .addCase(getCatalogProducts.pending, (state) => {

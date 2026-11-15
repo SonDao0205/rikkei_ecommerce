@@ -16,7 +16,7 @@ const mapProfile = (user: BackendUser): UserProfileDetails => ({
   phone: user.phone,
   full_name: user.full_name,
   username: cachedProfileExt.username || user.email?.split("@")[0] || "user",
-  avatar_url: cachedProfileExt.avatar_url || null,
+  avatar_url: user.avatar_url !== undefined ? user.avatar_url : cachedProfileExt.avatar_url ?? null,
   email_verified: user.email_verified ? 1 : 0,
   phone_verified: 0,
   status: user.status === "LOCKED" ? "LOCKED" : "ACTIVE",
@@ -64,9 +64,18 @@ export const profileApi = {
     return { success: true, message: response.data.message || "Đổi mật khẩu thành công. Vui lòng đăng nhập lại." };
   },
 
+  setAvatar: async (avatarUrl: string): Promise<UserProfileDetails> => {
+    const response = await axiosClient.put<ApiResponse<BackendUser>>("/api/v1/auth/profile/avatar", {
+      avatar_url: avatarUrl,
+    });
+    cachedProfileExt.avatar_url = response.data.data.avatar_url ?? avatarUrl;
+    return mapProfile(response.data.data);
+  },
+
   removeAvatar: async (): Promise<UserProfileDetails> => {
+    const response = await axiosClient.delete<ApiResponse<BackendUser>>("/api/v1/auth/profile/avatar");
     cachedProfileExt.avatar_url = null;
-    return profileApi.getProfile();
+    return mapProfile(response.data.data);
   },
 };
 

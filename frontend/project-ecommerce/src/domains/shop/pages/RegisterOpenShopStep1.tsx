@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "@/app/state/store";
 import { refreshAccessToken, registerUser } from "@/domains/auth/state/authSlice";
 import {
   setStep,
   updateAccount,
-  updateStore,
+  resetStore,
   setSuccessModalOpen,
 } from "@/domains/shop/state/shopRegisterSlice";
 import {
@@ -16,8 +16,10 @@ import {
 import {
   Step1Stepper,
   Step1FooterBar,
+  Step1AccountPanel,
 } from "@/domains/shop/components/register/step1";
 import { shopRegisterApi, type BackendShop } from "@/domains/shop/api/shopRegisterApi";
+import { isValidEmail, isValidVietnamesePhone } from "@/shared/utils/validation";
 
 export const RegisterOpenShopStep1: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -39,23 +41,11 @@ export const RegisterOpenShopStep1: React.FC = () => {
 
   const applyShopToForm = useCallback((shop: BackendShop | null) => {
     setExistingShop(shop);
-    if (!shop) return;
-    const address = (shop.warehouse_address || "").split(",").map((part) => part.trim());
-    dispatch(updateStore({
-      shopName: shop.name,
-      bio: shop.description || "",
-      logoUrl: shop.logo_url || "",
-      bannerUrl: shop.banner_url || "",
-      warehousePhone: shop.phone || "",
-      addressDetail: address.length > 3 ? address.slice(0, -3).join(", ") : address[0] || "",
-      ward: address.length > 3 ? address[address.length - 3] : "",
-      district: address.length > 2 ? address[address.length - 2] : "",
-      province: address.length > 1 ? address[address.length - 1] : "",
-    }));
-  }, [dispatch]);
+  }, []);
 
   useEffect(() => {
     dispatch(setStep(1));
+    dispatch(resetStore());
     if (user) {
       dispatch(updateAccount({
         fullName: user.full_name,
@@ -107,6 +97,14 @@ export const RegisterOpenShopStep1: React.FC = () => {
         setNotice("Vui lòng điền đầy đủ họ tên, email, số điện thoại và mật khẩu để tạo tài khoản.");
         return;
       }
+      if (!isValidEmail(email.trim())) {
+        setNotice("Email không đúng định dạng. Ví dụ: seller@example.com");
+        return;
+      }
+      if (!isValidVietnamesePhone(phone.trim())) {
+        setNotice("Số điện thoại không đúng định dạng số di động Việt Nam. Ví dụ: 0909 123 456");
+        return;
+      }
       if (password !== confirmPassword) {
         setNotice("Mật khẩu xác nhận chưa khớp.");
         return;
@@ -119,8 +117,11 @@ export const RegisterOpenShopStep1: React.FC = () => {
         return;
       }
       dispatch(updateAccount({ password: "", confirmPassword: "", agreeTerms: true }));
+      navigate(`/verify-email?email=${encodeURIComponent(email.trim().toLowerCase())}&next=${encodeURIComponent("/register-open-shop")}`);
+      return;
     }
     // Navigate to Step 2 page
+    dispatch(resetStore());
     dispatch(setStep(2));
     navigate("/register-open-shop/step2");
   };
@@ -179,22 +180,19 @@ export const RegisterOpenShopStep1: React.FC = () => {
           <div className="w-full max-w-[1440px] mx-auto px-gutter py-space-md sm:py-space-lg flex flex-col gap-space-lg">
             {shopLoading && user && <p role="status" className="rounded-xl bg-surface-container-low p-4">Đang tải trạng thái gian hàng...</p>}
             {shopLoadError && <div role="alert" className="rounded-xl border border-error/30 bg-error-container/30 p-4 text-sm"><p>Không thể tải hồ sơ shop. Để tránh tạo trùng shop, vui lòng tải lại trước khi tiếp tục.</p><button type="button" onClick={reloadShop} className="mt-2 rounded-lg border px-3 py-2 font-semibold">Thử tải lại</button></div>}
-            {existingShop && (
+            {existingShop && existingShop.status !== "PENDING" && (
               <section className={`rounded-xl border p-5 ${existingShop.status === "ACTIVE" ? "border-green-300 bg-green-50" : "border-amber-300 bg-amber-50"}`}>
                 <h2 className="font-semibold text-on-surface">
                   {existingShop.status === "ACTIVE" ? "Shop đã được duyệt" :
-                    existingShop.status === "PENDING" ? "Hồ sơ đang chờ xét duyệt" :
-                      existingShop.status === "SUSPENDED" ? "Shop đang bị tạm ngưng" :
-                        "Đã tìm thấy bản nháp hồ sơ shop"}
+                    existingShop.status === "SUSPENDED" ? "Shop đang bị tạm ngưng" :
+                      "Đã tìm thấy bản nháp hồ sơ shop"}
                 </h2>
                 <p className="mt-1 text-sm text-on-surface-variant">
                   {existingShop.status === "ACTIVE"
                     ? "Quyền SELLER đã được cấp. Bạn vẫn có thể mua sắm bằng tài khoản này."
-                    : existingShop.status === "PENDING"
-                      ? "Không cần gửi lại. Bạn có thể tiếp tục mua sắm trong lúc hồ sơ được xét duyệt."
-                      : existingShop.status === "SUSPENDED"
-                        ? "Liên hệ bộ phận hỗ trợ để biết thêm thông tin. Quyền mua hàng vẫn được giữ nguyên."
-                        : "Thông tin shop được tải từ máy chủ để bạn tiếp tục hoàn thiện."}
+                    : existingShop.status === "SUSPENDED"
+                      ? "Liên hệ bộ phận hỗ trợ để biết thêm thông tin. Quyền mua hàng vẫn được giữ nguyên."
+                      : "Thông tin shop được tải từ máy chủ để bạn tiếp tục hoàn thiện."}
                 </p>
                 {existingShop.reject_reason && (
                   <p className="mt-2 text-sm text-red-800">Ghi chú xét duyệt: {existingShop.reject_reason}</p>
@@ -212,41 +210,40 @@ export const RegisterOpenShopStep1: React.FC = () => {
               </section>
             )}
 
-            {!shopLoading && !shopLoadError && (!existingShop || ["DRAFT", "NEEDS_INFO", "REJECTED"].includes(existingShop.status)) && (
+            {!shopLoading && !shopLoadError && (!existingShop || ["DRAFT", "NEEDS_INFO", "REJECTED", "PENDING"].includes(existingShop.status)) && (
               <>
                 {/* Context subheader & 4-step stepper */}
                 <Step1Stepper onStepClick={handleStepClick} />
 
                 {/* Form Content Wrapper with width matching Stepper */}
                 <div className="w-full flex flex-col gap-space-lg mb-20">
-              <div className="w-full bg-surface-container-lowest rounded-2xl shadow-sm p-6 sm:p-10 transition-all">
-                <div className="max-w-3xl space-y-4">
-                  <p className="inline-flex rounded-full bg-primary-fixed px-3 py-1 text-label-sm font-semibold text-on-primary-fixed">
-                    Một tài khoản cho cả mua sắm và bán hàng
-                  </p>
-                  <h2 className="text-2xl font-bold text-on-surface">{user ? "Dùng tài khoản hiện tại để mở shop" : "Tạo tài khoản để bắt đầu bán hàng"}</h2>
-                  <p className="text-on-surface-variant">
-                    {user ? "Bạn không cần tạo tài khoản người bán riêng. Sau khi shop được duyệt, tài khoản này được bổ sung quyền SELLER và vẫn giữ quyền mua hàng." : "Tạo một tài khoản duy nhất để mua sắm và đăng ký bán hàng. Quyền SELLER chỉ được cấp sau khi admin duyệt hồ sơ."}
-                  </p>
-                  <dl className="grid gap-3 rounded-xl bg-surface-container-low p-4 sm:grid-cols-2">
-                    {user ? <>
-                      <div><dt className="text-sm text-on-surface-variant">Chủ tài khoản</dt><dd className="font-semibold">{user.full_name}</dd></div>
-                      <div><dt className="text-sm text-on-surface-variant">Email</dt><dd className="font-semibold">{user.email || "Chưa có email"}</dd></div>
-                      <div><dt className="text-sm text-on-surface-variant">Số điện thoại</dt><dd className="font-semibold">{user.phone}</dd></div>
-                      <div><dt className="text-sm text-on-surface-variant">Vai trò hiện tại</dt><dd className="font-semibold">{user.roles?.join(", ") || user.role}</dd></div>
-                    </> : <div className="grid gap-4 sm:grid-cols-2">
-                      <label className="text-sm font-medium">Họ và tên<input required autoComplete="name" value={formData.account.fullName} onChange={(e) => dispatch(updateAccount({ fullName: e.target.value }))} className="mt-1 w-full rounded-lg border p-3" /></label>
-                      <label className="text-sm font-medium">Email<input required type="email" autoComplete="email" value={formData.account.email} onChange={(e) => dispatch(updateAccount({ email: e.target.value }))} className="mt-1 w-full rounded-lg border p-3" /></label>
-                      <label className="text-sm font-medium">Số điện thoại<input required type="tel" autoComplete="tel" value={formData.account.phone} onChange={(e) => dispatch(updateAccount({ phone: e.target.value }))} className="mt-1 w-full rounded-lg border p-3" /></label>
-                      <label className="text-sm font-medium">Mật khẩu<input required type="password" autoComplete="new-password" minLength={10} value={formData.account.password} onChange={(e) => dispatch(updateAccount({ password: e.target.value }))} className="mt-1 w-full rounded-lg border p-3" /><span className="text-xs text-slate-500">Ít nhất 10 ký tự, gồm chữ cái và chữ số.</span></label>
-                      <label className="text-sm font-medium sm:col-span-2">Xác nhận mật khẩu<input required type="password" autoComplete="new-password" value={formData.account.confirmPassword} onChange={(e) => dispatch(updateAccount({ confirmPassword: e.target.value }))} className="mt-1 w-full rounded-lg border p-3" /></label>
-                      <p className="text-sm text-slate-600 sm:col-span-2">Tài khoản mới được tạo với quyền người mua. Quyền người bán chỉ được cấp khi shop được admin duyệt.</p>
-                      <p className="text-sm sm:col-span-2">Đã có tài khoản? <Link className="font-semibold text-indigo-700 underline" to="/login" state={{ from: { pathname: "/register-open-shop" } }}>Đăng nhập để tiếp tục</Link></p>
-                    </div>}
-                  </dl>
-                </div>
-              </div>
-              {(notice || registrationError) && <p role="alert" className="rounded-lg bg-blue-50 p-3 text-sm text-blue-900">{notice || registrationError}</p>}
+                <Step1AccountPanel
+                  data={formData.account}
+                  onChange={(fields) => dispatch(updateAccount(fields))}
+                  user={user}
+                />
+
+                {(notice || registrationError) && (
+                  <div
+                    role="alert"
+                    className="p-4 rounded-xl bg-error-container/30 border border-error/40 text-on-error-container text-sm font-medium flex items-center justify-between gap-3 shadow-xs"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className="material-symbols-outlined text-error text-[20px]">
+                        error
+                      </span>
+                      <span>{notice || registrationError}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setNotice(null)}
+                      className="text-outline hover:text-on-surface p-1 rounded-lg cursor-pointer"
+                      title="Đóng thông báo"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">close</span>
+                    </button>
+                  </div>
+                )}
 
               {/* Action Footer Bar */}
               <Step1FooterBar

@@ -2,7 +2,7 @@
 
 Backend REST API cho MVP Rikkei E-Commerce, viết bằng Go 1.24+, `net/http` và MySQL `database/sql`. Tài liệu này hướng dẫn DevOps chạy/vận hành BE và FE tích hợp các API **đang có**.
 
-> Backend implements auth/RBAC, catalog, shop management, seller products, addresses, cart, wishlist, categories, and checkout quote APIs. Order creation, stock reservation, and payment processing are not implemented.
+> Backend implements auth/RBAC, catalog, shop management, seller products, addresses, cart, wishlist, categories, checkout creation with atomic inventory deduction & multi-shop splitting, and comprehensive order tracking/seller processing with return/refund workflows. Direct 3rd-party payment gateway callbacks (Momo/VNPAY) and automated AI shop integrations are planned for future phases.
 
 ## Cấu trúc mã nguồn
 
@@ -54,7 +54,7 @@ docker compose ps
 Invoke-WebRequest http://localhost:5173/healthz
 ```
 
-Compose nạp schema qua `database/scriptDb.sql` khi khởi tạo database rỗng. **Không chạy lại file này trên database đã có dữ liệu**: script có `DROP DATABASE IF EXISTS`. Để nạp fixtures local có thể chạy lại an toàn:
+Compose nạp schema qua `database/scriptDb.sql` khi khởi tạo database rỗng. File schema không xóa database; nếu chạy trên DB đã có bảng, lệnh tạo bảng sẽ báo trùng và dừng, vì vậy chỉ dùng để bootstrap DB local rỗng. Để nạp lại fixtures local:
 
 ```powershell
 .\database\seed-local.ps1
@@ -97,15 +97,17 @@ Không chạy hai backend cùng bind một host port. API gốc mặc định `h
 | `TRUSTED_PROXY_CIDRS` | CIDR của reverse proxy được phép cung cấp `X-Real-IP` | Compose local mặc định `172.22.0.3/32`; thay bằng đúng IP/CIDR proxy thực tế |
 | `COOKIE_SECURE` | Chỉ gửi refresh cookie qua HTTPS | `false` local; production bắt buộc `true` |
 | `AUTO_MIGRATE` | Áp dụng migration theo domain khi API khởi động | `true` development; production bắt buộc `false` |
-| `SMTP_HOST`, `SMTP_PORT` | SMTP STARTTLS gửi OTP | Port mặc định `587`; production cần SMTP hoạt động |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE` | SMTP gửi OTP qua implicit TLS (`true`, thường port `465`) hoặc STARTTLS (`false`, thường port `587`) | Gmail thường dùng `smtp.gmail.com:587` với `SMTP_SECURE=false` |
 | `SMTP_USER`, `SMTP_PASSWORD` | SMTP authentication nếu nhà cung cấp yêu cầu | Không commit credentials |
+| `SMTP_PASS` | Alias tương thích cho `SMTP_PASSWORD` | Chỉ dùng nếu môi trường triển khai cấp tên biến này |
+| `SMTP_SECURE` | TLS ngầm định (true, thường port 465) hay STARTTLS (false, thường port 587) | Mặc định `false` |
 | `SMTP_FROM` | Email gửi OTP | Production bắt buộc email hợp lệ |
 
 Không commit `.env`, DSN/password DB, SMTP credentials hoặc JWT secret. Dùng tài khoản DB có quyền tối thiểu; chỉ bước migration cần quyền DDL.
 
 ### Migration và production
 
-`AUTO_MIGRATE=true` chạy migration của các domain khi API khởi động. Migration security nằm tại `internal/domain/auth/migrations/001_security.sql`; migration address/shop bổ sung các cột/constraint cần thiết, và auth migration dọn refresh token/OTP hết hạn. Migration **không tạo database và không thay thế schema commerce** trong `database/scriptDb.sql`.
+`AUTO_MIGRATE=true` chạy migration của các domain khi API khởi động. Migration security nằm tại `internal/domain/auth/migrations/001_security.sql`; migration address/shop bổ sung các cột/constraint cần thiết, và auth migration dọn refresh token/OTP hết hạn. Migration **không tạo database và không thay thế schema commerce** trong `database/scriptDb.sql`. Seed script xác nhận `APP_ENV=development`, `DB_NAME=rikkei_ecommerce` và yêu cầu gõ `SEED LOCAL` để tránh chạy nhầm vào DB khác.
 
 Production nên triển khai migration riêng bằng tài khoản có DDL, sau khi xác nhận schema và backup:
 
@@ -174,7 +176,9 @@ Postman collection importable kiểm thử các luồng API chính (không kiể
 | Method | Endpoint | Xác thực | Công dụng |
 |---|---|---|---|
 | `GET` | `/healthz` | Không | Health check DB |
-| `POST` | `/api/v1/auth/register` | Không | Đăng ký tài khoản CLIENT |
+| `POST` | `/api/v1/auth/register` | Không | Tạo yêu cầu đăng ký, gửi OTP; chưa tạo user trước khi xác minh |
+| `POST` | `/api/v1/auth/resend-email-otp` | Không | Gửi lại OTP cho đăng ký đang chờ; giới hạn 60 giây |
+| `POST` | `/api/v1/auth/verify-email-otp` | Không | Xác minh email và tạo tài khoản CLIENT |
 | `POST` | `/api/v1/auth/login` | Không | Email/phone và password; cấp access token, đặt refresh cookie |
 | `POST` | `/api/v1/auth/refresh` | Refresh cookie | Xoay refresh token và cấp access token |
 | `POST` | `/api/v1/auth/logout` | Access token | Thu hồi phiên hiện tại |
@@ -239,7 +243,7 @@ FE hiện có API client cho dashboard/admin shop/order nhưng BE chưa có các
 | Admin shops | `GET /api/v1/admin/shops/metrics`, `PATCH /api/v1/admin/shops/{id}/toggle-live`, `PATCH /api/v1/admin/shops/{id}/unlock`, `PATCH /api/v1/admin/shops/{id}/commission`, `GET /api/v1/admin/shops/export` |
 | Admin orders | `GET /api/v1/admin/orders`, `GET /api/v1/admin/orders/counts`, `GET /api/v1/admin/orders/{id}`, `PATCH /api/v1/admin/orders/{id}/confirm`, `PATCH /api/v1/admin/orders/{id}/cancel`, `PATCH /api/v1/admin/orders/{id}/courier`, `POST /api/v1/admin/orders/bulk-confirm`, `GET /api/v1/admin/orders/export` |
 
-Cart and wishlist APIs are available. Voucher validation, delivery/payment options, and checkout quote APIs are implemented; order creation and payment processing remain unimplemented.
+Cart and wishlist APIs are available. Voucher validation, delivery/payment options, checkout quote, and order creation/inventory deduction APIs are implemented.
 
 API path/query phải theo đúng tên và giới hạn dưới đây. Contract catalog/admin inventory và ví dụ response đầy đủ: [`docs/catalog-api.md`](../docs/catalog-api.md).
 
@@ -310,7 +314,7 @@ BE xác minh password hiện tại, yêu cầu password mới hợp lệ và kh�
 
 ### Quên password và OTP
 
-1. `POST /api/v1/auth/forgot-password` với `{ "identifier": "email-or-phone" }`. Response luôn chung để không tiết lộ tài khoản tồn tại; OTP gửi đến email của tài khoản. Development ghi OTP vào BE log.
+1. `POST /api/v1/auth/forgot-password` với `{ "identifier": "email-or-phone" }`. Response luôn chung để không tiết lộ tài khoản tồn tại; OTP gửi đến email của tài khoản qua SMTP khi được cấu hình. Chỉ development không có SMTP mới ghi OTP vào BE log.
 2. `POST /api/v1/auth/verify-reset-otp` với `{ "identifier": "email-or-phone", "otp": "123456" }`. OTP gồm đúng 6 chữ số.
 3. `POST /api/v1/auth/reset-password` với `{ "identifier": "email-or-phone", "otp": "123456", "new_password": "NewSecurePass456" }`. Field `email` cũ được hỗ trợ thay cho `identifier` để tương thích client cũ.
 
@@ -444,7 +448,7 @@ Cart và wishlist yêu cầu đăng nhập với role `CLIENT`; seller vẫn gi�
 - `PUT /api/v1/cart/items/{id}` nhận `{ "quantity": 2 }` và thay số lượng tuyệt đối (không cộng dồn). Biến thể không được đổi qua endpoint này; nếu sản phẩm không còn mua được hoặc số lượng vượt tồn kho, BE trả lỗi thay vì ghi dữ liệu sai. `DELETE /api/v1/cart/items/{id}` xóa đúng item thuộc cart của user; `DELETE /api/v1/cart/items` xóa cả giỏ. Cart được khóa theo user trong transaction để tuần tự hóa thao tác ghi cùng một cart.
 - GET cart vẫn trả các item đã hết hàng/ngừng bán để người dùng nhận biết và tự xóa; mỗi item có `is_available` và `available_stock`. Chỉ item khả dụng được cộng vào subtotal. Số tiền dòng được nhân ở `DECIMAL(30,2)` để bao phủ mức giá schema và số lượng tồn kho kiểu `INT`.
 - `GET /api/v1/wishlist` trả `items` và `total`, cùng trạng thái khả dụng/tồn kho hiện tại. Có thể lưu sản phẩm hết hàng; chỉ sản phẩm public (cùng shop/category active, chưa soft-delete) mới được thêm. `POST` lặp là idempotent; `DELETE` lặp vẫn thành công. Wishlist không khóa biến thể vì được lưu theo sản phẩm.
-- Cart and wishlist APIs are implemented. Checkout quote APIs are documented below; they calculate current pricing but do not create orders. Postman covers authorization and invalid-request cases.
+- Cart and wishlist APIs are implemented. Checkout supports quote and real order creation; POST order requires an `Idempotency-Key` so a retry returns the original order response rather than reserving stock or vouchers twice.
 
 ### Admin inventory
 
@@ -515,7 +519,7 @@ Payment method `MOCK_CARD` is intentionally excluded from customer checkout beca
 
 Successful response data includes `address`, `shipping_method`, `payment_method`, selected `items`, `subtotal`, `shipping_fee`, `shop_vouchers`, `shop_discount`, `platform_voucher`, `platform_discount`, and `total`. Invalid input returns `400`; unauthenticated or wrong-role callers return `401`/`403`; stale addresses/methods/cart items or invalid vouchers return `422`; database failures return a generic `500` while details are logged server-side. Common error codes include `address_unavailable`, `shipping_method_unavailable`, `payment_method_unavailable`, `cart_item_unavailable`, `cart_selection_changed`, `voucher_invalid`, `voucher_unavailable`, `voucher_minimum_not_met`, `voucher_shop_mismatch`, and `cart_total_exceeded`.
 
-A quote is advisory: it does not create an order, reserve stock, or consume a voucher. A future order-creation endpoint must repeat validation and atomically update stock and voucher usage in a transaction. The cart UI now collects delivery/payment choices and displays a server-calculated quote; it does not claim an order was placed.
+A quote is advisory: it does not create an order, reserve stock, or consume a voucher. The order-creation endpoint `POST /api/v1/checkout/orders` executes inside a single database transaction, atomically locking and updating stock and voucher usage, creating parent and sub-orders per shop, recording payment, and clearing purchased cart items.
 
 Example quote body:
 
@@ -530,6 +534,44 @@ Example quote body:
 }
 ```
 
+### Order creation: `POST /api/v1/checkout/orders`
+
+Send a unique `Idempotency-Key` header (16–128 ASCII letters, digits, `-`, `_`, `.`, or `:`). The key is scoped to the authenticated user and bound to a SHA-256 fingerprint of the canonical JSON request (the note is trimmed before hashing). Replaying the same key and request returns the original status/body with `Idempotency-Replayed: true`; using the same key for a different body returns `409 idempotency_key_reused`. The key, resulting order, stock/voucher changes, cart cleanup, and replay response are committed atomically. A failed transaction leaves no key reservation, so the same key can safely retry.
+
+Tạo đơn hàng từ giỏ hàng được bảo vệ bởi role `CLIENT`, thực thi toàn bộ trong một transaction cơ sở dữ liệu duy nhất:
+
+- **Input:**
+  - `address_id` (ID địa chỉ nhận hàng của chính người dùng).
+  - `shipping_method_id` (phương thức vận chuyển đang hoạt động).
+  - `payment_method_id` (`COD` hoặc `BANK_TRANSFER`; phương thức `MOCK_CARD` bị từ chối).
+  - `cart_item_ids` (mảng 1–100 ID dòng giỏ hàng thuộc về người dùng, không trùng lặp).
+  - `platform_voucher` (tùy chọn: mã voucher toàn sàn).
+  - `shop_vouchers` (tùy chọn: map mã voucher theo shop ID `{"920001": "SEED-MAY10"}`).
+  - `note` (tùy chọn: tối đa 500 ký tự).
+- **Cơ chế chống bán vượt tồn kho (Oversell Prevention) và chống Deadlock:**
+  1. Tập hợp tất cả `variant_id` liên quan và sắp xếp tăng dần theo ID trước khi khóa hàng (`ORDER BY v.id ASC FOR UPDATE`) để tránh deadlock khi nhiều người mua đồng thời.
+  2. Kiểm tra trạng thái khả dụng và số lượng tồn kho `v.stock >= requested_quantity`.
+  3. Trừ tồn kho nguyên tử bằng câu lệnh SQL `UPDATE product_variants SET stock = stock - ? WHERE id = ? AND stock >= ?`. Nếu không có dòng nào bị ảnh hưởng (`RowsAffected == 0`), transaction tự động rollback ngay lập tức và trả về `422 cart_item_unavailable`.
+  4. Ràng buộc toàn vẹn MySQL `CONSTRAINT chk_variants_stock CHECK (stock >= 0)` bảo vệ tuyệt đối ở tầng engine.
+- **Tách đơn theo Shop (Multi-Shop Splitting):**
+  - Tạo 1 đơn hàng cha trong bảng `orders` (tính tổng tiền hàng, phí vận chuyển chung, voucher sàn, voucher shop, tổng thanh toán).
+  - Tạo $N$ đơn hàng con trong bảng `shop_orders` theo từng shop:
+    - Trạng thái khởi tạo: `PENDING`.
+    - Phân bổ tỷ lệ phí ship và voucher sàn theo giá trị đơn của từng shop, đảm bảo tổng các đơn con khớp chính xác 100% với đơn cha.
+    - Snapshot tỷ lệ hoa hồng (`commission_rate = 0`, `commission_amount = 0`).
+  - Lưu chi tiết sản phẩm vào `order_items` gắn với từng `shop_orders`.
+  - Ghi log lịch sử trạng thái ban đầu vào `order_status_history` (`PENDING`).
+- **Thanh toán COD & Chuyển khoản (Bank Transfer):**
+  - Khởi tạo bản ghi trong bảng `payments` với trạng thái `PENDING`.
+  - Phương thức `COD`: `transaction_ref = "COD-" + order_code`.
+  - Phương thức `BANK_TRANSFER`: `transaction_ref = order_code` (được dùng làm nội dung chuyển khoản để đối soát).
+- **Voucher & Giỏ hàng:**
+  - Khóa voucher `FOR UPDATE`, kiểm tra hạn dùng, điều kiện tối thiểu và giới hạn `usage_limit`, `usage_per_user`.
+  - Tăng số lượt dùng nguyên tử `used_count = used_count + 1`.
+  - Lưu lịch sử dùng vào `voucher_usages`.
+  - Xóa chính xác các sản phẩm đã mua khỏi bảng `cart_items`.
+- **Response `201 Created`:** Trả về thông tin đầy đủ đơn hàng cha, phương thức thanh toán, hướng dẫn thanh toán `payment`, và danh sách các đơn con `shop_orders`.
+
 ## Checkout implementation and team follow-up
 
 Before validating a successful quote locally, start the API and seed a disposable local/test database (`database/seed.local.sql`). The seed includes `STANDARD`/`EXPRESS`, `COD`/`BANK_TRANSFER`, `SEED-WELCOME` (platform), and `SEED-MAY10` (shop 920001). Use a CLIENT access token, an address owned by that account, and cart item IDs returned by that same account's `GET /api/v1/cart`; do not substitute IDs from another user. `MOCK_CARD` is intentionally omitted from returned payment choices.
@@ -542,6 +584,157 @@ Manual/API QA matrix:
 - Try another user's address/cart ID, duplicate/non-positive IDs, an unavailable product/variant/category/shop, insufficient stock, and inactive or `MOCK_CARD` methods. These must fail with a client error and no mutation.
 - Change the price after loading the cart, then quote again; the returned amount must use the new DB price. Deactivate the product/method or reduce stock below cart quantity; the quote must return a client error instead of trusting FE state.
 
-The Postman folder currently verifies auth, option response shape, and invalid requests. A successful seeded quote is still a manual integration check because the disposable auth flow does not create a guaranteed address/cart fixture.
+The Postman collection verifies auth, option response shapes, order checkout, order tracking, and seller order management.
 
-Next implementation work is order creation: repeat quote validations within a DB transaction, lock/recheck stock, increment voucher usage atomically, persist order snapshots and clear only purchased cart items. Payment gateway callbacks/verification and cancellation/refund rules must be added before claiming online payment is supported.
+---
+
+## 5. Theo dõi và xử lý đơn hàng (Order Tracking and Seller Processing)
+
+Hệ thống cung cấp đầy đủ các API phục vụ luồng theo dõi đơn hàng của Khách hàng (`CLIENT`) và luồng xử lý đơn hàng của Chủ gian hàng (`SELLER`):
+
+### 5.1. Dành cho Khách hàng (`CLIENT`)
+
+1. **Lịch sử đơn hàng (`GET /api/v1/orders`):**
+   - Hỗ trợ phân trang: `page` (mặc định 1), `limit` (mặc định 10, tối đa 50).
+   - Lọc theo trạng thái/tab: `tab` (`all`, `pending`, `confirmed`, `packing`, `shipping`, `completed`, `cancelled`, `returned`).
+   - Tìm kiếm theo mã đơn hàng: `search`.
+   - Trả về danh sách đơn cha, chi tiết các đơn con theo shop (`shop_orders`), danh sách sản phẩm, trạng thái thanh toán, và tổng số lượng đơn hàng theo từng tab trạng thái (`counts`) để FE hiển thị badge trực quan.
+
+2. **Chi tiết đơn hàng (`GET /api/v1/orders/{id}`):**
+   - Hỗ trợ tra cứu theo ID (`id`) hoặc Mã đơn hàng (`order_code`).
+   - Kiểm tra chặt chẽ quyền sở hữu (`user_id = auth.CurrentUser.ID`).
+   - Trả về đầy đủ: thông tin người nhận, địa chỉ giao hàng, chi tiết tài chính (tiền hàng, phí ship, voucher sàn/shop), thông tin thanh toán (`payments`), lịch sử timeline trạng thái chi tiết theo thời gian từ `order_status_history`, và thông tin hoàn tiền (`refund_info`) nếu có.
+
+3. **Hủy đơn hàng (`POST /api/v1/orders/{id}/cancel`):**
+   - Body: `{"reason": "Lý do hủy đơn", "shop_order_id": 123 (tùy chọn nếu hủy đơn shop cụ thể)}`.
+   - **Quy tắc trạng thái:** Khách chỉ được hủy khi đơn ở trạng thái `PENDING` hoặc `CONFIRMED`. Nếu đơn đã chuyển sang `PACKING`, `SHIPPING`, `COMPLETED` hoặc `RETURNED`, hệ thống trả về lỗi `422 order_cannot_be_cancelled` để tránh hủy khi hàng đã gửi đi.
+   - **Bảo toàn tồn kho:** Hoàn trả số lượng tồn kho nguyên tử (`product_variants.stock += quantity`) và giảm số lượng đã bán (`products.sold_count = GREATEST(sold_count - quantity, 0)`) trong cùng 1 transaction DB.
+   - **Chính sách hoàn tiền:**
+     - Đơn thanh toán khi nhận hàng (`COD`): Không phát sinh hoàn tiền (`refund_status: "NOT_APPLICABLE"`). Thông báo: *"Đơn hàng thanh toán khi nhận hàng (COD) đã được hủy thành công. Không phát sinh hoàn tiền."*
+     - Đơn thanh toán chuyển khoản / QR / đã thanh toán (`payments.status = 'PAID'` hoặc phương thức online): Tự động cập nhật `payments.status = 'REFUNDED'`, thiết lập `refund_status: "REFUND_PROCESSING"`. Thông báo: *"Đã hủy đơn hàng thành công. Yêu cầu hoàn tiền đã được ghi nhận và tiền sẽ được hoàn lại vào tài khoản của quý khách trong vòng 3 ngày làm việc."*
+
+4. **Xác nhận nhận hàng thành công (`POST /api/v1/orders/{id}/received`):**
+   - Cho phép khách hàng chủ động xác nhận đã nhận được kiện hàng khi đơn đang ở trạng thái `SHIPPING`.
+   - Chuyển trạng thái đơn con sang `COMPLETED`, ghi log lịch sử `order_status_history`, và tự động cập nhật thanh toán COD sang `PAID`.
+
+5. **Yêu cầu đổi/trả/hoàn tiền (`POST /api/v1/orders/{id}/returns`):**
+   - Body: `{"shop_order_id": 123, "type": "RETURN", "reason": "Lý do đổi trả...", "refund_amount": 500000}`.
+   - **Điều kiện:** Đơn con phải ở trạng thái `COMPLETED` (đã nhận hàng thành công). Chặn tạo trùng lặp nếu đang có yêu cầu chờ xử lý.
+   - Lưu vào bảng `return_requests` với trạng thái `REQUESTED` để chờ chủ shop tiếp nhận và giải quyết.
+
+---
+
+### 5.2. Dành cho Chủ gian hàng (`SELLER`)
+
+1. **Nguyên tắc cô lập dữ liệu tuyệt đối:**
+   - Hệ thống xác định `shop_id` của chủ gian hàng đang đăng nhập từ token `SELLER`.
+   - **Mọi truy vấn và cập nhật đều bị khóa chặt bởi điều kiện `WHERE shop_id = current_seller_shop_id`**. Chủ shop hoàn toàn không thể xem hoặc sửa đổi đơn của shop khác.
+
+2. **Danh sách đơn hàng của Shop (`GET /api/v1/seller/orders`):**
+   - Lọc theo `status`, tìm kiếm theo mã đơn, tên/sđt khách hàng hoặc mã vận đơn `tracking_code`.
+   - Tự động tính toán số tiền thực nhận của gian hàng: `seller_payout = total_amount - commission_amount`.
+   - Trả về danh sách đơn con kèm `counts` theo từng tab.
+
+3. **Chi tiết đơn hàng gian hàng (`GET /api/v1/seller/orders/{id}`):**
+   - Hiển thị đầy đủ thông tin khách hàng, sản phẩm, doanh thu/hoa hồng, thông tin giao vận và lịch sử timeline trạng thái.
+
+4. **Cập nhật tiến trình đơn hàng tuần tự:**
+   - `PATCH /api/v1/seller/orders/{id}/confirm`: Chuyển `PENDING` $\to$ `CONFIRMED`.
+   - `PATCH /api/v1/seller/orders/{id}/pack`: Chuyển `CONFIRMED` $\to$ `PACKING`.
+   - `PATCH /api/v1/seller/orders/{id}/ship`: Chuyển `PACKING` $\to$ `SHIPPING`. Yêu cầu body `carrier` (đơn vị vận chuyển) và `tracking_code` (mã vận đơn).
+   - `PATCH /api/v1/seller/orders/{id}/complete`: Chuyển `SHIPPING` $\to$ `COMPLETED` (giao thành công). Cập nhật thanh toán COD thành `PAID`.
+   - `PATCH /api/v1/seller/orders/{id}/cancel`: Chủ shop hủy đơn khi hết hàng. Tự động hoàn lại tồn kho cho shop và xử lý hoàn tiền online nếu có.
+
+5. **Xử lý yêu cầu đổi trả (`return_requests`):**
+   - `GET /api/v1/seller/returns`: Danh sách các yêu cầu đổi trả từ khách hàng đối với sản phẩm của shop.
+   - `PATCH /api/v1/seller/returns/{id}/approve`: Chủ shop chấp thuận yêu cầu đổi trả. Hệ thống tự động chuyển đơn sang `RETURNED`, hoàn lại tồn kho cho biến thể sản phẩm, cập nhật hoàn tiền và thông báo hoàn tiền trong 3 ngày làm việc.
+   - `PATCH /api/v1/seller/returns/{id}/reject`: Chủ shop từ chối yêu cầu đổi trả kèm lý do giải thích cho khách hàng (bắt buộc nhập `note`).
+
+## Order workflow: customer and seller
+
+The database keeps the operational states `PENDING`, `CONFIRMED`, `PACKING`, `SHIPPING`, `COMPLETED`, `CANCELLED`, and `RETURNED`. The API does not rewrite a persisted status just to fit a screen tab.
+
+- Customer list `GET /api/v1/orders?tab=packing` groups `CONFIRMED` and `PACKING` as the customer-facing "shop is processing" tab. `counts.preparing` mirrors this grouped count; `counts.packing` is retained for compatibility. Individual order/detail records still expose their actual status.
+- Seller list `GET /api/v1/seller/orders?status=PREPARING` groups `CONFIRMED` and `PACKING`, and `counts.preparing` is their sum. Exact filters such as `CONFIRMED` and `PACKING` still select one state.
+- Seller filters also accept `payment_method`, `courier`, and `date_range=all|today|7days|30days`. Invalid values are rejected with HTTP 400.
+- Seller workflow is strictly `PENDING -> CONFIRMED -> PACKING -> SHIPPING -> COMPLETED`. Confirm, pack, ship, complete, and cancel handlers validate state in a transaction and scope the order to the authenticated seller's shop. `ship` requires non-empty `carrier` and `tracking_code`.
+- Seller bulk confirm: `POST /api/v1/seller/orders/bulk-confirm`, JSON `{ "shop_order_ids": [123, 124] }`. The request accepts 1–50 distinct positive IDs. All orders must belong to the seller and be `PENDING`; otherwise the transaction makes no changes. IDs are locked in sorted order to reduce deadlock risk.
+
+The customer and seller order pages use the live APIs. The UI retains the raw status as `workflowStatus` while mapping `CONFIRMED` and `PACKING` to the shared preparation tab. From `CONFIRMED`, the seller starts packing; from `PACKING`, the seller enters carrier/tracking details and hands the parcel to shipping. Dashboard order actions use the same API transitions. Dashboard analytics outside its urgent-order list are still mock data.
+
+Run `go test ./...`, `go vet ./...`, and from `frontend/project-ecommerce`, `npm run lint` and `npm run build`. For database-backed verification, start the local MySQL service and API, then use the Postman "Order Tracking and Seller Processing" folder with disposable buyer/seller fixtures. Do not reuse live orders for state-changing requests.
+
+## Media uploads (Cloudinary)
+
+Configure `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` in the local environment. For Docker Compose, set them in the repository-root `.env`; for running the Go API directly, set them in `backend/.env`. Templates are in both `.env.example` files. The API secret must stay in the backend environment and must never use a `VITE_` prefix. `.env` files are ignored by Git. The upload API returns `503 media_storage_unavailable` when these settings are missing; production startup requires them.
+
+`POST /api/v1/media` accepts authenticated `multipart/form-data` fields `purpose` and `file`. Supported purposes are `avatar`, `shop-image`, `product-image`, and `product-video`. Image requests accept `.jpg`, `.jpeg`, and `.png` files whose extension, detected content type, and decoded image bytes agree, up to 5 MiB. WebP, GIF, SVG, renamed files, and larger images are rejected. Product videos accept MP4/MOV/WebM up to 20 MiB. The handler checks file extension and content signature, caps the HTTP body, limits concurrent Cloudinary transfers, and sends only validated files to Cloudinary. Each account is limited to 30 upload requests per minute per backend instance; excess requests return `429 upload_rate_limited` and `Retry-After: 60`. Image purposes are available to CLIENT/SELLER roles; product media requires SELLER. The Cloudinary secret and signature are never sent to the browser. The frontend Nginx allows 22 MiB request bodies so a 20 MiB video plus multipart overhead can reach the API.
+
+Success returns HTTP 201 with `data.url`, `data.public_id`, `data.resource_type`, `data.format`, and `data.bytes`. Common errors include `400 invalid_multipart_upload`, `400 invalid_upload_purpose`, `403 upload_forbidden`, `413 file_size_exceeded`, `415 unsupported_media_type`, `502 media_storage_failed`, and `503 media_storage_unavailable`.
+
+Avatar workflow: upload media, then save the returned URL using `PUT /api/v1/auth/profile/avatar` with `{ "avatar_url": "https://res.cloudinary.com/..." }`. `DELETE /api/v1/auth/profile/avatar` removes the stored avatar. `GET /api/v1/auth/me` and profile responses now include `avatar_url`. The upload itself does not update the user's profile until the URL save call succeeds.
+
+Product create/update accepts optional `video_url` in addition to the existing `images` array. The seller migration adds `products.video_url` idempotently; the public product-detail response returns that URL so the storefront can play the video. Ensure the migration is run before deploying with `AUTO_MIGRATE=false` (`go run ./cmd/migrate` from `backend`). Existing product image URLs remain in `product_images` and continue to be validated by the seller API.
+
+The FE file pickers accept JPG/JPEG/PNG images and validate type/size before sending; the backend checks the extension against the detected and decoded file content and is authoritative. Images are limited to 5 MiB. Product videos accept MP4/MOV/WebM up to 20 MiB. Uploads run independently of React route components and show progress/status in the global upload panel, so in-app navigation does not abort a transfer. Reloading or closing the browser still ends an in-flight browser request; start that upload again if it did not complete.
+
+## Admin APIs and scope
+
+All `/api/v1/admin/*` endpoints require a valid access token and the `ADMIN` role; authorization is enforced in route middleware, not by the UI.
+
+- Users: `GET /api/v1/admin/users` lists up to 100 newest accounts with roles and shop status; `GET /api/v1/admin/users/{id}` returns one record. `POST /api/v1/admin/users` creates a CLIENT account using `full_name`, `email`, `phone`, `password` and optional `roles`/`status`; passwords follow the normal 10+ character policy. `PUT /api/v1/admin/users/{id}` edits profile, roles and status. `PATCH /api/v1/admin/users/{id}/status` accepts `{ "status": "LOCKED", "reason": "..." }` or `{ "status": "ACTIVE" }`. Locking revokes refresh sessions, saves the reason, suspends any active shop owned by the account and writes audit events. Unlocking does not automatically reactivate the shop; an admin must review and explicitly reactivate it. Admin accounts/current admin cannot be edited or locked. ADMIN role assignment is intentionally prohibited through this CRUD; SELLER is granted by shop approval and must remain paired with an active shop. A reset-password admin endpoint is not exposed; users use the account recovery flow.
+- Shop review: `GET /api/v1/admin/shops`, `PATCH /api/v1/admin/shops/{id}/approve`, `/reject`, `/lock`, and `/status` provide review and lifecycle management. Approval adds the `SELLER` role transactionally.
+- Product moderation and inventory: `GET /api/v1/admin/products`, `PATCH /api/v1/admin/products/{id}/status`, `DELETE /api/v1/admin/products/{id}`, `POST /api/v1/admin/products/bulk`, and inventory statistics are available. Approve a pending product with `{ "status": "ACTIVE" }`; reject one with `{ "status": "REJECTED", "reason": "..." }`; toggle an approved product with `{ "is_active": false }` or `{ "status": "HIDDEN" }`. Approval is rejected if the owner/shop or category is inactive. A rejected product must be resubmitted by its seller before another review. Product status changes are audited.
+- Categories: `/api/v1/admin/categories` supports list/create/update/status/deactivate; `PUT /api/v1/admin/categories/{id}/attributes` atomically configures category variant attributes and rejects changes that would invalidate existing products.
+- Brands: `GET/POST /api/v1/admin/brands`, `PUT /api/v1/admin/brands/{id}`, and `PATCH /api/v1/admin/brands/{id}/status` provide administration; public active brands are available at `GET /api/v1/brands`.
+- Attributes: `GET/POST /api/v1/admin/attributes`, `PUT /api/v1/admin/attributes/{id}`, `POST /api/v1/admin/attributes/{id}/values`, `DELETE /api/v1/admin/attributes/{id}/values/{valueId}`, and `DELETE /api/v1/admin/attributes/{id}` are available. Deleting values/attributes used by product variants returns `409` rather than breaking variant data.
+- Orders: `GET /api/v1/admin/orders?status=PENDING&search=...&page=1&limit=20` provides a paginated global view; status filters match shop orders in that lifecycle state. `GET /api/v1/admin/orders/{id-or-order-code}` returns parent order, child shop orders/items and buyer details. Admin APIs are read-only by design: order state is advanced by the buyer/seller workflows, preserving stock restoration, payment and audit invariants.
+- Promotions: `GET /api/v1/vouchers?scope=PLATFORM|SHOP&shop_id=...` lists currently usable vouchers. Admin creates platform vouchers with `POST /api/v1/admin/vouchers`; an owner with an active shop creates shop vouchers with `POST /api/v1/seller/vouchers`. Both accept `code`, `title`, optional `description`, `discount_type` (`FIXED|PERCENT`), `discount_value`, optional `max_discount_amount`, `min_order_value`, optional `usage_limit`, `usage_per_user`, `start_at` and `end_at` (RFC3339). Codes are unique and normalized uppercase. `PATCH /api/v1/{admin|seller}/vouchers/{id}/status` accepts `{ "is_active": false }`; sellers can only manage their own shop's vouchers. Existing checkout quote/order APIs revalidate dates, scope, usage caps and minimums and consume vouchers atomically on order creation.
+- Banners and flash sales: admins manage scheduled banners using `GET/POST /api/v1/admin/promotions/banners`, `PUT /api/v1/admin/promotions/banners/{id}`, and `PATCH /api/v1/admin/promotions/banners/{id}/status`; public live banners are at `GET /api/v1/promotions/banners`. Banner positions are `HOME_HERO`, `HOME_MIDDLE`, or `SHOP`; image and target URLs must use HTTPS. Flash sales are managed using `GET/POST /api/v1/admin/promotions/flash-sales`, `PATCH /api/v1/admin/promotions/flash-sales/{id}/status`; live campaigns are at `GET /api/v1/promotions/flash-sales`. Create body: `{ "product_id": 123, "sale_price": 99000, "quantity_limit": 100, "start_at": "2026-11-12T09:00:00Z", "end_at": "2026-11-12T12:00:00Z" }`. Price must be below every active variant price; overlapping campaigns for one product are rejected. Checkout applies campaign pricing and reserves campaign quantity in the same transaction as inventory/order creation; if campaign quantity is exhausted, checkout uses the regular variant price.
+- Reviews and audit: a buyer may `POST /api/v1/reviews` with `{ "order_item_id": 1, "rating": 5, "content": "...", "images": ["https://..."] }` only after the corresponding shop order is `COMPLETED`; each order item can be reviewed once. Public visible reviews are listed at `GET /api/v1/products/{id}/reviews`; buyers can see their own at `GET /api/v1/me/reviews`. The owning seller can list `GET /api/v1/seller/reviews` and reply using `POST /api/v1/seller/reviews/{id}/reply` with `{ "reply": "..." }`. Admin moderation uses `GET /api/v1/admin/reviews?status=VISIBLE|HIDDEN` and `PATCH /api/v1/admin/reviews/{id}/status` with `{ "status": "HIDDEN", "reason": "..." }` (a reason is required to hide). Product rating aggregates are recalculated from visible reviews. Changes are written to the business audit table in the same transaction where applicable. Admin audit inspection is available via `GET /api/v1/admin/audit-logs?limit=100` (limit 1–200).
+
+Promotion/review schema migrations run automatically with the API migration runner and are also represented in `database/scriptDb.sql`. The seller voucher page, public shop voucher strip, storefront banner/flash-sale sections, verified-purchase review form, seller reply page, and admin promotion/moderation/audit page call the API; these paths no longer use the previous mock voucher or review data. `GET /api/v1/seller/vouchers/stats` derives shop usage and discount totals from recorded voucher use. Deleting a voucher in the seller UI deactivates it so historical order references remain valid.
+
+## Promotions, reviews, and audit log
+
+Voucher configuration accepts `FIXED` or `PERCENT` discounts. Shipping vouchers are intentionally not offered because checkout currently applies discounts to merchandise only. Voucher codes are unique across the marketplace. Platform voucher management is ADMIN-only; shop voucher CRUD is limited to the authenticated owner's active shop. An edit cannot lower the use limit below existing uses. Public listing only returns active vouchers within their time window; logged-in buyers can save an available voucher with `POST /api/v1/me/vouchers/{id}/claim`, and `GET /api/v1/me/vouchers` lists their saved vouchers. Claiming is idempotent per buyer/voucher; checkout still revalidates scope, time, minimum subtotal, per-user use count, and global limit before applying it.
+
+Admins manage banners at `/api/v1/admin/promotions/banners` and flash sales at `/api/v1/admin/promotions/flash-sales`. Public storefront endpoints are `GET /api/v1/promotions/banners` and `GET /api/v1/promotions/flash-sales`. Banner links/images must be HTTPS and the time range and position are validated. Flash sales require an active product and a price lower than every active variant price; overlapping active campaigns for the same product are rejected. Checkout quotes the current sale price, and order creation locks the campaign row and reserves its remaining quantity in the same transaction as stock/order creation. Each order item stores `flash_sale_id`; customer or seller cancellation restores both warehouse stock and the campaign quantity. Campaign capacity therefore counts placed orders and releases cancelled orders.
+
+Buyers can review only a completed order item they own. `GET /api/v1/me/reviews/eligible` supplies selectable purchases; `POST /api/v1/reviews` accepts `order_item_id`, a 1–5 rating, optional text (up to 3000 characters), and up to five HTTPS image URLs. Review photos use authenticated `POST /api/v1/media` with `purpose=review-image` and the same image limits as other uploads. A database unique key enforces one review per order item even under concurrent submissions. Public reviews are available at `GET /api/v1/products/{id}/reviews`; a seller can reply only to a visible review in their own shop. Admins hide/restore reviews using `PATCH /api/v1/admin/reviews/{id}/status`; hiding requires a reason, product rating aggregates are recalculated transactionally, and the moderation reason is kept in audit history.
+
+Voucher, banner, flash-sale, review, and seller-reply mutations write an audit record in the same database transaction where the business mutation is transactional. Admin-only `GET /api/v1/admin/audit-logs?limit=100` returns at most 200 recent records with actor, entity, request ID, and before/after values. Do not place credentials or sensitive personal data in audit payloads. The review migration checks for existing duplicate `order_item_id` rows before adding the unique index and stops with the duplicate count rather than deleting customer content automatically; resolve those duplicates before deploying the migration.
+
+Admin FE page: `/admin/promotions` manages platform vouchers, banners, flash-sale campaigns, review moderation, and audit inspection. Seller FE pages: `/shop/vouchers` and `/shop/reviews`. Customer pages show available shop vouchers, active homepage banners/flash sales, review submission eligibility, and seller responses. The Postman collection folder `Promotions, Reviews, and Audit` contains the corresponding contract requests; use isolated local data and replace the sample IDs before running mutations.
+
+Database-backed admin integration tests should use disposable data and an ADMIN fixture. Unit tests cover admin validation and state filters; ensure `go test ./...` and `go vet ./...` pass before merging.
+
+## Idempotency and maintainability audit (2026-11-13)
+
+Checkout order creation is protected by a required per-user `Idempotency-Key`; the key reservation, request fingerprint, created order, stock/voucher/payment updates, cart cleanup, and replay response share one MySQL transaction. A replay with the same key/body returns the committed response; a changed body returns `409`. Registration is guarded by unique email/phone constraints; wishlist insertion is guarded by a unique row and uses an upsert; order/shop transitions lock rows and validate the current state so a repeated transition cannot apply stock/payment effects twice.
+
+This is not yet a universal idempotency-key policy. `POST /api/v1/cart/items` and `POST /api/v1/media` now have per-operation keys; address creation intentionally creates a new address per request. Other resource-creation APIs are protected by natural constraints where available, but they do not all replay the original response on retry. Do not blindly add a generic HTTP middleware: successful domain writes and stored responses must be committed atomically for reliable recovery after a lost response.
+
+The domain/package structure and route/handler separation provide a useful starting point for SOLID, but strict SOLID compliance is not claimed: several business handlers still combine transport, validation, SQL orchestration, and response mapping. Refactor incrementally by extracting cohesive domain services/repositories with behavior-preserving tests; avoid adding interfaces with only one implementation unless they create a real boundary.
+
+Validation in this workspace: `go test ./...`, `go vet ./...`, frontend `npm run lint`, and `npm run build` pass. The checkout idempotency behavior still needs a MySQL-backed replay/concurrency test before deployment; this run did not execute the mutating end-to-end Postman collection against a disposable database.
+
+## Cart and media idempotency
+
+`POST /api/v1/cart/items` requires `Idempotency-Key`. The cart mutation and `(user_id, key, request_hash)` record commit in the same transaction. Retrying the same add returns the user's current cart with `Idempotency-Replayed: true`; the same key with a different variant or quantity returns `409 idempotency_key_reused`. The FE persists pending keys per variant/quantity in session storage so a retry after a lost response does not increment quantity twice. A successful explicit add clears the key, so a later intentional add creates a new operation.
+
+`POST /api/v1/media` also requires the key. The request fingerprint includes purpose, basename, and SHA-256 of file bytes. The backend stores the response and Cloudinary public ID under the same user-scoped key; Cloudinary receives a deterministic public ID and `overwrite=true`, so a retry targets the same logical asset. Upload requests may hold a DB transaction while Cloudinary is responding; upload concurrency is capped at three per API process. Retry the same file and key after a network error; changed file content/purpose/filename with that key returns `409` after a committed upload.
+
+CORS preflight explicitly allows `Idempotency-Key` and exposes replay/rate-limit headers. Keep API clients and Postman callers on the same header contract.
+
+### Email OTP cho đăng ký và khôi phục mật khẩu
+
+Đăng ký mới là luồng hai bước: `POST /api/v1/auth/register` kiểm tra input, chuẩn hóa email và lưu yêu cầu tạm đã băm password; OTP chỉ lưu HMAC. Tài khoản chưa được tạo và không thể đăng nhập ở bước này. FE chuyển tới `/verify-email`; `POST /api/v1/auth/verify-email-otp` xác minh mã trong transaction, sau đó mới tạo `users` với `email_verified=1` và role `CLIENT`. Mã có thời hạn `OTP_TTL`, tối đa 5 lần thử và gửi lại sau tối thiểu 60 giây. `POST /api/v1/auth/resend-email-otp` không tiết lộ email có yêu cầu chờ hay không.
+
+Nếu SMTP hoạt động, cả xác minh đăng ký và khôi phục mật khẩu gửi email qua SMTP ngay cả ở local. Chỉ khi `APP_ENV=development` và không cấu hình SMTP, mã mới được ghi vào log backend để test. SMTP lỗi khi đăng ký trả lỗi tạm thời và xóa yêu cầu/code vừa tạo để người dùng gửi lại; OTP khôi phục lỗi gửi không được giữ lại trong DB.
+
+Cấu hình local trong `.env` dùng `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=587`, `SMTP_SECURE=false`, `SMTP_USER`, `SMTP_PASSWORD` (hoặc alias `SMTP_PASS`) và `SMTP_FROM`. Với Gmail, địa chỉ người gửi phải trùng `SMTP_USER`. Dùng Gmail App Password, không dùng mật khẩu đăng nhập tài khoản. Nếu App Password đã được chia sẻ trong chat/log, hãy thu hồi và tạo App Password mới trước khi dùng. Không commit `.env`.
+
+Migration `internal/domain/auth/migrations/003_email_verification.sql` tạo bảng yêu cầu đăng ký tạm và được chạy cùng auth migrations. Khi `AUTO_MIGRATE=false`, chạy lệnh migration của backend trước khi triển khai API.
+
+SMOKE API cần mailbox dùng được: đặt `SMOKE_TEST_EMAIL` và cung cấp OTP nhận được bằng `SMOKE_EMAIL_OTP`; khi development SMTP chưa cấu hình, script thử đọc mã xác minh từ Docker backend log. Tài khoản và số điện thoại phải là dữ liệu test riêng.
