@@ -1,5 +1,6 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { WishlistItem } from "@/domains/customer/types/wishlist.types";
 import { formatCurrencyVND } from "@/shared/utils/currency";
 
@@ -17,6 +18,7 @@ export const WishlistCard: React.FC<WishlistCardProps> = ({
   onNotifyRestock,
 }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation("customer");
   const isOutOfStock = item.status === "out-of-stock";
 
   const handleCardClick = (e: React.MouseEvent) => {
@@ -73,7 +75,7 @@ export const WishlistCard: React.FC<WishlistCardProps> = ({
         {isOutOfStock && (
           <div className="absolute inset-0 bg-on-surface/40 backdrop-blur-[2px] flex items-center justify-center">
             <span className="px-3.5 py-1.5 rounded-lg bg-surface-container-lowest text-on-surface text-xs font-bold shadow-md tracking-wider">
-              TẠM HẾT HÀNG
+              {t("wishlist.card.out_of_stock_badge")}
             </span>
           </div>
         )}
@@ -85,7 +87,7 @@ export const WishlistCard: React.FC<WishlistCardProps> = ({
             e.stopPropagation();
             onRemove(item.id);
           }}
-          title="Bỏ thích"
+          title={t("wishlist.card.remove_tooltip")}
           aria-label="Remove from wishlist"
           className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/95 backdrop-blur-sm text-tertiary shadow-sm hover:scale-110 active:scale-95 transition-all flex items-center justify-center cursor-pointer z-10"
         >
@@ -124,7 +126,7 @@ export const WishlistCard: React.FC<WishlistCardProps> = ({
 
           {/* Variant label */}
           <div className="text-xs text-on-surface-variant flex items-center gap-1">
-            <span>Phân loại:</span>
+            <span>{t("wishlist.card.variant_prefix")}</span>
             <span className="font-medium text-on-surface truncate">
               {item.variant_label}
             </span>
@@ -156,7 +158,7 @@ export const WishlistCard: React.FC<WishlistCardProps> = ({
               <span className="material-symbols-outlined text-[18px]">
                 shopping_bag
               </span>
-              <span>Thêm vào giỏ hàng</span>
+              <span>{t("wishlist.card.add_to_cart")}</span>
             </button>
           ) : (
             <div className="flex flex-col gap-1.5">
@@ -168,7 +170,7 @@ export const WishlistCard: React.FC<WishlistCardProps> = ({
                 <span className="material-symbols-outlined text-[18px]">
                   remove_shopping_cart
                 </span>
-                <span>Hết hàng tạm thời</span>
+                <span>{t("wishlist.card.out_of_stock_btn")}</span>
               </button>
 
               <button
@@ -182,7 +184,7 @@ export const WishlistCard: React.FC<WishlistCardProps> = ({
                 <span className="material-symbols-outlined text-[14px]">
                   notifications
                 </span>
-                <span>Báo cho tôi khi có hàng lại</span>
+                <span>{t("wishlist.card.notify_restock")}</span>
               </button>
             </div>
           )}
@@ -193,4 +195,3 @@ export const WishlistCard: React.FC<WishlistCardProps> = ({
 };
 
 export default WishlistCard;
-

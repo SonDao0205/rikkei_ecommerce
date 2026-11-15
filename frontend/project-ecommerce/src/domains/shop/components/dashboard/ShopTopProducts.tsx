@@ -80,7 +80,7 @@ export const ShopTopProducts: React.FC<ShopTopProductsProps> = ({ products }) =>
                         : "text-on-surface-variant"
                     }`}
                   >
-                    Kho: {item.stockQuantity} {item.isLowStock && "(Sắp hết)"}
+                    Kho: {item.stockQuantity} {item.isLowStock && "(Sắp hết hàng)"}
                   </span>
                 </div>
               </div>
@@ -94,7 +94,7 @@ export const ShopTopProducts: React.FC<ShopTopProductsProps> = ({ products }) =>
           to="/shop/products"
           className="block w-full py-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container text-primary font-label-md text-label-md font-semibold text-center transition-colors border border-outline-variant/20"
         >
-          Xem báo cáo phân tích mặt hàng
+          Chi tiết
         </Link>
       </div>
     </div>

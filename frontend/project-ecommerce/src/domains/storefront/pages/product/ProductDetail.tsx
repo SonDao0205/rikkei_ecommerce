@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import CustomerLayout from "@/app/layout/CustomerLayout";
 import ProductBreadcrumb from "@/domains/storefront/components/product/ProductBreadcrumb";
 import ProductGallery from "@/domains/storefront/components/product/ProductGallery";
@@ -16,6 +17,7 @@ import {
 import type { ProductVariant } from "@/shared/types";
 
 export const ProductDetail: React.FC = () => {
+  const { t } = useTranslation("customer");
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
@@ -98,9 +100,9 @@ export const ProductDetail: React.FC = () => {
             <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-tertiary text-on-tertiary">
               <span className="material-symbols-outlined text-[14px]">bolt</span>
             </span>
-            <span className="font-label-md font-bold text-on-surface">Flash Deal Hour:</span>
+            <span className="font-label-md font-bold text-on-surface">{t("product.ticker.flash_deal")}</span>
             <span>
-              Giảm thêm 50.000 ₫ tự động áp dụng tại giỏ hàng với mã{" "}
+              {t("product.ticker.promo_desc")}{" "}
               <span className="font-mono font-bold text-primary">RETRO50</span>
             </span>
           </div>
@@ -108,14 +110,14 @@ export const ProductDetail: React.FC = () => {
           <div className="flex items-center gap-4 text-label-md font-label-md text-outline hidden md:flex">
             <span className="flex items-center gap-1 text-on-surface-variant">
               <span className="material-symbols-outlined text-[16px] text-secondary">verified</span>
-              Bảo hành Flagship chính hãng
+              {t("product.ticker.warranty")}
             </span>
             <span>•</span>
             <span className="flex items-center gap-1 text-on-surface">
               <span className="material-symbols-outlined text-[16px] text-tertiary-container">
                 local_shipping
               </span>
-              Hỏa tốc COD: Hà Nội &amp; TP.HCM
+              {t("product.ticker.shipping")}
             </span>
           </div>
         </div>
@@ -128,7 +130,7 @@ export const ProductDetail: React.FC = () => {
           <div className="flex flex-col items-center justify-center py-24 gap-4">
             <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
             <p className="text-body-md text-on-surface-variant font-medium">
-              Đang tải thông tin chi tiết sản phẩm...
+              {t("product.loading")}
             </p>
           </div>
         )}
@@ -139,14 +141,14 @@ export const ProductDetail: React.FC = () => {
             <div className="w-14 h-14 rounded-full bg-error-container text-error flex items-center justify-center">
               <span className="material-symbols-outlined text-[32px]">error</span>
             </div>
-            <h2 className="text-xl font-bold text-on-surface">Không thể tải thông tin sản phẩm</h2>
+            <h2 className="text-xl font-bold text-on-surface">{t("product.error_title")}</h2>
             <p className="text-on-surface-variant max-w-md text-sm">{detailError}</p>
             <Link
               to="/"
               className="mt-2 px-5 py-2.5 rounded-xl bg-primary text-on-primary font-bold text-sm shadow-sm hover:bg-primary-container transition-colors inline-flex items-center gap-1.5"
             >
               <span className="material-symbols-outlined text-[18px]">arrow_back</span>
-              <span>Quay lại trang chủ</span>
+              <span>{t("product.back_home")}</span>
             </Link>
           </div>
         )}
@@ -161,12 +163,12 @@ export const ProductDetail: React.FC = () => {
                 type="button"
                 onClick={handleGoBack}
                 className="inline-flex items-center gap-1.5 text-on-surface-variant hover:text-primary font-label-md text-label-md font-semibold transition-colors cursor-pointer group"
-                title="Quay lại trang trước"
+                title={t("product.back")}
               >
                 <span className="material-symbols-outlined text-[18px] group-hover:-translate-x-1 transition-transform">
                   arrow_back
                 </span>
-                <span>Quay lại</span>
+                <span>{t("product.back")}</span>
               </button>
             </div>
 

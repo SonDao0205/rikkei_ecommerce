@@ -63,12 +63,17 @@ export const ShopLayout: React.FC<ShopLayoutProps> = ({ children }) => {
       label: "Đơn hàng & Vận chuyển",
       path: "/shop/orders",
       icon: "local_shipping",
-      badge: pendingOrders > 0 ? (pendingOrders > 99 ? "99+ mới" : `${pendingOrders} mới`) : undefined,
+      badge:
+        pendingOrders > 0
+          ? pendingOrders > 99
+            ? "99+ mới"
+            : `${pendingOrders} mới`
+          : undefined,
       badgeVariant: "error" as const,
     },
     { label: "Quản lý voucher", path: "/shop/vouchers", icon: "confirmation_number" },
-    { label: "Đánh giá", path: "/shop/reviews", icon: "rate_review" },
     { label: "Ví & Doanh thu", path: "/shop/finances", icon: "account_balance_wallet" },
+    { label: "Đánh giá", path: "/shop/reviews", icon: "rate_review" },
     {
       label: "Chăm sóc khách",
       path: "/shop/customer-chat",
@@ -231,9 +236,11 @@ export const ShopLayout: React.FC<ShopLayoutProps> = ({ children }) => {
                   ? "Quản lý voucher"
                   : location.pathname.startsWith("/shop/finance")
                   ? "Ví & Doanh thu"
+                  : location.pathname.startsWith("/shop/review")
+                  ? "Đánh giá"
                   : location.pathname.startsWith("/shop/setting")
                   ? "Cài đặt gian hàng"
-                  : "Dashboard"}
+                  : "Tổng quan"}
               </span>
             </div>
 

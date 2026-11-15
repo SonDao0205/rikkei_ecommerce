@@ -1,5 +1,6 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { WishlistRecommendation } from "@/domains/customer/types/wishlist.types";
 import { formatCurrencyVND } from "@/shared/utils/currency";
 
@@ -13,6 +14,7 @@ export const WishlistRecommendations: React.FC<WishlistRecommendationsProps> = (
   onAddToWishlist,
 }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation("customer");
 
   return (
     <div className="flex flex-col gap-4 pt-6 border-t border-surface-container">
@@ -20,14 +22,14 @@ export const WishlistRecommendations: React.FC<WishlistRecommendationsProps> = (
         <div className="flex items-center gap-2.5">
           <div className="w-2.5 h-6 rounded-full bg-primary-container"></div>
           <h2 className="font-headline-lg text-lg sm:text-xl text-on-surface font-bold">
-            Gợi ý tương tự dành riêng cho bạn
+            {t("wishlist.recommendations.title")}
           </h2>
         </div>
         <Link
           to="/"
           className="text-xs sm:text-sm text-primary font-bold hover:underline flex items-center gap-1 cursor-pointer"
         >
-          <span>Xem tất cả gợi ý</span>
+          <span>{t("wishlist.recommendations.view_all")}</span>
           <span className="material-symbols-outlined text-[16px]">chevron_right</span>
         </Link>
       </div>
@@ -83,7 +85,7 @@ export const WishlistRecommendations: React.FC<WishlistRecommendationsProps> = (
                   e.stopPropagation();
                   onAddToWishlist(reco);
                 }}
-                title="Lưu vào yêu thích"
+                title={t("wishlist.recommendations.add_tooltip")}
                 aria-label="Add recommendation to wishlist"
                 className="w-8 h-8 rounded-full bg-surface-container hover:bg-primary-fixed hover:text-primary text-on-surface-variant flex items-center justify-center transition-colors cursor-pointer"
               >
@@ -100,4 +102,3 @@ export const WishlistRecommendations: React.FC<WishlistRecommendationsProps> = (
 };
 
 export default WishlistRecommendations;
-

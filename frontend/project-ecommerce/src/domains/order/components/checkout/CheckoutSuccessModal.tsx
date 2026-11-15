@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { formatCurrencyVND } from "@/shared/utils/currency";
 
 interface CheckoutSuccessModalProps {
@@ -24,6 +25,8 @@ export const CheckoutSuccessModal: React.FC<CheckoutSuccessModalProps> = ({
   onViewOrders,
   onContinueShopping,
 }) => {
+  const { t } = useTranslation("customer");
+
   if (!isOpen) return null;
 
   return (
@@ -41,22 +44,28 @@ export const CheckoutSuccessModal: React.FC<CheckoutSuccessModalProps> = ({
         {/* Title & Order Code */}
         <div className="flex flex-col gap-1">
           <h3 className="font-bold text-xl sm:text-2xl text-on-surface">
-            Đặt hàng thành công!
+            {t("checkout.success_modal.title", { defaultValue: "Đặt hàng thành công!" })}
           </h3>
           <p className="text-xs sm:text-sm text-on-surface-variant">
-            Mã đơn hàng: <strong className="text-primary font-mono">{orderCode}</strong>
+            {t("checkout.success_modal.order_code_label", { defaultValue: "Mã đơn hàng:" })}{" "}
+            <strong className="text-primary font-mono">{orderCode}</strong>
           </p>
         </div>
 
         {/* Description */}
         <p className="text-xs sm:text-sm text-on-surface-variant max-w-sm leading-relaxed">
-          Hệ thống đã thông báo cho{" "}
-          <strong>{shopNames.join(", ") || "các cửa hàng"}</strong>. Đơn hàng của bạn sẽ sớm được đóng gói và bàn giao cho <strong>{shippingCarrier}</strong>.
+          {t("checkout.success_modal.description", {
+            shops: shopNames.join(", ") || "các cửa hàng",
+            carrier: shippingCarrier,
+            defaultValue: `Hệ thống đã thông báo cho ${shopNames.join(", ") || "các cửa hàng"}. Đơn hàng của bạn sẽ sớm được đóng gói và bàn giao cho ${shippingCarrier}.`,
+          })}
         </p>
 
         <div className="w-full p-3.5 rounded-2xl bg-surface-container-low border border-outline-variant/40 flex items-center justify-between text-xs sm:text-sm">
           <span className="text-on-surface-variant font-medium">
-            {paymentMethodCode === "COD" ? "Số tiền thu khi nhận hàng:" : "Số tiền cần chuyển khoản:"}
+            {paymentMethodCode === "COD"
+              ? t("checkout.success_modal.amount_to_collect", { defaultValue: "Số tiền thu khi nhận hàng:" })
+              : t("checkout.success_modal.amount_to_transfer", { defaultValue: "Số tiền cần chuyển khoản:" })}
           </span>
           <span className="font-bold text-primary text-base sm:text-lg">
             {formatCurrencyVND(totalAmount)}
@@ -65,7 +74,8 @@ export const CheckoutSuccessModal: React.FC<CheckoutSuccessModalProps> = ({
 
         {paymentReference && paymentMethodCode !== "COD" && (
           <p className="w-full text-xs text-on-surface-variant">
-            Nội dung chuyển khoản: <strong className="font-mono">{paymentReference}</strong>
+            {t("checkout.success_modal.transfer_ref", { defaultValue: "Nội dung chuyển khoản:" })}{" "}
+            <strong className="font-mono">{paymentReference}</strong>
           </p>
         )}
 
@@ -77,7 +87,9 @@ export const CheckoutSuccessModal: React.FC<CheckoutSuccessModalProps> = ({
             className="w-full h-12 rounded-xl bg-primary text-on-primary font-bold text-xs sm:text-sm hover:bg-primary-container transition-all cursor-pointer shadow-md active:scale-95 flex items-center justify-center gap-2"
           >
             <span className="material-symbols-outlined text-[18px]">inventory_2</span>
-            <span>Xem chi tiết đơn hàng</span>
+            <span>
+              {t("checkout.success_modal.view_orders_btn", { defaultValue: "Xem chi tiết đơn hàng" })}
+            </span>
           </button>
 
           <button
@@ -85,7 +97,7 @@ export const CheckoutSuccessModal: React.FC<CheckoutSuccessModalProps> = ({
             onClick={onContinueShopping}
             className="w-full h-11 rounded-xl bg-surface-container text-on-surface font-semibold text-xs sm:text-sm hover:bg-surface-container-high transition-colors cursor-pointer"
           >
-            Tiếp tục mua sắm
+            {t("checkout.success_modal.continue_shopping_btn", { defaultValue: "Tiếp tục mua sắm" })}
           </button>
         </div>
       </div>
@@ -94,4 +106,3 @@ export const CheckoutSuccessModal: React.FC<CheckoutSuccessModalProps> = ({
 };
 
 export default CheckoutSuccessModal;
-

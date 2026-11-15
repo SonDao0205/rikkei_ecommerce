@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAppDispatch, useAppSelector } from "@/app/state/store";
 import { openLogoutModal } from "@/domains/auth/state/authSlice";
 import { getDefaultAvatar } from "@/shared/utils/avatar";
@@ -8,6 +9,7 @@ import { fetchWishlist, resetWishlist } from "@/domains/customer/state/wishlistS
 import { formatCurrencyVND } from "@/shared/utils/currency";
 import { BrandIcon } from "@/shared/components/common/BrandLogo";
 import SwitchToShopModal from "@/shared/components/common/SwitchToShopModal";
+import { LanguageSwitcher } from "@/shared/components/common/LanguageSwitcher";
 
 export interface HeaderProps {
   cartItemCount?: number;
@@ -20,6 +22,7 @@ const Header: React.FC<HeaderProps> = ({
   cartTotal = "₫0",
   wishlistCount = 0,
 }) => {
+  const { t } = useTranslation('customer');
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
@@ -164,23 +167,20 @@ const Header: React.FC<HeaderProps> = ({
               <span className="material-symbols-outlined text-secondary-fixed text-[16px]">
                 local_shipping
               </span>
-              <span>Free shipping on orders over 500k ₫ | Cash on Delivery available across Vietnam</span>
+              <span>{t("header.utility.free_shipping")}</span>
             </div>
             <div className="flex items-center gap-space-lg text-body-sm">
               <a className="flex items-center gap-1 hover:text-white transition-colors" href="tel:19006868">
                 <span className="material-symbols-outlined text-[15px]">support_agent</span>
-                <span>+84 1900 6868</span>
+                <span>{t("header.utility.hotline")}</span>
               </a>
               <span className="text-outline">|</span>
               <Link className="flex items-center gap-1 hover:text-white transition-colors" to="#">
                 <span className="material-symbols-outlined text-[15px]">inventory_2</span>
-                <span>Order Tracking</span>
+                <span>{t("header.utility.order_tracking")}</span>
               </Link>
               <span className="text-outline">|</span>
-              <div className="flex items-center gap-1 cursor-pointer hover:text-white">
-                <span className="material-symbols-outlined text-[15px]">language</span>
-                <span>VN / EN</span>
-              </div>
+              <LanguageSwitcher variant="dark" />
             </div>
           </div>
         </div>
@@ -204,7 +204,7 @@ const Header: React.FC<HeaderProps> = ({
               </span>
               <input
                 className="w-full bg-transparent text-on-surface placeholder:text-outline text-body-sm font-body-sm focus:outline-none"
-                placeholder="Search 12,000+ artisan stores & products..."
+                placeholder={t("header.search.mobile_placeholder")}
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -235,14 +235,14 @@ const Header: React.FC<HeaderProps> = ({
             <div className="flex-1 max-w-2xl">
               <div className="relative flex items-center w-full h-12 rounded-xl bg-surface-container-low border border-outline-variant hover:border-primary-container focus-within:border-primary-container transition-all">
                 <div className="flex items-center gap-1 pl-space-md pr-space-sm text-on-surface-variant font-label-md text-label-md shrink-0 border-r border-outline-variant cursor-pointer">
-                  <span>All Categories</span>
+                  <span>{t("header.search.categories")}</span>
                   <span className="material-symbols-outlined text-[16px]">expand_more</span>
                 </div>
                 <div className="flex items-center flex-1 px-space-md gap-space-sm">
                   <span className="material-symbols-outlined text-outline text-[20px]">search</span>
                   <input
                     className="w-full bg-transparent text-on-surface placeholder:text-outline text-body-md font-body-md focus:outline-none"
-                    placeholder="Search 12,000+ verified artisan stores & products..."
+                    placeholder={t("header.search.placeholder")}
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -253,7 +253,7 @@ const Header: React.FC<HeaderProps> = ({
                     ⌘K
                   </kbd>
                   <button className="h-8 px-space-md bg-primary-container text-on-primary font-label-md text-label-md rounded-lg flex items-center justify-center hover:bg-primary transition-colors cursor-pointer">
-                    Search
+                    {t("header.search.button")}
                   </button>
                 </div>
               </div>
@@ -266,7 +266,7 @@ const Header: React.FC<HeaderProps> = ({
                   <Link
                     className="relative p-2 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all"
                     to="/wishlist"
-                    title="Danh sách yêu thích"
+                    title={t("header.actions.wishlist")}
                   >
                     <span className="material-symbols-outlined text-[24px]">favorite</span>
                     <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-tertiary-container text-on-primary text-[10px] font-bold flex items-center justify-center">
@@ -276,7 +276,7 @@ const Header: React.FC<HeaderProps> = ({
                   <Link
                     className="flex items-center gap-space-sm px-space-md py-2 rounded-xl bg-surface-container-low hover:bg-surface-container transition-all"
                     to="/cart"
-                    title="Giỏ hàng"
+                    title={t("header.actions.cart")}
                   >
                     <div className="relative">
                       <span className="material-symbols-outlined text-primary text-[22px]">
@@ -287,7 +287,7 @@ const Header: React.FC<HeaderProps> = ({
                       </span>
                     </div>
                     <div className="hidden sm:flex flex-col text-left">
-                      <span className="font-label-sm text-label-sm text-outline leading-none">Cart</span>
+                      <span className="font-label-sm text-label-sm text-outline leading-none">{t("header.actions.cart")}</span>
                       <span className="font-label-md text-label-md text-on-surface font-bold">{displayCartTotal}</span>
                     </div>
                   </Link>
@@ -353,7 +353,7 @@ const Header: React.FC<HeaderProps> = ({
                       className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-on-surface hover:bg-surface-container hover:text-primary transition-colors"
                     >
                       <span className="material-symbols-outlined text-[16px]">person</span>
-                      <span>Hồ sơ của tôi</span>
+                      <span>{t("header.actions.my_profile")}</span>
                     </Link>
 
                     {hasSellerRole && (
@@ -363,7 +363,7 @@ const Header: React.FC<HeaderProps> = ({
                         className="w-full flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-on-surface hover:bg-surface-container hover:text-primary transition-colors cursor-pointer text-left"
                       >
                         <span className="material-symbols-outlined text-[16px]">storefront</span>
-                        <span>Gian hàng của tôi</span>
+                        <span>{t("header.actions.my_shop")}</span>
                       </button>
                     )}
 
@@ -373,7 +373,7 @@ const Header: React.FC<HeaderProps> = ({
                       className="w-full flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-error hover:bg-error-container/40 transition-colors text-left cursor-pointer"
                     >
                       <span className="material-symbols-outlined text-[16px]">logout</span>
-                      <span>Sign Out</span>
+                      <span>{t("header.actions.sign_out")}</span>
                     </button>
                   </div>
                 </div>
@@ -383,7 +383,7 @@ const Header: React.FC<HeaderProps> = ({
                     to="/login"
                     className="px-3 py-1.5 rounded-lg bg-primary-container text-on-primary font-label-md text-label-md hover:bg-primary transition-colors font-bold shadow-xs"
                   >
-                    Sign In
+                    {t("header.actions.sign_in")}
                   </Link>
                 </div>
               )}
@@ -432,7 +432,7 @@ const Header: React.FC<HeaderProps> = ({
             type="button"
             onClick={() => setIsMobileDrawerOpen(false)}
             className="w-9 h-9 rounded-xl flex items-center justify-center text-outline hover:text-on-surface hover:bg-surface-container transition-colors cursor-pointer"
-            aria-label="Đóng menu"
+            aria-label={t("header.mobile_drawer.close")}
           >
             <span className="material-symbols-outlined text-[22px]">close</span>
           </button>
@@ -441,7 +441,7 @@ const Header: React.FC<HeaderProps> = ({
         {/* Drawer Content: 4 phần từ ảnh thứ 2 */}
         <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2.5">
             <span className="text-[11px] font-bold uppercase tracking-wider text-outline px-1">
-              Tính năng người dùng
+              {t("header.mobile_drawer.user_features")}
             </span>
 
             {/* Phần 4: Thông tin tài khoản người dùng */}
@@ -463,7 +463,7 @@ const Header: React.FC<HeaderProps> = ({
                       {user.full_name || "Hoàng Minh Quang"}
                     </p>
                     <p className="text-xs text-outline truncate">
-                      {user.email || user.phone || "Khách hàng thân thiết"}
+                      {user.email || user.phone || t("header.mobile_drawer.loyal_customer")}
                     </p>
                   </div>
                 </div>
@@ -478,7 +478,7 @@ const Header: React.FC<HeaderProps> = ({
                       <span className="material-symbols-outlined text-[18px] text-primary">
                         person
                       </span>
-                      <span>Hồ sơ của tôi</span>
+                      <span>{t("header.actions.my_profile")}</span>
                     </span>
                     <span className="material-symbols-outlined text-outline text-[16px]">
                       chevron_right
@@ -495,7 +495,7 @@ const Header: React.FC<HeaderProps> = ({
                         <span className="material-symbols-outlined text-[18px] text-primary">
                           storefront
                         </span>
-                        <span>Gian hàng của tôi</span>
+                        <span>{t("header.actions.my_shop")}</span>
                       </span>
                       <span className="material-symbols-outlined text-outline text-[16px]">
                         chevron_right
@@ -510,7 +510,7 @@ const Header: React.FC<HeaderProps> = ({
                   >
                     <span className="flex items-center gap-2">
                       <span className="material-symbols-outlined text-[18px]">logout</span>
-                      <span>Đăng xuất</span>
+                      <span>{t("header.actions.sign_out")}</span>
                     </span>
                     <span className="material-symbols-outlined text-outline text-[16px]">
                       chevron_right
@@ -521,15 +521,15 @@ const Header: React.FC<HeaderProps> = ({
             ) : (
               <div className="p-3.5 rounded-2xl bg-surface-container-low border border-outline-variant/60 flex items-center justify-between">
                 <div>
-                  <p className="font-bold text-on-surface text-sm">Chào mừng bạn</p>
-                  <p className="text-xs text-outline">Đăng nhập để trải nghiệm đầy đủ</p>
+                  <p className="font-bold text-on-surface text-sm">{t("header.actions.welcome")}</p>
+                  <p className="text-xs text-outline">{t("header.actions.login_prompt")}</p>
                 </div>
                 <Link
                   to="/login"
                   onClick={() => setIsMobileDrawerOpen(false)}
                   className="px-3.5 py-1.5 rounded-xl bg-primary text-on-primary text-xs font-bold hover:bg-primary/90 transition-colors shadow-xs"
                 >
-                  Đăng nhập
+                  {t("header.actions.sign_in")}
                 </Link>
               </div>
             )}
@@ -552,7 +552,7 @@ const Header: React.FC<HeaderProps> = ({
                       </span>
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-xs text-outline font-medium">Giỏ hàng ({displayCartCount})</span>
+                      <span className="text-xs text-outline font-medium">{t("header.actions.cart")} ({displayCartCount})</span>
                       <span className="text-sm font-bold text-on-surface">{displayCartTotal}</span>
                     </div>
                   </div>
@@ -576,8 +576,8 @@ const Header: React.FC<HeaderProps> = ({
                       </span>
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-sm font-semibold text-on-surface">Yêu thích</span>
-                      <span className="text-xs text-outline">{displayWishlistCount} sản phẩm đã lưu</span>
+                      <span className="text-sm font-semibold text-on-surface">{t("header.actions.wishlist")}</span>
+                      <span className="text-xs text-outline">{t("header.mobile_drawer.saved_items", { count: displayWishlistCount })}</span>
                     </div>
                   </div>
                   <span className="material-symbols-outlined text-outline text-[18px]">
@@ -590,7 +590,7 @@ const Header: React.FC<HeaderProps> = ({
 
         {/* Drawer Footer */}
         <div className="p-4 border-t border-outline-variant/50 text-[11px] text-outline text-center">
-          MarketPulse © 2026 – Nền tảng thương mại điện tử
+          {t("header.mobile_drawer.footer_copyright")}
         </div>
       </aside>
 

@@ -56,10 +56,11 @@ export const AddProductMedia: React.FC<AddProductMediaProps> = ({
   };
 
   const handleDetailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
+    // Copy the live FileList before clearing the input value.
+    const files = Array.from(e.target.files ?? []);
     e.target.value = "";
-    if (!files?.length) return;
-    const accepted = Array.from(files).slice(0, Math.max(0, 8 - detailImagesRef.current.length));
+    if (!files.length) return;
+    const accepted = files.slice(0, Math.max(0, 8 - detailImagesRef.current.length));
     const previews = accepted.map((file, idx) => ({ id: `img-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 6)}`, file, preview: URL.createObjectURL(file) }));
     detailImagesRef.current = [...detailImagesRef.current, ...previews.map(({ id, preview }) => ({ id, url: preview, tag: "Ảnh chi tiết" }))];
     onChange({ detailImages: detailImagesRef.current });

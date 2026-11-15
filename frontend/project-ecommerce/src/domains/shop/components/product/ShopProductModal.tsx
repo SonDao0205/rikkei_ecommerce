@@ -84,7 +84,14 @@ const SUGGESTED_COLORS = [
 
 const SAMPLE_PRESETS: Record<
   string,
-  { name: string; sku: string; price: number; colors: string[]; sizes: string[]; img: string }
+  {
+    name: string;
+    sku: string;
+    price: number;
+    colors: string[];
+    sizes: string[];
+    img: string;
+  }
 > = {
   shoes: {
     name: "Giày Sneaker Retro Runner V2 Da Lộn Thủ Công",
@@ -153,36 +160,31 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
   onSave,
 }) => {
   const initialCat =
-    editingProduct?.category ||
-    String(editingProduct?.categoryId || "930011");
+    editingProduct?.category || String(editingProduct?.categoryId || "930011");
 
   const [name, setName] = useState(editingProduct?.name || "");
-  const [baseSku, setBaseSku] = useState(
-    editingProduct?.sku || "VN-SNK-88219"
-  );
+  const [baseSku, setBaseSku] = useState(editingProduct?.sku || "VN-SNK-88219");
   const [category, setCategory] = useState(initialCat);
   const [categoryLabel, setCategoryLabel] = useState(
     editingProduct?.categoryLabel ||
       PRODUCT_CATEGORIES.find((c) => c.id === initialCat)?.name ||
-      "Giày dép"
+      "Giày dép",
   );
   const [brand, setBrand] = useState("An Nhiên");
   const [description, setDescription] = useState(
     editingProduct?.variationSubtitle ||
-      "Sản phẩm thiết kế cao cấp, chất liệu bền bỉ và kiểm duyệt chất lượng kỹ càng."
+      "Sản phẩm thiết kế cao cấp, chất liệu bền bỉ và kiểm duyệt chất lượng kỹ càng.",
   );
   const [imageUrl, setImageUrl] = useState(
     editingProduct?.imageUrl ||
-      "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800"
+      "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800",
   );
 
   // Single product fallback pricing
   const [singlePrice, setSinglePrice] = useState(
-    editingProduct?.price || 850000
+    editingProduct?.price || 850000,
   );
-  const [singleStock, setSingleStock] = useState(
-    editingProduct?.stock ?? 25
-  );
+  const [singleStock, setSingleStock] = useState(editingProduct?.stock ?? 25);
 
   // Variants Toggle
   const [hasVariants, setHasVariants] = useState<boolean>(() => {
@@ -195,8 +197,7 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
   // Category info
   const currentCategoryOption = useMemo(() => {
     return (
-      PRODUCT_CATEGORIES.find((c) => c.id === category) ||
-      PRODUCT_CATEGORIES[0]
+      PRODUCT_CATEGORIES.find((c) => c.id === category) || PRODUCT_CATEGORIES[0]
     );
   }, [category]);
 
@@ -233,7 +234,10 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
 
   // Overrides for individual matrix cells (price, stock, sku, enabled)
   const [customCellOverrides, setCustomCellOverrides] = useState<
-    Record<string, { price?: number; stock?: number; sku?: string; enabled?: boolean }>
+    Record<
+      string,
+      { price?: number; stock?: number; sku?: string; enabled?: boolean }
+    >
   >({});
 
   // Batch Fill inputs
@@ -387,8 +391,14 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
       }
       nextOverrides[r.key] = {
         ...nextOverrides[r.key],
-        price: !isNaN(pNum) && pNum > 0 ? pNum : (nextOverrides[r.key]?.price ?? r.price),
-        stock: !isNaN(sNum) && sNum >= 0 ? sNum : (nextOverrides[r.key]?.stock ?? r.stock),
+        price:
+          !isNaN(pNum) && pNum > 0
+            ? pNum
+            : (nextOverrides[r.key]?.price ?? r.price),
+        stock:
+          !isNaN(sNum) && sNum >= 0
+            ? sNum
+            : (nextOverrides[r.key]?.stock ?? r.stock),
         sku: newSku || `${baseSku}-${idx + 1}`,
       };
     });
@@ -398,7 +408,11 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
 
   // Update specific row cell
   const handleUpdateRow = useCallback(
-    (key: string, field: "price" | "stock" | "sku" | "enabled", value: unknown) => {
+    (
+      key: string,
+      field: "price" | "stock" | "sku" | "enabled",
+      value: unknown,
+    ) => {
       setCustomCellOverrides((prev) => ({
         ...prev,
         [key]: {
@@ -407,7 +421,7 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
         },
       }));
     },
-    []
+    [],
   );
 
   // Category switch
@@ -423,7 +437,7 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
   // Form Stats
   const activeRows = useMemo(
     () => variantRows.filter((r) => r.enabled),
-    [variantRows]
+    [variantRows],
   );
   const totalStockCount = useMemo(() => {
     if (!hasVariants) return Number(singleStock) || 0;
@@ -454,43 +468,50 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
     }
 
     if (hasVariants && activeRows.length === 0) {
-      alert("Vui lòng kích hoạt ít nhất một biến thể hoặc tắt tùy chọn biến thể.");
+      alert(
+        "Vui lòng kích hoạt ít nhất một biến thể hoặc tắt tùy chọn biến thể.",
+      );
       return;
     }
 
-    const finalPrice = hasVariants && activeRows.length > 0
-      ? Math.min(...activeRows.map((r) => r.price))
-      : singlePrice;
+    const finalPrice =
+      hasVariants && activeRows.length > 0
+        ? Math.min(...activeRows.map((r) => r.price))
+        : singlePrice;
 
     const finalStock = hasVariants ? totalStockCount : singleStock;
 
-    const variationTitle = hasVariants && activeRows.length > 0
-      ? `${activeRows.length} phân loại (${group1Name}${enableGroup2 ? `, ${group2Name}` : ""})`
-      : "Bản tiêu chuẩn";
+    const variationTitle =
+      hasVariants && activeRows.length > 0
+        ? `${activeRows.length} phân loại (${group1Name}${enableGroup2 ? `, ${group2Name}` : ""})`
+        : "Bản tiêu chuẩn";
 
-    const variationSubtitle = hasVariants && activeRows.length > 0
-      ? group1Values.slice(0, 3).join(", ") + (group1Values.length > 3 ? "..." : "")
-      : "Tiêu chuẩn nhà máy";
+    const variationSubtitle =
+      hasVariants && activeRows.length > 0
+        ? group1Values.slice(0, 3).join(", ") +
+          (group1Values.length > 3 ? "..." : "")
+        : "Tiêu chuẩn nhà máy";
 
-    const finalVariants: BackendSellerProductVariant[] = hasVariants && activeRows.length > 0
-      ? activeRows.map((r, idx) => ({
-          sku: r.sku || `${baseSku}-${idx + 1}`,
-          name: r.name,
-          price: Number(r.price),
-          stock: Number(r.stock),
-          image_url: imageUrl,
-          attribute_value_ids: [],
-        }))
-      : [
-          {
-            sku: baseSku,
-            name: "Tiêu chuẩn",
-            price: Number(singlePrice),
-            stock: Number(singleStock),
+    const finalVariants: BackendSellerProductVariant[] =
+      hasVariants && activeRows.length > 0
+        ? activeRows.map((r, idx) => ({
+            sku: r.sku || `${baseSku}-${idx + 1}`,
+            name: r.name,
+            price: Number(r.price),
+            stock: Number(r.stock),
             image_url: imageUrl,
             attribute_value_ids: [],
-          },
-        ];
+          }))
+        : [
+            {
+              sku: baseSku,
+              name: "Tiêu chuẩn",
+              price: Number(singlePrice),
+              stock: Number(singleStock),
+              image_url: imageUrl,
+              attribute_value_ids: [],
+            },
+          ];
 
     onSave({
       id: editingProduct?.id,
@@ -509,18 +530,18 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
         finalStock > 20
           ? "abundant"
           : finalStock > 5
-          ? "safe"
-          : finalStock > 0
-          ? "low"
-          : "out",
+            ? "safe"
+            : finalStock > 0
+              ? "low"
+              : "out",
       stockStatusLabel:
         finalStock > 20
           ? "Đủ hàng"
           : finalStock > 5
-          ? "An toàn"
-          : finalStock > 0
-          ? "Sắp hết"
-          : "Hết hàng",
+            ? "An toàn"
+            : finalStock > 0
+              ? "Sắp hết"
+              : "Hết hàng",
       status: "ACTIVE",
       rawVariants: finalVariants,
       rawImages: [
@@ -585,7 +606,9 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
               className="p-2 rounded-xl text-outline hover:text-on-surface hover:bg-surface-container transition-colors cursor-pointer"
               aria-label="Đóng modal"
             >
-              <span className="material-symbols-outlined text-[22px]">close</span>
+              <span className="material-symbols-outlined text-[22px]">
+                close
+              </span>
             </button>
           </div>
         </div>
@@ -709,14 +732,6 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
               </div>
 
               <div className="flex-1 w-full space-y-2">
-                <input
-                  type="url"
-                  required
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="https://images.unsplash.com/photo-..."
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/50 font-mono text-xs focus:outline-none focus:border-primary shadow-xs text-on-surface"
-                />
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-label-sm text-[11px] text-outline">
                     Ảnh mẫu nhanh:
@@ -725,7 +740,7 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
                     type="button"
                     onClick={() =>
                       setImageUrl(
-                        "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800"
+                        "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800",
                       )
                     }
                     className="px-2 py-0.5 rounded bg-surface-container hover:bg-surface-container-high text-[11px] text-on-surface font-medium transition-colors cursor-pointer"
@@ -736,7 +751,7 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
                     type="button"
                     onClick={() =>
                       setImageUrl(
-                        "https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?w=800"
+                        "https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?w=800",
                       )
                     }
                     className="px-2 py-0.5 rounded bg-surface-container hover:bg-surface-container-high text-[11px] text-on-surface font-medium transition-colors cursor-pointer"
@@ -747,7 +762,7 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
                     type="button"
                     onClick={() =>
                       setImageUrl(
-                        "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=800"
+                        "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=800",
                       )
                     }
                     className="px-2 py-0.5 rounded bg-surface-container hover:bg-surface-container-high text-[11px] text-on-surface font-medium transition-colors cursor-pointer"
@@ -758,7 +773,7 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
                     type="button"
                     onClick={() =>
                       setImageUrl(
-                        "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800"
+                        "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800",
                       )
                     }
                     className="px-2 py-0.5 rounded bg-surface-container hover:bg-surface-container-high text-[11px] text-on-surface font-medium transition-colors cursor-pointer"
@@ -782,7 +797,8 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
                     3. Phân loại hàng &amp; Biến thể sản phẩm
                   </h3>
                   <p className="font-body-sm text-xs text-on-surface-variant">
-                    Thiết lập phân loại đa kích cỡ (Size), màu sắc, giá bán và tồn kho tương ứng
+                    Thiết lập phân loại đa kích cỡ (Size), màu sắc, giá bán và
+                    tồn kho tương ứng
                   </p>
                 </div>
               </div>
@@ -1111,7 +1127,8 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
                       Danh sách biến thể ({variantRows.length} phân loại):
                     </span>
                     <span className="font-body-sm text-xs text-on-surface-variant">
-                      Chỉnh sửa trực tiếp từng ô giá và kho cho từng Size &amp; Màu
+                      Chỉnh sửa trực tiếp từng ô giá và kho cho từng Size &amp;
+                      Màu
                     </span>
                   </div>
 
@@ -1119,7 +1136,9 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
                     <table className="w-full text-left border-collapse">
                       <thead className="sticky top-0 bg-surface-container-low text-on-surface-variant font-label-sm text-[11px] uppercase tracking-wider font-semibold border-b border-outline-variant/30 z-10">
                         <tr>
-                          <th className="py-2.5 px-3.5 w-10 text-center">Bật</th>
+                          <th className="py-2.5 px-3.5 w-10 text-center">
+                            Bật
+                          </th>
                           <th className="py-2.5 px-3">{group1Name}</th>
                           {enableGroup2 && (
                             <th className="py-2.5 px-3">{group2Name}</th>
@@ -1140,7 +1159,9 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
                           <tr
                             key={row.key}
                             className={`hover:bg-surface-container-low/50 transition-colors ${
-                              !row.enabled ? "opacity-45 bg-surface-container/20" : ""
+                              !row.enabled
+                                ? "opacity-45 bg-surface-container/20"
+                                : ""
                             }`}
                           >
                             <td className="py-2.5 px-3.5 text-center">
@@ -1151,7 +1172,7 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
                                   handleUpdateRow(
                                     row.key,
                                     "enabled",
-                                    e.target.checked
+                                    e.target.checked,
                                   )
                                 }
                                 className="w-3.5 h-3.5 rounded text-primary focus:ring-0 cursor-pointer"
@@ -1185,7 +1206,7 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
                                   handleUpdateRow(
                                     row.key,
                                     "price",
-                                    Number(e.target.value)
+                                    Number(e.target.value),
                                   )
                                 }
                                 className="w-full px-2.5 py-1 rounded-lg border border-outline-variant/40 font-mono text-xs font-bold text-primary bg-surface-container-lowest focus:outline-none focus:border-primary"
@@ -1203,7 +1224,7 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
                                   handleUpdateRow(
                                     row.key,
                                     "stock",
-                                    Number(e.target.value)
+                                    Number(e.target.value),
                                   )
                                 }
                                 className="w-full px-2.5 py-1 rounded-lg border border-outline-variant/40 font-mono text-xs font-bold text-on-surface bg-surface-container-lowest focus:outline-none focus:border-primary"
@@ -1220,7 +1241,7 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
                                   handleUpdateRow(
                                     row.key,
                                     "sku",
-                                    e.target.value
+                                    e.target.value,
                                   )
                                 }
                                 className="w-full px-2.5 py-1 rounded-lg border border-outline-variant/40 font-mono text-[11px] font-bold uppercase text-on-surface bg-surface-container-lowest focus:outline-none focus:border-primary"

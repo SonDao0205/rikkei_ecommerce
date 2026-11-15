@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import CustomerLayout from "@/app/layout/CustomerLayout";
 import ProfileSidebar from "@/domains/customer/components/profile/ProfileSidebar";
 import AddressList from "@/domains/customer/components/profile/address/AddressList";
@@ -16,6 +17,7 @@ import {
 import type { Address as AddressItem } from "@/domains/customer/types/address.types";
 
 export const Address: React.FC = () => {
+  const { t } = useTranslation("customer");
   const dispatch = useAppDispatch();
   const formRef = useRef<HTMLDivElement>(null);
 
@@ -78,6 +80,15 @@ export const Address: React.FC = () => {
     }
   };
 
+  const formatSuccessMessage = (msg: string | null) => {
+    if (!msg) return null;
+    if (msg.includes("Thêm địa chỉ")) return t("profile.address.messages.add_success");
+    if (msg.includes("Cập nhật địa chỉ")) return t("profile.address.messages.update_success");
+    if (msg.includes("xóa địa chỉ")) return t("profile.address.messages.delete_success");
+    if (msg.includes("mặc định")) return t("profile.address.messages.set_default_success");
+    return msg;
+  };
+
   return (
     <CustomerLayout>
       <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-8 pt-3 pb-8 sm:pt-4 sm:pb-10">
@@ -88,34 +99,38 @@ export const Address: React.FC = () => {
             className="hover:text-primary transition-colors flex items-center gap-1"
           >
             <span className="material-symbols-outlined text-[16px]">home</span>
-            <span>Home</span>
+            <span>{t("profile.address.breadcrumb.home")}</span>
           </Link>
           <span className="material-symbols-outlined text-outline text-[14px]">
             chevron_right
           </span>
           <Link to="/profile" className="hover:text-primary transition-colors">
-            My Account
+            {t("profile.address.breadcrumb.account")}
           </Link>
           <span className="material-symbols-outlined text-outline text-[14px]">
             chevron_right
           </span>
-          <span className="text-on-surface font-semibold">Address Book</span>
+          <span className="text-on-surface font-semibold">
+            {t("profile.address.breadcrumb.address_book")}
+          </span>
         </nav>
 
-        {/* Page Header matching address.html */}
+        {/* Page Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-5 mb-6 sm:mb-8 border-b border-outline-variant">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="px-2.5 py-0.5 rounded-full bg-primary-fixed text-primary font-label-sm text-label-sm uppercase tracking-wider font-bold">
-                Account Management
+                {t("profile.address.header.badge")}
               </span>
-              <span className="text-outline text-body-sm">• Vietnam Marketplace Hub</span>
+              <span className="text-outline text-body-sm">
+                • {t("profile.address.header.hub")}
+              </span>
             </div>
             <h1 className="font-headline-xl text-headline-xl text-on-surface tracking-tight">
-              Sổ Địa Chỉ (Address Book)
+              {t("profile.address.header.title")}
             </h1>
             <p className="font-body-md text-body-md text-on-surface-variant mt-1">
-              Quản lý các điểm giao nhận hàng hóa của bạn để trải nghiệm thanh toán 1-chạm nhanh chóng và an toàn.
+              {t("profile.address.header.desc")}
             </p>
           </div>
 
@@ -127,7 +142,7 @@ export const Address: React.FC = () => {
               </span>
               <div className="flex flex-col">
                 <span className="font-label-sm text-label-sm text-outline leading-tight">
-                  Địa chỉ đã lưu
+                  {t("profile.address.header.saved_addresses")}
                 </span>
                 <span className="font-label-md text-label-md text-on-surface font-semibold">
                   {addresses.length} / 20
@@ -140,10 +155,10 @@ export const Address: React.FC = () => {
               </span>
               <div className="flex flex-col">
                 <span className="font-label-sm text-label-sm text-outline leading-tight">
-                  Quyền thao tác
+                  {t("profile.address.header.access_role")}
                 </span>
                 <span className="font-label-md text-label-md text-primary font-semibold">
-                  Chủ tài khoản
+                  {t("profile.address.header.account_owner")}
                 </span>
               </div>
             </div>
@@ -157,7 +172,7 @@ export const Address: React.FC = () => {
               <span className="material-symbols-outlined text-emerald-600 text-[20px]">
                 check_circle
               </span>
-              <span className="font-medium text-sm">{successMessage}</span>
+              <span className="font-medium text-sm">{formatSuccessMessage(successMessage)}</span>
             </div>
             <button
               onClick={() => dispatch(clearAddressMessages())}
@@ -178,7 +193,7 @@ export const Address: React.FC = () => {
               onClick={() => dispatch(clearAddressMessages())}
               className="hover:opacity-70 cursor-pointer"
               type="button"
-              aria-label="Đóng thông báo lỗi"
+              aria-label={t("profile.address.alerts.close_error")}
             >
               <span className="material-symbols-outlined text-[18px]">close</span>
             </button>
@@ -218,14 +233,13 @@ export const Address: React.FC = () => {
             <div className="p-6 rounded-2xl bg-surface-container-lowest border border-outline-variant/40 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h2 className="text-on-surface font-headline-md text-headline-md font-bold leading-tight">
-                  Danh Sách Địa Chỉ Nhận Hàng
+                  {t("profile.address.list.title")}
                 </h2>
                 <p className="text-on-surface-variant font-body-sm text-body-sm mt-0.5">
-                  Chọn địa chỉ nhận hàng mặc định hoặc bổ sung địa chỉ giao tận nơi mới.
+                  {t("profile.address.list.desc")}
                 </p>
               </div>
 
-              {/* Requirement: Thêm 1 nút thêm địa chỉ, khi ấn vào nút này sẽ hiển thị thêm 1 khung form */}
               <button
                 type="button"
                 id="btn-add-address"
@@ -234,7 +248,11 @@ export const Address: React.FC = () => {
                 className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-on-primary hover:bg-primary-container font-label-md text-label-md font-bold transition-all shadow-md active:scale-95 cursor-pointer shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span className="material-symbols-outlined text-[20px]">add_location_alt</span>
-                <span>{addresses.length >= 20 ? "Đã đạt giới hạn 20 địa chỉ" : "+ Thêm địa chỉ mới"}</span>
+                <span>
+                  {addresses.length >= 20
+                    ? t("profile.address.list.limit_reached")
+                    : t("profile.address.list.add_new_btn")}
+                </span>
               </button>
             </div>
 
@@ -249,6 +267,7 @@ export const Address: React.FC = () => {
             <AddressList
               onAddNewClick={handleOpenAddForm}
               onRetry={() => dispatch(fetchAddresses())}
+              onDeleteClick={(addr) => setAddressToDelete(addr)}
             />
           </main>
         </div>

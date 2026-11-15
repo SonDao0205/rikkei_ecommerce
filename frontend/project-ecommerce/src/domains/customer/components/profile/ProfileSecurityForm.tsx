@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAppDispatch, useAppSelector } from "@/app/state/store";
 import { changeUserPassword, clearProfileStatus } from "@/domains/customer/state/profileSlice";
 import { logoutUser } from "@/domains/auth/state/authSlice";
 
 export const ProfileSecurityForm: React.FC = () => {
+  const { t } = useTranslation("customer");
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { passwordLoading, passwordSuccessMessage, passwordError } =
@@ -36,7 +38,7 @@ export const ProfileSecurityForm: React.FC = () => {
   const getPasswordStrength = (pass: string) => {
     if (!pass || pass.length === 0) return { score: 0, label: "", color: "", text: "" };
     if (pass.length < 6) {
-      return { score: 1, label: "Yếu", color: "bg-red-500", text: "text-red-600" };
+      return { score: 1, label: t("profile.change_password.form.strength.weak"), color: "bg-red-500", text: "text-red-600" };
     }
     let score = 0;
     if (pass.length >= 8) score += 1;
@@ -44,10 +46,10 @@ export const ProfileSecurityForm: React.FC = () => {
     if (/[A-Za-z]/.test(pass) && /[0-9]/.test(pass)) score += 1;
     if (/[^A-Za-z0-9]/.test(pass)) score += 1;
 
-    if (score <= 1) return { score: 1, label: "Yếu", color: "bg-red-500", text: "text-red-600" };
-    if (score === 2) return { score: 2, label: "Trung bình", color: "bg-amber-500", text: "text-amber-600" };
-    if (score === 3) return { score: 3, label: "Mạnh", color: "bg-blue-500", text: "text-blue-600" };
-    return { score: 4, label: "Rất mạnh", color: "bg-green-500", text: "text-green-700" };
+    if (score <= 1) return { score: 1, label: t("profile.change_password.form.strength.weak"), color: "bg-red-500", text: "text-red-600" };
+    if (score === 2) return { score: 2, label: t("profile.change_password.form.strength.medium"), color: "bg-amber-500", text: "text-amber-600" };
+    if (score === 3) return { score: 3, label: t("profile.change_password.form.strength.strong"), color: "bg-blue-500", text: "text-blue-600" };
+    return { score: 4, label: t("profile.change_password.form.strength.very_strong"), color: "bg-green-500", text: "text-green-700" };
   };
 
   const strength = getPasswordStrength(newPassword);
@@ -58,23 +60,23 @@ export const ProfileSecurityForm: React.FC = () => {
     setFieldErrors({});
 
     if (!currentPassword) {
-      setFieldErrors({ currentPassword: "Vui lòng nhập mật khẩu hiện tại." });
+      setFieldErrors({ currentPassword: t("profile.change_password.errors.current_required") });
       return;
     }
     if (!newPassword || newPassword.length < 10) {
-      setFieldErrors({ newPassword: "Mật khẩu mới phải có tối thiểu 10 ký tự." });
+      setFieldErrors({ newPassword: t("profile.change_password.errors.min_length") });
       return;
     }
     if (!/[A-Za-z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
-      setFieldErrors({ newPassword: "Mật khẩu mới phải chứa ít nhất một chữ cái và một chữ số." });
+      setFieldErrors({ newPassword: t("profile.change_password.errors.letter_and_number") });
       return;
     }
     if (newPassword === currentPassword) {
-      setFieldErrors({ newPassword: "Mật khẩu mới không được trùng với mật khẩu hiện tại." });
+      setFieldErrors({ newPassword: t("profile.change_password.errors.must_be_different") });
       return;
     }
     if (newPassword !== confirmPassword) {
-      setFieldErrors({ confirmPassword: "Mật khẩu xác nhận không khớp với mật khẩu mới." });
+      setFieldErrors({ confirmPassword: t("profile.change_password.errors.mismatch") });
       return;
     }
 
@@ -91,14 +93,16 @@ export const ProfileSecurityForm: React.FC = () => {
       setNewPassword("");
       setConfirmPassword("");
     } else if (changeUserPassword.rejected.match(res)) {
-      const errMsg = (res.payload as string) || "Đổi mật khẩu thất bại.";
+      const errMsg = (res.payload as string) || t("profile.change_password.errors.failed");
       if (
         errMsg.toLowerCase().includes("mật khẩu hiện tại") ||
         errMsg.toLowerCase().includes("current password")
       ) {
-        setFieldErrors({ currentPassword: "Mật khẩu hiện tại không chính xác." });
+        setFieldErrors({ currentPassword: t("profile.change_password.errors.current_incorrect") });
       } else if (errMsg.toLowerCase().includes("trùng") || errMsg.toLowerCase().includes("reused")) {
-        setFieldErrors({ newPassword: "Mật khẩu mới không được trùng với mật khẩu hiện tại." });
+        setFieldErrors({ newPassword: t("profile.change_password.errors.must_be_different") });
+      } else {
+        setValidationError(errMsg);
       }
     }
   };
@@ -116,16 +120,16 @@ export const ProfileSecurityForm: React.FC = () => {
           </div>
           <div>
             <h2 className="font-headline-lg text-headline-lg text-on-surface font-bold tracking-tight">
-              Security &amp; Password (Đổi mật khẩu)
+              {t("profile.change_password.form.title")}
             </h2>
             <p className="font-body-sm text-body-sm text-on-surface-variant">
-              Ensure your account remains safe with strong, periodically renewed credentials.
+              {t("profile.change_password.form.desc")}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <span className="font-body-sm text-body-sm text-outline">
-            Last changed 3 months ago
+            {t("profile.change_password.form.last_changed")}
           </span>
         </div>
       </div>
@@ -138,9 +142,11 @@ export const ProfileSecurityForm: React.FC = () => {
               check_circle
             </span>
             <div>
-              <p className="font-bold text-emerald-900 text-sm">{passwordSuccessMessage}</p>
+              <p className="font-bold text-emerald-900 text-sm">
+                {t("profile.change_password.form.success_title")}
+              </p>
               <p className="text-emerald-700 mt-0.5">
-                Các phiên đăng nhập trên thiết bị khác đã được thu hồi an toàn.
+                {t("profile.change_password.form.sessions_revoked")}
               </p>
             </div>
           </div>
@@ -152,7 +158,7 @@ export const ProfileSecurityForm: React.FC = () => {
             }}
             className="shrink-0 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition-colors cursor-pointer text-xs"
           >
-            Đăng nhập lại
+            {t("profile.change_password.form.relogin_btn")}
           </button>
         </div>
       )}
@@ -161,7 +167,7 @@ export const ProfileSecurityForm: React.FC = () => {
           <span className="material-symbols-outlined text-red-600 text-[18px]">
             error
           </span>
-          <span>{passwordError || validationError}</span>
+          <span>{validationError || passwordError}</span>
         </div>
       )}
 
@@ -172,7 +178,7 @@ export const ProfileSecurityForm: React.FC = () => {
           <div className="flex flex-col gap-1.5">
             <label className="font-label-md text-label-md text-on-surface font-semibold flex items-center justify-between">
               <span>
-                Current Password <span className="text-error">*</span>
+                {t("profile.change_password.form.current_password")} <span className="text-error">*</span>
               </span>
             </label>
             <div className="relative flex items-center">
@@ -199,7 +205,7 @@ export const ProfileSecurityForm: React.FC = () => {
               />
               <button
                 className="absolute right-3 text-outline hover:text-on-surface transition-colors cursor-pointer"
-                title="Toggle visibility"
+                title={t("profile.change_password.form.toggle_visibility")}
                 type="button"
                 onClick={() => setShowCurrent((v) => !v)}
               >
@@ -220,7 +226,7 @@ export const ProfileSecurityForm: React.FC = () => {
           <div className="flex flex-col gap-1.5">
             <label className="font-label-md text-label-md text-on-surface font-semibold flex items-center justify-between">
               <span>
-                New Password <span className="text-error">*</span>
+                {t("profile.change_password.form.new_password")} <span className="text-error">*</span>
               </span>
             </label>
             <div className="relative flex items-center">
@@ -233,7 +239,7 @@ export const ProfileSecurityForm: React.FC = () => {
                     ? "border-red-400 focus:ring-2 focus:ring-red-100 bg-red-50/20"
                     : "border-outline-variant focus:border-primary-container focus:ring-2 focus:ring-primary-container/20"
                 }`}
-                placeholder="Tối thiểu 10 ký tự"
+                placeholder={t("profile.change_password.form.new_password_placeholder")}
                 type={showNew ? "text" : "password"}
                 value={newPassword}
                 onChange={(e) => {
@@ -247,7 +253,7 @@ export const ProfileSecurityForm: React.FC = () => {
               />
               <button
                 className="absolute right-3 text-outline hover:text-on-surface transition-colors cursor-pointer"
-                title="Toggle visibility"
+                title={t("profile.change_password.form.toggle_visibility")}
                 type="button"
                 onClick={() => setShowNew((v) => !v)}
               >
@@ -285,7 +291,7 @@ export const ProfileSecurityForm: React.FC = () => {
           <div className="flex flex-col gap-1.5">
             <label className="font-label-md text-label-md text-on-surface font-semibold flex items-center justify-between">
               <span>
-                Confirm New Password <span className="text-error">*</span>
+                {t("profile.change_password.form.confirm_password")} <span className="text-error">*</span>
               </span>
             </label>
             <div className="relative flex items-center">
@@ -298,7 +304,7 @@ export const ProfileSecurityForm: React.FC = () => {
                     ? "border-red-400 focus:ring-2 focus:ring-red-100 bg-red-50/20"
                     : "border-outline-variant focus:border-primary-container focus:ring-2 focus:ring-primary-container/20"
                 }`}
-                placeholder="Nhập lại mật khẩu mới"
+                placeholder={t("profile.change_password.form.confirm_password_placeholder")}
                 type={showConfirm ? "text" : "password"}
                 value={confirmPassword}
                 onChange={(e) => {
@@ -312,7 +318,7 @@ export const ProfileSecurityForm: React.FC = () => {
               />
               <button
                 className="absolute right-3 text-outline hover:text-on-surface transition-colors cursor-pointer"
-                title="Toggle visibility"
+                title={t("profile.change_password.form.toggle_visibility")}
                 type="button"
                 onClick={() => setShowConfirm((v) => !v)}
               >
@@ -343,14 +349,14 @@ export const ProfileSecurityForm: React.FC = () => {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                 </svg>
-                <span>Đang xử lý...</span>
+                <span>{t("profile.change_password.form.submitting")}</span>
               </>
             ) : (
               <>
                 <span className="material-symbols-outlined text-[18px]">
                   check_circle
                 </span>
-                <span>Xác nhận đổi mật khẩu</span>
+                <span>{t("profile.change_password.form.submit_btn")}</span>
               </>
             )}
           </button>

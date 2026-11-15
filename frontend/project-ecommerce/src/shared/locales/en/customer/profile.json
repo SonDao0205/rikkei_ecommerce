@@ -1,0 +1,518 @@
+{
+  "breadcrumb": {
+    "home": "Home",
+    "account": "My Account",
+    "profile": "My Profile"
+  },
+  "header": {
+    "badge": "Account Management",
+    "hub": "MarketPulse Hub",
+    "title": "My Profile",
+    "desc": "Manage your personal credentials, contact verification, profile avatar, and account details."
+  },
+  "sidebar": {
+    "avatar_tooltip": "Click to change profile picture",
+    "update_photo": "Update profile picture",
+    "membership_tier": "Loyal Member",
+    "nav": {
+      "profile": "My Profile",
+      "change_password": "Change Password",
+      "change_password_sub": "Change PW",
+      "address_book": "Address Book",
+      "address_book_sub": "Address",
+      "my_orders": "My Orders",
+      "orders_active": "6 Active",
+      "voucher_wallet": "Voucher Wallet",
+      "vouchers_available": "4 Available",
+      "notifications": "Notifications",
+      "logout": "Log Out"
+    }
+  },
+  "shop_status": {
+    "refresh": "Refresh shop status",
+    "refreshing": "Refreshing...",
+    "refresh_failed": "Unable to refresh shop status. Please try again later.",
+    "load_error": "Unable to load shop status. Your profile has not confirmed shop registration.",
+    "retry_btn": "Try again",
+    "no_shop": {
+      "title": "Want to open your business store?",
+      "desc": "Register a seller store to reach millions of customers nationwide.",
+      "btn": "Register Store Now"
+    },
+    "pending": {
+      "badge": "Application Under Review",
+      "code": "ID:",
+      "desc": "Your store application has been submitted. Our review team will process within 24–48 business hours.",
+      "edit_btn": "Edit Application"
+    },
+    "rejected": {
+      "badge": "Application Rejected",
+      "code": "ID:",
+      "reason_prefix": "Rejection reason:",
+      "default_reason": "Application does not meet MarketPulse marketplace approval standards."
+    },
+    "needs_info": {
+      "badge": "More Information Required",
+      "code": "ID:",
+      "request_prefix": "Update requirement:",
+      "default_request": "Please provide additional profile details as requested.",
+      "btn": "Provide Information"
+    },
+    "active": {
+      "badge": "Official Store • Active",
+      "code": "ID:",
+      "followers": "Followers:",
+      "portal_btn": "Seller Portal"
+    },
+    "suspended": {
+      "badge": "Store Suspended",
+      "reason_prefix": "Reason:",
+      "default_reason": "Temporarily suspended according to marketplace policy.",
+      "view_btn": "View Profile"
+    },
+    "modal": {
+      "title_resubmit": "Edit & Resubmit Store Application",
+      "title_edit": "Update Store Profile",
+      "shop_name": "Store Name",
+      "shop_name_placeholder": "e.g. UrbanStep Official Store",
+      "phone": "Contact Phone Number",
+      "phone_placeholder": "e.g. 0912345678",
+      "warehouse": "Warehouse Pickup Address",
+      "warehouse_placeholder": "Building/Street, Ward, District, City/Province",
+      "description": "Store Description",
+      "description_placeholder": "Briefly introduce your brand or products...",
+      "logo_url": "Logo URL (HTTPS)",
+      "banner_url": "Banner URL (HTTPS)",
+      "terms_legend": "Confirm terms to resubmit application",
+      "terms_service": "I agree to the marketplace operating regulations and policies.",
+      "terms_authenticity": "I confirm that all application details are accurate.",
+      "terms_anti_counterfeit": "I commit not to sell counterfeit or prohibited products.",
+      "cancel_btn": "Cancel",
+      "resubmit_btn": "Resubmit for Review",
+      "save_btn": "Save Changes",
+      "errors": {
+        "name_length": "Store name must be between 2 and 150 characters",
+        "invalid_phone": "Invalid phone number format for Vietnam (e.g. 0912 345 678)",
+        "warehouse_length": "Warehouse address must be between 5 and 500 characters",
+        "terms_required": "Please confirm all three terms before resubmitting.",
+        "update_failed": "Failed to update profile"
+      }
+    }
+  },
+  "form": {
+    "header_title": "Profile Photo & Basic Identity",
+    "header_desc": "Update your public avatar and official profile identification.",
+    "avatar_title": "Profile Avatar",
+    "avatar_hint": "Supports JPG, JPEG, PNG, max 5 MB. Uploads in background so you can continue using the system.",
+    "change_avatar_title": "Change profile picture",
+    "upload_btn": "Upload New Photo",
+    "uploading_btn": "Uploading photo...",
+    "remove_btn": "Remove",
+    "confirm_remove_avatar": "Are you sure you want to remove your current profile photo?",
+    "close_alert": "Close notification",
+    "close_alert_error": "Close error notification",
+    "full_name": "Full Name",
+    "diacritics_hint": "Vietnamese Diacritics OK",
+    "full_name_placeholder": "John Doe",
+    "username": "Display Name / Username",
+    "unique_handle_hint": "Unique public handle",
+    "username_placeholder": "johndoe_vn",
+    "email": "Email Address",
+    "email_placeholder": "name@example.com",
+    "verified": "Verified",
+    "unverified": "Unverified",
+    "phone": "Phone Number",
+    "phone_placeholder": "0909 123 456",
+    "dob": "Date of Birth",
+    "gender": "Gender",
+    "genders": {
+      "male": "Male",
+      "female": "Female",
+      "other": "Other"
+    },
+    "saving": "Saving...",
+    "save_btn": "Save Profile Details",
+    "month_prefix": "Month {{month}}",
+    "errors": {
+      "restricted_fields": "You can only update Full Name and Phone Number",
+      "invalid_phone": "Phone number is not a valid Vietnamese mobile number (e.g. 0912 345 678)",
+      "avatar_upload_failed": "Unable to upload profile avatar."
+    }
+  },
+  "change_password": {
+    "breadcrumb": {
+      "home": "Home",
+      "account": "My Account",
+      "change_password": "Change Password"
+    },
+    "header": {
+      "badge": "Account Security",
+      "hub": "MarketPulse Hub",
+      "title": "Change Password",
+      "desc": "Ensure your account remains safe with strong, periodically renewed credentials."
+    },
+    "form": {
+      "title": "Security & Password",
+      "desc": "Ensure your account remains safe with strong, periodically renewed credentials.",
+      "last_changed": "Last changed 3 months ago",
+      "sessions_revoked": "Active sessions on other devices have been safely revoked.",
+      "relogin_btn": "Log in again",
+      "current_password": "Current Password",
+      "toggle_visibility": "Toggle visibility",
+      "new_password": "New Password",
+      "new_password_placeholder": "At least 10 characters",
+      "strength": {
+        "weak": "Weak",
+        "medium": "Medium",
+        "strong": "Strong",
+        "very_strong": "Very strong"
+      },
+      "confirm_password": "Confirm New Password",
+      "confirm_password_placeholder": "Re-enter new password",
+      "submitting": "Processing...",
+      "submit_btn": "Confirm Password Change",
+      "success_title": "Password changed successfully. You can now log in with your new password."
+    },
+    "errors": {
+      "current_required": "Please enter your current password.",
+      "min_length": "New password must be at least 10 characters.",
+      "letter_and_number": "New password must contain at least one letter and one number.",
+      "must_be_different": "New password cannot be the same as your current password.",
+      "mismatch": "Password confirmation does not match the new password.",
+      "current_incorrect": "Current password is incorrect.",
+      "failed": "Failed to change password."
+    }
+  },
+  "address": {
+    "breadcrumb": {
+      "home": "Home",
+      "account": "My Account",
+      "address_book": "Address Book"
+    },
+    "header": {
+      "badge": "Account Management",
+      "hub": "MarketPulse Hub",
+      "title": "Address Book",
+      "desc": "Manage your delivery addresses for a fast and secure 1-click checkout experience.",
+      "saved_addresses": "Saved Addresses",
+      "access_role": "Access Role",
+      "account_owner": "Account Owner"
+    },
+    "alerts": {
+      "close_error": "Close error notification"
+    },
+    "messages": {
+      "add_success": "New address added successfully!",
+      "update_success": "Address updated successfully!",
+      "delete_success": "Address deleted successfully!",
+      "set_default_success": "Default address updated successfully!"
+    },
+    "types": {
+      "home": "Home",
+      "office": "Office / Company",
+      "other": "Other"
+    },
+    "badge_default": "Default",
+    "list": {
+      "title": "Delivery Address List",
+      "desc": "Choose your default delivery address or add a new delivery location.",
+      "add_new_btn": "+ Add New Address",
+      "limit_reached": "Reached 20 address limit",
+      "empty_title": "No Delivery Addresses Yet",
+      "empty_desc": "Add a delivery address to enjoy convenient shopping and 1-click checkout on MarketPulse.",
+      "add_first_btn": "Add First Address",
+      "load_error_title": "Unable to Load Address Book",
+      "retry_btn": "Try Again"
+    },
+    "actions": {
+      "edit": "Edit",
+      "edit_tooltip": "Edit address",
+      "delete": "Delete",
+      "delete_tooltip": "Delete address",
+      "set_default": "Set as Default",
+      "set_default_tooltip": "Set as default address",
+      "confirm_delete_fallback": "Are you sure you want to delete address for \"{{name}}\" ({{street}})?"
+    },
+    "form": {
+      "badge_add": "Add New Delivery Address",
+      "badge_edit": "Edit Address",
+      "max_limit": "Max 20 addresses",
+      "title_add": "Add New Delivery Address",
+      "title_edit": "Edit Delivery Address",
+      "desc_add": "Add a new parcel delivery address",
+      "desc_edit": "Update your delivery address",
+      "close_tooltip": "Close form",
+      "recipient_label": "Recipient Full Name",
+      "recipient_placeholder": "e.g. John Doe",
+      "phone_label": "Phone Number",
+      "admin_area_label": "Administrative Area (Province / City, District, Ward)",
+      "province_placeholder": "Province / City",
+      "district_placeholder": "District",
+      "ward_placeholder": "Ward",
+      "street_label": "Street Address & House Number",
+      "street_placeholder": "e.g. Floor 4, Bitexco Financial Tower, 2 Hai Trieu St...",
+      "type_label": "Address Category",
+      "set_default_checkbox": "Set as default delivery address",
+      "cancel_btn": "Cancel",
+      "saving": "Saving...",
+      "save_address_btn": "Save Address",
+      "save_changes_btn": "Save Changes"
+    },
+    "errors": {
+      "recipient_required": "Please enter recipient full name",
+      "invalid_phone": "Please enter a valid Vietnamese phone number (e.g. 0912 345 678)",
+      "location_required": "Please provide province/city, district and ward",
+      "street_required": "Please provide detailed street address (house number, street name, building)"
+    },
+    "delete_modal": {
+      "title": "Confirm Delete Address",
+      "desc": "Are you sure you want to remove this address from your address book? This action cannot be undone.",
+      "default_warning": "Note: This is your default address. Upon deletion, the system will automatically assign the next address as default.",
+      "cancel_btn": "Cancel",
+      "confirm_btn": "Delete Address",
+      "deleting": "Deleting...",
+      "close": "Close"
+    }
+  },
+  "orders": {
+    "breadcrumb": {
+      "home": "Home",
+      "account": "My Account",
+      "orders": "Order History"
+    },
+    "header": {
+      "badge": "ACCOUNT MANAGEMENT • YOUR ORDERS",
+      "title": "My Orders",
+      "total_orders": "{{count}} Orders",
+      "desc": "Track, manage, and check the delivery progress of multi-store orders nationwide.",
+      "carrier_label": "Delivery Partner:"
+    },
+    "search": {
+      "placeholder": "Search by Order ID, Product Name, or Shop Name...",
+      "button": "Search"
+    },
+    "tabs": {
+      "all": "All",
+      "pending": "Pending Confirmation",
+      "packing": "Processing",
+      "shipping": "Shipping",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "returned": "Return / Refund"
+    },
+    "statuses": {
+      "pending": "PENDING CONFIRMATION",
+      "packing": "PROCESSING",
+      "shipping": "SHIPPING",
+      "completed": "COMPLETED",
+      "cancelled": "CANCELLED",
+      "returned": "RETURN / REFUND"
+    },
+    "payment_cod": "Cash on Delivery",
+    "payment_online": "Online Payment",
+    "unpaid": "Unpaid",
+    "paid": "Paid",
+    "shipping_in_transit": "Your order is in transit to you",
+    "shipping_delivered": "Successfully delivered",
+    "empty": {
+      "title": "No orders yet",
+      "not_found": "No orders found matching keyword \"{{query}}\".",
+      "no_orders": "You have no orders in this status yet. Browse around and find items you love!",
+      "explore_btn": "Explore Products"
+    },
+    "pagination": "Showing {{start}} - {{end}} of {{total}} orders",
+    "toast": {
+      "cancel_success_title": "Order Cancelled Successfully",
+      "cancel_success_msg": "Order {{code}} has been cancelled as requested.",
+      "cancel_failed_title": "Failed to Cancel Order"
+    },
+    "dialog": {
+      "confirm_received": "Do you confirm that you have received all items and are satisfied with the package?",
+      "received_success": "Order receipt confirmed successfully!"
+    },
+    "card": {
+      "multi_shop": "Multi-store Order ({{count}} Shops)",
+      "chat": "Chat Now",
+      "view_shop": "View Store",
+      "partner_shop": "Partner Store",
+      "see_more": "View more ({{count}} other items in this order)",
+      "collapse": "Collapse list",
+      "cancel_reason_prefix": "Cancellation reason:",
+      "cancelled_by_buyer": "Cancelled by Buyer at {{time}} • Order was not charged.",
+      "cancelled_recorded": "Order has been recorded as successfully cancelled.",
+      "payment_prefix": "Payment:",
+      "order_code_prefix": "Order ID:",
+      "total_prefix": "Total:",
+      "order_code_tooltip": "Click to view details of this order",
+      "seller_preparing": "Seller is preparing to pack your items",
+      "ordered_at": "Ordered at: {{time}}",
+      "track_order": "Track Order",
+      "contact_shop": "Contact Store",
+      "received_btn": "Received Order",
+      "view_vat_invoice": "View VAT invoice & order details",
+      "review_btn": "Rate 5★",
+      "repurchase": "Re-order",
+      "change_address": "Change Delivery Address",
+      "cancel_order": "Cancel Order",
+      "order_details": "Order Details",
+      "view_details": "View Details"
+    },
+    "item": {
+      "view_shop": "View Store",
+      "variant": "Variant: {{name}}",
+      "quantity": "Qty: x{{qty}}",
+      "unit_price": "Unit price: {{price}}"
+    },
+    "cancel_modal": {
+      "title": "Cancel Order {{code}}",
+      "subtitle": "Please select a reason to help the marketplace and seller improve service",
+      "reason_label": "Cancellation reason:",
+      "custom_placeholder": "Enter your reason details...",
+      "warning_note": "Note: Cancelled orders cannot be restored. You can select products and place a new order anytime.",
+      "keep_order": "Keep Order",
+      "confirm_cancel": "Confirm Cancel",
+      "cancelling": "Cancelling...",
+      "reasons": {
+        "change_mind": "Changed mind, no longer want to buy",
+        "change_address": "Want to change delivery address",
+        "change_product": "Want to change product, size, or color",
+        "found_cheaper": "Found a better price elsewhere",
+        "delivery_too_long": "Estimated delivery time is too long",
+        "other": "Other reason"
+      }
+    },
+    "detail": {
+      "not_found_title": "Order Not Found",
+      "not_found_desc": "The order you are looking for does not exist or has been removed from the system.",
+      "back_to_list": "Back to order list",
+      "back_to_orders": "Back to order list",
+      "breadcrumb_detail": "Order details #{{code}}",
+      "page_title": "Order Details #{{code}}",
+      "ordered_at": "Ordered at {{time}}",
+      "updated_recent": "Recently updated",
+      "print_vat": "Print VAT Invoice",
+      "chat_with_shop": "Chat with Shop",
+      "chat_alert_fallback": "Starting chat with seller for order {{code}}",
+      "stepper": {
+        "title": "Delivery Progress",
+        "subtitle": "Parcel is moving to the nearest delivery hub",
+        "estimated_arrival": "Est. delivery: {{date}} (1-2 days left)",
+        "step_order_placed": "Order Placed",
+        "step_pending": "Pending Confirmation",
+        "step_packing": "Awaiting Pickup",
+        "step_shipping": "In Transit",
+        "step_completed": "Delivered",
+        "est_prefix": "Est. {{date}}",
+        "carrier_express": "Express",
+        "tracking_code": "Tracking Code:",
+        "copy_code": "Copy code",
+        "copied_success": "Copied tracking code: {{code}}",
+        "track_on_website": "Track on {{carrier}} Website",
+        "view_details": "View details",
+        "collapse": "Collapse",
+        "latest": "Latest",
+        "timeline": {
+          "delivered_title": "Delivered",
+          "delivered_subtitle": "Recipient has signed for the parcel",
+          "shipping_title": "In Transit",
+          "shipping_subtitle_delivered_today": "Assigned courier: Tran Minh Quan - Est. delivery today",
+          "shipping_subtitle": "Assigned courier: Tran Minh Quan",
+          "packing_title": "Awaiting Pickup",
+          "packing_subtitle": "Shop packed the items and is preparing handover to courier",
+          "pending_title": "Pending Confirmation",
+          "pending_subtitle": "Seller is reviewing and confirming your order",
+          "placed_title": "Order Placed",
+          "placed_subtitle": "System successfully recorded your order",
+          "cancelled_title": "Order Cancelled",
+          "cancel_reason_prefix": "Reason: {{reason}}",
+          "default_cancel_reason": "Changed mind, no longer want to buy"
+        }
+      },
+      "delivery_grid": {
+        "address_title": "Delivery Address",
+        "notes_prefix": "Note:",
+        "shipping_method_title": "Shipping Method",
+        "default_carrier": "GHN Express - Standard Delivery",
+        "est_delivery_title": "Estimated delivery date:",
+        "insurance_title": "MarketPulse Protect Insurance",
+        "insurance_desc": "100% compensation for lost or damaged parcels",
+        "payment_method_title": "Payment Method",
+        "payment_cod": "Cash on Delivery (COD)",
+        "payment_momo": "MoMo E-Wallet",
+        "payment_visa": "Visa Card",
+        "payment_zalopay": "ZaloPay E-Wallet",
+        "paid": "Paid",
+        "unpaid": "Unpaid",
+        "cod_desc": "Courier will collect cash upon parcel handover.",
+        "online_desc": "Payment processed securely via payment gateway.",
+        "prepare_cash_title": "Cash Preparation Required",
+        "prepare_cash_hint": "Courier collects this exact amount, no extra fees"
+      },
+      "shop_section": {
+        "official_mall": "OFFICIAL MALL",
+        "artisan": "ARTISAN",
+        "stats": "Response rate {{rate}}% • Rating {{rating}}/5 ★",
+        "view_shop": "View Store",
+        "message_shop": "Message Shop",
+        "toast_chat_opened": "Opened chat with store {{name}}",
+        "genuine_badge": "100% Genuine",
+        "variant_prefix": "Variant:",
+        "total_item_price": "Total",
+        "repurchase": "Repurchase",
+        "review_product": "Review Product",
+        "review_tooltip": "Available once order is delivered",
+        "review_toast": "Open product review: {{name}}"
+      },
+      "price_summary": {
+        "buyer_rights_title": "MarketPulse Buyer Protection",
+        "right_inspection_title": "Inspection upon delivery:",
+        "right_inspection_desc": "You can open the box to inspect quantity and appearance before paying the courier.",
+        "right_returns_title": "15-day free returns:",
+        "right_returns_desc": "Fast returns if items are defective from manufacturer or do not fit.",
+        "right_authentic_title": "100% Genuine:",
+        "right_authentic_desc": "Double compensation if counterfeit items are discovered from Official Mall stores.",
+        "need_help": "Need help with this order?",
+        "contact_support_agent": "Contact Support Agent →",
+        "payment_details_title": "Payment Details",
+        "subtotal": "Subtotal ({{count}} items)",
+        "shipping_fee": "Shipping Fee ({{carrier}})",
+        "default_shipping_carrier": "GHN Standard",
+        "shipping_discount": "Shipping Discount (Freeship Extra)",
+        "shop_discount": "Store Voucher Discount",
+        "total_cod": "Total COD Payment:",
+        "total_order": "Total Order Value:",
+        "vat_included": "VAT included, no extra fees apply"
+      },
+      "footer_bar": {
+        "support_prefix": "Need help? Hotline:",
+        "support_suffix": "(24/7)",
+        "support_text": "Need help? Hotline: {{phone}} (24/7)",
+        "complaints_center": "Dispute & Complaint Center",
+        "request_cancel": "Cancel Order Request",
+        "cancel_disabled_tooltip": "Order has been handed over to GHN and cannot be directly cancelled. Please contact support or refuse delivery when courier calls.",
+        "request_return": "Return / Refund Request",
+        "received_order": "Order Received",
+        "delivered_success": "Delivered Successfully",
+        "order_cancelled": "Order Cancelled"
+      },
+      "confirm_receive_modal": {
+        "title": "Confirm Order Received?",
+        "desc": "Please only confirm when you have received the parcel from courier GHN and verified the items are intact.",
+        "btn_later": "Later",
+        "btn_confirm": "I have received the items",
+        "submitting": "Processing..."
+      },
+      "toasts": {
+        "connecting_chat": "Connecting to seller chat...",
+        "received_success": "Order marked as received successfully!",
+        "received_error": "An error occurred while confirming delivery.",
+        "cancel_success": "Order {{code}} has been cancelled successfully.",
+        "cancel_success_title": "Order Cancelled",
+        "cancel_error_title": "Cancellation Failed",
+        "cancel_error": "An error occurred while cancelling order.",
+        "return_requested": "Return / Refund request recorded. Redirecting...",
+        "hotline_ready": "Support Hotline 1900 6868 available 24/7"
+      }
+    }
+  }
+}

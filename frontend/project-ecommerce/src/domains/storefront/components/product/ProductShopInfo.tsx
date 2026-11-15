@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAppDispatch, useAppSelector } from "@/app/state/store";
 import { toggleFollowShop } from "@/domains/shop/state/publicShopSlice";
 import WishlistToast from "@/domains/customer/components/wishlist/WishlistToast";
@@ -11,6 +12,7 @@ interface ProductShopInfoProps {
 }
 
 export const ProductShopInfo: React.FC<ProductShopInfoProps> = ({ shop }) => {
+  const { t } = useTranslation("customer");
   const dispatch = useAppDispatch();
   const { followState, followLoading } = useAppSelector((state) => state.publicShop);
   const { user, isAuthenticated } = useAppSelector((state) => state.auth);
@@ -34,9 +36,9 @@ export const ProductShopInfo: React.FC<ProductShopInfoProps> = ({ shop }) => {
     if (!isAuthenticated || !user) {
       setToast({
         isOpen: true,
-        title: "Yêu cầu đăng nhập",
-        message: "Vui lòng đăng nhập với tài khoản khách hàng để theo dõi cửa hàng.",
-        actionText: "Đăng nhập ngay",
+        title: t("product.shop_info.auth_required_title"),
+        message: t("product.shop_info.auth_required_msg"),
+        actionText: t("header.actions.sign_in", { defaultValue: "Đăng nhập ngay" }),
         actionLink: "/login",
         type: "error",
       });
@@ -46,8 +48,8 @@ export const ProductShopInfo: React.FC<ProductShopInfoProps> = ({ shop }) => {
     if (!user.roles?.includes("client") && user.role !== "client") {
       setToast({
         isOpen: true,
-        title: "Không thể thao tác",
-        message: "Tính năng theo dõi cửa hàng chỉ dành cho tài khoản Người mua.",
+        title: t("product.shop_info.buyer_only_title"),
+        message: t("product.shop_info.buyer_only_msg"),
         type: "error",
       });
       return;
@@ -64,19 +66,21 @@ export const ProductShopInfo: React.FC<ProductShopInfoProps> = ({ shop }) => {
 
       setToast({
         isOpen: true,
-        title: result.following ? "Đã theo dõi cửa hàng" : "Đã bỏ theo dõi cửa hàng",
+        title: result.following
+          ? t("product.shop_info.follow_success_title")
+          : t("product.shop_info.unfollow_success_title"),
         message: result.following
-          ? `Bạn đã theo dõi thành công gian hàng "${shop.name}".`
-          : `Bạn đã bỏ theo dõi gian hàng "${shop.name}".`,
-        actionText: "Xem gian hàng",
+          ? t("product.shop_info.follow_success_msg", { name: shop.name })
+          : t("product.shop_info.unfollow_success_msg", { name: shop.name }),
+        actionText: t("product.shop_info.view_shop"),
         actionLink: `/shop/${shop.id}`,
         type: "success",
       });
     } catch (err: unknown) {
       setToast({
         isOpen: true,
-        title: "Không thể thao tác",
-        message: err instanceof Error ? err.message : "Thao tác thất bại, vui lòng thử lại.",
+        title: t("product.shop_info.buyer_only_title"),
+        message: err instanceof Error ? err.message : t("product.shop_info.action_failed"),
         type: "error",
       });
     }
@@ -115,7 +119,7 @@ export const ProductShopInfo: React.FC<ProductShopInfoProps> = ({ shop }) => {
             </Link>
             <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed text-[11px] font-bold">
               <span className="material-symbols-outlined text-[13px]">verified</span>
-              Mall Partner
+              {t("product.shop_info.partner_badge")}
             </span>
           </div>
 
@@ -124,9 +128,9 @@ export const ProductShopInfo: React.FC<ProductShopInfoProps> = ({ shop }) => {
               ★ 4.9 <span className="text-outline font-normal ml-0.5">(18.4k)</span>
             </span>
             <span>•</span>
-            <span>{formattedFollowers} người theo dõi</span>
+            <span>{t("product.shop_info.followers", { count: formattedFollowers })}</span>
             <span>•</span>
-            <span className="text-primary font-semibold">98% Phản hồi chat</span>
+            <span className="text-primary font-semibold">{t("product.shop_info.chat_response")}</span>
           </div>
         </div>
       </div>
@@ -134,9 +138,9 @@ export const ProductShopInfo: React.FC<ProductShopInfoProps> = ({ shop }) => {
       <div className="flex items-center gap-2 shrink-0">
         <button
           type="button"
-          onClick={() => alert(`Bắt đầu chat với ${shop.name}`)}
+          onClick={() => alert(t("product.shop_info.chat_alert", { name: shop.name }))}
           className="w-9 h-9 rounded-xl bg-surface-container-low text-on-surface-variant hover:text-primary hover:bg-surface-container transition-all flex items-center justify-center cursor-pointer"
-          title="Nhắn tin với Shop"
+          title={t("product.shop_info.chat_btn_title")}
         >
           <span className="material-symbols-outlined text-[20px]">chat</span>
         </button>
@@ -154,14 +158,18 @@ export const ProductShopInfo: React.FC<ProductShopInfoProps> = ({ shop }) => {
           <span className="material-symbols-outlined text-[16px]">
             {followState.following ? "check" : "add"}
           </span>
-          <span>{followState.following ? "Đang theo dõi" : "Theo dõi"}</span>
+          <span>
+            {followState.following
+              ? t("product.shop_info.following")
+              : t("product.shop_info.follow")}
+          </span>
         </button>
 
         <Link
           to={`/shop/${shop.id}`}
           className="px-3 py-1.5 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-xs font-semibold transition-all inline-flex items-center"
         >
-          Xem Shop
+          {t("product.shop_info.view_shop")}
         </Link>
       </div>
 

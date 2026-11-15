@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { CartItem, ShopVoucher } from "@/domains/customer/types/cart.types";
 import CartItemRow from "./CartItemRow";
 import { formatCurrencyVND } from "@/shared/utils/currency";
@@ -38,6 +39,7 @@ export const CartShopGroup: React.FC<CartShopGroupProps> = ({
   onApplyShopVoucher,
   onRemoveShopVoucher,
 }) => {
+  const { t } = useTranslation("customer");
   const [voucherCodeInput, setVoucherCodeInput] = useState("");
   const [isApplyingVoucher, setIsApplyingVoucher] = useState(false);
   const [showVoucherInput, setShowVoucherInput] = useState(false);
@@ -119,14 +121,18 @@ export const CartShopGroup: React.FC<CartShopGroupProps> = ({
             className="text-secondary text-xs sm:text-sm flex items-center gap-0.5 hover:underline ml-1 cursor-pointer font-semibold"
           >
             <span className="material-symbols-outlined text-[15px]">chat</span>
-            <span>Chat</span>
+            <span>{t("cart.shop_group.chat")}</span>
           </button>
         </div>
 
         {voucher && voucher.is_applied ? (
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-container-highest text-primary-container text-xs font-bold">
             <span className="material-symbols-outlined text-[15px]">local_activity</span>
-            <span>Shop Voucher applied: -{formatCurrencyVND(voucher.discount_amount)}</span>
+            <span>
+              {t("cart.shop_group.shop_voucher_applied", {
+                discount: formatCurrencyVND(voucher.discount_amount),
+              })}
+            </span>
           </div>
         ) : shopLocation ? (
           <div className="text-outline text-xs font-medium">
@@ -154,19 +160,19 @@ export const CartShopGroup: React.FC<CartShopGroupProps> = ({
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 text-xs font-bold text-on-surface-variant">
             <span className="material-symbols-outlined text-[16px] text-primary">sell</span>
-            <span>Voucher của Shop:</span>
+            <span>{t("cart.shop_group.shop_voucher_label")}</span>
           </div>
 
           <div className="flex items-center gap-2 text-xs sm:text-sm">
             <span className="text-on-surface-variant">
-              Tổng shop ({selectedItemsCount} {selectedItemsCount === 1 ? "món" : "món"}):
+              {t("cart.shop_group.shop_total", { count: selectedItemsCount })}
             </span>
             <span className="font-label-lg text-sm sm:text-base text-on-surface font-bold">
               {formatCurrencyVND(finalShopTotal)}
             </span>
             {voucherDiscount > 0 && (
               <span className="text-secondary text-xs font-bold">
-                (Tiết kiệm {formatCurrencyVND(voucherDiscount)})
+                ({t("cart.shop_group.you_save", { amount: formatCurrencyVND(voucherDiscount) })})
               </span>
             )}
           </div>
@@ -197,7 +203,7 @@ export const CartShopGroup: React.FC<CartShopGroupProps> = ({
                           ? err
                           : err instanceof Error
                           ? err.message
-                          : "Không thể áp dụng voucher"
+                          : t("cart.shop_group.apply_voucher_failed")
                       );
                     } finally {
                       setIsApplyingVoucher(false);

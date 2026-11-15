@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { CheckoutAddress } from "@/domains/customer/api/cartApi";
 
 interface CheckoutAddressCardProps {
@@ -14,6 +15,7 @@ export const CheckoutAddressCard: React.FC<CheckoutAddressCardProps> = ({
   onSelectAddress,
   isLoading = false,
 }) => {
+  const { t } = useTranslation("customer");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [tempAddressId, setTempAddressId] = useState<number>(selectedAddressId);
 
@@ -39,7 +41,7 @@ export const CheckoutAddressCard: React.FC<CheckoutAddressCardProps> = ({
           <div className="flex items-center gap-2 text-primary">
             <span className="material-symbols-outlined text-[20px]">location_on</span>
             <span className="font-label-md text-xs sm:text-sm font-bold text-on-surface uppercase tracking-wide">
-              Địa chỉ nhận hàng (Delivery Address)
+              {t("checkout.address.title")}
             </span>
           </div>
 
@@ -49,18 +51,20 @@ export const CheckoutAddressCard: React.FC<CheckoutAddressCardProps> = ({
             disabled={isLoading || addresses.length === 0}
             className="font-label-sm text-xs text-primary hover:underline font-bold cursor-pointer disabled:opacity-50"
           >
-            {addresses.length > 1 ? "Thay đổi" : "Quản lý địa chỉ"}
+            {addresses.length > 1
+              ? t("checkout.address.change")
+              : t("checkout.address.manage")}
           </button>
         </div>
 
         {addresses.length === 0 ? (
           <div className="p-3 rounded-xl bg-amber-50 text-amber-800 text-xs sm:text-sm border border-amber-200 flex items-center justify-between">
-            <span>Bạn chưa có địa chỉ nhận hàng nào. Vui lòng thêm địa chỉ trong hồ sơ.</span>
+            <span>{t("checkout.address.no_address_notice")}</span>
             <a
               href="/profile/address"
               className="font-bold underline text-primary hover:text-primary-container shrink-0 ml-2"
             >
-              + Thêm địa chỉ
+              + {t("checkout.address.add_address")}
             </a>
           </div>
         ) : selectedAddress ? (
@@ -74,7 +78,7 @@ export const CheckoutAddressCard: React.FC<CheckoutAddressCardProps> = ({
               </span>
               {selectedAddress.is_default && (
                 <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider">
-                  Mặc định
+                  {t("checkout.address.default_badge")}
                 </span>
               )}
             </div>
@@ -103,7 +107,7 @@ export const CheckoutAddressCard: React.FC<CheckoutAddressCardProps> = ({
           <div className="w-full max-w-lg bg-surface-container-lowest rounded-2xl p-5 sm:p-6 shadow-xl flex flex-col gap-4 max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-outline-variant/40">
               <h3 className="font-bold text-base sm:text-lg text-on-surface">
-                Chọn địa chỉ nhận hàng
+                {t("checkout.address.modal_title")}
               </h3>
               <button
                 type="button"
@@ -145,7 +149,7 @@ export const CheckoutAddressCard: React.FC<CheckoutAddressCardProps> = ({
                         </span>
                         {addr.is_default && (
                           <span className="px-1.5 py-0.2 rounded bg-primary/10 text-primary text-[10px] font-bold uppercase">
-                            Mặc định
+                            {t("checkout.address.default_badge")}
                           </span>
                         )}
                       </div>
@@ -167,7 +171,7 @@ export const CheckoutAddressCard: React.FC<CheckoutAddressCardProps> = ({
                 onClick={() => setIsModalOpen(false)}
                 className="px-4 py-2.5 rounded-xl border border-outline-variant text-on-surface font-semibold text-xs sm:text-sm hover:bg-surface-container transition-colors cursor-pointer"
               >
-                Hủy
+                {t("checkout.address.modal_close")}
               </button>
               <button
                 type="button"
@@ -175,7 +179,7 @@ export const CheckoutAddressCard: React.FC<CheckoutAddressCardProps> = ({
                 disabled={!tempAddressId}
                 className="px-5 py-2.5 rounded-xl bg-primary text-on-primary font-bold text-xs sm:text-sm hover:bg-primary-container transition-all cursor-pointer shadow-xs active:scale-95 disabled:opacity-50"
               >
-                Xác nhận
+                {t("checkout.address.confirm_select")}
               </button>
             </div>
           </div>

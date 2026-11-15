@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { ProductItem, ProductVariant } from "@/domains/storefront/types";
 import { useAppDispatch, useAppSelector } from "@/app/state/store";
 import { addCartItem, selectVariantForCheckout } from "@/domains/customer/state/cartSlice";
@@ -45,6 +46,7 @@ export const ProductOrderSection: React.FC<ProductOrderSectionProps> = ({
   selectedVariant,
   onSelectVariant,
 }) => {
+  const { t } = useTranslation("customer");
   const [requestedQuantity, setRequestedQuantity] = useState<number>(1);
   const [cartToastMessage, setCartToastMessage] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -281,21 +283,21 @@ export const ProductOrderSection: React.FC<ProductOrderSectionProps> = ({
     setIsAdding(true);
     try {
       await dispatch(addCartItem({ variantId, quantity })).unwrap();
-      setCartToastMessage(`Đã thêm ${quantity} sản phẩm vào giỏ hàng.`);
+      setCartToastMessage(t("product.order.cart_added_msg", { name: product.name, quantity }));
       setToastState({
         isOpen: true,
-        title: "Đã thêm vào giỏ hàng",
-        message: `"${product.name}" (SL: ${quantity}) đã được thêm vào giỏ hàng.`,
+        title: t("product.order.cart_added_title"),
+        message: t("product.order.cart_added_msg", { name: product.name, quantity }),
         type: "success",
-        actionText: "Xem giỏ",
+        actionText: t("product.order.view_cart"),
         actionLink: "/cart",
       });
     } catch (error) {
-      const msg = error instanceof Error ? error.message : "Không thể thêm sản phẩm vào giỏ.";
+      const msg = error instanceof Error ? error.message : t("product.order.cannot_add_title");
       setActionError(msg);
       setToastState({
         isOpen: true,
-        title: "Không thể thêm vào giỏ",
+        title: t("product.order.cannot_add_title"),
         message: msg,
         type: "error",
       });
@@ -310,12 +312,12 @@ export const ProductOrderSection: React.FC<ProductOrderSectionProps> = ({
       return;
     }
     if (!canUseCustomerFeatures) {
-      setActionError("Tính năng mua hàng chỉ dành cho tài khoản người mua.");
+      setActionError(t("home.product_card.cart_error_buyer_only"));
       return;
     }
     const variantId = selectedVariant?.id || (variants.length > 0 ? variants[0].id : null);
     if (!variantId || currentStock < 1) {
-      setActionError("Vui lòng chọn phiên bản còn hàng trước khi mua ngay.");
+      setActionError(t("product.order.select_variant_prompt"));
       return;
     }
     setActionError(null);
@@ -325,11 +327,11 @@ export const ProductOrderSection: React.FC<ProductOrderSectionProps> = ({
       dispatch(selectVariantForCheckout(variantId));
       navigate("/checkout");
     } catch (error) {
-      const msg = error instanceof Error ? error.message : "Không thể tiến hành mua ngay.";
+      const msg = error instanceof Error ? error.message : t("product.order.cannot_buy_title");
       setActionError(msg);
       setToastState({
         isOpen: true,
-        title: "Không thể mua ngay",
+        title: t("product.order.cannot_buy_title"),
         message: msg,
         type: "error",
       });
@@ -344,7 +346,7 @@ export const ProductOrderSection: React.FC<ProductOrderSectionProps> = ({
       return;
     }
     if (!canUseCustomerFeatures) {
-      setActionError("Danh sách yêu thích chỉ dành cho tài khoản người mua.");
+      setActionError(t("home.product_card.wishlist_error_buyer_only"));
       return;
     }
     setActionError(null);
@@ -353,20 +355,22 @@ export const ProductOrderSection: React.FC<ProductOrderSectionProps> = ({
       await dispatch(toggleWishlistItem(product.id)).unwrap();
       setToastState({
         isOpen: true,
-        title: wasLiked ? "Đã bỏ thích sản phẩm" : "Đã thêm vào yêu thích",
+        title: wasLiked
+          ? t("home.product_card.wishlist_removed_title")
+          : t("home.product_card.wishlist_added_title"),
         message: wasLiked
-          ? `"${product.name}" đã được xóa khỏi danh sách yêu thích.`
-          : `"${product.name}" đã được lưu vào danh sách yêu thích.`,
+          ? t("home.product_card.wishlist_removed_msg", { name: product.name })
+          : t("home.product_card.wishlist_added_msg", { name: product.name }),
         type: "success",
-        actionText: "Xem yêu thích",
+        actionText: t("home.product_card.view_wishlist"),
         actionLink: "/wishlist",
       });
     } catch (error) {
-      const msg = error instanceof Error ? error.message : "Không thể cập nhật danh sách yêu thích.";
+      const msg = error instanceof Error ? error.message : t("product.shop_info.action_failed");
       setActionError(msg);
       setToastState({
         isOpen: true,
-        title: "Thao tác thất bại",
+        title: t("home.product_card.action_failed"),
         message: msg,
         type: "error",
       });
@@ -586,7 +590,11 @@ export const ProductOrderSection: React.FC<ProductOrderSectionProps> = ({
                         isSelected ? "text-on-primary/80" : "text-outline"
                       }`}
                     >
-                      ({v.stock > 0 ? `${v.stock} sẵn` : "Hết hàng"})
+                      (
+                      {v.stock > 0
+                        ? t("product.order.stock_suffix", { count: v.stock })
+                        : t("product.order.out_of_stock")}
+                      )
                     </span>
                   </button>
                 );
@@ -598,7 +606,9 @@ export const ProductOrderSection: React.FC<ProductOrderSectionProps> = ({
         {/* Quantity Stepper & Stock status */}
         <div className="flex items-center justify-between pt-1 flex-wrap gap-2">
           <div className="flex items-center gap-3">
-            <span className="font-label-lg font-bold text-on-surface text-sm">Số lượng:</span>
+            <span className="font-label-lg font-bold text-on-surface text-sm">
+              {t("product.order.quantity")}
+            </span>
             <div className="inline-flex items-center rounded-xl bg-surface-container-lowest p-1 shadow-sm border border-outline-variant/30">
               <button
                 type="button"
@@ -633,17 +643,17 @@ export const ProductOrderSection: React.FC<ProductOrderSectionProps> = ({
             {currentStock <= 5 && currentStock > 0 ? (
               <span className="text-amber-600 flex items-center gap-1 animate-pulse font-bold">
                 <span className="material-symbols-outlined text-[18px]">emergency</span>
-                Chỉ còn {currentStock} sản phẩm trong kho!
+                {t("product.order.low_stock", { count: currentStock })}
               </span>
             ) : currentStock <= 0 ? (
               <span className="text-error font-bold flex items-center gap-1">
                 <span className="material-symbols-outlined text-[18px]">block</span>
-                Tạm thời hết hàng
+                {t("product.order.out_of_stock")}
               </span>
             ) : (
               <span className="text-secondary flex items-center gap-1">
                 <span className="material-symbols-outlined text-[18px]">check_circle</span>
-                {currentStock} sản phẩm có sẵn
+                {t("product.order.in_stock", { count: currentStock })}
               </span>
             )}
           </div>
@@ -660,7 +670,11 @@ export const ProductOrderSection: React.FC<ProductOrderSectionProps> = ({
           className="flex-1 py-4 px-6 rounded-xl bg-surface-container-lowest hover:bg-surface-container text-primary font-label-lg font-bold transition-all flex items-center justify-center gap-2 shadow-sm transform active:scale-[0.98] border border-primary/30 cursor-pointer disabled:opacity-50"
         >
           <span className="material-symbols-outlined text-[20px]">add_shopping_cart</span>
-          <span>{isAdding ? "Đang thêm..." : "Thêm Vào Giỏ Hàng"}</span>
+          <span>
+            {isAdding
+              ? t("product.order.adding_to_cart")
+              : t("product.order.add_to_cart")}
+          </span>
         </button>
 
         {/* Buy Now Primary CTA (Replaces View cart button) */}
@@ -671,7 +685,11 @@ export const ProductOrderSection: React.FC<ProductOrderSectionProps> = ({
           className="flex-1 py-4 px-6 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-label-lg font-bold transition-all flex items-center justify-center gap-2 shadow-md transform active:scale-[0.98] cursor-pointer disabled:opacity-50"
         >
           <span className="material-symbols-outlined text-[20px]">flash_on</span>
-          <span>{isBuyingNow ? "Đang chuyển thanh toán..." : "Mua Ngay"}</span>
+          <span>
+            {isBuyingNow
+              ? t("product.order.buying_now")
+              : t("product.order.buy_now")}
+          </span>
         </button>
       </div>
 

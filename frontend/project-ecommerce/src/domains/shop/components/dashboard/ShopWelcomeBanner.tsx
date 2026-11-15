@@ -9,13 +9,6 @@ interface ShopWelcomeBannerProps {
   isLoading?: boolean;
 }
 
-const FILTER_OPTIONS: { id: ShopDateFilter; label: string }[] = [
-  { id: "today", label: "Hôm nay" },
-  { id: "yesterday", label: "Hôm qua" },
-  { id: "7days", label: "7 ngày qua" },
-  { id: "this_month", label: "Tháng này" },
-];
-
 export const ShopWelcomeBanner: React.FC<ShopWelcomeBannerProps> = ({
   shopInfo,
   activeFilter,
@@ -23,6 +16,13 @@ export const ShopWelcomeBanner: React.FC<ShopWelcomeBannerProps> = ({
   onRefresh,
   isLoading = false,
 }) => {
+  const filterOptions: { id: ShopDateFilter; label: string }[] = [
+    { id: "today", label: "Hôm nay" },
+    { id: "yesterday", label: "Hôm qua" },
+    { id: "7days", label: "7 ngày qua" },
+    { id: "this_month", label: "Tháng này" },
+  ];
+
   return (
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 py-6 border-b border-outline-variant/30">
       <div className="flex flex-col gap-1.5">
@@ -32,7 +32,7 @@ export const ShopWelcomeBanner: React.FC<ShopWelcomeBannerProps> = ({
             {shopInfo.tierBadge}
           </span>
           <span className="text-outline font-body-sm text-body-sm">
-            • Mã gian hàng: <strong className="text-on-surface font-mono">{shopInfo.shopCode}</strong>
+            • Mã gian hàng: {shopInfo.shopCode}
           </span>
           <span className="text-outline font-body-sm text-body-sm">
             • Đồng bộ lúc: {shopInfo.lastSyncTime}
@@ -51,7 +51,7 @@ export const ShopWelcomeBanner: React.FC<ShopWelcomeBannerProps> = ({
       {/* Toolbar Filters & Refresh matching DashboardHeader */}
       <div className="flex items-center flex-wrap gap-3">
         <div className="inline-flex p-1 rounded-xl bg-surface-container shadow-sm border border-outline-variant/30">
-          {FILTER_OPTIONS.map((opt) => {
+          {filterOptions.map((opt) => {
             const isActive = activeFilter === opt.id;
             return (
               <button

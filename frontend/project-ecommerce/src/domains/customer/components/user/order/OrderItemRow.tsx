@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { UserOrderItem } from "@/shared/types";
 
 interface OrderItemRowProps {
@@ -11,6 +12,8 @@ export const OrderItemRow: React.FC<OrderItemRowProps> = ({
   item,
   showShopHeader = false,
 }) => {
+  const { t } = useTranslation("customer");
+
   const formatPrice = (price: number) => {
     return price.toLocaleString("vi-VN") + " ₫";
   };
@@ -46,7 +49,7 @@ export const OrderItemRow: React.FC<OrderItemRowProps> = ({
             to={`/shop/${item.shopId}`}
             className="ml-auto px-2 py-0.5 rounded bg-surface-container-low hover:bg-surface-container text-on-surface font-label-sm text-[11px] transition-colors"
           >
-            Xem Shop
+            {t("profile.orders.item.view_shop")}
           </Link>
         </div>
       )}
@@ -81,7 +84,7 @@ export const OrderItemRow: React.FC<OrderItemRowProps> = ({
 
             <div className="flex items-center gap-2 mt-0.5 flex-wrap">
               <span className="font-body-sm text-body-sm text-on-surface-variant">
-                Phân loại: {item.variantName}
+                {t("profile.orders.item.variant", { name: item.variantName })}
               </span>
               {item.discountVoucherText && (
                 <span className="px-1.5 py-0.5 rounded bg-tertiary-fixed text-on-tertiary-fixed-variant font-label-sm text-[10px] font-bold">
@@ -92,11 +95,11 @@ export const OrderItemRow: React.FC<OrderItemRowProps> = ({
 
             <div className="flex items-center gap-3 mt-1">
               <span className="font-body-sm text-[12px] text-outline">
-                Số lượng: x{item.quantity}
+                {t("profile.orders.item.quantity", { qty: item.quantity })}
               </span>
               <span className="text-outline text-xs">•</span>
               <span className="font-body-sm text-[12px] text-outline">
-                Đơn giá: {formatPrice(item.unitPrice)}
+                {t("profile.orders.item.unit_price", { price: formatPrice(item.unitPrice) })}
               </span>
             </div>
           </div>

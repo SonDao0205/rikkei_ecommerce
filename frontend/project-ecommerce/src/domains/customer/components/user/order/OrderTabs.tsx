@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import type {
   UserOrderStatusTab,
   UserOrderStatusCounts,
@@ -17,60 +18,62 @@ interface TabConfig {
   badgeColorClass?: string;
 }
 
-const TABS: TabConfig[] = [
-  {
-    key: "all",
-    label: "Tất cả",
-    countKey: "all",
-    badgeColorClass: "bg-primary text-on-primary",
-  },
-  {
-    key: "pending",
-    label: "Chờ xác nhận",
-    countKey: "pending",
-    badgeColorClass: "bg-amber-100 text-amber-900",
-  },
-  {
-    key: "packing",
-    label: "Shop đang xử lý",
-    countKey: "packing",
-    badgeColorClass: "bg-blue-100 text-blue-900",
-  },
-  {
-    key: "shipping",
-    label: "Đang vận chuyển",
-    countKey: "shipping",
-    badgeColorClass: "bg-secondary-fixed text-on-secondary-fixed-variant",
-  },
-  {
-    key: "completed",
-    label: "Hoàn thành",
-    countKey: "completed",
-    badgeColorClass: "bg-emerald-100 text-emerald-900",
-  },
-  {
-    key: "cancelled",
-    label: "Đã hủy",
-    countKey: "cancelled",
-    badgeColorClass: "bg-surface-container text-on-surface-variant",
-  },
-  {
-    key: "returned",
-    label: "Trả hàng / Hoàn tiền",
-    countKey: "returned",
-    badgeColorClass: "bg-surface-container text-on-surface-variant",
-  },
-];
-
 export const OrderTabs: React.FC<OrderTabsProps> = ({
   currentTab,
   counts,
   onTabChange,
 }) => {
+  const { t } = useTranslation("customer");
+
+  const tabs: TabConfig[] = [
+    {
+      key: "all",
+      label: t("profile.orders.tabs.all"),
+      countKey: "all",
+      badgeColorClass: "bg-primary text-on-primary",
+    },
+    {
+      key: "pending",
+      label: t("profile.orders.tabs.pending"),
+      countKey: "pending",
+      badgeColorClass: "bg-amber-100 text-amber-900",
+    },
+    {
+      key: "packing",
+      label: t("profile.orders.tabs.packing"),
+      countKey: "packing",
+      badgeColorClass: "bg-blue-100 text-blue-900",
+    },
+    {
+      key: "shipping",
+      label: t("profile.orders.tabs.shipping"),
+      countKey: "shipping",
+      badgeColorClass: "bg-secondary-fixed text-on-secondary-fixed-variant",
+    },
+    {
+      key: "completed",
+      label: t("profile.orders.tabs.completed"),
+      countKey: "completed",
+      badgeColorClass: "bg-emerald-100 text-emerald-900",
+    },
+    {
+      key: "cancelled",
+      label: t("profile.orders.tabs.cancelled"),
+      countKey: "cancelled",
+      badgeColorClass: "bg-surface-container text-on-surface-variant",
+    },
+    {
+      key: "returned",
+      label: t("profile.orders.tabs.returned"),
+      countKey: "returned",
+      badgeColorClass: "bg-surface-container text-on-surface-variant",
+    },
+  ];
+
   return (
     <div className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/40 overflow-x-auto scrollbar-none">
       <div className="flex items-center min-w-max px-2">
-        {TABS.map((tab) => {
+        {tabs.map((tab) => {
           const isActive = currentTab === tab.key;
           const count = tab.countKey ? counts[tab.countKey] : 0;
 
@@ -98,7 +101,7 @@ export const OrderTabs: React.FC<OrderTabsProps> = ({
               )}
 
               {isActive && (
-                <div className="absolute bottom-0 left-2 right-2 h-0.5 bg-primary rounded-full" />
+                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
               )}
             </button>
           );

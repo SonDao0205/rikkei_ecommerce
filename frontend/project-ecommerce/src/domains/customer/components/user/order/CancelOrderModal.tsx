@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { UserOrder } from "@/shared/types";
 
 interface CancelOrderModalProps {
@@ -9,15 +10,6 @@ interface CancelOrderModalProps {
   loading?: boolean;
 }
 
-const REASONS = [
-  "Đổi ý không muốn mua nữa",
-  "Muốn thay đổi địa chỉ nhận hàng",
-  "Muốn đổi sản phẩm, kích thước hoặc màu sắc khác",
-  "Tìm thấy giá tốt hơn ở nơi khác",
-  "Thời gian giao hàng dự kiến quá lâu",
-  "Lý do khác",
-];
-
 export const CancelOrderModal: React.FC<CancelOrderModalProps> = ({
   order,
   isOpen,
@@ -25,7 +17,18 @@ export const CancelOrderModal: React.FC<CancelOrderModalProps> = ({
   onConfirmCancel,
   loading = false,
 }) => {
-  const [selectedReason, setSelectedReason] = useState(REASONS[0]);
+  const { t } = useTranslation("customer");
+
+  const reasons = [
+    { key: "change_mind", label: t("profile.orders.cancel_modal.reasons.change_mind") },
+    { key: "change_address", label: t("profile.orders.cancel_modal.reasons.change_address") },
+    { key: "change_product", label: t("profile.orders.cancel_modal.reasons.change_product") },
+    { key: "found_cheaper", label: t("profile.orders.cancel_modal.reasons.found_cheaper") },
+    { key: "delivery_too_long", label: t("profile.orders.cancel_modal.reasons.delivery_too_long") },
+    { key: "other", label: t("profile.orders.cancel_modal.reasons.other") },
+  ];
+
+  const [selectedReasonKey, setSelectedReasonKey] = useState("change_mind");
   const [customReason, setCustomReason] = useState("");
 
   if (!isOpen || !order) return null;
@@ -35,10 +38,12 @@ export const CancelOrderModal: React.FC<CancelOrderModalProps> = ({
       e.preventDefault();
     }
     if (loading) return;
+
+    const matchedReason = reasons.find((r) => r.key === selectedReasonKey);
     const finalReason =
-      selectedReason === "Lý do khác" && customReason.trim()
+      selectedReasonKey === "other" && customReason.trim()
         ? customReason.trim()
-        : selectedReason;
+        : matchedReason?.label || "Lý do khác";
 
     onConfirmCancel(order.id, finalReason);
   };
@@ -56,10 +61,10 @@ export const CancelOrderModal: React.FC<CancelOrderModalProps> = ({
             </div>
             <div>
               <h3 className="font-headline-md text-headline-md font-bold text-on-surface">
-                Hủy đơn hàng {order.orderCode}
+                {t("profile.orders.cancel_modal.title", { code: order.orderCode })}
               </h3>
               <p className="font-body-sm text-body-sm text-on-surface-variant">
-                Vui lòng chọn lý do để sàn và người bán hoàn thiện dịch vụ
+                {t("profile.orders.cancel_modal.subtitle")}
               </p>
             </div>
           </div>
@@ -76,34 +81,34 @@ export const CancelOrderModal: React.FC<CancelOrderModalProps> = ({
         <form onSubmit={handleSubmit} className="p-5 flex flex-col gap-4">
           <div className="flex flex-col gap-2">
             <span className="font-label-md text-label-md font-semibold text-on-surface">
-              Lý do hủy đơn:
+              {t("profile.orders.cancel_modal.reason_label")}
             </span>
             <div className="flex flex-col gap-2">
-              {REASONS.map((reason) => (
+              {reasons.map((reason) => (
                 <label
-                  key={reason}
+                  key={reason.key}
                   className="flex items-center gap-2.5 p-2.5 rounded-xl border border-outline-variant/40 hover:bg-surface-container-low transition-colors cursor-pointer"
                 >
                   <input
                     type="radio"
                     name="cancel_reason"
-                    value={reason}
-                    checked={selectedReason === reason}
-                    onChange={() => setSelectedReason(reason)}
+                    value={reason.key}
+                    checked={selectedReasonKey === reason.key}
+                    onChange={() => setSelectedReasonKey(reason.key)}
                     className="w-4 h-4 text-primary focus:ring-primary"
                   />
                   <span className="font-body-md text-body-md text-on-surface">
-                    {reason}
+                    {reason.label}
                   </span>
                 </label>
               ))}
             </div>
 
-            {selectedReason === "Lý do khác" && (
+            {selectedReasonKey === "other" && (
               <textarea
                 value={customReason}
                 onChange={(e) => setCustomReason(e.target.value)}
-                placeholder="Nhập chi tiết lý do của bạn..."
+                placeholder={t("profile.orders.cancel_modal.custom_placeholder")}
                 rows={3}
                 required
                 className="w-full mt-2 p-3 rounded-xl border border-outline-variant/40 bg-surface-container-low text-on-surface placeholder:text-outline font-body-md text-body-md focus:outline-none focus:border-primary"
@@ -112,9 +117,7 @@ export const CancelOrderModal: React.FC<CancelOrderModalProps> = ({
           </div>
 
           <div className="p-3 rounded-xl bg-surface-container-low text-body-sm text-on-surface-variant text-xs">
-            <span className="font-bold text-on-surface">Lưu ý:</span> Đơn hàng sau khi
-            hủy sẽ không thể khôi phục lại. Bạn có thể chọn sản phẩm và đặt lại đơn mới
-            bất cứ lúc nào.
+            {t("profile.orders.cancel_modal.warning_note")}
           </div>
 
           {/* Footer Buttons */}
@@ -125,7 +128,7 @@ export const CancelOrderModal: React.FC<CancelOrderModalProps> = ({
               disabled={loading}
               className="px-4 py-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md transition-colors cursor-pointer"
             >
-              Giữ lại đơn
+              {t("profile.orders.cancel_modal.keep_order")}
             </button>
             <button
               type="submit"
@@ -136,7 +139,11 @@ export const CancelOrderModal: React.FC<CancelOrderModalProps> = ({
               {loading && (
                 <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               )}
-              <span>{loading ? "Đang hủy..." : "Xác nhận hủy"}</span>
+              <span>
+                {loading
+                  ? t("profile.orders.cancel_modal.cancelling")
+                  : t("profile.orders.cancel_modal.confirm_cancel")}
+              </span>
             </button>
           </div>
         </form>

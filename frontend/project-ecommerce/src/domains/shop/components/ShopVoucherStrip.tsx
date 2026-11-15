@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import type { ShopVoucherItem } from "@/domains/shop/types/shopVoucher.types";
 import { shopVoucherApi } from "@/domains/shop/api/shopVoucherApi";
 import ShopVouchersModal from "./ShopVouchersModal";
@@ -13,6 +14,7 @@ export const ShopVoucherStrip: React.FC<ShopVoucherStripProps> = ({
   shopId,
   shopName = "Gian hàng",
 }) => {
+  const { t } = useTranslation("customer");
   const [vouchers, setVouchers] = useState<ShopVoucherItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -58,7 +60,7 @@ export const ShopVoucherStrip: React.FC<ShopVoucherStripProps> = ({
       await shopVoucherApi.claimShopVoucher(id);
       setClaimedMap((prev) => ({ ...prev, [id]: true }));
     } catch {
-      setClaimError("Đăng nhập bằng tài khoản người mua để lưu voucher.");
+      setClaimError(t("public_shop.vouchers.login_to_claim"));
     }
   };
 
@@ -76,11 +78,10 @@ export const ShopVoucherStrip: React.FC<ShopVoucherStripProps> = ({
           </div>
           <div>
             <h3 className="font-headline-md text-headline-md font-bold text-on-surface">
-              Mã giảm giá độc quyền từ Shop
+              {t("public_shop.vouchers.exclusive_title")}
             </h3>
             <p className="font-body-sm text-body-sm text-on-surface-variant">
-              Thu thập mã giảm giá để áp dụng ngay tại bước thanh toán của gian hàng{" "}
-              {shopName}
+              {t("public_shop.vouchers.exclusive_desc", { shopName })}
             </p>
           </div>
         </div>
@@ -91,7 +92,7 @@ export const ShopVoucherStrip: React.FC<ShopVoucherStripProps> = ({
           onClick={() => setIsModalOpen(true)}
           className="flex items-center gap-1 font-label-md text-label-md text-primary hover:text-primary-container cursor-pointer transition-colors self-start sm:self-auto group"
         >
-          <span>Xem tất cả ưu đãi</span>
+          <span>{t("public_shop.vouchers.view_all")}</span>
           <span className="material-symbols-outlined text-[16px] group-hover:translate-x-0.5 transition-transform">
             chevron_right
           </span>
@@ -162,7 +163,7 @@ export const ShopVoucherStrip: React.FC<ShopVoucherStripProps> = ({
                   <span className="material-symbols-outlined text-[16px]">
                     check_circle
                   </span>
-                  <span>Đã lưu</span>
+                  <span>{t("public_shop.vouchers.claimed")}</span>
                 </button>
               ) : (
                 <button
@@ -170,7 +171,7 @@ export const ShopVoucherStrip: React.FC<ShopVoucherStripProps> = ({
                   onClick={() => handleClaim(voucher.id)}
                   className="shrink-0 h-9 px-4 rounded-lg bg-primary-container text-on-primary hover:bg-primary font-label-md text-label-md transition-all cursor-pointer shadow-xs active:scale-95"
                 >
-                  Lưu mã
+                  {t("public_shop.vouchers.claim")}
                 </button>
               )}
             </div>

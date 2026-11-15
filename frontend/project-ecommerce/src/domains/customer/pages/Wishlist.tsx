@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import CustomerLayout from "@/app/layout/CustomerLayout";
 import {
   WishlistBreadcrumb,
@@ -31,6 +32,7 @@ import type {
 } from "@/domains/customer/types/wishlist.types";
 
 export const Wishlist: React.FC = () => {
+  const { t } = useTranslation("customer");
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { isAuthenticated } = useAppSelector((state) => state.auth);
@@ -55,7 +57,7 @@ export const Wishlist: React.FC = () => {
     isOpen: false,
     title: "",
     message: "",
-    actionText: "Xem yêu thích",
+    actionText: "",
     actionLink: "/wishlist",
   });
 
@@ -80,14 +82,14 @@ export const Wishlist: React.FC = () => {
   const showToast = (
     title: string,
     message: string,
-    actionText: string = "Xem yêu thích",
+    actionText?: string,
     actionLink: string = "/wishlist"
   ) => {
     setToastState({
       isOpen: true,
       title,
       message,
-      actionText,
+      actionText: actionText || t("wishlist.toast.view_wishlist"),
       actionLink,
     });
   };
@@ -150,9 +152,12 @@ export const Wishlist: React.FC = () => {
     const productId = item?.product_id || id;
     try {
       await dispatch(removeFromWishlist(productId)).unwrap();
-      showToast("Đã bỏ thích sản phẩm", `"${item?.name || "Sản phẩm"}" đã được xóa khỏi danh sách.`);
+      showToast(
+        t("wishlist.toast.removed_title"),
+        t("wishlist.toast.removed_msg", { name: item?.name || "Sản phẩm" })
+      );
     } catch {
-      showToast("Lỗi", "Không thể xóa sản phẩm khỏi danh sách yêu thích.");
+      showToast(t("wishlist.toast.error_title"), t("wishlist.toast.error_remove"));
     }
   };
 
@@ -170,23 +175,23 @@ export const Wishlist: React.FC = () => {
           addToCart({ variantId: defaultVariant.id, quantity: 1 })
         ).unwrap();
         showToast(
-          "Đã thêm vào giỏ hàng",
-          `"${item.name}" đã được thêm vào giỏ.`,
-          "Xem giỏ",
+          t("wishlist.toast.added_to_cart_title"),
+          t("wishlist.toast.added_to_cart_msg", { name: item.name }),
+          t("wishlist.toast.view_cart"),
           "/cart"
         );
       } else {
         navigate(`/product/${item.product_id}`);
         showToast(
-          "Đang mở trang sản phẩm",
-          `Vui lòng chọn size/màu sắc của "${item.name}".`
+          t("wishlist.toast.choose_variant_title"),
+          t("wishlist.toast.choose_variant_msg", { name: item.name })
         );
       }
     } catch {
       navigate(`/product/${item.product_id}`);
       showToast(
-        "Đang mở trang sản phẩm",
-        `Vui lòng chọn size/màu sắc của "${item.name}".`
+        t("wishlist.toast.choose_variant_title"),
+        t("wishlist.toast.choose_variant_msg", { name: item.name })
       );
     }
   };
@@ -218,9 +223,9 @@ export const Wishlist: React.FC = () => {
 
     if (addedCount > 0) {
       showToast(
-        "Đã thêm vào giỏ hàng",
-        `Đã chuyển ${addedCount} sản phẩm còn hàng vào giỏ.`,
-        "Xem giỏ",
+        t("wishlist.toast.added_all_title"),
+        t("wishlist.toast.added_all_msg", { count: addedCount }),
+        t("wishlist.toast.view_cart"),
         "/cart"
       );
     } else {
@@ -229,35 +234,29 @@ export const Wishlist: React.FC = () => {
   };
 
   const handleClearAll = async () => {
-    if (
-      window.confirm(
-        "Bạn có chắc chắn muốn xóa toàn bộ sản phẩm khỏi danh sách yêu thích?"
-      )
-    ) {
+    if (window.confirm(t("wishlist.toast.clear_confirm"))) {
       try {
         await dispatch(clearWishlist()).unwrap();
-        showToast("Đã xóa tất cả", "Danh sách yêu thích của bạn hiện đang trống.");
+        showToast(t("wishlist.toast.cleared_title"), t("wishlist.toast.cleared_msg"));
       } catch {
-        showToast("Lỗi", "Không thể làm sạch danh sách yêu thích.");
+        showToast(t("wishlist.toast.error_title"), t("wishlist.toast.error_clear"));
       }
     }
   };
 
   const handleNotifyRestock = (item: WishlistItem) => {
-    alert(
-      `Hệ thống sẽ gửi thông báo qua Zalo/Email cho bạn ngay khi sản phẩm "${item.name}" có sẵn trở lại!`
-    );
+    alert(t("wishlist.toast.notify_restock_alert", { name: item.name }));
   };
 
   const handleAddToWishlistFromReco = async (reco: WishlistRecommendation) => {
     try {
       await dispatch(addToWishlist(reco.product_id)).unwrap();
       showToast(
-        "Đã thêm vào yêu thích!",
-        `"${reco.name}" đã được lưu vào danh sách yêu thích.`
+        t("wishlist.toast.added_wishlist_title"),
+        t("wishlist.toast.added_wishlist_msg", { name: reco.name })
       );
     } catch {
-      showToast("Lỗi", "Không thể thêm vào danh sách yêu thích.");
+      showToast(t("wishlist.toast.error_title"), t("wishlist.toast.error_add"));
     }
   };
 
@@ -283,7 +282,7 @@ export const Wishlist: React.FC = () => {
         isOpen={toastState.isOpen}
         title={toastState.title}
         message={toastState.message}
-        actionText={toastState.actionText || "Xem yêu thích"}
+        actionText={toastState.actionText || t("wishlist.toast.view_wishlist")}
         actionLink={toastState.actionLink || "/wishlist"}
         onClose={() => setToastState((prev) => ({ ...prev, isOpen: false }))}
       />
@@ -322,16 +321,18 @@ export const Wishlist: React.FC = () => {
             <div className="w-20 h-20 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-4">
               <span className="material-symbols-outlined text-[40px]">lock</span>
             </div>
-            <h2 className="text-xl font-bold text-on-surface mb-2">Đăng nhập để xem danh sách yêu thích</h2>
+            <h2 className="text-xl font-bold text-on-surface mb-2">
+              {t("wishlist.auth.login_required_title")}
+            </h2>
             <p className="text-sm text-outline mb-6">
-              Vui lòng đăng nhập tài khoản để xem các sản phẩm bạn đã lưu và nhận thông báo khi có ưu đãi.
+              {t("wishlist.auth.login_required_desc")}
             </p>
             <button
               type="button"
               onClick={() => navigate("/login?redirect=/wishlist")}
               className="px-6 py-3 rounded-xl bg-primary text-on-primary font-bold shadow-md hover:bg-primary-container transition-all cursor-pointer"
             >
-              Đăng nhập ngay
+              {t("wishlist.auth.login_btn")}
             </button>
           </div>
         ) : showEmptyState ? (
@@ -339,7 +340,7 @@ export const Wishlist: React.FC = () => {
         ) : displayedItems.length === 0 ? (
           <div className="py-12 text-center bg-surface-container-lowest rounded-xl border border-outline-variant/50">
             <p className="text-sm text-on-surface-variant font-semibold">
-              Không tìm thấy sản phẩm yêu thích nào khớp với bộ lọc hiện tại.
+              {t("wishlist.filter.no_results")}
             </p>
           </div>
         ) : (

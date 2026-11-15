@@ -113,7 +113,9 @@ export async function uploadMedia(file: File, purpose: MediaPurpose): Promise<Up
     body.append("file", file, file.name);
     const response = await axiosClient.post<MediaUploadEnvelope>("/api/v1/media", body, {
       timeout: 120000,
-      headers: { "Idempotency-Key": key },
+      // Override axiosClient's JSON default. The browser must set the
+      // multipart boundary for FormData uploads.
+      headers: { "Content-Type": undefined, "Idempotency-Key": key },
       onUploadProgress: (event) => {
         const progress = event.total ? Math.min(99, Math.round((event.loaded / event.total) * 100)) : 0;
         publish(jobs.map((item) => item.id === id ? { ...item, progress } : item));

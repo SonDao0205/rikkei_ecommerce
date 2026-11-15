@@ -1,0 +1,36 @@
+{
+  "actions": {
+    "save": "Save Changes",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "confirm": "Confirm",
+    "search": "Search",
+    "close": "Close",
+    "back": "Back",
+    "retry": "Retry",
+    "view_detail": "View Detail",
+    "copy": "Copy",
+    "copied": "Copied"
+  },
+  "status": {
+    "active": "Active",
+    "pending": "Pending",
+    "rejected": "Rejected",
+    "suspended": "Suspended",
+    "completed": "Completed",
+    "cancelled": "Cancelled"
+  },
+  "feedback": {
+    "loading": "Loading data...",
+    "no_data": "No data found",
+    "success": "Action completed successfully",
+    "error_occurred": "An error occurred, please try again"
+  },
+  "language": {
+    "select": "Select Language",
+    "vietnamese": "Tiếng Việt",
+    "english": "English"
+  }
+}
+

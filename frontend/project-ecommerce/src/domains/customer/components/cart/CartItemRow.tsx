@@ -1,5 +1,6 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { CartItem } from "@/domains/customer/types/cart.types";
 import { formatCurrencyVND } from "@/shared/utils/currency";
 
@@ -18,11 +19,14 @@ export const CartItemRow: React.FC<CartItemRowProps> = ({
   onRemove,
   onSaveForLater,
 }) => {
+  const { t } = useTranslation("customer");
   const navigate = useNavigate();
   const price = item.price ?? item.unit_price ?? 0;
   const originalPrice = item.original_price ?? price;
   const maxStock = item.max_stock ?? item.available_stock ?? 99;
-  const stockStatus = item.stock_status ?? (item.is_available ? "Còn hàng" : "Hết hàng");
+  const stockStatus =
+    item.stock_status ??
+    (item.is_available ? t("cart.item_row.in_stock") : t("cart.item_row.out_of_stock"));
   const isAvailable = item.is_available !== false;
   const isMinQuantity = item.quantity <= 1;
   const isMaxQuantity = item.quantity >= maxStock;
@@ -193,7 +197,7 @@ export const CartItemRow: React.FC<CartItemRowProps> = ({
               e.stopPropagation();
               onRemove(item.id);
             }}
-            title="Xóa sản phẩm"
+            title={t("cart.item_row.delete_title")}
             className="p-1 text-outline hover:text-error transition-colors cursor-pointer"
           >
             <span className="material-symbols-outlined text-[18px]">delete</span>
@@ -205,7 +209,7 @@ export const CartItemRow: React.FC<CartItemRowProps> = ({
                 e.stopPropagation();
                 onSaveForLater(item);
               }}
-              title="Lưu vào yêu thích"
+              title={t("cart.item_row.wishlist_title")}
               className="p-1 text-outline hover:text-tertiary-container transition-colors cursor-pointer"
             >
               <span className="material-symbols-outlined text-[18px]">favorite</span>

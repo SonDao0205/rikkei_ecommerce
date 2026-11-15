@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAppDispatch, useAppSelector } from "@/app/state/store";
 import { toggleWishlistItem } from "@/domains/customer/state/wishlistSlice";
 import WishlistToast from "@/domains/customer/components/wishlist/WishlistToast";
@@ -20,6 +21,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   onClick,
   onShopClick,
 }) => {
+  const { t } = useTranslation("customer");
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
@@ -67,8 +69,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
     if (!canUseCustomerFeatures) {
       setToastState({
         isOpen: true,
-        title: "Không khả dụng",
-        message: "Danh sách yêu thích chỉ dành cho tài khoản người mua.",
+        title: t("home.product_card.wishlist_unavailable_title"),
+        message: t("home.product_card.wishlist_error_buyer_only"),
         type: "error",
       });
       return;
@@ -79,18 +81,20 @@ const ProductCard: React.FC<ProductCardProps> = ({
       await dispatch(toggleWishlistItem(product.id)).unwrap();
       setToastState({
         isOpen: true,
-        title: wasLiked ? "Đã bỏ thích sản phẩm" : "Đã thêm vào yêu thích",
+        title: wasLiked
+          ? t("home.product_card.wishlist_removed_title")
+          : t("home.product_card.wishlist_added_title"),
         message: wasLiked
-          ? `"${product.name}" đã được xóa khỏi danh sách yêu thích.`
-          : `"${product.name}" đã được lưu vào danh sách yêu thích.`,
+          ? t("home.product_card.wishlist_removed_msg", { name: product.name })
+          : t("home.product_card.wishlist_added_msg", { name: product.name }),
         type: "success",
       });
       onToggleWishlist?.(product);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Thao tác thất bại";
+      const msg = err instanceof Error ? err.message : t("home.product_card.action_failed");
       setToastState({
         isOpen: true,
-        title: "Thao tác thất bại",
+        title: t("home.product_card.action_failed"),
         message: msg,
         type: "error",
       });
@@ -105,11 +109,13 @@ const ProductCard: React.FC<ProductCardProps> = ({
       return;
     }
     if (!canUseCustomerFeatures) {
-      setActionError("Giỏ hàng chỉ dành cho tài khoản người mua.");
+      setActionError(t("home.product_card.cart_error_buyer_only"));
       return;
     }
     void Promise.resolve(onQuickAdd?.(product)).catch((error: unknown) => {
-      setActionError(error instanceof Error ? error.message : "Không thể thêm sản phẩm vào giỏ hàng.");
+      setActionError(
+        error instanceof Error ? error.message : t("home.product_card.cart_add_failed")
+      );
     });
   };
 
@@ -172,7 +178,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
         {/* Cart action appears only when a real cart handler is wired. */}
         {onQuickAdd && <div className="absolute inset-x-2 bottom-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
           <button onClick={handleQuickAddClick} disabled={cartUpdating} className="w-full py-2.5 rounded-lg bg-primary text-on-primary font-label-md text-label-md flex items-center justify-center gap-1.5 shadow-md hover:bg-primary-container transition-colors cursor-pointer disabled:opacity-60">
-            <span className="material-symbols-outlined text-[18px]">add_shopping_cart</span><span>Thêm vào giỏ</span>
+            <span className="material-symbols-outlined text-[18px]">add_shopping_cart</span><span>{t("home.product_card.add_to_cart")}</span>
           </button>
         </div>}
       </div>
@@ -287,7 +293,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
         title={toastState.title}
         message={toastState.message}
         type={toastState.type}
-        actionText="Xem yêu thích"
+        actionText={t("home.product_card.view_wishlist")}
         actionLink="/wishlist"
         onClose={() => setToastState((prev) => ({ ...prev, isOpen: false }))}
       />

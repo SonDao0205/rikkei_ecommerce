@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import CustomerLayout from "@/app/layout/CustomerLayout";
 import ShopBannerCard from "@/domains/shop/components/ShopBannerCard";
 import ShopVoucherStrip from "@/domains/shop/components/ShopVoucherStrip";
@@ -18,6 +19,7 @@ import {
 import type { CatalogQueryParams } from "@/shared/types";
 
 export const InforShop: React.FC = () => {
+  const { t } = useTranslation("customer");
   const { id } = useParams<{ id: string }>();
   const shopId = id ? parseInt(id, 10) : NaN;
 
@@ -136,17 +138,17 @@ export const InforShop: React.FC = () => {
             <span className="material-symbols-outlined text-3xl">error</span>
           </div>
           <h2 className="text-2xl font-bold text-on-surface mb-2">
-            Mã gian hàng không hợp lệ
+            {t("public_shop.invalid_shop_id")}
           </h2>
           <p className="text-on-surface-variant mb-6">
-            Đường dẫn gian hàng không chính xác hoặc đã bị thay đổi.
+            {t("public_shop.invalid_shop_desc")}
           </p>
           <Link
             to="/"
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-on-primary font-semibold hover:bg-primary-container transition-all"
           >
             <span className="material-symbols-outlined text-lg">arrow_back</span>
-            <span>Về trang chủ</span>
+            <span>{t("product.back_home")}</span>
           </Link>
         </div>
       </CustomerLayout>
@@ -159,7 +161,7 @@ export const InforShop: React.FC = () => {
         <div className="max-w-[1440px] mx-auto px-4 py-32 flex flex-col items-center justify-center gap-4">
           <div className="w-12 h-12 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
           <p className="text-sm font-semibold text-on-surface-variant animate-pulse">
-            Đang tải thông tin gian hàng...
+            {t("public_shop.loading")}
           </p>
         </div>
       </CustomerLayout>
@@ -174,17 +176,17 @@ export const InforShop: React.FC = () => {
             <span className="material-symbols-outlined text-3xl">storefront</span>
           </div>
           <h2 className="text-2xl font-bold text-on-surface mb-2">
-            Không tìm thấy gian hàng
+            {t("public_shop.not_found_title")}
           </h2>
           <p className="text-on-surface-variant max-w-md mx-auto mb-6">
-            Gian hàng này không tồn tại hoặc đã tạm ngừng hoạt động trên hệ thống sàn MarketPulse.
+            {t("public_shop.not_found_desc")}
           </p>
           <Link
             to="/"
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-on-primary font-semibold hover:bg-primary-container transition-all"
           >
             <span className="material-symbols-outlined text-lg">arrow_back</span>
-            <span>Về trang chủ</span>
+            <span>{t("product.back_home")}</span>
           </Link>
         </div>
       </CustomerLayout>
