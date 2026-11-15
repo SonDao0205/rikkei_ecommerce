@@ -14,9 +14,11 @@ export const ShopLayout: React.FC<ShopLayoutProps> = ({ children }) => {
   const location = useLocation();
   const dispatch = useAppDispatch();
   const { user, isAuthenticated, isInitialized } = useAppSelector(
-    (state) => state.auth
+    (state) => state.auth,
   );
-  const pendingOrders = useAppSelector((state) => state.shopOrder.counts.pending);
+  const pendingOrders = useAppSelector(
+    (state) => state.shopOrder.counts.pending,
+  );
   const totalProducts = useAppSelector((state) => state.shopProduct.total);
 
   useEffect(() => {
@@ -41,7 +43,11 @@ export const ShopLayout: React.FC<ShopLayoutProps> = ({ children }) => {
       : user?.role
         ? [user.role]
         : [];
-    if (!isAuthenticated || !userRoles.includes("seller") || user?.shop_status !== "ACTIVE") {
+    if (
+      !isAuthenticated ||
+      !userRoles.includes("seller") ||
+      user?.shop_status !== "ACTIVE"
+    ) {
       return <Navigate to="/register-open-shop" replace />;
     }
   }
@@ -71,8 +77,11 @@ export const ShopLayout: React.FC<ShopLayoutProps> = ({ children }) => {
           : undefined,
       badgeVariant: "error" as const,
     },
-    { label: "Quản lý voucher", path: "/shop/vouchers", icon: "confirmation_number" },
-    { label: "Ví & Doanh thu", path: "/shop/finances", icon: "account_balance_wallet" },
+    {
+      label: "Quản lý voucher",
+      path: "/shop/vouchers",
+      icon: "confirmation_number",
+    },
     { label: "Đánh giá", path: "/shop/reviews", icon: "rate_review" },
     {
       label: "Chăm sóc khách",
@@ -98,7 +107,9 @@ export const ShopLayout: React.FC<ShopLayoutProps> = ({ children }) => {
       {/* Sidebar Navigation - Style matching AdminLayout */}
       <aside
         className={`fixed left-0 top-0 h-full w-72 bg-inverse-surface text-inverse-on-surface z-50 flex flex-col justify-between py-6 px-4 shadow-[0_1px_8px_rgba(0,0,0,0.04)] transition-transform duration-300 lg:translate-x-0 ${
-          isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+          isMobileMenuOpen
+            ? "translate-x-0"
+            : "-translate-x-full lg:translate-x-0"
         }`}
       >
         <div className="flex flex-col gap-5">
@@ -132,10 +143,12 @@ export const ShopLayout: React.FC<ShopLayoutProps> = ({ children }) => {
           <nav className="flex flex-col gap-1.5 mt-1">
             {navItems.map((item) => {
               const isDashboard =
-                location.pathname === "/shop" || location.pathname === "/shop/dashboard";
+                location.pathname === "/shop" ||
+                location.pathname === "/shop/dashboard";
               const isActive =
                 (item.path === "/shop/dashboard" && isDashboard) ||
-                (item.path !== "/shop/dashboard" && location.pathname.startsWith(item.path));
+                (item.path !== "/shop/dashboard" &&
+                  location.pathname.startsWith(item.path));
 
               return (
                 <Link
@@ -164,10 +177,10 @@ export const ShopLayout: React.FC<ShopLayoutProps> = ({ children }) => {
                         item.badgeVariant === "error"
                           ? "bg-error text-on-error shadow-xs"
                           : item.badgeVariant === "secondary"
-                          ? "bg-secondary-container text-on-secondary-container"
-                          : isActive
-                          ? "bg-white/20 text-on-primary"
-                          : "bg-surface-container-highest/20 text-inverse-on-surface/80"
+                            ? "bg-secondary-container text-on-secondary-container"
+                            : isActive
+                              ? "bg-white/20 text-on-primary"
+                              : "bg-surface-container-highest/20 text-inverse-on-surface/80"
                       }`}
                     >
                       {item.badge}
@@ -203,7 +216,9 @@ export const ShopLayout: React.FC<ShopLayoutProps> = ({ children }) => {
               className="p-1.5 text-inverse-on-surface/60 hover:text-white hover:bg-inverse-surface/80 rounded-lg transition-colors cursor-pointer"
               title="Đăng xuất"
             >
-              <span className="material-symbols-outlined text-[20px]">logout</span>
+              <span className="material-symbols-outlined text-[20px]">
+                logout
+              </span>
             </button>
           </div>
         </div>
@@ -221,26 +236,33 @@ export const ShopLayout: React.FC<ShopLayoutProps> = ({ children }) => {
               className="lg:hidden p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-lg transition-colors"
               aria-label="Mở menu"
             >
-              <span className="material-symbols-outlined text-[22px]">menu</span>
+              <span className="material-symbols-outlined text-[22px]">
+                menu
+              </span>
             </button>
 
             <div className="flex items-center gap-2 font-label-md text-label-md text-on-surface-variant">
-              <span className="font-medium text-on-surface-variant">Kênh Người Bán</span>
-              <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+              <span className="font-medium text-on-surface-variant">
+                Kênh Người Bán
+              </span>
+              <span className="material-symbols-outlined text-[16px]">
+                chevron_right
+              </span>
               <span className="font-semibold text-on-surface">
                 {location.pathname.startsWith("/shop/product")
                   ? "Quản lý sản phẩm"
                   : location.pathname.startsWith("/shop/order")
-                  ? "Đơn hàng & Vận chuyển"
-                  : location.pathname.startsWith("/shop/voucher") || location.pathname.startsWith("/shop/promotion")
-                  ? "Quản lý voucher"
-                  : location.pathname.startsWith("/shop/finance")
-                  ? "Ví & Doanh thu"
-                  : location.pathname.startsWith("/shop/review")
-                  ? "Đánh giá"
-                  : location.pathname.startsWith("/shop/setting")
-                  ? "Cài đặt gian hàng"
-                  : "Tổng quan"}
+                    ? "Đơn hàng & Vận chuyển"
+                    : location.pathname.startsWith("/shop/voucher") ||
+                        location.pathname.startsWith("/shop/promotion")
+                      ? "Quản lý voucher"
+                      : location.pathname.startsWith("/shop/finance")
+                        ? "Ví & Doanh thu"
+                        : location.pathname.startsWith("/shop/review")
+                          ? "Đánh giá"
+                          : location.pathname.startsWith("/shop/setting")
+                            ? "Cài đặt gian hàng"
+                            : "Tổng quan"}
               </span>
             </div>
 
@@ -275,7 +297,9 @@ export const ShopLayout: React.FC<ShopLayoutProps> = ({ children }) => {
                 className="relative p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-full transition-colors cursor-pointer"
                 title="Thông báo"
               >
-                <span className="material-symbols-outlined text-[22px]">notifications</span>
+                <span className="material-symbols-outlined text-[22px]">
+                  notifications
+                </span>
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-error" />
               </button>
               <button
@@ -283,21 +307,27 @@ export const ShopLayout: React.FC<ShopLayoutProps> = ({ children }) => {
                 className="p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-full transition-colors cursor-pointer"
                 title="Tin nhắn khách hàng"
               >
-                <span className="material-symbols-outlined text-[22px]">chat</span>
+                <span className="material-symbols-outlined text-[22px]">
+                  chat
+                </span>
               </button>
               <button
                 type="button"
                 className="p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-full transition-colors cursor-pointer"
                 title="Trợ giúp"
               >
-                <span className="material-symbols-outlined text-[22px]">help_outline</span>
+                <span className="material-symbols-outlined text-[22px]">
+                  help_outline
+                </span>
               </button>
             </div>
 
             {/* User Profile Avatar */}
             <div className="flex items-center pl-1">
               <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-xs">
-                <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
+                <span className="material-symbols-outlined text-on-primary text-[18px]">
+                  person
+                </span>
               </div>
             </div>
           </div>

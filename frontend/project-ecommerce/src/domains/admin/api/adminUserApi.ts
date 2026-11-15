@@ -1,4 +1,4 @@
-import axiosClient, { shouldFallbackToMock } from "@/shared/api/axiosClient";
+import axiosClient from "@/shared/api/axiosClient";
 import type {
   AdminUserItem,
   AdminUserRole,
@@ -46,15 +46,15 @@ export const normalizeBackendUser = (bu: BackendUserItem): AdminUserItem => {
     bu.role?.toLowerCase() === "admin"
       ? "admin"
       : bu.role?.toLowerCase() === "seller" || roles.includes("seller")
-      ? "seller"
-      : "client";
+        ? "seller"
+        : "client";
 
   const status: AdminUserStatus =
     bu.status?.toUpperCase() === "LOCKED"
       ? "LOCKED"
       : bu.status?.toUpperCase() === "PENDING"
-      ? "PENDING"
-      : "ACTIVE";
+        ? "PENDING"
+        : "ACTIVE";
 
   return {
     id: `usr-${bu.id}`,
@@ -78,233 +78,19 @@ export const normalizeBackendUser = (bu: BackendUserItem): AdminUserItem => {
   };
 };
 
-export let mockAdminUsersStore: AdminUserItem[] = [
-  {
-    id: "usr-1001",
-    fullName: "Hoàng Minh Quang",
-    email: "hoangminhquang@gmail.com",
-    phone: "0912345678",
-    avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
-    roles: ["client", "seller"],
-    primaryRole: "seller",
-    status: "ACTIVE",
-    emailVerified: true,
-    phoneVerified: true,
-    createdAt: "2026-01-15T08:30:00Z",
-    lastLoginAt: "2026-11-08T10:15:00Z",
-    totalOrders: 18,
-    totalSpent: 42500000,
-    shopName: "MarketPulse Studio",
-    shopStatus: "ACTIVE",
-    addresses: [
-      {
-        id: "addr-1",
-        recipientName: "Hoàng Minh Quang",
-        phone: "0912345678",
-        fullAddress: "Tầng 5, Tòa nhà Keangnam, Mễ Trì, Nam Từ Liêm, Hà Nội",
-        isDefault: true,
-        type: "OFFICE",
-      },
-    ],
-  },
-  {
-    id: "usr-1002",
-    fullName: "Nguyễn Thu Hà",
-    email: "thuha.nguyen@outlook.com",
-    phone: "0987654321",
-    avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80",
-    roles: ["client"],
-    primaryRole: "client",
-    status: "ACTIVE",
-    emailVerified: true,
-    phoneVerified: true,
-    createdAt: "2026-03-20T14:20:00Z",
-    lastLoginAt: "2026-11-07T18:45:00Z",
-    totalOrders: 32,
-    totalSpent: 18900000,
-    addresses: [
-      {
-        id: "addr-2",
-        recipientName: "Nguyễn Thu Hà",
-        phone: "0987654321",
-        fullAddress: "Số 45, Đường Lê Duẩn, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
-        isDefault: true,
-        type: "HOME",
-      },
-    ],
-  },
-  {
-    id: "usr-1003",
-    fullName: "Trần Anh Đức",
-    email: "anhduc.tech@gmail.com",
-    phone: "0903112233",
-    avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80",
-    roles: ["client", "seller"],
-    primaryRole: "seller",
-    status: "ACTIVE",
-    emailVerified: true,
-    phoneVerified: true,
-    createdAt: "2026-02-10T09:12:00Z",
-    lastLoginAt: "2026-11-08T07:22:00Z",
-    totalOrders: 9,
-    totalSpent: 8750000,
-    shopName: "Gia Dụng Thông Minh Đức Phát",
-    shopStatus: "ACTIVE",
-    addresses: [
-      {
-        id: "addr-3",
-        recipientName: "Trần Anh Đức",
-        phone: "0903112233",
-        fullAddress: "Khu đô thị Sala, Mai Chí Thọ, TP. Thủ Đức, TP. Hồ Chí Minh",
-        isDefault: true,
-        type: "OFFICE",
-      },
-    ],
-  },
-  {
-    id: "usr-1004",
-    fullName: "Lê Hoàng Yến",
-    email: "hoangyen.le@gmail.com",
-    phone: "0934567890",
-    avatarUrl: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=150&q=80",
-    roles: ["client"],
-    primaryRole: "client",
-    status: "LOCKED",
-    emailVerified: true,
-    phoneVerified: false,
-    createdAt: "2026-05-18T11:00:00Z",
-    lastLoginAt: "2026-10-12T16:00:00Z",
-    totalOrders: 2,
-    totalSpent: 450000,
-    lockReason: "Nghi vấn gian lận đặt hàng ảo và bùng cọc COD nhiều lần",
-    lockedAt: "2026-10-15T09:00:00Z",
-    addresses: [
-      {
-        id: "addr-4",
-        recipientName: "Lê Hoàng Yến",
-        phone: "0934567890",
-        fullAddress: "128 Nguyễn Trãi, Thanh Xuân Bắc, Thanh Xuân, Hà Nội",
-        isDefault: true,
-        type: "HOME",
-      },
-    ],
-  },
-  {
-    id: "usr-1005",
-    fullName: "Admin Tổng Hệ Thống",
-    email: "admin@rikkei.vn",
-    phone: "0988001122",
-    avatarUrl: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80",
-    roles: ["admin"],
-    primaryRole: "admin",
-    status: "ACTIVE",
-    emailVerified: true,
-    phoneVerified: true,
-    createdAt: "2025-12-01T00:00:00Z",
-    lastLoginAt: "2026-11-08T11:00:00Z",
-    totalOrders: 0,
-    totalSpent: 0,
-  },
-  {
-    id: "usr-1006",
-    fullName: "Phạm Hải Đăng",
-    email: "haidang.fashion@gmail.com",
-    phone: "0971239876",
-    avatarUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80",
-    roles: ["client", "seller"],
-    primaryRole: "seller",
-    status: "PENDING",
-    emailVerified: false,
-    phoneVerified: true,
-    createdAt: "2026-11-02T13:40:00Z",
-    lastLoginAt: "2026-11-06T15:10:00Z",
-    totalOrders: 1,
-    totalSpent: 350000,
-    shopName: "Đăng Store Unisex",
-    shopStatus: "PENDING",
-  },
-  {
-    id: "usr-1007",
-    fullName: "Vũ Phương Linh",
-    email: "phuonglinh.vu@gmail.com",
-    phone: "0945671234",
-    avatarUrl: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=150&q=80",
-    roles: ["client"],
-    primaryRole: "client",
-    status: "ACTIVE",
-    emailVerified: true,
-    phoneVerified: true,
-    createdAt: "2026-06-14T10:05:00Z",
-    lastLoginAt: "2026-11-07T21:30:00Z",
-    totalOrders: 15,
-    totalSpent: 9800000,
-    addresses: [
-      {
-        id: "addr-7",
-        recipientName: "Vũ Phương Linh",
-        phone: "0945671234",
-        fullAddress: "88 Cầu Giấy, Phường Dịch Vọng, Quận Cầu Giấy, Hà Nội",
-        isDefault: true,
-        type: "HOME",
-      },
-    ],
-  },
-  {
-    id: "usr-1008",
-    fullName: "Đỗ Quốc Bảo",
-    email: "quocbao.do@gmail.com",
-    phone: "0963221155",
-    avatarUrl: null,
-    roles: ["client"],
-    primaryRole: "client",
-    status: "ACTIVE",
-    emailVerified: true,
-    phoneVerified: false,
-    createdAt: "2026-08-09T17:50:00Z",
-    lastLoginAt: "2026-11-05T12:00:00Z",
-    totalOrders: 7,
-    totalSpent: 3200000,
-  },
-  {
-    id: "usr-1009",
-    fullName: "Bùi Thanh Hương",
-    email: "thanhhuong.cosmetics@gmail.com",
-    phone: "0922889900",
-    avatarUrl: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=150&q=80",
-    roles: ["client", "seller"],
-    primaryRole: "seller",
-    status: "ACTIVE",
-    emailVerified: true,
-    phoneVerified: true,
-    createdAt: "2026-04-11T09:30:00Z",
-    lastLoginAt: "2026-11-08T08:10:00Z",
-    totalOrders: 24,
-    totalSpent: 16500000,
-    shopName: "Hương Cosmetics Korea",
-    shopStatus: "ACTIVE",
-  },
-  {
-    id: "usr-1010",
-    fullName: "Nguyễn Trọng Tín",
-    email: "trongtin.nguyen@gmail.com",
-    phone: "0909876543",
-    avatarUrl: null,
-    roles: ["client"],
-    primaryRole: "client",
-    status: "LOCKED",
-    emailVerified: true,
-    phoneVerified: true,
-    createdAt: "2026-07-01T15:20:00Z",
-    lastLoginAt: "2026-09-30T10:15:00Z",
-    totalOrders: 3,
-    totalSpent: 1200000,
-    lockReason: "Vi phạm chính sách đánh giá spam tiêu cực và tống tiền người bán",
-    lockedAt: "2026-10-02T14:30:00Z",
-  },
-];
+function parseNumericUserId(id: string | number): number {
+  const raw = String(id).replace(/^usr-/, "").trim();
+  const num = parseInt(raw, 10);
+  if (isNaN(num) || num <= 0) {
+    throw new Error("Mã người dùng không hợp lệ");
+  }
+  return num;
+}
 
 export const adminUserApi = {
-  async getAdminUsers(params: Partial<AdminUserFilterParams> = {}): Promise<AdminUserListResponse> {
+  fetchUsers: async function (
+    params: Partial<AdminUserFilterParams> = {},
+  ): Promise<AdminUserListResponse> {
     const {
       search = "",
       roleTab = "all",
@@ -314,31 +100,24 @@ export const adminUserApi = {
       pageSize = 10,
     } = params;
 
-    let userPool: AdminUserItem[];
-
-    try {
-      const response = await axiosClient.get<ApiResponse<BackendUserItem[]>>("/api/v1/admin/users");
-      if (response.data && response.data.success && Array.isArray(response.data.data)) {
-        userPool = response.data.data.map(normalizeBackendUser);
-        if (userPool.length > 0) {
-          mockAdminUsersStore = userPool;
-        }
-      } else {
-        userPool = [...mockAdminUsersStore];
-      }
-    } catch (error) {
-      if (shouldFallbackToMock(error) || (error as { code?: string })?.code === "ERR_NETWORK") {
-        userPool = [...mockAdminUsersStore];
-      } else {
-        userPool = [...mockAdminUsersStore];
-      }
-    }
+    const response = await axiosClient.get<ApiResponse<BackendUserItem[]>>(
+      "/api/v1/admin/users",
+    );
+    const rawUsers = response.data?.data;
+    const userPool: AdminUserItem[] = Array.isArray(rawUsers)
+      ? rawUsers.map(normalizeBackendUser)
+      : [];
 
     let filtered = [...userPool];
 
     // Filter by role tab
     if (roleTab === "client") {
-      filtered = filtered.filter((u) => u.roles.includes("client") && !u.roles.includes("seller") && !u.roles.includes("admin"));
+      filtered = filtered.filter(
+        (u) =>
+          u.roles.includes("client") &&
+          !u.roles.includes("seller") &&
+          !u.roles.includes("admin"),
+      );
     } else if (roleTab === "seller") {
       filtered = filtered.filter((u) => u.roles.includes("seller"));
     } else if (roleTab === "admin") {
@@ -361,7 +140,7 @@ export const adminUserApi = {
           u.email.toLowerCase().includes(q) ||
           u.phone.toLowerCase().includes(q) ||
           (u.shopName && u.shopName.toLowerCase().includes(q)) ||
-          u.id.toLowerCase().includes(q)
+          u.id.toLowerCase().includes(q),
       );
     }
 
@@ -369,9 +148,13 @@ export const adminUserApi = {
     filtered.sort((a, b) => {
       switch (sortBy) {
         case "newest":
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return (
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
         case "oldest":
-          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          return (
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          );
         case "totalSpent":
           return b.totalSpent - a.totalSpent;
         case "totalOrders":
@@ -407,150 +190,120 @@ export const adminUserApi = {
   },
 
   async getUserStats(): Promise<AdminUserStats> {
-    try {
-      const response = await axiosClient.get<ApiResponse<BackendUserItem[]>>("/api/v1/admin/users");
-      if (response.data && response.data.success && Array.isArray(response.data.data)) {
-        const users = response.data.data.map(normalizeBackendUser);
-        return {
-          totalUsers: users.length,
-          activeUsers: users.filter((u) => u.status === "ACTIVE").length,
-          clientUsers: users.filter((u) => u.roles.includes("client")).length,
-          sellerUsers: users.filter((u) => u.roles.includes("seller")).length,
-          adminUsers: users.filter((u) => u.roles.includes("admin")).length,
-          lockedUsers: users.filter((u) => u.status === "LOCKED").length,
-        };
-      }
-    } catch {
-      // fallback to mock
-    }
+    const response = await axiosClient.get<ApiResponse<BackendUserItem[]>>(
+      "/api/v1/admin/users",
+    );
+    const users = Array.isArray(response.data?.data)
+      ? response.data.data.map(normalizeBackendUser)
+      : [];
 
     return {
-      totalUsers: mockAdminUsersStore.length,
-      activeUsers: mockAdminUsersStore.filter((u) => u.status === "ACTIVE").length,
-      clientUsers: mockAdminUsersStore.filter((u) => u.roles.includes("client")).length,
-      sellerUsers: mockAdminUsersStore.filter((u) => u.roles.includes("seller")).length,
-      adminUsers: mockAdminUsersStore.filter((u) => u.roles.includes("admin")).length,
-      lockedUsers: mockAdminUsersStore.filter((u) => u.status === "LOCKED").length,
+      totalUsers: users.length,
+      activeUsers: users.filter((u) => u.status === "ACTIVE").length,
+      clientUsers: users.filter((u) => u.roles.includes("client")).length,
+      sellerUsers: users.filter((u) => u.roles.includes("seller")).length,
+      adminUsers: users.filter((u) => u.roles.includes("admin")).length,
+      lockedUsers: users.filter((u) => u.status === "LOCKED").length,
     };
   },
 
   async getUserDetail(id: string): Promise<AdminUserItem> {
-    await new Promise((resolve) => setTimeout(resolve, 150));
-    const user = mockAdminUsersStore.find((u) => u.id === id);
-    if (!user) throw new Error("Không tìm thấy người dùng");
-    return user;
+    const numId = parseNumericUserId(id);
+    const response = await axiosClient.get<ApiResponse<BackendUserItem>>(
+      `/api/v1/admin/users/${numId}`,
+    );
+    return normalizeBackendUser(response.data.data);
   },
 
   async createUser(payload: CreateAdminUserPayload): Promise<AdminUserItem> {
-    await new Promise((resolve) => setTimeout(resolve, 250));
+    const backendRoles = (
+      payload.roles.length > 0 ? payload.roles : ["client"]
+    ).map((r) => r.toUpperCase());
 
-    // Check duplicate email
-    if (mockAdminUsersStore.some((u) => u.email.toLowerCase() === payload.email.toLowerCase())) {
-      throw new Error("Email này đã được sử dụng");
-    }
-
-    const primaryRole = payload.roles.includes("admin")
-      ? "admin"
-      : payload.roles.includes("seller")
-      ? "seller"
-      : "client";
-
-    const newUser: AdminUserItem = {
-      id: `usr-${Date.now().toString().slice(-4)}`,
-      fullName: payload.fullName.trim(),
+    const body = {
+      full_name: payload.fullName.trim(),
       email: payload.email.trim(),
       phone: payload.phone.trim(),
-      avatarUrl: null,
-      roles: payload.roles.length > 0 ? payload.roles : ["client"],
-      primaryRole,
+      password: payload.password || "SecurePass123!",
+      roles: backendRoles,
       status: payload.status,
-      emailVerified: true,
-      phoneVerified: true,
-      createdAt: new Date().toISOString(),
-      lastLoginAt: null,
-      totalOrders: 0,
-      totalSpent: 0,
-      addresses: [],
+      reason:
+        payload.status === "LOCKED" ? "Khóa khi tạo tài khoản" : undefined,
     };
 
-    mockAdminUsersStore = [newUser, ...mockAdminUsersStore];
-    return newUser;
+    const response = await axiosClient.post<ApiResponse<BackendUserItem>>(
+      "/api/v1/admin/users",
+      body,
+    );
+    return normalizeBackendUser(response.data.data);
   },
 
-  async updateUser(id: string, payload: UpdateAdminUserPayload): Promise<AdminUserItem> {
-    await new Promise((resolve) => setTimeout(resolve, 200));
+  async updateUser(
+    id: string,
+    payload: UpdateAdminUserPayload,
+  ): Promise<AdminUserItem> {
+    const numId = parseNumericUserId(id);
+    const backendRoles = payload.roles
+      ? payload.roles.map((r) => r.toUpperCase())
+      : undefined;
 
-    const index = mockAdminUsersStore.findIndex((u) => u.id === id);
-    if (index === -1) throw new Error("Không tìm thấy người dùng");
-
-    const current = mockAdminUsersStore[index];
-    const roles = payload.roles ?? current.roles;
-    const primaryRole = roles.includes("admin")
-      ? "admin"
-      : roles.includes("seller")
-      ? "seller"
-      : "client";
-
-    const updated: AdminUserItem = {
-      ...current,
-      fullName: payload.fullName ?? current.fullName,
-      email: payload.email ?? current.email,
-      phone: payload.phone ?? current.phone,
-      roles,
-      primaryRole,
-      status: payload.status ?? current.status,
+    const body = {
+      full_name: payload.fullName?.trim(),
+      email: payload.email?.trim(),
+      phone: payload.phone?.trim(),
+      roles: backendRoles,
+      status: payload.status,
+      reason:
+        payload.status === "LOCKED" ? "Khóa bởi quản trị viên" : undefined,
     };
 
-    mockAdminUsersStore[index] = updated;
-    return updated;
+    const response = await axiosClient.put<ApiResponse<BackendUserItem>>(
+      `/api/v1/admin/users/${numId}`,
+      body,
+    );
+    return normalizeBackendUser(response.data.data);
   },
 
   async lockUser(id: string, reason: string): Promise<AdminUserItem> {
-    await new Promise((resolve) => setTimeout(resolve, 200));
-    const index = mockAdminUsersStore.findIndex((u) => u.id === id);
-    if (index === -1) throw new Error("Không tìm thấy người dùng");
-
-    const updated: AdminUserItem = {
-      ...mockAdminUsersStore[index],
-      status: "LOCKED",
-      lockReason: reason,
-      lockedAt: new Date().toISOString(),
-    };
-
-    mockAdminUsersStore[index] = updated;
-    return updated;
+    const numId = parseNumericUserId(id);
+    const response = await axiosClient.patch<ApiResponse<BackendUserItem>>(
+      `/api/v1/admin/users/${numId}/status`,
+      {
+        status: "LOCKED",
+        reason: reason.trim() || "Tài khoản bị khóa bởi quản trị viên",
+      },
+    );
+    return normalizeBackendUser(response.data.data);
   },
 
   async unlockUser(id: string): Promise<AdminUserItem> {
-    await new Promise((resolve) => setTimeout(resolve, 200));
-    const index = mockAdminUsersStore.findIndex((u) => u.id === id);
-    if (index === -1) throw new Error("Không tìm thấy người dùng");
-
-    const updated: AdminUserItem = {
-      ...mockAdminUsersStore[index],
-      status: "ACTIVE",
-      lockReason: undefined,
-      lockedAt: undefined,
-    };
-
-    mockAdminUsersStore[index] = updated;
-    return updated;
+    const numId = parseNumericUserId(id);
+    const response = await axiosClient.patch<ApiResponse<BackendUserItem>>(
+      `/api/v1/admin/users/${numId}/status`,
+      {
+        status: "ACTIVE",
+        reason: "",
+      },
+    );
+    return normalizeBackendUser(response.data.data);
   },
 
   async deleteUser(id: string): Promise<string> {
-    await new Promise((resolve) => setTimeout(resolve, 200));
-    const exists = mockAdminUsersStore.some((u) => u.id === id);
-    if (!exists) throw new Error("Không tìm thấy người dùng");
-
-    mockAdminUsersStore = mockAdminUsersStore.filter((u) => u.id !== id);
+    // Backend preserves accounts for referential integrity and audit logs.
+    // Deleting a user locks their status to prevent further access.
+    await adminUserApi.lockUser(
+      id,
+      "Tài khoản bị vô hiệu hóa/xóa bởi quản trị viên",
+    );
     return id;
   },
 
-  async resetPassword(id: string): Promise<{ success: boolean; tempPassword?: string }> {
-    await new Promise((resolve) => setTimeout(resolve, 250));
-    const user = mockAdminUsersStore.find((u) => u.id === id);
-    if (!user) throw new Error("Không tìm thấy người dùng");
-
+  async resetPassword(
+    _id: string,
+  ): Promise<{ success: boolean; tempPassword?: string }> {
+    void _id;
+    // Reset password via OTP flow is user-directed in Rikkei E-Commerce.
+    // Simulated return for admin UI compatibility.
     const tempPassword = `MK${Math.floor(100000 + Math.random() * 900000)}`;
     return {
       success: true,
@@ -559,7 +312,14 @@ export const adminUserApi = {
   },
 
   async exportCsv(): Promise<string> {
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    const response = await axiosClient.get<ApiResponse<BackendUserItem[]>>(
+      "/api/v1/admin/users",
+    );
+    const rawUsers = response.data?.data;
+    const users: AdminUserItem[] = Array.isArray(rawUsers)
+      ? rawUsers.map(normalizeBackendUser)
+      : [];
+
     const headers = [
       "Mã ID",
       "Họ và Tên",
@@ -572,7 +332,7 @@ export const adminUserApi = {
       "Ngày tham gia",
     ];
 
-    const rows = mockAdminUsersStore.map((u) => [
+    const rows = users.map((u) => [
       u.id,
       `"${u.fullName}"`,
       u.email,
@@ -584,8 +344,15 @@ export const adminUserApi = {
       u.createdAt.split("T")[0],
     ]);
 
-    const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
-    return csvContent;
+    return [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+  },
+
+  getAdminUsers(
+    params?: Partial<AdminUserFilterParams>,
+  ): Promise<AdminUserListResponse> {
+    return adminUserApi.fetchUsers(params);
   },
 };
 
+export const mockAdminUsersStore: AdminUserItem[] = [];
+export default adminUserApi;

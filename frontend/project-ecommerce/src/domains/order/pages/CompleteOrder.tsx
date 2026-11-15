@@ -1,5 +1,5 @@
-import React from "react";
-import { useLocation } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useLocation, useSearchParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import CustomerLayout from "@/app/layout/CustomerLayout";
 import { CartBreadcrumbStepper } from "@/domains/customer/components/cart/CartBreadcrumbStepper";
@@ -13,6 +13,8 @@ import {
   type CompleteOrderShopGroup,
 } from "@/domains/order/components/complete";
 import { formatCurrencyVND } from "@/shared/utils/currency";
+import { userOrderApi } from "@/domains/customer/api/orderApi";
+import type { UserOrder } from "@/domains/order/types";
 
 export interface CompleteOrderState {
   orderCode?: string;
@@ -36,81 +38,177 @@ export interface CompleteOrderState {
   shopGroups?: CompleteOrderShopGroup[];
 }
 
+function mapUserOrderToCompleteState(order: UserOrder): CompleteOrderState {
+  const shopGroups: CompleteOrderShopGroup[] = (order.shops || []).map((shop) => {
+    const shopItems = order.items.filter((item) => item.shopId === shop.shopId);
+    const subtotal = shopItems.reduce((acc, it) => acc + it.unitPrice * it.quantity, 0);
+    return {
+      shopId: shop.shopId,
+      shopName: shop.shopName,
+      shopBadge: "Mall",
+      shopAvatarText: shop.shopName.charAt(0).toUpperCase(),
+      warehouseLocation: "Kho hàng người bán",
+      subtotal,
+      items: shopItems.map((it) => ({
+        id: it.id,
+        productId: it.productId,
+        productName: it.productName,
+        variantLabel: it.variantName,
+        quantity: it.quantity,
+        unitPrice: it.unitPrice,
+        originalPrice: it.unitPrice,
+        lineTotal: it.unitPrice * it.quantity,
+        imageUrl: it.imageUrl,
+        stockStatusBadge: "Còn hàng",
+      })),
+    };
+  });
+
+  return {
+    orderCode: order.orderCode,
+    customerName: order.recipient?.name || "Quý khách",
+    customerPhone: order.recipient?.phone || "",
+    deliveryAddress: order.recipient?.address || "Địa chỉ nhận hàng",
+    deliveryNote: order.note,
+    carrierName: order.shippingCarrier || order.courierName || "Giao hàng tiêu chuẩn",
+    trackingCode: order.trackingCode || "",
+    estimatedDeliveryDate: order.estimatedDeliveryDate || "2-4 ngày làm việc",
+    orderTime: order.createdAt,
+    paymentMethodName: order.paymentStatusText,
+    paymentMethodCode: order.paymentMethod || "COD",
+    itemsSubtotal: order.subtotal,
+    shippingFee: order.shippingFee,
+    shippingDiscount: order.shippingDiscount,
+    shopDiscount: order.shopDiscount,
+    platformDiscount: 0,
+    totalAmount: order.totalAmount,
+    shopGroups,
+  };
+}
+
 export const CompleteOrder: React.FC = () => {
   const { t } = useTranslation("customer");
   const location = useLocation();
-  const passedData = (location.state as CompleteOrderState) || {};
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
 
-  // Default realistic mock fallback matching complete_order.html
-  const orderCode = passedData.orderCode || "#ORD-9821";
-  const customerEmail = passedData.customerEmail || "nguyen.vana***@gmail.com";
-  const customerName = passedData.customerName || "Nguyễn Văn A";
-  const customerPhone = passedData.customerPhone || "+84 909 123 456";
-  const deliveryAddress =
-    passedData.deliveryAddress ||
-    "Số 142/8 Ung Văn Khiêm, Phường 25, Quận Bình Thạnh, TP. Hồ Chí Minh";
-  const deliveryNote =
-    passedData.deliveryNote || t("order_complete.shipping.default_delivery_note");
-  const carrierName = passedData.carrierName || t("order_complete.shipping.standard_delivery");
-  const trackingCode = passedData.trackingCode || "GHN-VN-98234120";
+  const passedData = (location.state as CompleteOrderState) || {};
+  const queryOrderCode =
+    searchParams.get("orderCode") || searchParams.get("code") || searchParams.get("id");
+  const hasFullData = Boolean(
+    passedData.orderCode && passedData.shopGroups && passedData.shopGroups.length > 0
+  );
+  const targetCode = passedData.orderCode || queryOrderCode;
+
+  const [orderData, setOrderData] = useState<CompleteOrderState>(passedData);
+  const [loading, setLoading] = useState<boolean>(() => !hasFullData && Boolean(targetCode));
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (hasFullData || !targetCode) {
+      return;
+    }
+
+    let isMounted = true;
+
+    userOrderApi
+      .fetchUserOrderDetail(targetCode)
+      .then((order) => {
+        if (!isMounted) return;
+        setOrderData(mapUserOrderToCompleteState(order));
+      })
+      .catch((err: unknown) => {
+        if (!isMounted) return;
+        setLoadError(
+          err instanceof Error
+            ? err.message
+            : "Không tìm thấy thông tin đơn hàng này."
+        );
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [targetCode, hasFullData]);
+
+  const orderCode = orderData.orderCode || "";
+  const customerEmail = orderData.customerEmail || "";
+  const customerName = orderData.customerName || "Quý khách";
+  const customerPhone = orderData.customerPhone || "";
+  const deliveryAddress = orderData.deliveryAddress || "";
+  const deliveryNote = orderData.deliveryNote || t("order_complete.shipping.default_delivery_note");
+  const carrierName = orderData.carrierName || t("order_complete.shipping.standard_delivery");
+  const trackingCode = orderData.trackingCode || "";
   const estimatedDeliveryDate =
-    passedData.estimatedDeliveryDate || t("order_complete.shipping.default_estimated_days");
-  const orderTime = passedData.orderTime || "26/10/2026 • 15:30";
-  const paymentMethodCode = passedData.paymentMethodCode || "COD";
+    orderData.estimatedDeliveryDate || t("order_complete.shipping.default_estimated_days");
+  const orderTime = orderData.orderTime || new Date().toLocaleString("vi-VN");
+  const paymentMethodCode = orderData.paymentMethodCode || "COD";
   const paymentMethodName =
-    passedData.paymentMethodName ||
+    orderData.paymentMethodName ||
     t("checkout.payment.methods.cod.name", { defaultValue: "Thanh toán khi nhận hàng" });
 
-  const itemsSubtotal = passedData.itemsSubtotal ?? 1640000;
-  const shippingFee = passedData.shippingFee ?? 45000;
-  const shippingDiscount = passedData.shippingDiscount ?? 30000;
-  const shopDiscount = passedData.shopDiscount ?? 0;
-  const platformDiscount = passedData.platformDiscount ?? 0;
-  const totalAmount = passedData.totalAmount ?? 1655000;
+  const itemsSubtotal = orderData.itemsSubtotal ?? 0;
+  const shippingFee = orderData.shippingFee ?? 0;
+  const shippingDiscount = orderData.shippingDiscount ?? 0;
+  const shopDiscount = orderData.shopDiscount ?? 0;
+  const platformDiscount = orderData.platformDiscount ?? 0;
+  const totalAmount = orderData.totalAmount ?? 0;
   const totalSavings = shippingDiscount + shopDiscount + platformDiscount;
+  const shopGroups = orderData.shopGroups || [];
 
-  const shopGroups: CompleteOrderShopGroup[] =
-    passedData.shopGroups && passedData.shopGroups.length > 0
-      ? passedData.shopGroups
-      : [
-          {
-            shopId: 920001,
-            shopName: "UrbanStep Official Store",
-            shopBadge: "Mall",
-            shopAvatarText: "U",
-            warehouseLocation: t("order_complete.items.default_warehouse"),
-            subtotal: 1640000,
-            items: [
-              {
-                id: 1,
-                productId: 960001,
-                productName: "Sneaker Retro Runner V2 Cổ Thấp Da Lộn Thủ Công",
-                variantLabel: "Size: 42 • Màu: Đen Tuyền",
-                quantity: 1,
-                unitPrice: 890000,
-                originalPrice: 1050000,
-                lineTotal: 890000,
-                imageUrl:
-                  "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=300",
-                stockStatusBadge: t("order_complete.items.in_stock"),
-              },
-              {
-                id: 2,
-                productId: 960002,
-                productName: "Túi du lịch da bò sáp mộc Minimalist Vintage Duffel",
-                variantLabel: "Màu: Nâu Cà phê Sáp",
-                quantity: 1,
-                unitPrice: 750000,
-                originalPrice: 880000,
-                lineTotal: 750000,
-                imageUrl:
-                  "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=300",
-                stockStatusBadge: t("order_complete.items.warranty_12m"),
-                shopDiscountText: "Voucher Shop -15%",
-              },
-            ],
-          },
-        ];
+  if (loading) {
+    return (
+      <CustomerLayout cartItemCount={0} cartTotal={formatCurrencyVND(0)}>
+        <div className="w-full pb-16">
+          <CartBreadcrumbStepper currentStep={3} />
+          <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 mt-12 text-center">
+            <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-primary border-t-transparent mb-4"></div>
+            <p className="text-on-surface-variant text-sm">Đang tải thông tin đơn hàng...</p>
+          </div>
+        </div>
+      </CustomerLayout>
+    );
+  }
+
+  if (!orderCode && !loading) {
+    return (
+      <CustomerLayout cartItemCount={0} cartTotal={formatCurrencyVND(0)}>
+        <div className="w-full pb-16">
+          <CartBreadcrumbStepper currentStep={3} />
+          <div className="max-w-[700px] mx-auto px-4 sm:px-6 mt-12 text-center py-12 bg-surface-container-lowest rounded-2xl border border-outline-variant/30">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant">
+              <span className="material-symbols-outlined text-3xl">receipt_long</span>
+            </div>
+            <h2 className="text-xl font-bold text-on-surface mb-2">
+              {loadError || "Không tìm thấy thông tin đơn hàng"}
+            </h2>
+            <p className="text-on-surface-variant text-sm mb-6">
+              Bạn có thể xem lịch sử các đơn hàng đã đặt trong trang Đơn mua của tôi.
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => navigate("/orders")}
+                className="px-6 py-2.5 rounded-xl bg-primary text-on-primary font-medium text-sm hover:opacity-90 transition-opacity"
+              >
+                Xem đơn mua của tôi
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate("/")}
+                className="px-6 py-2.5 rounded-xl border border-outline-variant text-on-surface font-medium text-sm hover:bg-surface-container transition-colors"
+              >
+                Tiếp tục mua sắm
+              </button>
+            </div>
+          </div>
+        </div>
+      </CustomerLayout>
+    );
+  }
 
   return (
     <CustomerLayout cartItemCount={0} cartTotal={formatCurrencyVND(0)}>
