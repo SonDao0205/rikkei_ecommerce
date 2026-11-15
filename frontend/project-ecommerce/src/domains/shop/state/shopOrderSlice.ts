@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from "@reduxjs/toolkit";
-import { shopOrderApi } from "@/domains/shop/api/shopOrderApiLive";
+import { shopOrderApi } from "@/domains/shop/api/shopOrderApi";
 import type {
   ShopOrderItem,
   ShopOrderStatus,

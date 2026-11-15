@@ -21,14 +21,17 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   }
 
   const { user, role, isAuthenticated, isInitialized } = useAppSelector(
-    (state) => state.auth
+    (state) => state.auth,
   );
 
   if (isInitialized) {
     const userRoles = new Set(
-      (user?.roles?.length ? user.roles : role || user?.role ? [role || user?.role] : []).map(
-        (value) => String(value).toLowerCase().trim()
-      )
+      (user?.roles?.length
+        ? user.roles
+        : role || user?.role
+          ? [role || user?.role]
+          : []
+      ).map((value) => String(value).toLowerCase().trim()),
     );
     if (!isAuthenticated || !userRoles.has("admin")) {
       return <Navigate to="/" replace />;
@@ -47,8 +50,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { label: "Orders", path: "/admin/orders", icon: "local_shipping" },
     { label: "Shops & Merchants", path: "/admin/shops", icon: "store" },
     { label: "Quản lý người dùng", path: "/admin/users", icon: "group" },
-    { label: "Khuyến mãi & đánh giá", path: "/admin/promotions", icon: "campaign" },
-    { label: "Settings", path: "/admin/settings", icon: "settings" },
+    {
+      label: "Khuyến mãi & đánh giá",
+      path: "/admin/promotions",
+      icon: "campaign",
+    },
   ];
 
   return (
@@ -57,7 +63,10 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       <aside className="fixed left-0 top-0 h-full w-72 bg-inverse-surface text-inverse-on-surface z-50 flex flex-col justify-between py-6 px-4 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
         <div className="flex flex-col gap-6">
           {/* Brand Logo */}
-          <Link to="/admin/dashboard" className="flex items-center gap-3 px-3 py-2 cursor-pointer group">
+          <Link
+            to="/admin/dashboard"
+            className="flex items-center gap-3 px-3 py-2 cursor-pointer group"
+          >
             <div className="w-10 h-10 rounded-xl bg-primary-container flex items-center justify-center text-on-primary shadow-sm transition-transform group-hover:scale-105">
               <BrandIcon className="w-6 h-6 text-on-primary" />
             </div>
@@ -75,7 +84,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           <nav className="flex flex-col gap-1.5">
             {navItems.map((item) => {
               const isDashboard =
-                location.pathname === "/admin" || location.pathname === "/admin/dashboard";
+                location.pathname === "/admin" ||
+                location.pathname === "/admin/dashboard";
               const isActive =
                 (item.path === "/admin/dashboard" && isDashboard) ||
                 (item.path === "/admin/products" &&
@@ -154,7 +164,9 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
               className="p-1.5 text-inverse-on-surface/60 hover:text-white hover:bg-inverse-surface/80 rounded-lg transition-colors cursor-pointer"
               title="Sign out"
             >
-              <span className="material-symbols-outlined text-[20px]">logout</span>
+              <span className="material-symbols-outlined text-[20px]">
+                logout
+              </span>
             </button>
           </div>
         </div>
@@ -166,21 +178,24 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         <header className="fixed top-0 left-72 right-0 h-16 bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 flex items-center justify-between px-gutter border-b border-outline-variant/20">
           <div className="flex items-center gap-2 font-label-md text-label-md text-on-surface-variant">
             <span className="font-medium text-on-surface-variant">Admin</span>
-            <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+            <span className="material-symbols-outlined text-[16px]">
+              chevron_right
+            </span>
             <span className="font-semibold text-on-surface">
               {location.pathname.startsWith("/admin/product")
                 ? "Products"
                 : location.pathname.startsWith("/admin/categories")
-                ? "Categories"
-                : location.pathname.startsWith("/admin/order")
-                ? "Orders"
-                : location.pathname.startsWith("/admin/user") || location.pathname.startsWith("/admin/customer")
-                ? "Quản lý người dùng"
-                : location.pathname.startsWith("/admin/setting")
-                ? "Settings"
-                : location.pathname.startsWith("/admin/promotions")
-                ? "Khuyến mãi & đánh giá"
-                : "Dashboard"}
+                  ? "Categories"
+                  : location.pathname.startsWith("/admin/order")
+                    ? "Orders"
+                    : location.pathname.startsWith("/admin/user") ||
+                        location.pathname.startsWith("/admin/customer")
+                      ? "Quản lý người dùng"
+                      : location.pathname.startsWith("/admin/setting")
+                        ? "Settings"
+                        : location.pathname.startsWith("/admin/promotions")
+                          ? "Khuyến mãi & đánh giá"
+                          : "Dashboard"}
             </span>
           </div>
 
@@ -208,21 +223,27 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 type="button"
                 className="relative p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-full transition-colors cursor-pointer"
               >
-                <span className="material-symbols-outlined text-[22px]">notifications</span>
+                <span className="material-symbols-outlined text-[22px]">
+                  notifications
+                </span>
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-error" />
               </button>
               <button
                 type="button"
                 className="p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-full transition-colors cursor-pointer"
               >
-                <span className="material-symbols-outlined text-[22px]">help_outline</span>
+                <span className="material-symbols-outlined text-[22px]">
+                  help_outline
+                </span>
               </button>
             </div>
 
             {/* Profile Avatar */}
             <div className="flex items-center pl-2">
               <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
+                <span className="material-symbols-outlined text-on-primary text-[18px]">
+                  person
+                </span>
               </div>
             </div>
           </div>

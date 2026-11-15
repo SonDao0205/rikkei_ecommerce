@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from "@reduxjs/toolkit";
-import { userOrderApi } from "@/domains/customer/api/orderApiLive";
+import { userOrderApi } from "@/domains/customer/api/orderApi";
 import type {
   UserOrder,
   UserOrderStatusCounts,

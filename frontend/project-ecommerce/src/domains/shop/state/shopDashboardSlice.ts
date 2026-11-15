@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from "@reduxjs/toolkit";
 import { shopDashboardApi, initialShopDashboardData } from "@/domains/shop/api/shopDashboardApi";
-import { shopOrderApi } from "@/domains/shop/api/shopOrderApiLive";
+import { shopOrderApi } from "@/domains/shop/api/shopOrderApi";
 import type {
   ShopDashboardData,
   ShopDateFilter,
