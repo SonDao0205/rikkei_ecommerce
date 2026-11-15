@@ -6,6 +6,12 @@ import type {
   OrderCourier,
 } from "@/shared/types";
 
+const requireDevelopmentMock = (): void => {
+  if (!import.meta.env.DEV) {
+    throw new Error("Màn quản lý đơn hàng này chưa được kết nối đầy đủ với API backend.");
+  }
+};
+
 export let mockOrdersState: AdminOrderItem[] = [
   {
     id: "#ORD-9821",
@@ -202,6 +208,7 @@ export let mockOrdersState: AdminOrderItem[] = [
 // Admin order endpoints are not implemented by the backend; keep this client mock-only.
 export const adminOrderApi = {
   fetchOrders: async (params?: OrderFilterParams): Promise<{ orders: AdminOrderItem[]; total: number }> => {
+    requireDevelopmentMock();
     let filtered = [...mockOrdersState];
 
     // Status Tab Filter
@@ -248,6 +255,7 @@ export const adminOrderApi = {
   },
 
   fetchStatusCounts: async (): Promise<OrderStatusCounts> => {
+    requireDevelopmentMock();
     return {
       all: mockOrdersState.length,
       pending: mockOrdersState.filter((order) => order.status === "pending").length,
@@ -258,6 +266,7 @@ export const adminOrderApi = {
   },
 
   confirmOrder: async (orderId: string): Promise<AdminOrderItem> => {
+    requireDevelopmentMock();
     const index = mockOrdersState.findIndex((o) => o.id === orderId);
     if (index !== -1) {
       mockOrdersState[index] = {
@@ -271,6 +280,7 @@ export const adminOrderApi = {
   },
 
   bulkConfirmOrders: async (orderIds: string[]): Promise<string[]> => {
+    requireDevelopmentMock();
     const knownIds = new Set(mockOrdersState.map((order) => order.id));
     if (orderIds.some((orderId) => !knownIds.has(orderId))) {
       throw new Error("Một hoặc nhiều đơn hàng không tồn tại");
@@ -285,6 +295,7 @@ export const adminOrderApi = {
   },
 
   cancelOrder: async (orderId: string): Promise<AdminOrderItem> => {
+    requireDevelopmentMock();
     const index = mockOrdersState.findIndex((o) => o.id === orderId);
     if (index !== -1) {
       mockOrdersState[index] = {
@@ -299,6 +310,7 @@ export const adminOrderApi = {
   },
 
   exportCsv: async (): Promise<Blob> => {
+    requireDevelopmentMock();
     const headers = "Order ID,Date,Customer,Phone,Address,Shop,Payment,Total,Status,Courier\n";
     const rows = mockOrdersState
       .map(
@@ -310,6 +322,7 @@ export const adminOrderApi = {
   },
 
   getOrderDetailById: async (orderId: string): Promise<AdminOrderDetailData> => {
+    requireDevelopmentMock();
     const normalizedId = orderId.startsWith("#") ? orderId : `#${orderId}`;
     const baseOrder = mockOrdersState.find((o) => o.id === normalizedId);
     if (!baseOrder) {
@@ -429,6 +442,7 @@ export const adminOrderApi = {
   },
 
   changeCourier: async (orderId: string, courierName: string, trackingCode: string): Promise<string> => {
+    requireDevelopmentMock();
     const index = mockOrdersState.findIndex((order) => order.id === orderId);
     if (index < 0) {
       throw new Error("Không tìm thấy đơn hàng");

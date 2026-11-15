@@ -4,7 +4,7 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 $envPath = Join-Path $repoRoot '.env'
 $seedPath = Join-Path $PSScriptRoot 'seed.local.sql'
 if (-not (Test-Path -LiteralPath $envPath)) {
-  throw 'Không tìm thấy .env ở thư mục gốc. Hãy tạo .env từ .env.example trước.'
+  throw 'Không tìm thấy .env ở thư mục gốc. Hãy tạo .env theo docs/local-development.md trước.'
 }
 
 $settings = @{}

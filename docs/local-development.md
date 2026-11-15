@@ -7,8 +7,7 @@ Checkout này chứa mã FE/BE tương ứng với nhánh `build` của nhóm. C
 Mở PowerShell tại thư mục gốc repository:
 
 ```powershell
-Copy-Item .env.example .env   # chỉ chạy nếu chưa có file .env
-# Trước khi chạy, đặt JWT_SECRET và mật khẩu database riêng trong .env.
+# Tạo file .env tại thư mục gốc và khai báo các biến dưới đây với giá trị dành riêng cho máy local.
 docker compose up --build -d
 docker compose ps
 ```
@@ -16,6 +15,8 @@ docker compose ps
 Mở giao diện tại `http://localhost:5173`. Nginx của FE chuyển tiếp `/api/` và `/healthz` tới BE bên trong Docker. MySQL truy cập tại `localhost:3307`. Trên máy này, BE được mở ở `localhost:18080` vì cổng `8080` có thể đang được dự án local khác sử dụng.
 
 Muốn dùng cổng BE mặc định `8080`, hãy xóa `BACKEND_HOST_PORT` khỏi `.env` hoặc đặt thành `8080`, sau khi xác nhận cổng đó đang trống.
+
+Các biến bắt buộc cho Compose: `DB_USERNAME`, `DB_PASSWORD`, `DB_NAME`, `MYSQL_ROOT_PASSWORD`, `JWT_SECRET`, `CORS_ALLOWED_ORIGINS`, `APP_ENV`, `HTTP_ADDR`, `AUTO_MIGRATE`, `COOKIE_SECURE`, `VITE_API_BASE_URL` và `VITE_BACKEND_HOST`. Tùy chức năng, thêm `SMTP_*`, `CLOUDINARY_*`, `PAYOS_*`, `PUBLIC_API_URL`, `TRUSTED_PROXY_CIDRS`, `TUNNEL_TOKEN` và `BACKEND_HOST_PORT`. Không đưa secret thật vào Git, issue hoặc frontend `VITE_*`.
 
 ## Nạp dữ liệu mẫu cho local
 

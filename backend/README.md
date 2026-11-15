@@ -47,7 +47,7 @@ Contract đầy đủ của catalog và inventory nằm tại [`docs/catalog-api
 Từ thư mục gốc `rikkei_ecommerce`:
 
 ```powershell
-Copy-Item .env.example .env   # chỉ khi chưa có .env
+# Tạo .env ở thư mục gốc theo docs/local-development.md trước khi chạy Compose.
 # Đặt các mật khẩu local và JWT_SECRET riêng trong .env.
 docker compose up --build -d
 docker compose ps
@@ -67,7 +67,7 @@ Seed chỉ dành cho local; các tài khoản và mật khẩu mẫu được gh
 Từ thư mục `rikkei_ecommerce/backend`:
 
 ```powershell
-Copy-Item .env.example .env   # cấu hình DATABASE_DSN và JWT_SECRET trước
+# Tạo backend/.env hoặc đặt các biến cấu hình trong môi trường shell; Compose dùng .env ở root.
 go run ./cmd/api
 ```
 
@@ -668,7 +668,7 @@ Run `go test ./...`, `go vet ./...`, and from `frontend/project-ecommerce`, `npm
 
 ## Media uploads (Cloudinary)
 
-Configure `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` in the local environment. For Docker Compose, set them in the repository-root `.env`; for running the Go API directly, set them in `backend/.env`. Templates are in both `.env.example` files. The API secret must stay in the backend environment and must never use a `VITE_` prefix. `.env` files are ignored by Git. The upload API returns `503 media_storage_unavailable` when these settings are missing; production startup requires them.
+Configure `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` in the local environment. For Docker Compose, set them in the repository-root `.env`; for running the Go API directly, set them in `backend/.env` or the shell environment. The API secret must stay in the backend environment and must never use a `VITE_` prefix. `.env` files are ignored by Git. The upload API returns `503 media_storage_unavailable` when these settings are missing; production startup requires them.
 
 `POST /api/v1/media` accepts authenticated `multipart/form-data` fields `purpose` and `file`. Supported purposes are `avatar`, `shop-image`, `product-image`, and `product-video`. Image requests accept `.jpg`, `.jpeg`, and `.png` files whose extension, detected content type, and decoded image bytes agree, up to 5 MiB. WebP, GIF, SVG, renamed files, and larger images are rejected. Product videos accept MP4/MOV/WebM up to 20 MiB. The handler checks file extension and content signature, caps the HTTP body, limits concurrent Cloudinary transfers, and sends only validated files to Cloudinary. Each account is limited to 30 upload requests per minute per backend instance; excess requests return `429 upload_rate_limited` and `Retry-After: 60`. Image purposes are available to CLIENT/SELLER roles; product media requires SELLER. The Cloudinary secret and signature are never sent to the browser. The frontend Nginx allows 22 MiB request bodies so a 20 MiB video plus multipart overhead can reach the API.
 

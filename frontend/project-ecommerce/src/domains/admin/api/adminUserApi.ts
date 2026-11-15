@@ -66,7 +66,9 @@ export const normalizeBackendUser = (bu: BackendUserItem): AdminUserItem => {
     primaryRole,
     status,
     emailVerified: Boolean(bu.email_verified),
-    phoneVerified: Boolean(bu.phone),
+    // The backend does not currently return phone verification state. Do not
+    // infer verification from the mere presence of a phone number.
+    phoneVerified: false,
     createdAt: bu.created_at || new Date().toISOString(),
     lastLoginAt: null,
     totalOrders: 0,
@@ -76,6 +78,18 @@ export const normalizeBackendUser = (bu: BackendUserItem): AdminUserItem => {
     lockReason: bu.lock_reason || undefined,
     lockedAt: bu.locked_at || undefined,
   };
+};
+
+const backendUserId = (id: string): string => {
+  const match = /^usr-(\d+)$/.exec(id);
+  if (!match) throw new Error("Mã người dùng không hợp lệ");
+  return match[1];
+};
+
+const requireDevelopmentMock = (): void => {
+  if (!import.meta.env.DEV) {
+    throw new Error("Chức năng này chưa được kết nối với API backend.");
+  }
 };
 
 export let mockAdminUsersStore: AdminUserItem[] = [
@@ -324,14 +338,12 @@ export const adminUserApi = {
           mockAdminUsersStore = userPool;
         }
       } else {
+        if (!import.meta.env.DEV) throw new Error("Phản hồi API danh sách người dùng không hợp lệ");
         userPool = [...mockAdminUsersStore];
       }
     } catch (error) {
-      if (shouldFallbackToMock(error) || (error as { code?: string })?.code === "ERR_NETWORK") {
-        userPool = [...mockAdminUsersStore];
-      } else {
-        userPool = [...mockAdminUsersStore];
-      }
+      if (!shouldFallbackToMock(error)) throw error;
+      userPool = [...mockAdminUsersStore];
     }
 
     let filtered = [...userPool];
@@ -420,8 +432,9 @@ export const adminUserApi = {
           lockedUsers: users.filter((u) => u.status === "LOCKED").length,
         };
       }
-    } catch {
-      // fallback to mock
+      if (!import.meta.env.DEV) throw new Error("Phản hồi API thống kê người dùng không hợp lệ");
+    } catch (error) {
+      if (!shouldFallbackToMock(error)) throw error;
     }
 
     return {
@@ -435,6 +448,11 @@ export const adminUserApi = {
   },
 
   async getUserDetail(id: string): Promise<AdminUserItem> {
+    if (!import.meta.env.DEV) {
+      const response = await axiosClient.get<ApiResponse<BackendUserItem>>(`/api/v1/admin/users/${backendUserId(id)}`);
+      if (!response.data?.success || !response.data.data) throw new Error("Phản hồi API chi tiết người dùng không hợp lệ");
+      return normalizeBackendUser(response.data.data);
+    }
     await new Promise((resolve) => setTimeout(resolve, 150));
     const user = mockAdminUsersStore.find((u) => u.id === id);
     if (!user) throw new Error("Không tìm thấy người dùng");
@@ -442,6 +460,15 @@ export const adminUserApi = {
   },
 
   async createUser(payload: CreateAdminUserPayload): Promise<AdminUserItem> {
+    if (!import.meta.env.DEV) {
+      if (!payload.password) throw new Error("Cần đặt mật khẩu ban đầu để tạo tài khoản.");
+      const response = await axiosClient.post<ApiResponse<BackendUserItem>>("/api/v1/admin/users", {
+        full_name: payload.fullName, email: payload.email, phone: payload.phone,
+        password: payload.password, roles: payload.roles.map((role) => role.toUpperCase()), status: payload.status,
+      });
+      if (!response.data?.success || !response.data.data) throw new Error("Phản hồi API tạo người dùng không hợp lệ");
+      return normalizeBackendUser(response.data.data);
+    }
     await new Promise((resolve) => setTimeout(resolve, 250));
 
     // Check duplicate email
@@ -478,6 +505,14 @@ export const adminUserApi = {
   },
 
   async updateUser(id: string, payload: UpdateAdminUserPayload): Promise<AdminUserItem> {
+    if (!import.meta.env.DEV) {
+      const response = await axiosClient.put<ApiResponse<BackendUserItem>>(`/api/v1/admin/users/${backendUserId(id)}`, {
+        full_name: payload.fullName, email: payload.email, phone: payload.phone,
+        roles: payload.roles?.map((role) => role.toUpperCase()),
+      });
+      if (!response.data?.success || !response.data.data) throw new Error("Phản hồi API cập nhật người dùng không hợp lệ");
+      return normalizeBackendUser(response.data.data);
+    }
     await new Promise((resolve) => setTimeout(resolve, 200));
 
     const index = mockAdminUsersStore.findIndex((u) => u.id === id);
@@ -506,6 +541,11 @@ export const adminUserApi = {
   },
 
   async lockUser(id: string, reason: string): Promise<AdminUserItem> {
+    if (!import.meta.env.DEV) {
+      const response = await axiosClient.patch<ApiResponse<BackendUserItem>>(`/api/v1/admin/users/${backendUserId(id)}/status`, { status: "LOCKED", reason });
+      if (!response.data?.success || !response.data.data) throw new Error("Phản hồi API khóa người dùng không hợp lệ");
+      return normalizeBackendUser(response.data.data);
+    }
     await new Promise((resolve) => setTimeout(resolve, 200));
     const index = mockAdminUsersStore.findIndex((u) => u.id === id);
     if (index === -1) throw new Error("Không tìm thấy người dùng");
@@ -522,6 +562,11 @@ export const adminUserApi = {
   },
 
   async unlockUser(id: string): Promise<AdminUserItem> {
+    if (!import.meta.env.DEV) {
+      const response = await axiosClient.patch<ApiResponse<BackendUserItem>>(`/api/v1/admin/users/${backendUserId(id)}/status`, { status: "ACTIVE" });
+      if (!response.data?.success || !response.data.data) throw new Error("Phản hồi API mở khóa người dùng không hợp lệ");
+      return normalizeBackendUser(response.data.data);
+    }
     await new Promise((resolve) => setTimeout(resolve, 200));
     const index = mockAdminUsersStore.findIndex((u) => u.id === id);
     if (index === -1) throw new Error("Không tìm thấy người dùng");
@@ -538,6 +583,7 @@ export const adminUserApi = {
   },
 
   async deleteUser(id: string): Promise<string> {
+    requireDevelopmentMock();
     await new Promise((resolve) => setTimeout(resolve, 200));
     const exists = mockAdminUsersStore.some((u) => u.id === id);
     if (!exists) throw new Error("Không tìm thấy người dùng");
@@ -547,6 +593,7 @@ export const adminUserApi = {
   },
 
   async resetPassword(id: string): Promise<{ success: boolean; tempPassword?: string }> {
+    requireDevelopmentMock();
     await new Promise((resolve) => setTimeout(resolve, 250));
     const user = mockAdminUsersStore.find((u) => u.id === id);
     if (!user) throw new Error("Không tìm thấy người dùng");
@@ -559,6 +606,7 @@ export const adminUserApi = {
   },
 
   async exportCsv(): Promise<string> {
+    requireDevelopmentMock();
     await new Promise((resolve) => setTimeout(resolve, 300));
     const headers = [
       "Mã ID",

@@ -13,7 +13,7 @@ export default function PaymentResult() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!Number.isSafeInteger(orderId) || orderId < 1) { setError("Thiếu mã đơn hàng hợp lệ."); return; }
+    if (!Number.isSafeInteger(orderId) || orderId < 1) return;
     let active = true;
     const refresh = async () => {
       try { const result = await cartApi.getPaymentStatus(orderId); if (active) { setPayment(result); setError(""); } }
@@ -32,7 +32,7 @@ export default function PaymentResult() {
   return <CustomerLayout cartItemCount={0} cartTotal={formatCurrencyVND(0)}>
     <main className="mx-auto my-16 max-w-xl rounded-2xl bg-white p-8 text-center shadow">
       <h1 className="text-2xl font-bold">Trạng thái thanh toán</h1>
-      {payment ? <>
+      {!Number.isSafeInteger(orderId) || orderId < 1 ? <p className="mt-4 text-red-700" role="alert">Thiếu mã đơn hàng hợp lệ.</p> : payment ? <>
         <p className="mt-4">Số tiền: <strong>{formatCurrencyVND(payment.amount)}</strong></p>
         <p className="mt-2" aria-live="polite">{payment.status === "PAID" ? "Thanh toán thành công" : payment.status === "FAILED" ? "Thanh toán chưa thành công" : "Đang chờ PayOS xác nhận giao dịch…"}</p>
         {(payment.status === "PENDING" || payment.status === "FAILED") && <button className="mt-5 rounded-lg bg-primary px-5 py-3 font-semibold text-white" onClick={() => void reopen()}>Mở hoặc thử lại thanh toán</button>}
