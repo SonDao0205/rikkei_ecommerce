@@ -14,7 +14,7 @@ const CategoryBar: React.FC<CategoryBarProps> = ({
 }) => {
   return (
     <section className="w-full max-w-[1440px] mx-auto px-margin-lg pt-space-lg pb-space-md">
-      <div className="flex items-center gap-space-lg overflow-x-auto pb-2 pt-1 scroll-smooth justify-between md:justify-center">
+      <div className="flex items-center gap-space-lg overflow-x-auto pb-2 pt-1 scroll-smooth justify-start">
         {categories.map((category) => {
           const isSelected = category.id === selectedCategoryId;
 
@@ -35,12 +35,16 @@ const CategoryBar: React.FC<CategoryBarProps> = ({
                   <div className="w-full h-full rounded-full overflow-hidden bg-surface-container-low">
                     <div
                       className="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
-                      style={{ backgroundImage: `url('${category.image_url}')` }}
+                      style={{
+                        backgroundImage: `url('${category.image_url}')`,
+                      }}
                     />
                   </div>
                 ) : (
                   <div className="w-full h-full rounded-full bg-primary flex items-center justify-center text-on-primary shadow-sm overflow-hidden">
-                    <span className="material-symbols-outlined text-[28px]">apps</span>
+                    <span className="material-symbols-outlined text-[28px]">
+                      apps
+                    </span>
                   </div>
                 )}
               </div>
