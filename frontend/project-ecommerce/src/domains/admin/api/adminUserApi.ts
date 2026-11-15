@@ -46,15 +46,15 @@ export const normalizeBackendUser = (bu: BackendUserItem): AdminUserItem => {
     bu.role?.toLowerCase() === "admin"
       ? "admin"
       : bu.role?.toLowerCase() === "seller" || roles.includes("seller")
-      ? "seller"
-      : "client";
+        ? "seller"
+        : "client";
 
   const status: AdminUserStatus =
     bu.status?.toUpperCase() === "LOCKED"
       ? "LOCKED"
       : bu.status?.toUpperCase() === "PENDING"
-      ? "PENDING"
-      : "ACTIVE";
+        ? "PENDING"
+        : "ACTIVE";
 
   return {
     id: `usr-${bu.id}`,
@@ -89,7 +89,7 @@ function parseNumericUserId(id: string | number): number {
 
 export const adminUserApi = {
   fetchUsers: async function (
-    params: Partial<AdminUserFilterParams> = {}
+    params: Partial<AdminUserFilterParams> = {},
   ): Promise<AdminUserListResponse> {
     const {
       search = "",
@@ -100,7 +100,9 @@ export const adminUserApi = {
       pageSize = 10,
     } = params;
 
-    const response = await axiosClient.get<ApiResponse<BackendUserItem[]>>("/api/v1/admin/users");
+    const response = await axiosClient.get<ApiResponse<BackendUserItem[]>>(
+      "/api/v1/admin/users",
+    );
     const rawUsers = response.data?.data;
     const userPool: AdminUserItem[] = Array.isArray(rawUsers)
       ? rawUsers.map(normalizeBackendUser)
@@ -114,7 +116,7 @@ export const adminUserApi = {
         (u) =>
           u.roles.includes("client") &&
           !u.roles.includes("seller") &&
-          !u.roles.includes("admin")
+          !u.roles.includes("admin"),
       );
     } else if (roleTab === "seller") {
       filtered = filtered.filter((u) => u.roles.includes("seller"));
@@ -138,7 +140,7 @@ export const adminUserApi = {
           u.email.toLowerCase().includes(q) ||
           u.phone.toLowerCase().includes(q) ||
           (u.shopName && u.shopName.toLowerCase().includes(q)) ||
-          u.id.toLowerCase().includes(q)
+          u.id.toLowerCase().includes(q),
       );
     }
 
@@ -146,9 +148,13 @@ export const adminUserApi = {
     filtered.sort((a, b) => {
       switch (sortBy) {
         case "newest":
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return (
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
         case "oldest":
-          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          return (
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          );
         case "totalSpent":
           return b.totalSpent - a.totalSpent;
         case "totalOrders":
@@ -184,7 +190,9 @@ export const adminUserApi = {
   },
 
   async getUserStats(): Promise<AdminUserStats> {
-    const response = await axiosClient.get<ApiResponse<BackendUserItem[]>>("/api/v1/admin/users");
+    const response = await axiosClient.get<ApiResponse<BackendUserItem[]>>(
+      "/api/v1/admin/users",
+    );
     const users = Array.isArray(response.data?.data)
       ? response.data.data.map(normalizeBackendUser)
       : [];
@@ -202,7 +210,7 @@ export const adminUserApi = {
   async getUserDetail(id: string): Promise<AdminUserItem> {
     const numId = parseNumericUserId(id);
     const response = await axiosClient.get<ApiResponse<BackendUserItem>>(
-      `/api/v1/admin/users/${numId}`
+      `/api/v1/admin/users/${numId}`,
     );
     return normalizeBackendUser(response.data.data);
   },
@@ -219,17 +227,21 @@ export const adminUserApi = {
       password: payload.password || "SecurePass123!",
       roles: backendRoles,
       status: payload.status,
-      reason: payload.status === "LOCKED" ? "Khóa khi tạo tài khoản" : undefined,
+      reason:
+        payload.status === "LOCKED" ? "Khóa khi tạo tài khoản" : undefined,
     };
 
     const response = await axiosClient.post<ApiResponse<BackendUserItem>>(
       "/api/v1/admin/users",
-      body
+      body,
     );
     return normalizeBackendUser(response.data.data);
   },
 
-  async updateUser(id: string, payload: UpdateAdminUserPayload): Promise<AdminUserItem> {
+  async updateUser(
+    id: string,
+    payload: UpdateAdminUserPayload,
+  ): Promise<AdminUserItem> {
     const numId = parseNumericUserId(id);
     const backendRoles = payload.roles
       ? payload.roles.map((r) => r.toUpperCase())
@@ -241,12 +253,13 @@ export const adminUserApi = {
       phone: payload.phone?.trim(),
       roles: backendRoles,
       status: payload.status,
-      reason: payload.status === "LOCKED" ? "Khóa bởi quản trị viên" : undefined,
+      reason:
+        payload.status === "LOCKED" ? "Khóa bởi quản trị viên" : undefined,
     };
 
     const response = await axiosClient.put<ApiResponse<BackendUserItem>>(
       `/api/v1/admin/users/${numId}`,
-      body
+      body,
     );
     return normalizeBackendUser(response.data.data);
   },
@@ -258,7 +271,7 @@ export const adminUserApi = {
       {
         status: "LOCKED",
         reason: reason.trim() || "Tài khoản bị khóa bởi quản trị viên",
-      }
+      },
     );
     return normalizeBackendUser(response.data.data);
   },
@@ -270,7 +283,7 @@ export const adminUserApi = {
       {
         status: "ACTIVE",
         reason: "",
-      }
+      },
     );
     return normalizeBackendUser(response.data.data);
   },
@@ -278,22 +291,17 @@ export const adminUserApi = {
   async deleteUser(id: string): Promise<string> {
     // Backend preserves accounts for referential integrity and audit logs.
     // Deleting a user locks their status to prevent further access.
-    await adminUserApi.lockUser(id, "Tài khoản bị vô hiệu hóa/xóa bởi quản trị viên");
+    await adminUserApi.lockUser(
+      id,
+      "Tài khoản bị vô hiệu hóa/xóa bởi quản trị viên",
+    );
     return id;
   },
 
-  async resetPassword(_id: string): Promise<{ success: boolean; tempPassword?: string }> {
-    // Reset password via OTP flow is user-directed in Rikkei E-Commerce.
-    // Simulated return for admin UI compatibility
-    const tempPassword = `MK${Math.floor(100000 + Math.random() * 900000)}`;
-    return {
-      success: true,
-      tempPassword,
-    };
-  },
-
   async exportCsv(): Promise<string> {
-    const response = await axiosClient.get<ApiResponse<BackendUserItem[]>>("/api/v1/admin/users");
+    const response = await axiosClient.get<ApiResponse<BackendUserItem[]>>(
+      "/api/v1/admin/users",
+    );
     const rawUsers = response.data?.data;
     const users: AdminUserItem[] = Array.isArray(rawUsers)
       ? rawUsers.map(normalizeBackendUser)
@@ -326,7 +334,9 @@ export const adminUserApi = {
     return [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
   },
 
-  getAdminUsers(params?: Partial<AdminUserFilterParams>): Promise<AdminUserListResponse> {
+  getAdminUsers(
+    params?: Partial<AdminUserFilterParams>,
+  ): Promise<AdminUserListResponse> {
     return adminUserApi.fetchUsers(params);
   },
 };

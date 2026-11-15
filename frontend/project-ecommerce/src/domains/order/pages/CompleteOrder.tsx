@@ -93,28 +93,26 @@ export const CompleteOrder: React.FC = () => {
   const navigate = useNavigate();
 
   const passedData = (location.state as CompleteOrderState) || {};
-  const [orderData, setOrderData] = useState<CompleteOrderState>(passedData);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
-
   const queryOrderCode =
     searchParams.get("orderCode") || searchParams.get("code") || searchParams.get("id");
+  const hasFullData = Boolean(
+    passedData.orderCode && passedData.shopGroups && passedData.shopGroups.length > 0
+  );
+  const targetCode = passedData.orderCode || queryOrderCode;
+
+  const [orderData, setOrderData] = useState<CompleteOrderState>(passedData);
+  const [loading, setLoading] = useState<boolean>(() => !hasFullData && Boolean(targetCode));
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
-    // If state is already filled, no need to fetch
-    if (orderData.orderCode && orderData.shopGroups && orderData.shopGroups.length > 0) {
+    if (hasFullData || !targetCode) {
       return;
     }
 
-    const codeToFetch = orderData.orderCode || queryOrderCode;
-    if (!codeToFetch) return;
-
     let isMounted = true;
-    setLoading(true);
-    setLoadError(null);
 
     userOrderApi
-      .fetchUserOrderDetail(codeToFetch)
+      .fetchUserOrderDetail(targetCode)
       .then((order) => {
         if (!isMounted) return;
         setOrderData(mapUserOrderToCompleteState(order));
@@ -134,7 +132,7 @@ export const CompleteOrder: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [orderData.orderCode, queryOrderCode]);
+  }, [targetCode, hasFullData]);
 
   const orderCode = orderData.orderCode || "";
   const customerEmail = orderData.customerEmail || "";
