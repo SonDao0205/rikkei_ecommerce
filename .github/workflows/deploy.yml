@@ -20,7 +20,6 @@ jobs:
       github.event.workflow_run.event == 'push' &&
       github.event.workflow_run.head_branch == github.event.repository.default_branch
     runs-on: ubuntu-latest
-
     steps:
       - name: Chọn service cần deploy
         id: svc
@@ -48,9 +47,10 @@ jobs:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
           SERVICE: ${{ steps.svc.outputs.name }}
         run: |
-          ssh "$DEPLOY_USER@$DEPLOY_HOST" "cd $DEPLOY_PATH && SERVICE=$SERVICE bash -s" <<'EOF'
+          ssh -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" "cd $DEPLOY_PATH && SERVICE=$SERVICE bash -s" <<'EOF'
           set -e
           docker compose pull "$SERVICE"
           docker compose up -d --no-deps "$SERVICE"
