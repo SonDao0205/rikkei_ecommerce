@@ -9,6 +9,7 @@ Nền tảng thương mại điện tử gồm REST API Go, React/TypeScript fro
 - [Frontend: kiến trúc app/domain/shared, chạy và build](frontend/project-ecommerce/README.md)
 - [Postman/Newman: phạm vi test API và tác động dữ liệu](postman/README.md)
 - [Catalog API contract](docs/catalog-api.md)
+- [COD and PayOS payment flow](docs/payment-flow.md)
 
 ## Thành phần và kiến trúc
 
@@ -31,8 +32,8 @@ Giữ logic nghiệp vụ trong domain sở hữu nó. Chỉ chuyển mã sang `
 Yêu cầu Docker Compose, Go 1.24+, Node.js 22+ và npm. Ở root repo:
 
 ```powershell
-Copy-Item .env.example .env   # chỉ khi chưa có .env
-# Đổi mật khẩu local và JWT_SECRET trong .env; không dùng secret production.
+# Tạo file .env riêng tại thư mục gốc theo mục “Cấu hình môi trường” trong docs/local-development.md.
+# Không sao chép secret dùng chung; chọn secret riêng cho máy local.
 docker compose up --build -d
 docker compose ps
 ```

@@ -11,6 +11,7 @@ import (
 	"rikkei-ecommerce/internal/domain/catalog"
 	"rikkei-ecommerce/internal/domain/checkout"
 	"rikkei-ecommerce/internal/domain/media"
+	"rikkei-ecommerce/internal/domain/payment"
 	"rikkei-ecommerce/internal/domain/promotion"
 	"rikkei-ecommerce/internal/domain/review"
 	"rikkei-ecommerce/internal/domain/seller"
@@ -29,6 +30,7 @@ func Run(ctx context.Context, db *sql.DB) error {
 		{name: "cart", run: cart.Migrate},
 		{name: "promotion", run: promotion.Migrate},
 		{name: "checkout", run: checkout.Migrate},
+		{name: "payment", run: payment.Migrate},
 		{name: "media", run: media.Migrate},
 		{name: "seller", run: seller.Migrate},
 		{name: "shop", run: shop.Migrate},

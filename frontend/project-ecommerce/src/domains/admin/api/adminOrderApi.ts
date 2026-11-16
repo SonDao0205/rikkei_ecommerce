@@ -106,7 +106,9 @@ function mapBackendStatusToUi(status: string): OrderStatus {
   }
 }
 
-export function normalizeAdminOrder(row: BackendCustomerOrderSummary): AdminOrderItem {
+export function normalizeAdminOrder(
+  row: BackendCustomerOrderSummary,
+): AdminOrderItem {
   const status = mapBackendStatusToUi(row.status);
   const createdDate = new Date(row.created_at);
   const formattedDate = Number.isNaN(createdDate.getTime())
@@ -114,7 +116,10 @@ export function normalizeAdminOrder(row: BackendCustomerOrderSummary): AdminOrde
     : createdDate.toLocaleDateString("vi-VN");
   const timeAgo = Number.isNaN(createdDate.getTime())
     ? ""
-    : createdDate.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+    : createdDate.toLocaleTimeString("vi-VN", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
 
   const allItems: OrderLineItem[] = (row.shops ?? []).flatMap((shop) =>
     (shop.items ?? []).map((item) => ({
@@ -124,7 +129,7 @@ export function normalizeAdminOrder(row: BackendCustomerOrderSummary): AdminOrde
       quantity: item.quantity,
       price: item.unit_price,
       sku: item.sku || `SKU-${item.id}`,
-    }))
+    })),
   );
 
   const productSummary =
@@ -135,12 +140,13 @@ export function normalizeAdminOrder(row: BackendCustomerOrderSummary): AdminOrde
       : "Đơn hàng sàn";
 
   const shopNames =
-    Array.from(new Set((row.shops ?? []).map((s) => s.shop_name).filter(Boolean))).join(
-      ", "
-    ) || "Gian hàng đối tác";
+    Array.from(
+      new Set((row.shops ?? []).map((s) => s.shop_name).filter(Boolean)),
+    ).join(", ") || "Gian hàng đối tác";
 
   const carrier = (row.shops ?? []).find((s) => s.carrier)?.carrier || "GHN";
-  const trackingCode = (row.shops ?? []).find((s) => s.tracking_code)?.tracking_code || undefined;
+  const trackingCode =
+    (row.shops ?? []).find((s) => s.tracking_code)?.tracking_code || undefined;
 
   const paymentMethod: OrderPaymentMethod =
     row.payment_method_code === "BANK_TRANSFER" ? "CARD" : "COD";
@@ -166,7 +172,8 @@ export function normalizeAdminOrder(row: BackendCustomerOrderSummary): AdminOrde
     paymentMethod,
     paymentNote,
     totalAmount: row.total_amount,
-    formattedTotal: new Intl.NumberFormat("vi-VN").format(row.total_amount) + " ₫",
+    formattedTotal:
+      new Intl.NumberFormat("vi-VN").format(row.total_amount) + " ₫",
     codAmount: paymentMethod === "COD" ? row.total_amount : undefined,
     status,
     statusLabel:
@@ -174,10 +181,10 @@ export function normalizeAdminOrder(row: BackendCustomerOrderSummary): AdminOrde
       (status === "pending"
         ? "Chờ xác nhận"
         : status === "delivered"
-        ? "Đã giao hàng"
-        : status === "shipping"
-        ? "Đang giao hàng"
-        : "Đã hủy"),
+          ? "Đã giao hàng"
+          : status === "shipping"
+            ? "Đang giao hàng"
+            : "Đã hủy"),
     courier: carrier as OrderCourier,
     courierLabel: `${carrier} Express`,
     trackingCode,
@@ -186,25 +193,34 @@ export function normalizeAdminOrder(row: BackendCustomerOrderSummary): AdminOrde
 
 export function normalizeAdminOrderDetail(
   order: BackendCustomerOrderSummary,
-  buyer?: { id: number; name: string; email: string; phone: string; status: string }
+  buyer?: {
+    id: number;
+    name: string;
+    email: string;
+    phone: string;
+    status: string;
+  },
 ): AdminOrderDetailData {
   const base = normalizeAdminOrder(order);
 
-  const detailItems: OrderDetailProductItem[] = (order.shops ?? []).flatMap((shop) =>
-    (shop.items ?? []).map((item) => ({
-      id: item.id,
-      name: item.product_name,
-      image: item.image_url || "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=300",
-      tag: "Chính hãng",
-      tagType: "emerald",
-      variant: item.variant_name || "Mặc định",
-      sku: item.sku || `SKU-${item.id}`,
-      warehouse: shop.shop_name,
-      availableStock: "Sẵn có",
-      price: item.unit_price,
-      quantity: item.quantity,
-      total: item.line_total || item.unit_price * item.quantity,
-    }))
+  const detailItems: OrderDetailProductItem[] = (order.shops ?? []).flatMap(
+    (shop) =>
+      (shop.items ?? []).map((item) => ({
+        id: item.id,
+        name: item.product_name,
+        image:
+          item.image_url ||
+          "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=300",
+        tag: "Chính hãng",
+        tagType: "emerald",
+        variant: item.variant_name || "Mặc định",
+        sku: item.sku || `SKU-${item.id}`,
+        warehouse: shop.shop_name,
+        availableStock: "Sẵn có",
+        price: item.unit_price,
+        quantity: item.quantity,
+        total: item.line_total || item.unit_price * item.quantity,
+      })),
   );
 
   const firstShop = order.shops?.[0];
@@ -238,14 +254,17 @@ export function normalizeAdminOrderDetail(
       voucherDiscount: order.shop_discount_total + order.platform_discount,
       partnerDiscount: 0,
       grandTotal: order.total_amount,
-      paymentStatus: order.payment_status === "PAID" ? "Đã thanh toán" : "Chờ thu tiền",
+      paymentStatus:
+        order.payment_status === "PAID" ? "Đã thanh toán" : "Chờ thu tiền",
       paymentStatusType: order.payment_status === "PAID" ? "emerald" : "amber",
       paymentNote: order.payment_method_name,
     },
     customer: {
       id: buyer ? `CUST-${buyer.id}` : "CUST-01",
       name: buyer?.name || order.recipient_name,
-      avatarText: (buyer?.name || order.recipient_name || "K").charAt(0).toUpperCase(),
+      avatarText: (buyer?.name || order.recipient_name || "K")
+        .charAt(0)
+        .toUpperCase(),
       tier: "Thành viên Thân thiết",
       orderCount: 1,
       phone: buyer?.phone || order.recipient_phone,
@@ -269,7 +288,10 @@ export function normalizeAdminOrderDetail(
         {
           step: 2,
           title: "Xác nhận & Đóng gói",
-          time: base.status !== "pending" ? base.createdAt : "Đang chờ gian hàng chuẩn bị",
+          time:
+            base.status !== "pending"
+              ? base.createdAt
+              : "Đang chờ gian hàng chuẩn bị",
           description: "Gian hàng tiếp nhận đơn và xử lý kho.",
           status: base.status === "pending" ? "current" : "completed",
         },
@@ -285,13 +307,14 @@ export function normalizeAdminOrderDetail(
             base.status === "shipping"
               ? "current"
               : base.status === "delivered"
-              ? "completed"
-              : "pending",
+                ? "completed"
+                : "pending",
         },
         {
           step: 4,
           title: "Giao hàng thành công",
-          time: base.status === "delivered" ? base.createdAt : "Dự kiến 2-4 ngày",
+          time:
+            base.status === "delivered" ? base.createdAt : "Dự kiến 2-4 ngày",
           description: "Đơn hàng đã được giao an toàn đến người nhận.",
           status: base.status === "delivered" ? "completed" : "pending",
         },
@@ -302,7 +325,7 @@ export function normalizeAdminOrderDetail(
 
 export const adminOrderApi = {
   fetchOrders: async (
-    params?: OrderFilterParams
+    params?: OrderFilterParams,
   ): Promise<{ orders: AdminOrderItem[]; total: number }> => {
     const queryParams: Record<string, string | number> = {
       page: params?.page ?? 1,
@@ -312,18 +335,19 @@ export const adminOrderApi = {
     if (params?.statusTab && params.statusTab !== "all") {
       if (params.statusTab === "pending") queryParams.status = "PENDING";
       else if (params.statusTab === "shipping") queryParams.status = "SHIPPING";
-      else if (params.statusTab === "delivered") queryParams.status = "COMPLETED";
-      else if (params.statusTab === "cancelled") queryParams.status = "CANCELLED";
+      else if (params.statusTab === "delivered")
+        queryParams.status = "COMPLETED";
+      else if (params.statusTab === "cancelled")
+        queryParams.status = "CANCELLED";
     }
 
     if (params?.search && params.search.trim()) {
       queryParams.search = params.search.trim().replace(/^#/, "").slice(0, 100);
     }
 
-    const response = await axiosClient.get<ApiResponse<BackendAdminOrderListResponse>>(
-      "/api/v1/admin/orders",
-      { params: queryParams }
-    );
+    const response = await axiosClient.get<
+      ApiResponse<BackendAdminOrderListResponse>
+    >("/api/v1/admin/orders", { params: queryParams });
 
     const rawOrders = response.data?.data?.orders ?? [];
     let orders = rawOrders.map(normalizeAdminOrder);
@@ -350,23 +374,39 @@ export const adminOrderApi = {
 
   fetchStatusCounts: async (): Promise<OrderStatusCounts> => {
     try {
-      const [allRes, pendingRes, shippingRes, deliveredRes, cancelledRes] = await Promise.all([
-        axiosClient.get<ApiResponse<BackendAdminOrderListResponse>>("/api/v1/admin/orders", {
-          params: { limit: 1 },
-        }),
-        axiosClient.get<ApiResponse<BackendAdminOrderListResponse>>("/api/v1/admin/orders", {
-          params: { status: "PENDING", limit: 1 },
-        }),
-        axiosClient.get<ApiResponse<BackendAdminOrderListResponse>>("/api/v1/admin/orders", {
-          params: { status: "SHIPPING", limit: 1 },
-        }),
-        axiosClient.get<ApiResponse<BackendAdminOrderListResponse>>("/api/v1/admin/orders", {
-          params: { status: "COMPLETED", limit: 1 },
-        }),
-        axiosClient.get<ApiResponse<BackendAdminOrderListResponse>>("/api/v1/admin/orders", {
-          params: { status: "CANCELLED", limit: 1 },
-        }),
-      ]);
+      const [allRes, pendingRes, shippingRes, deliveredRes, cancelledRes] =
+        await Promise.all([
+          axiosClient.get<ApiResponse<BackendAdminOrderListResponse>>(
+            "/api/v1/admin/orders",
+            {
+              params: { limit: 1 },
+            },
+          ),
+          axiosClient.get<ApiResponse<BackendAdminOrderListResponse>>(
+            "/api/v1/admin/orders",
+            {
+              params: { status: "PENDING", limit: 1 },
+            },
+          ),
+          axiosClient.get<ApiResponse<BackendAdminOrderListResponse>>(
+            "/api/v1/admin/orders",
+            {
+              params: { status: "SHIPPING", limit: 1 },
+            },
+          ),
+          axiosClient.get<ApiResponse<BackendAdminOrderListResponse>>(
+            "/api/v1/admin/orders",
+            {
+              params: { status: "COMPLETED", limit: 1 },
+            },
+          ),
+          axiosClient.get<ApiResponse<BackendAdminOrderListResponse>>(
+            "/api/v1/admin/orders",
+            {
+              params: { status: "CANCELLED", limit: 1 },
+            },
+          ),
+        ]);
 
       return {
         all: allRes.data?.data?.total ?? 0,
@@ -386,15 +426,20 @@ export const adminOrderApi = {
     }
   },
 
-  getOrderDetailById: async (orderId: string): Promise<AdminOrderDetailData> => {
+  getOrderDetailById: async (
+    orderId: string,
+  ): Promise<AdminOrderDetailData> => {
     const cleanId = orderId.replace(/^#/, "").trim();
-    const response = await axiosClient.get<ApiResponse<BackendAdminOrderDetailResponse>>(
-      `/api/v1/admin/orders/${encodeURIComponent(cleanId)}`
-    );
+    const response = await axiosClient.get<
+      ApiResponse<BackendAdminOrderDetailResponse>
+    >(`/api/v1/admin/orders/${encodeURIComponent(cleanId)}`);
     if (!response.data?.success || !response.data?.data?.order) {
       throw new Error("Không tìm thấy đơn hàng trên hệ thống.");
     }
-    return normalizeAdminOrderDetail(response.data.data.order, response.data.data.buyer);
+    return normalizeAdminOrderDetail(
+      response.data.data.order,
+      response.data.data.buyer,
+    );
   },
 
   confirmOrder: async (orderId: string): Promise<AdminOrderItem> => {
@@ -410,7 +455,9 @@ export const adminOrderApi = {
         address: detail.customer.street,
       },
       shopName: detail.shopName,
-      productSummary: detail.items.map((i) => `${i.name} x${i.quantity}`).join(", "),
+      productSummary: detail.items
+        .map((i) => `${i.name} x${i.quantity}`)
+        .join(", "),
       items: detail.items.map((i) => ({
         name: i.name,
         quantity: i.quantity,
@@ -420,7 +467,9 @@ export const adminOrderApi = {
       paymentMethod: detail.paymentCode === "BANK_TRANSFER" ? "CARD" : "COD",
       paymentNote: detail.financial.paymentNote || "Đã xác nhận",
       totalAmount: detail.financial.grandTotal,
-      formattedTotal: new Intl.NumberFormat("vi-VN").format(detail.financial.grandTotal) + " ₫",
+      formattedTotal:
+        new Intl.NumberFormat("vi-VN").format(detail.financial.grandTotal) +
+        " ₫",
       status: "packing",
       statusLabel: "Đang đóng gói",
       courier: (detail.shipping.courier as OrderCourier) || "GHN",
@@ -446,7 +495,9 @@ export const adminOrderApi = {
         address: detail.customer.street,
       },
       shopName: detail.shopName,
-      productSummary: detail.items.map((i) => `${i.name} x${i.quantity}`).join(", "),
+      productSummary: detail.items
+        .map((i) => `${i.name} x${i.quantity}`)
+        .join(", "),
       items: detail.items.map((i) => ({
         name: i.name,
         quantity: i.quantity,
@@ -456,7 +507,9 @@ export const adminOrderApi = {
       paymentMethod: detail.paymentCode === "BANK_TRANSFER" ? "CARD" : "COD",
       paymentNote: "Đã hủy đơn",
       totalAmount: detail.financial.grandTotal,
-      formattedTotal: new Intl.NumberFormat("vi-VN").format(detail.financial.grandTotal) + " ₫",
+      formattedTotal:
+        new Intl.NumberFormat("vi-VN").format(detail.financial.grandTotal) +
+        " ₫",
       status: "cancelled",
       statusLabel: "Đã hủy",
       courier: (detail.shipping.courier as OrderCourier) || "GHN",
@@ -468,19 +521,22 @@ export const adminOrderApi = {
   changeCourier: async (
     _orderId: string,
     courierName: string,
-    trackingCode: string
+    trackingCode: string,
   ): Promise<{ courierName: string; trackingCode: string }> => {
     return { courierName, trackingCode };
   },
 
   exportCsv: async (): Promise<Blob> => {
-    const { orders } = await adminOrderApi.fetchOrders({ page: 1, pageSize: 100 });
+    const { orders } = await adminOrderApi.fetchOrders({
+      page: 1,
+      pageSize: 100,
+    });
     const headers =
       "Mã đơn hàng,Ngày tạo,Khách hàng,Số điện thoại,Địa chỉ,Cửa hàng,Phương thức,Tổng tiền,Trạng thái,Đơn vị vận chuyển\n";
     const rows = orders
       .map(
         (o) =>
-          `"${o.id}","${o.createdAt}","${o.customer.name}","${o.customer.phone}","${o.customer.address}","${o.shopName}","${o.paymentMethod}","${o.totalAmount}","${o.statusLabel}","${o.courierLabel}"`
+          `"${o.id}","${o.createdAt}","${o.customer.name}","${o.customer.phone}","${o.customer.address}","${o.shopName}","${o.paymentMethod}","${o.totalAmount}","${o.statusLabel}","${o.courierLabel}"`,
       )
       .join("\n");
     return new Blob([headers + rows], { type: "text/csv;charset=utf-8;" });

@@ -2,7 +2,7 @@
 
 Backend REST API cho MVP Rikkei E-Commerce, viết bằng Go 1.24+, `net/http` và MySQL `database/sql`. Tài liệu này hướng dẫn DevOps chạy/vận hành BE và FE tích hợp các API **đang có**.
 
-> Backend implements auth/RBAC, catalog, shop management, seller products, addresses, cart, wishlist, categories, checkout creation with atomic inventory deduction & multi-shop splitting, and comprehensive order tracking/seller processing with return/refund workflows. Direct 3rd-party payment gateway callbacks (Momo/VNPAY) and automated AI shop integrations are planned for future phases.
+> Backend implements auth/RBAC, catalog, shop management, seller products, addresses, cart, wishlist, categories, checkout creation with atomic inventory deduction and multi-shop splitting, COD and PayOS bank transfer collection with signed webhook reconciliation, and order tracking. Provider-backed refunds are not implemented; paid cancellation/return cases require manual reconciliation.
 
 ## Cấu trúc mã nguồn
 
@@ -30,7 +30,7 @@ internal/
 
 Trong domain, routes/handlers và logic riêng domain nằm cạnh nhau theo package boundary của Go; chỉ đưa helper sang platform khi có nhiều domain dùng chung. Không tạo abstraction repository/service chỉ để đủ tên thư mục: tách lớp khi nghiệp vụ hoặc query có ranh giới ổn định và cần được kiểm thử/đổi độc lập.
 
-Contract đầy đủ của catalog và inventory nằm tại [`docs/catalog-api.md`](../docs/catalog-api.md). Hướng dẫn Compose/seed local nằm tại [`docs/local-development.md`](../docs/local-development.md).
+Contract đầy đủ của catalog và inventory nằm tại [`docs/catalog-api.md`](../docs/catalog-api.md). Hướng dẫn Compose/seed local nằm tại [`docs/local-development.md`](../docs/local-development.md). Luồng COD/PayOS, API và cấu hình được mô tả trong [`docs/payment-flow.md`](../docs/payment-flow.md).
 
 ## 1. Hướng dẫn DevOps
 
@@ -47,7 +47,7 @@ Contract đầy đủ của catalog và inventory nằm tại [`docs/catalog-api
 Từ thư mục gốc `rikkei_ecommerce`:
 
 ```powershell
-Copy-Item .env.example .env   # chỉ khi chưa có .env
+# Tạo .env ở thư mục gốc theo docs/local-development.md trước khi chạy Compose.
 # Đặt các mật khẩu local và JWT_SECRET riêng trong .env.
 docker compose up --build -d
 docker compose ps
@@ -67,7 +67,7 @@ Seed chỉ dành cho local; các tài khoản và mật khẩu mẫu được gh
 Từ thư mục `rikkei_ecommerce/backend`:
 
 ```powershell
-Copy-Item .env.example .env   # cấu hình DATABASE_DSN và JWT_SECRET trước
+# Tạo backend/.env hoặc đặt các biến cấu hình trong môi trường shell; Compose dùng .env ở root.
 go run ./cmd/api
 ```
 
@@ -83,25 +83,25 @@ Không chạy hai backend cùng bind một host port. API gốc mặc định `h
 
 `cmd/api` và `cmd/migrate` đọc `.env` tại **working directory hiện tại**; biến môi trường của hệ thống được ưu tiên.
 
-| Biến | Mục đích | Mặc định / yêu cầu |
-|---|---|---|
-| `APP_ENV` | Chế độ chạy | `development`; production đặt `production` |
-| `HTTP_ADDR` | Địa chỉ listen | `:8080` |
-| `LOG_LEVEL` | Mức operational log | `info`; nhận `debug`, `info`, `warn`, `error` |
-| `DATABASE_DSN` | Kết nối MySQL | Bắt buộc; schema phải tồn tại |
-| `JWT_SECRET` | Ký JWT và HMAC OTP | Bắt buộc, tối thiểu 32 ký tự; production dùng secret ngẫu nhiên mạnh |
-| `ACCESS_TOKEN_TTL` | Tuổi thọ access token | `15m`; 1 phút–1 giờ |
-| `REFRESH_TOKEN_TTL` | Tuổi thọ refresh session | `168h` (7 ngày); tối thiểu 1 giờ |
-| `OTP_TTL` | Tuổi thọ OTP | `10m`; 1–30 phút |
-| `CORS_ALLOWED_ORIGINS` | Allowlist origin, phân cách dấu phẩy | Local `http://localhost:5173`; production chỉ origin HTTPS tường minh |
-| `TRUSTED_PROXY_CIDRS` | CIDR của reverse proxy được phép cung cấp `X-Real-IP` | Compose local mặc định `172.22.0.3/32`; thay bằng đúng IP/CIDR proxy thực tế |
-| `COOKIE_SECURE` | Chỉ gửi refresh cookie qua HTTPS | `false` local; production bắt buộc `true` |
-| `AUTO_MIGRATE` | Áp dụng migration theo domain khi API khởi động | `true` development; production bắt buộc `false` |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE` | SMTP gửi OTP qua implicit TLS (`true`, thường port `465`) hoặc STARTTLS (`false`, thường port `587`) | Gmail thường dùng `smtp.gmail.com:587` với `SMTP_SECURE=false` |
-| `SMTP_USER`, `SMTP_PASSWORD` | SMTP authentication nếu nhà cung cấp yêu cầu | Không commit credentials |
-| `SMTP_PASS` | Alias tương thích cho `SMTP_PASSWORD` | Chỉ dùng nếu môi trường triển khai cấp tên biến này |
-| `SMTP_SECURE` | TLS ngầm định (true, thường port 465) hay STARTTLS (false, thường port 587) | Mặc định `false` |
-| `SMTP_FROM` | Email gửi OTP | Production bắt buộc email hợp lệ |
+| Biến                                    | Mục đích                                                                                             | Mặc định / yêu cầu                                                           |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `APP_ENV`                               | Chế độ chạy                                                                                          | `development`; production đặt `production`                                   |
+| `HTTP_ADDR`                             | Địa chỉ listen                                                                                       | `:8080`                                                                      |
+| `LOG_LEVEL`                             | Mức operational log                                                                                  | `info`; nhận `debug`, `info`, `warn`, `error`                                |
+| `DATABASE_DSN`                          | Kết nối MySQL                                                                                        | Bắt buộc; schema phải tồn tại                                                |
+| `JWT_SECRET`                            | Ký JWT và HMAC OTP                                                                                   | Bắt buộc, tối thiểu 32 ký tự; production dùng secret ngẫu nhiên mạnh         |
+| `ACCESS_TOKEN_TTL`                      | Tuổi thọ access token                                                                                | `15m`; 1 phút–1 giờ                                                          |
+| `REFRESH_TOKEN_TTL`                     | Tuổi thọ refresh session                                                                             | `168h` (7 ngày); tối thiểu 1 giờ                                             |
+| `OTP_TTL`                               | Tuổi thọ OTP                                                                                         | `10m`; 1–30 phút                                                             |
+| `CORS_ALLOWED_ORIGINS`                  | Allowlist origin, phân cách dấu phẩy                                                                 | Local `http://localhost:5173`; production chỉ origin HTTPS tường minh        |
+| `TRUSTED_PROXY_CIDRS`                   | CIDR của reverse proxy được phép cung cấp `X-Real-IP`                                                | Compose local mặc định `172.22.0.3/32`; thay bằng đúng IP/CIDR proxy thực tế |
+| `COOKIE_SECURE`                         | Chỉ gửi refresh cookie qua HTTPS                                                                     | `false` local; production bắt buộc `true`                                    |
+| `AUTO_MIGRATE`                          | Áp dụng migration theo domain khi API khởi động                                                      | `true` development; production bắt buộc `false`                              |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE` | SMTP gửi OTP qua implicit TLS (`true`, thường port `465`) hoặc STARTTLS (`false`, thường port `587`) | Gmail thường dùng `smtp.gmail.com:587` với `SMTP_SECURE=false`               |
+| `SMTP_USER`, `SMTP_PASSWORD`            | SMTP authentication nếu nhà cung cấp yêu cầu                                                         | Không commit credentials                                                     |
+| `SMTP_PASS`                             | Alias tương thích cho `SMTP_PASSWORD`                                                                | Chỉ dùng nếu môi trường triển khai cấp tên biến này                          |
+| `SMTP_SECURE`                           | TLS ngầm định (true, thường port 465) hay STARTTLS (false, thường port 587)                          | Mặc định `false`                                                             |
+| `SMTP_FROM`                             | Email gửi OTP                                                                                        | Production bắt buộc email hợp lệ                                             |
 
 Không commit `.env`, DSN/password DB, SMTP credentials hoặc JWT secret. Dùng tài khoản DB có quyền tối thiểu; chỉ bước migration cần quyền DDL.
 
@@ -173,75 +173,75 @@ Postman collection importable kiểm thử các luồng API chính (không kiể
 
 ### API hiện có
 
-| Method | Endpoint | Xác thực | Công dụng |
-|---|---|---|---|
-| `GET` | `/healthz` | Không | Health check DB |
-| `POST` | `/api/v1/auth/register` | Không | Tạo yêu cầu đăng ký, gửi OTP; chưa tạo user trước khi xác minh |
-| `POST` | `/api/v1/auth/resend-email-otp` | Không | Gửi lại OTP cho đăng ký đang chờ; giới hạn 60 giây |
-| `POST` | `/api/v1/auth/verify-email-otp` | Không | Xác minh email và tạo tài khoản CLIENT |
-| `POST` | `/api/v1/auth/login` | Không | Email/phone và password; cấp access token, đặt refresh cookie |
-| `POST` | `/api/v1/auth/refresh` | Refresh cookie | Xoay refresh token và cấp access token |
-| `POST` | `/api/v1/auth/logout` | Access token | Thu hồi phiên hiện tại |
-| `GET` | `/api/v1/auth/me` | Access token | Hồ sơ tài khoản hiện tại |
-| `PUT` | `/api/v1/auth/profile` | Access token | Cập nhật tên và phone |
-| `PUT` | `/api/v1/auth/password` | Access token | Đổi password, thu hồi refresh session |
-| `POST` | `/api/v1/auth/forgot-password` | Không | Yêu cầu OTP qua email |
-| `POST` | `/api/v1/auth/verify-reset-otp` | Không | Xác thực OTP |
-| `POST` | `/api/v1/auth/reset-password` | OTP | Đặt password mới, thu hồi session |
-| `GET` | `/api/v1/admin/users` | ADMIN | Danh sách tối đa 100 user |
-| `GET` | `/api/v1/categories` | Không | Danh mục đang hoạt động |
-| `GET` | `/api/v1/categories/{id}/attributes` | Không | Thuộc tính biến thể, bắt buộc/tùy chọn và các giá trị của danh mục |
-| `PUT` | `/api/v1/admin/categories/{id}/attributes` | ADMIN | Thay thế cấu hình thuộc tính biến thể danh mục |
-| `GET` | `/api/v1/products` | Không | Danh sách/tìm kiếm/lọc/sắp xếp sản phẩm |
-| `GET` | `/api/v1/products/{id}` | Không | Chi tiết sản phẩm, ảnh, biến thể và shop công khai |
-| `GET` | `/api/v1/shops/{id}` | Không | Hồ sơ shop đang hoạt động |
-| `GET` | `/api/v1/shops/{id}/products` | Không | Sản phẩm công khai của shop |
-| `GET` | `/api/v1/shops/{id}/follow` | CLIENT | Trạng thái follow của user hiện tại |
-| `POST` | `/api/v1/shops` | CLIENT | Alias tương thích; tạo hồ sơ shop `DRAFT` |
-| `POST` | `/api/v1/me/shop` | CLIENT | Tạo bản nháp shop `DRAFT` |
-| `GET` | `/api/v1/me/shop` | CLIENT | Xem shop của tài khoản hiện tại |
-| `PUT` | `/api/v1/me/shop` | CLIENT | Sửa hồ sơ shop của chủ shop; không tự gửi duyệt |
-| `POST` | `/api/v1/me/shop/submit` | CLIENT | Gửi bản nháp/yêu cầu bổ sung để xét duyệt |
-| `GET` | `/api/v1/admin/shops` | ADMIN | Lọc/danh sách shop |
-| `PATCH` | `/api/v1/admin/shops/{id}/status` | ADMIN | Duyệt/từ chối/khóa shop |
-| `PATCH` | `/api/v1/admin/shops/{id}/approve` | ADMIN | Duyệt shop, cấp role SELLER |
-| `PATCH` | `/api/v1/admin/shops/{id}/reject` | ADMIN | Từ chối shop |
-| `PATCH` | `/api/v1/admin/shops/{id}/lock` | ADMIN | Chuyển shop sang SUSPENDED |
-| `GET` | `/api/v1/seller/products` | SELLER | Danh sách sản phẩm của shop ACTIVE |
-| `POST` | `/api/v1/seller/products` | SELLER | Tạo sản phẩm, ảnh, SKU/biến thể và tồn kho |
-| `GET` | `/api/v1/seller/products/{id}` | SELLER | Xem sản phẩm do shop sở hữu |
-| `PUT` | `/api/v1/seller/products/{id}` | SELLER | Cập nhật và gửi lại sản phẩm để duyệt |
-| `DELETE` | `/api/v1/seller/products/{id}` | SELLER | Xóa mềm sản phẩm, vô hiệu hóa biến thể |
-| `GET` | `/api/v1/addresses` | Access token | Danh sách địa chỉ của tài khoản |
-| `POST` | `/api/v1/addresses` | Access token | Thêm địa chỉ |
-| `PUT` | `/api/v1/addresses/{id}` | Access token | Sửa địa chỉ thuộc tài khoản |
-| `DELETE` | `/api/v1/addresses/{id}` | Access token | Xóa địa chỉ thuộc tài khoản |
-| `PATCH` | `/api/v1/addresses/{id}/default` | Access token | Đặt địa chỉ mặc định |
-| `GET` | `/api/v1/cart` | CLIENT | Đọc giỏ hàng của tài khoản hiện tại |
-| `POST` | `/api/v1/cart/items` | CLIENT | Thêm biến thể; nếu đã có thì cộng số lượng |
-| `PUT` | `/api/v1/cart/items/{id}` | CLIENT | Đặt số lượng tuyệt đối cho item |
-| `DELETE` | `/api/v1/cart/items/{id}` | CLIENT | Xóa item thuộc giỏ của tài khoản hiện tại |
-| `DELETE` | `/api/v1/cart/items` | CLIENT | Xóa toàn bộ item trong giỏ hiện tại |
-| `GET` | `/api/v1/wishlist` | CLIENT | Danh sách sản phẩm yêu thích của tài khoản hiện tại |
-| `POST` | `/api/v1/wishlist/products/{id}` | CLIENT | Thêm sản phẩm công khai vào wishlist (idempotent) |
-| `DELETE` | `/api/v1/wishlist/products/{id}` | CLIENT | Bỏ sản phẩm khỏi wishlist |
-| `POST` | `/api/v1/shops/{id}/follow` | CLIENT | Theo dõi shop |
-| `DELETE` | `/api/v1/shops/{id}/follow` | CLIENT | Bỏ theo dõi shop |
-| `GET` | `/api/v1/admin/products` | ADMIN | Danh sách/tìm kiếm/lọc/sort inventory |
-| `GET` | `/api/v1/admin/inventory-stats` | ADMIN | Thống kê inventory |
-| `PATCH` | `/api/v1/admin/products/{id}/status` | ADMIN | Bật/tắt sản phẩm đã duyệt |
-| `DELETE` | `/api/v1/admin/products/{id}` | ADMIN | Xóa mềm sản phẩm |
-| `POST` | `/api/v1/admin/products/bulk` | ADMIN | Activate/deactivate/delete tối đa 100 ID |
+| Method   | Endpoint                                   | Xác thực       | Công dụng                                                          |
+| -------- | ------------------------------------------ | -------------- | ------------------------------------------------------------------ |
+| `GET`    | `/healthz`                                 | Không          | Health check DB                                                    |
+| `POST`   | `/api/v1/auth/register`                    | Không          | Tạo yêu cầu đăng ký, gửi OTP; chưa tạo user trước khi xác minh     |
+| `POST`   | `/api/v1/auth/resend-email-otp`            | Không          | Gửi lại OTP cho đăng ký đang chờ; giới hạn 60 giây                 |
+| `POST`   | `/api/v1/auth/verify-email-otp`            | Không          | Xác minh email và tạo tài khoản CLIENT                             |
+| `POST`   | `/api/v1/auth/login`                       | Không          | Email/phone và password; cấp access token, đặt refresh cookie      |
+| `POST`   | `/api/v1/auth/refresh`                     | Refresh cookie | Xoay refresh token và cấp access token                             |
+| `POST`   | `/api/v1/auth/logout`                      | Access token   | Thu hồi phiên hiện tại                                             |
+| `GET`    | `/api/v1/auth/me`                          | Access token   | Hồ sơ tài khoản hiện tại                                           |
+| `PUT`    | `/api/v1/auth/profile`                     | Access token   | Cập nhật tên và phone                                              |
+| `PUT`    | `/api/v1/auth/password`                    | Access token   | Đổi password, thu hồi refresh session                              |
+| `POST`   | `/api/v1/auth/forgot-password`             | Không          | Yêu cầu OTP qua email                                              |
+| `POST`   | `/api/v1/auth/verify-reset-otp`            | Không          | Xác thực OTP                                                       |
+| `POST`   | `/api/v1/auth/reset-password`              | OTP            | Đặt password mới, thu hồi session                                  |
+| `GET`    | `/api/v1/admin/users`                      | ADMIN          | Danh sách tối đa 100 user                                          |
+| `GET`    | `/api/v1/categories`                       | Không          | Danh mục đang hoạt động                                            |
+| `GET`    | `/api/v1/categories/{id}/attributes`       | Không          | Thuộc tính biến thể, bắt buộc/tùy chọn và các giá trị của danh mục |
+| `PUT`    | `/api/v1/admin/categories/{id}/attributes` | ADMIN          | Thay thế cấu hình thuộc tính biến thể danh mục                     |
+| `GET`    | `/api/v1/products`                         | Không          | Danh sách/tìm kiếm/lọc/sắp xếp sản phẩm                            |
+| `GET`    | `/api/v1/products/{id}`                    | Không          | Chi tiết sản phẩm, ảnh, biến thể và shop công khai                 |
+| `GET`    | `/api/v1/shops/{id}`                       | Không          | Hồ sơ shop đang hoạt động                                          |
+| `GET`    | `/api/v1/shops/{id}/products`              | Không          | Sản phẩm công khai của shop                                        |
+| `GET`    | `/api/v1/shops/{id}/follow`                | CLIENT         | Trạng thái follow của user hiện tại                                |
+| `POST`   | `/api/v1/shops`                            | CLIENT         | Alias tương thích; tạo hồ sơ shop `DRAFT`                          |
+| `POST`   | `/api/v1/me/shop`                          | CLIENT         | Tạo bản nháp shop `DRAFT`                                          |
+| `GET`    | `/api/v1/me/shop`                          | CLIENT         | Xem shop của tài khoản hiện tại                                    |
+| `PUT`    | `/api/v1/me/shop`                          | CLIENT         | Sửa hồ sơ shop của chủ shop; không tự gửi duyệt                    |
+| `POST`   | `/api/v1/me/shop/submit`                   | CLIENT         | Gửi bản nháp/yêu cầu bổ sung để xét duyệt                          |
+| `GET`    | `/api/v1/admin/shops`                      | ADMIN          | Lọc/danh sách shop                                                 |
+| `PATCH`  | `/api/v1/admin/shops/{id}/status`          | ADMIN          | Duyệt/từ chối/khóa shop                                            |
+| `PATCH`  | `/api/v1/admin/shops/{id}/approve`         | ADMIN          | Duyệt shop, cấp role SELLER                                        |
+| `PATCH`  | `/api/v1/admin/shops/{id}/reject`          | ADMIN          | Từ chối shop                                                       |
+| `PATCH`  | `/api/v1/admin/shops/{id}/lock`            | ADMIN          | Chuyển shop sang SUSPENDED                                         |
+| `GET`    | `/api/v1/seller/products`                  | SELLER         | Danh sách sản phẩm của shop ACTIVE                                 |
+| `POST`   | `/api/v1/seller/products`                  | SELLER         | Tạo sản phẩm, ảnh, SKU/biến thể và tồn kho                         |
+| `GET`    | `/api/v1/seller/products/{id}`             | SELLER         | Xem sản phẩm do shop sở hữu                                        |
+| `PUT`    | `/api/v1/seller/products/{id}`             | SELLER         | Cập nhật và gửi lại sản phẩm để duyệt                              |
+| `DELETE` | `/api/v1/seller/products/{id}`             | SELLER         | Xóa mềm sản phẩm, vô hiệu hóa biến thể                             |
+| `GET`    | `/api/v1/addresses`                        | Access token   | Danh sách địa chỉ của tài khoản                                    |
+| `POST`   | `/api/v1/addresses`                        | Access token   | Thêm địa chỉ                                                       |
+| `PUT`    | `/api/v1/addresses/{id}`                   | Access token   | Sửa địa chỉ thuộc tài khoản                                        |
+| `DELETE` | `/api/v1/addresses/{id}`                   | Access token   | Xóa địa chỉ thuộc tài khoản                                        |
+| `PATCH`  | `/api/v1/addresses/{id}/default`           | Access token   | Đặt địa chỉ mặc định                                               |
+| `GET`    | `/api/v1/cart`                             | CLIENT         | Đọc giỏ hàng của tài khoản hiện tại                                |
+| `POST`   | `/api/v1/cart/items`                       | CLIENT         | Thêm biến thể; nếu đã có thì cộng số lượng                         |
+| `PUT`    | `/api/v1/cart/items/{id}`                  | CLIENT         | Đặt số lượng tuyệt đối cho item                                    |
+| `DELETE` | `/api/v1/cart/items/{id}`                  | CLIENT         | Xóa item thuộc giỏ của tài khoản hiện tại                          |
+| `DELETE` | `/api/v1/cart/items`                       | CLIENT         | Xóa toàn bộ item trong giỏ hiện tại                                |
+| `GET`    | `/api/v1/wishlist`                         | CLIENT         | Danh sách sản phẩm yêu thích của tài khoản hiện tại                |
+| `POST`   | `/api/v1/wishlist/products/{id}`           | CLIENT         | Thêm sản phẩm công khai vào wishlist (idempotent)                  |
+| `DELETE` | `/api/v1/wishlist/products/{id}`           | CLIENT         | Bỏ sản phẩm khỏi wishlist                                          |
+| `POST`   | `/api/v1/shops/{id}/follow`                | CLIENT         | Theo dõi shop                                                      |
+| `DELETE` | `/api/v1/shops/{id}/follow`                | CLIENT         | Bỏ theo dõi shop                                                   |
+| `GET`    | `/api/v1/admin/products`                   | ADMIN          | Danh sách/tìm kiếm/lọc/sort inventory                              |
+| `GET`    | `/api/v1/admin/inventory-stats`            | ADMIN          | Thống kê inventory                                                 |
+| `PATCH`  | `/api/v1/admin/products/{id}/status`       | ADMIN          | Bật/tắt sản phẩm đã duyệt                                          |
+| `DELETE` | `/api/v1/admin/products/{id}`              | ADMIN          | Xóa mềm sản phẩm                                                   |
+| `POST`   | `/api/v1/admin/products/bulk`              | ADMIN          | Activate/deactivate/delete tối đa 100 ID                           |
 
 ### Những route FE đang gọi nhưng BE chưa triển khai
 
 FE hiện có API client cho dashboard/admin shop/order nhưng BE chưa có các endpoint dưới đây. Các module FE bắt lỗi và trả dữ liệu mock khi request thất bại, nên UI hiển thị được không đồng nghĩa dữ liệu đã được lưu ở BE. Không coi những phần này là tích hợp hoàn chỉnh cho tới khi BE có contract/API tương ứng và bỏ fallback mock trong môi trường tích hợp:
 
-| Nhóm | Endpoint FE đang gọi nhưng BE chưa có |
-|---|---|
-| Admin dashboard | `GET /api/v1/admin/dashboard`, `GET /api/v1/admin/dashboard/export` |
-| Admin shops | `GET /api/v1/admin/shops/metrics`, `PATCH /api/v1/admin/shops/{id}/toggle-live`, `PATCH /api/v1/admin/shops/{id}/unlock`, `PATCH /api/v1/admin/shops/{id}/commission`, `GET /api/v1/admin/shops/export` |
-| Admin orders | `GET /api/v1/admin/orders`, `GET /api/v1/admin/orders/counts`, `GET /api/v1/admin/orders/{id}`, `PATCH /api/v1/admin/orders/{id}/confirm`, `PATCH /api/v1/admin/orders/{id}/cancel`, `PATCH /api/v1/admin/orders/{id}/courier`, `POST /api/v1/admin/orders/bulk-confirm`, `GET /api/v1/admin/orders/export` |
+| Nhóm            | Endpoint FE đang gọi nhưng BE chưa có                                                                                                                                                                                                                                                                       |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Admin dashboard | `GET /api/v1/admin/dashboard`, `GET /api/v1/admin/dashboard/export`                                                                                                                                                                                                                                         |
+| Admin shops     | `GET /api/v1/admin/shops/metrics`, `PATCH /api/v1/admin/shops/{id}/toggle-live`, `PATCH /api/v1/admin/shops/{id}/unlock`, `PATCH /api/v1/admin/shops/{id}/commission`, `GET /api/v1/admin/shops/export`                                                                                                     |
+| Admin orders    | `GET /api/v1/admin/orders`, `GET /api/v1/admin/orders/counts`, `GET /api/v1/admin/orders/{id}`, `PATCH /api/v1/admin/orders/{id}/confirm`, `PATCH /api/v1/admin/orders/{id}/cancel`, `PATCH /api/v1/admin/orders/{id}/courier`, `POST /api/v1/admin/orders/bulk-confirm`, `GET /api/v1/admin/orders/export` |
 
 Cart and wishlist APIs are available. Voucher validation, delivery/payment options, checkout quote, and order creation/inventory deduction APIs are implemented.
 
@@ -324,16 +324,16 @@ OTP mặc định hết hạn sau 10 phút, tối đa 5 lần nhập sai và gi�
 
 `GET /api/v1/products` hỗ trợ:
 
-| Query | Mô tả |
-|---|---|
-| `q` | Tìm theo token trong tên sản phẩm; tối đa 100 ký tự. Kết quả xếp theo tỷ lệ token khớp tên từ cao xuống thấp; alias `search` được hỗ trợ. |
-| `category_id` | `0` hoặc không gửi để lấy mọi danh mục; ID không âm |
-| `brand_id`, `shop_id` | ID dương |
-| `min_price`, `max_price` | Giá không âm; min không được lớn hơn max |
-| `min_rating` | Từ 0 đến 5 |
-| `sort` | `latest` (mặc định), `best_selling`, `price_asc`, `price_desc` |
-| `page` | Mặc định 1; từ 1 đến 100000 |
-| `limit` | Mặc định 100; tối đa 100 |
+| Query                    | Mô tả                                                                                                                                     |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `q`                      | Tìm theo token trong tên sản phẩm; tối đa 100 ký tự. Kết quả xếp theo tỷ lệ token khớp tên từ cao xuống thấp; alias `search` được hỗ trợ. |
+| `category_id`            | `0` hoặc không gửi để lấy mọi danh mục; ID không âm                                                                                       |
+| `brand_id`, `shop_id`    | ID dương                                                                                                                                  |
+| `min_price`, `max_price` | Giá không âm; min không được lớn hơn max                                                                                                  |
+| `min_rating`             | Từ 0 đến 5                                                                                                                                |
+| `sort`                   | `latest` (mặc định), `best_selling`, `price_asc`, `price_desc`                                                                            |
+| `page`                   | Mặc định 1; từ 1 đến 100000                                                                                                               |
+| `limit`                  | Mặc định 100; tối đa 100                                                                                                                  |
 
 Ví dụ:
 
@@ -363,13 +363,13 @@ Gửi access token dạng Bearer. Gọi lặp là idempotent, follower count đ�
 
 Danh sách công khai `GET /api/v1/categories` chỉ trả danh mục đang hoạt động. Chỉ role `ADMIN` được dùng các API quản trị sau; chúng bao gồm cả danh mục inactive để admin có thể chỉnh sửa hoặc kích hoạt lại:
 
-| Method | Endpoint | Tác dụng |
-|---|---|---|
-| `GET` | `/api/v1/admin/categories` | Liệt kê toàn bộ danh mục (admin lọc/tìm kiếm trên danh sách) |
-| `POST` | `/api/v1/admin/categories` | Tạo danh mục |
-| `PUT` | `/api/v1/admin/categories/{id}` | Cập nhật tên, slug, ảnh, thứ tự, parent và trạng thái |
-| `PATCH` | `/api/v1/admin/categories/{id}/status` | Đổi `is_active` (`true`/`false`) |
-| `DELETE` | `/api/v1/admin/categories/{id}` | Soft-delete bằng cách chuyển inactive; không xóa lịch sử liên kết sản phẩm |
+| Method   | Endpoint                               | Tác dụng                                                                   |
+| -------- | -------------------------------------- | -------------------------------------------------------------------------- |
+| `GET`    | `/api/v1/admin/categories`             | Liệt kê toàn bộ danh mục (admin lọc/tìm kiếm trên danh sách)               |
+| `POST`   | `/api/v1/admin/categories`             | Tạo danh mục                                                               |
+| `PUT`    | `/api/v1/admin/categories/{id}`        | Cập nhật tên, slug, ảnh, thứ tự, parent và trạng thái                      |
+| `PATCH`  | `/api/v1/admin/categories/{id}/status` | Đổi `is_active` (`true`/`false`)                                           |
+| `DELETE` | `/api/v1/admin/categories/{id}`        | Soft-delete bằng cách chuyển inactive; không xóa lịch sử liên kết sản phẩm |
 
 Body tạo/cập nhật dùng `name` (2–120 ký tự), `slug` (chữ thường ASCII, số, dấu gạch nối; `all` dành riêng), `image_url` (HTTPS hoặc rỗng), `sort_order` (0–100000), `parent_id` (ID dương hoặc `null`) và `is_active` (boolean). Slug duy nhất; trùng slug trả `409 category_slug_in_use`. Parent phải tồn tại, không thể là chính danh mục hoặc hậu duệ; không thể kích hoạt danh mục bên dưới một ancestor inactive. Danh mục có con active không thể bị chuyển inactive cho đến khi các con được chuyển inactive trước. DELETE có thể gọi lặp an toàn. Không có hard-delete API.
 
@@ -378,6 +378,7 @@ Trang quản trị nằm tại `/admin/categories`, yêu cầu đăng nhập ADM
 ### Mở và quản lý shop
 
 Điểm vào `/register-open-shop` không yêu cầu đăng nhập: khách mới có thể tạo tài khoản (API đăng ký chỉ cấp `CLIENT`) rồi tiếp tục khai báo shop. Người đã có `CLIENT` đăng nhập để tiếp tục hồ sơ; ràng buộc duy nhất theo chủ tài khoản ngăn tạo shop thứ hai. FE tải `GET /api/v1/me/shop` trước khi hiện form và yêu cầu thử lại nếu không lấy được trạng thái.
+
 - Một tài khoản có thể giữ đồng thời `CLIENT` và `SELLER`. API đăng ký public chỉ tạo `CLIENT`; không nhận role từ body. `GET /api/v1/auth/me`, login và refresh trả trường `roles` dạng mảng, `shop_status` nếu có shop, đồng thời giữ `role` dạng chuỗi để tương thích client cũ.
 - `POST /api/v1/me/shop` (và alias `POST /api/v1/shops`) tạo bản nháp `DRAFT`; body gồm `name`, `description`, `logo_url`, `banner_url`, `phone`, `warehouse_address`. Tên dài 2–150 ký tự, URL nếu có phải là HTTPS. Mỗi tài khoản và tên shop chỉ được dùng một lần.
 - `PUT /api/v1/me/shop` chỉ cập nhật shop thuộc user hiện tại và không tự gửi duyệt. Bản nháp, hồ sơ bị từ chối/yêu cầu bổ sung và hồ sơ đang xét duyệt có thể chỉnh sửa; `POST /api/v1/me/shop/submit` chuyển `DRAFT`, `NEEDS_INFO` hoặc `REJECTED` về `PENDING`. Body nộp gồm `agreements` với `version: "seller-onboarding-v1"` và ba cờ `service_policy`, `authenticity`, `anti_counterfeit` đều phải là `true`. Backend lưu phiên bản, thời điểm, IP và User-Agent để audit; nộp lại khi hồ sơ `PENDING` là idempotent.
@@ -464,23 +465,23 @@ Body JSON bị giới hạn kích thước, field lạ, JSON sai/nhiều JSON va
 
 ### Lỗi và phản hồi FE
 
-| HTTP | Ý nghĩa thường gặp | Hành vi FE khuyến nghị |
-|---|---|---|
-| `400` | JSON/query/input không hợp lệ | Báo lỗi field/query; không lặp request nguyên trạng |
-| `401` | Thiếu/sai/hết hạn access token hoặc phiên | Thử refresh một lần; nếu thất bại thì xóa phiên |
-| `403` | Origin không được phép hoặc role không đủ | Báo không có quyền; không retry tự động |
-| `404` | Tài nguyên không tồn tại/không công khai | Hiển thị not found |
-| `409` | Tài khoản trùng, trạng thái không cho phép, follow shop của mình | Hiển thị xung đột và yêu cầu tải lại nếu phù hợp |
-| `415` | Body không gửi `application/json` | Sửa request header |
-| `429` | Rate limit | Tôn trọng `Retry-After`, chờ trước khi thử lại |
-| `500`/`503` | Lỗi BE hoặc DB chưa sẵn sàng | Báo lỗi chung, không hiển thị chi tiết nội bộ |
+| HTTP        | Ý nghĩa thường gặp                                               | Hành vi FE khuyến nghị                              |
+| ----------- | ---------------------------------------------------------------- | --------------------------------------------------- |
+| `400`       | JSON/query/input không hợp lệ                                    | Báo lỗi field/query; không lặp request nguyên trạng |
+| `401`       | Thiếu/sai/hết hạn access token hoặc phiên                        | Thử refresh một lần; nếu thất bại thì xóa phiên     |
+| `403`       | Origin không được phép hoặc role không đủ                        | Báo không có quyền; không retry tự động             |
+| `404`       | Tài nguyên không tồn tại/không công khai                         | Hiển thị not found                                  |
+| `409`       | Tài khoản trùng, trạng thái không cho phép, follow shop của mình | Hiển thị xung đột và yêu cầu tải lại nếu phù hợp    |
+| `415`       | Body không gửi `application/json`                                | Sửa request header                                  |
+| `429`       | Rate limit                                                       | Tôn trọng `Retry-After`, chờ trước khi thử lại      |
+| `500`/`503` | Lỗi BE hoặc DB chưa sẵn sàng                                     | Báo lỗi chung, không hiển thị chi tiết nội bộ       |
 
 ## 3. Bảo mật và giới hạn hiện tại
 
 - Protected API kiểm tra user status, tất cả role đang gán và trạng thái phiên trong DB; access JWT dùng HS256. Refresh token chỉ lưu dạng hash, xoay vòng và phát hiện replay.
 - Rate limiter hiện nằm trong memory của một process; khi scale nhiều replica cần chuyển giới hạn sang gateway hoặc shared store.
 - OTP delivery qua SMTP STARTTLS cần được kiểm thử trên môi trường tích hợp; không ghi OTP hoặc secret ra log ngoài development.
-- OAuth Google/Facebook, MFA, email/phone verification, device/session UI, order creation, and payment processing are not implemented.
+- OAuth Google/Facebook, MFA, and device/session UI are not implemented. COD and PayOS transfer collection are implemented; provider-backed refunds remain a manual operational process.
 - Role `SELLER` được cấp khi admin duyệt shop; `ADMIN` chỉ cấp qua quy trình quản trị tin cậy. Migration `002_multi_role.sql` tạo `roles`/`user_roles` và backfill các role hiện có, luôn bổ sung `CLIENT` mà không xóa role legacy.
 - Migration không xóa cột `users.role` trong giai đoạn tương thích; authorization sử dụng `user_roles`. Cột legacy được giữ để các client cũ không bị gãy.
 - Security migration không thay thế full commerce schema; migration domain bổ sung role assignments, trạng thái shop `DRAFT`/`NEEDS_INFO`, `addresses.address_type` và `shops.approval_notes`. Kiểm tra schema/backup trước migration tại database đã có dữ liệu.
@@ -503,7 +504,6 @@ scripts/                      Smoke test API local
 Mỗi domain tự đăng ký routes; `internal/app/server` lắp các domain vào HTTP mux, còn `internal/app/migrations` chạy migration theo thứ tự. `internal/domain/auth` không sở hữu routes shop/seller/address. Seller và shop được tách handler, model, repository, validation, route và transport helper thành file trong cùng package. Các domain nhỏ tiếp tục dùng ít file hơn để tránh tạo lớp/thư mục rỗng chỉ vì quy ước.
 
 Catalog dùng MySQL parameterized queries, allowlist sort, giới hạn phân trang và validate query/body tại BE. Gửi thay đổi có kiểm thử liên quan và chạy `go test ./...`, `go vet ./...`, `go build ./...` trước khi merge.
-
 
 ## Voucher validation and checkout quote
 
@@ -530,7 +530,7 @@ Example quote body:
   "payment_method_id": 980101,
   "cart_item_ids": [45, 46],
   "platform_voucher": "SEED-WELCOME",
-  "shop_vouchers": {"920001": "SEED-MAY10"}
+  "shop_vouchers": { "920001": "SEED-MAY10" }
 }
 ```
 
@@ -564,13 +564,15 @@ Tạo đơn hàng từ giỏ hàng được bảo vệ bởi role `CLIENT`, th�
 - **Thanh toán COD & Chuyển khoản (Bank Transfer):**
   - Khởi tạo bản ghi trong bảng `payments` với trạng thái `PENDING`.
   - Phương thức `COD`: `transaction_ref = "COD-" + order_code`.
-  - Phương thức `BANK_TRANSFER`: `transaction_ref = order_code` (được dùng làm nội dung chuyển khoản để đối soát).
+  - Phương thức `BANK_TRANSFER`: checkout tạo payment `PENDING`; sau khi order được commit, FE gọi `POST /api/v1/orders/{id}/payment` để nhận PayOS link. Webhook PayOS hợp lệ mới xác nhận khoản tiền.
 - **Voucher & Giỏ hàng:**
   - Khóa voucher `FOR UPDATE`, kiểm tra hạn dùng, điều kiện tối thiểu và giới hạn `usage_limit`, `usage_per_user`.
   - Tăng số lượt dùng nguyên tử `used_count = used_count + 1`.
   - Lưu lịch sử dùng vào `voucher_usages`.
   - Xóa chính xác các sản phẩm đã mua khỏi bảng `cart_items`.
 - **Response `201 Created`:** Trả về thông tin đầy đủ đơn hàng cha, phương thức thanh toán, hướng dẫn thanh toán `payment`, và danh sách các đơn con `shop_orders`.
+
+PayOS configuration, payment endpoints, retry behavior, and webhook operation are described in `[docs/payment-flow.md](../docs/payment-flow.md)`. Configure `PAYOS_CLIENT_ID`, `PAYOS_API_KEY`, `PAYOS_CHECKSUM_KEY`, `PAYOS_RETURN_URL`, `PAYOS_CANCEL_URL`, and public HTTPS `PUBLIC_API_URL`. `GET /api/v1/orders/{id}/payment` is the authoritative state used by the FE after provider redirects or lost browser connections.
 
 ## Checkout implementation and team follow-up
 
@@ -610,8 +612,8 @@ Hệ thống cung cấp đầy đủ các API phục vụ luồng theo dõi đơ
    - **Quy tắc trạng thái:** Khách chỉ được hủy khi đơn ở trạng thái `PENDING` hoặc `CONFIRMED`. Nếu đơn đã chuyển sang `PACKING`, `SHIPPING`, `COMPLETED` hoặc `RETURNED`, hệ thống trả về lỗi `422 order_cannot_be_cancelled` để tránh hủy khi hàng đã gửi đi.
    - **Bảo toàn tồn kho:** Hoàn trả số lượng tồn kho nguyên tử (`product_variants.stock += quantity`) và giảm số lượng đã bán (`products.sold_count = GREATEST(sold_count - quantity, 0)`) trong cùng 1 transaction DB.
    - **Chính sách hoàn tiền:**
-     - Đơn thanh toán khi nhận hàng (`COD`): Không phát sinh hoàn tiền (`refund_status: "NOT_APPLICABLE"`). Thông báo: *"Đơn hàng thanh toán khi nhận hàng (COD) đã được hủy thành công. Không phát sinh hoàn tiền."*
-     - Đơn thanh toán chuyển khoản / QR / đã thanh toán (`payments.status = 'PAID'` hoặc phương thức online): Tự động cập nhật `payments.status = 'REFUNDED'`, thiết lập `refund_status: "REFUND_PROCESSING"`. Thông báo: *"Đã hủy đơn hàng thành công. Yêu cầu hoàn tiền đã được ghi nhận và tiền sẽ được hoàn lại vào tài khoản của quý khách trong vòng 3 ngày làm việc."*
+     - Đơn thanh toán khi nhận hàng (`COD`): Không phát sinh hoàn tiền (`refund_status: "NOT_APPLICABLE"`). Thông báo: _"Đơn hàng thanh toán khi nhận hàng (COD) đã được hủy thành công. Không phát sinh hoàn tiền."_
+     - Khoản đã thu được giữ nguyên `payments.status`; API trả `REFUND_REQUIRES_MANUAL_REVIEW` và không khẳng định đã hoàn tiền cho đến khi có giao dịch hoàn được xác nhận. Chuyển khoản chưa thanh toán bị chuyển `FAILED` khi hủy toàn bộ đơn.
 
 4. **Xác nhận nhận hàng thành công (`POST /api/v1/orders/{id}/received`):**
    - Cho phép khách hàng chủ động xác nhận đã nhận được kiện hàng khi đơn đang ở trạng thái `SHIPPING`.
@@ -647,7 +649,7 @@ Hệ thống cung cấp đầy đủ các API phục vụ luồng theo dõi đơ
 
 5. **Xử lý yêu cầu đổi trả (`return_requests`):**
    - `GET /api/v1/seller/returns`: Danh sách các yêu cầu đổi trả từ khách hàng đối với sản phẩm của shop.
-   - `PATCH /api/v1/seller/returns/{id}/approve`: Chủ shop chấp thuận yêu cầu đổi trả. Hệ thống tự động chuyển đơn sang `RETURNED`, hoàn lại tồn kho cho biến thể sản phẩm, cập nhật hoàn tiền và thông báo hoàn tiền trong 3 ngày làm việc.
+   - `PATCH /api/v1/seller/returns/{id}/approve`: Chủ shop chấp thuận đổi trả; đơn chuyển `RETURNED` và tồn kho được cập nhật. Hoàn tiền không tự chạy; cần quản trị viên đối soát và xử lý giao dịch riêng.
    - `PATCH /api/v1/seller/returns/{id}/reject`: Chủ shop từ chối yêu cầu đổi trả kèm lý do giải thích cho khách hàng (bắt buộc nhập `note`).
 
 ## Order workflow: customer and seller
@@ -666,7 +668,7 @@ Run `go test ./...`, `go vet ./...`, and from `frontend/project-ecommerce`, `npm
 
 ## Media uploads (Cloudinary)
 
-Configure `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` in the local environment. For Docker Compose, set them in the repository-root `.env`; for running the Go API directly, set them in `backend/.env`. Templates are in both `.env.example` files. The API secret must stay in the backend environment and must never use a `VITE_` prefix. `.env` files are ignored by Git. The upload API returns `503 media_storage_unavailable` when these settings are missing; production startup requires them.
+Configure `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` in the local environment. For Docker Compose, set them in the repository-root `.env`; for running the Go API directly, set them in `backend/.env` or the shell environment. The API secret must stay in the backend environment and must never use a `VITE_` prefix. `.env` files are ignored by Git. The upload API returns `503 media_storage_unavailable` when these settings are missing; production startup requires them.
 
 `POST /api/v1/media` accepts authenticated `multipart/form-data` fields `purpose` and `file`. Supported purposes are `avatar`, `shop-image`, `product-image`, and `product-video`. Image requests accept `.jpg`, `.jpeg`, and `.png` files whose extension, detected content type, and decoded image bytes agree, up to 5 MiB. WebP, GIF, SVG, renamed files, and larger images are rejected. Product videos accept MP4/MOV/WebM up to 20 MiB. The handler checks file extension and content signature, caps the HTTP body, limits concurrent Cloudinary transfers, and sends only validated files to Cloudinary. Each account is limited to 30 upload requests per minute per backend instance; excess requests return `429 upload_rate_limited` and `Retry-After: 60`. Image purposes are available to CLIENT/SELLER roles; product media requires SELLER. The Cloudinary secret and signature are never sent to the browser. The frontend Nginx allows 22 MiB request bodies so a 20 MiB video plus multipart overhead can reach the API.
 
@@ -735,6 +737,6 @@ Nếu SMTP hoạt động, cả xác minh đăng ký và khôi phục mật kh�
 
 Cấu hình local trong `.env` dùng `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=587`, `SMTP_SECURE=false`, `SMTP_USER`, `SMTP_PASSWORD` (hoặc alias `SMTP_PASS`) và `SMTP_FROM`. Với Gmail, địa chỉ người gửi phải trùng `SMTP_USER`. Dùng Gmail App Password, không dùng mật khẩu đăng nhập tài khoản. Nếu App Password đã được chia sẻ trong chat/log, hãy thu hồi và tạo App Password mới trước khi dùng. Không commit `.env`.
 
-Migration `internal/domain/auth/migrations/003_email_verification.sql` tạo bảng yêu cầu đăng ký tạm và được chạy cùng auth migrations. Khi `AUTO_MIGRATE=false`, chạy lệnh migration của backend trước khi triển khai API.
+Migration `internal/domain/auth/migrations/003_email_verification.sql` tạo bảng yêu cầu đăng ký tạm và được chạy cùng auth migrations. Khi `AUTO_MIGRATE=false`, chạy lệnh migration của backend trước khi triển khai API.21
 
 SMOKE API cần mailbox dùng được: đặt `SMOKE_TEST_EMAIL` và cung cấp OTP nhận được bằng `SMOKE_EMAIL_OTP`; khi development SMTP chưa cấu hình, script thử đọc mã xác minh từ Docker backend log. Tài khoản và số điện thoại phải là dữ liệu test riêng.

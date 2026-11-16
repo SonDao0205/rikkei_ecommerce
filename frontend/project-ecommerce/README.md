@@ -8,7 +8,8 @@ Yêu cầu Node.js/npm. Từ thư mục `frontend/project-ecommerce`:
 
 ```powershell
 npm ci
-Copy-Item .env.example .env.local
+# Docker Compose đọc cấu hình từ .env ở thư mục gốc. Với Vite chạy trực tiếp,
+# khai báo VITE_BACKEND_HOST=http://localhost:18080 trong .env.local nếu cần.
 npm run dev
 ```
 

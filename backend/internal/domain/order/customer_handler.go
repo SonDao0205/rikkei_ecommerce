@@ -530,9 +530,15 @@ func (h *CustomerHandler) getCustomerOrderDetail(w http.ResponseWriter, r *http.
 		if pmCode == "COD" && payStatus != "PAID" {
 			refund.RefundStatus = "NOT_APPLICABLE"
 			refund.RefundMessage = "Đơn hàng thanh toán khi nhận hàng (COD) đã được hủy thành công. Không phát sinh hoàn tiền."
+		} else if payStatus == "PAID" {
+			refund.RefundStatus = "REFUND_REQUIRES_MANUAL_REVIEW"
+			refund.RefundMessage = "Khoản thanh toán đã thu chưa được hoàn tự động; yêu cầu cần được quản trị viên đối soát và xử lý riêng."
+		} else if payStatus == "REFUNDED" {
+			refund.RefundStatus = "REFUNDED"
+			refund.RefundMessage = "Khoản hoàn tiền đã được xác nhận."
 		} else {
-			refund.RefundStatus = "REFUND_PROCESSING"
-			refund.RefundMessage = "Yêu cầu hoàn tiền đã được ghi nhận. Tiền sẽ được hoàn lại vào tài khoản của quý khách trong vòng 3 ngày làm việc."
+			refund.RefundStatus = "NOT_PAID"
+			refund.RefundMessage = "Chưa phát sinh khoản thanh toán thành công cần hoàn."
 		}
 		o.RefundInfo = &refund
 	}
@@ -765,21 +771,15 @@ func (h *CustomerHandler) cancelCustomerOrder(w http.ResponseWriter, r *http.Req
 	refundStatus := "NOT_APPLICABLE"
 	refundMessage := "Đơn hàng thanh toán khi nhận hàng (COD) đã được hủy thành công. Không phát sinh hoàn tiền."
 
-	if pmCode != "COD" || payStatus == "PAID" {
-		// Online / QR / Transfer payment or pre-paid
-		refundStatus = "REFUND_PROCESSING"
-		refundMessage = "Đã hủy đơn hàng thành công. Yêu cầu hoàn tiền đã được ghi nhận và tiền sẽ được hoàn lại vào tài khoản của quý khách trong vòng 3 ngày làm việc."
-
-		_, err = tx.ExecContext(r.Context(),
-			`UPDATE payments SET status = 'REFUNDED', updated_at = NOW() WHERE id = ?`,
-			payID,
-		)
-		if err != nil {
-			serverError(w, h.logger, err)
-			return
-		}
+	if payStatus == "PAID" {
+		// No provider refund API is integrated yet. Keep the ledger truthful and flag manual reconciliation.
+		refundStatus = "REFUND_REQUIRES_MANUAL_REVIEW"
+		refundMessage = "Đơn hàng đã hủy. Khoản thanh toán đã thu chưa được hoàn tự động; yêu cầu hoàn tiền cần được xử lý và xác nhận riêng bởi quản trị viên."
 	} else {
-		// COD: not yet paid
+		if pmCode != "COD" {
+			refundStatus = "NOT_PAID"
+			refundMessage = "Đơn hàng đã hủy trước khi thanh toán; chưa phát sinh khoản tiền cần hoàn."
+		}
 		_, _ = tx.ExecContext(r.Context(),
 			`UPDATE payments SET status = 'FAILED', updated_at = NOW() WHERE id = ? AND status = 'PENDING'`,
 			payID,

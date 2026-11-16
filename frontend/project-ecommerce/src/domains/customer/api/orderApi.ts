@@ -83,10 +83,45 @@ type BackendOrderList = {
   counts: UserOrderStatusCounts;
   pagination: { total: number };
 };
+type BackendPaymentStatus = { status: string };
 
 async function fetchBackendOrderPage(params: Record<string, string | number>): Promise<BackendOrderList> {
   const response = await axiosClient.get<APIEnvelope<BackendOrderList>>("/api/v1/orders", { params });
   return response.data.data;
+}
+
+async function refreshPendingBankTransfers(orders: BackendCustomerOrder[]): Promise<void> {
+  const uniquePendingTransfers = new Map<number, BackendCustomerOrder>();
+  for (const order of orders) {
+    if (
+      order.payment_method_code === "BANK_TRANSFER" &&
+      ["PENDING", "FAILED"].includes(order.payment?.status || order.payment_status) &&
+      !uniquePendingTransfers.has(order.id)
+    ) {
+      uniquePendingTransfers.set(order.id, order);
+    }
+  }
+  const pendingTransfers = [...uniquePendingTransfers.values()].slice(0, 6);
+
+  const refreshed = await Promise.allSettled(
+    pendingTransfers.map(async (order) => {
+      const payment = await axiosClient.get<APIEnvelope<BackendPaymentStatus>>(
+        `/api/v1/orders/${encodeURIComponent(String(order.id))}/payment`
+      );
+      return { orderID: order.id, status: payment.data.data.status };
+    })
+  );
+
+  const paidOrderIDs = new Set(
+    refreshed.flatMap((result) =>
+      result.status === "fulfilled" && result.value.status === "PAID" ? [result.value.orderID] : []
+    )
+  );
+  for (const order of orders) {
+    if (!paidOrderIDs.has(order.id)) continue;
+    order.payment_status = "PAID";
+    if (order.payment) order.payment.status = "PAID";
+  }
 }
 
 function expandParentOrders(parents: BackendCustomerOrder[]): BackendCustomerOrder[] {
@@ -142,6 +177,7 @@ async function loadLegacyShopOrders(firstPage: BackendOrderList): Promise<Backen
     const response = await fetchBackendOrderPage({ group_by: "shop", page, limit: pageSize });
     parentOrders.push(...response.orders);
   }
+  await refreshPendingBankTransfers(parentOrders);
   return expandParentOrders(parentOrders);
 }
 
@@ -286,6 +322,7 @@ export const userOrderApi = {
         page: params?.page ?? 1,
         limit: params?.pageSize ?? 6,
       });
+      await refreshPendingBankTransfers(response.orders);
       return {
         orders: response.orders.map(mapCustomerBackendOrder),
         total: response.pagination.total,
