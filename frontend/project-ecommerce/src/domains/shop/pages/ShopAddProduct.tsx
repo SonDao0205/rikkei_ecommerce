@@ -79,7 +79,7 @@ export const ShopAddProduct: React.FC = () => {
   };
 
   const handleSelectCategory = async (category: AddProductCategoryOption) => {
-    let attributes: ShopCategoryAttribute[] = [];
+    let attributes: ShopCategoryAttribute[];
     try {
       attributes = await shopCatalogApi.categoryAttributes(category.id);
       setCategoryAttributes(attributes);

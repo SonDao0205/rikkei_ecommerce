@@ -137,6 +137,36 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
   const [categoryAttributes, setCategoryAttributes] = useState<ShopCategoryAttribute[]>([]);
   const [brandId, setBrandId] = useState<number | null>(editingProduct?.brand_id ?? null);
   const [catalogError, setCatalogError] = useState<string | null>(null);
+  // Attribute Group 1 (Colors)
+  const [group1Name, setGroup1Name] = useState("Màu sắc");
+  const [group1Values, setGroup1Values] = useState<string[]>(() => {
+    if (editingProduct?.rawVariants && editingProduct.rawVariants.length > 0) {
+      const colors = new Set<string>();
+      editingProduct.rawVariants.forEach((v) => {
+        const parts = v.name.split(/[/,•-]/).map((s) => s.trim());
+        if (parts[0]) colors.add(parts[0]);
+      });
+      if (colors.size > 0) return Array.from(colors);
+    }
+    return ["Đen", "Trắng", "Xanh navy"];
+  });
+  const [newGroup1Input, setNewGroup1Input] = useState("");
+
+  // Attribute Group 2 (Sizes)
+  const [enableGroup2, setEnableGroup2] = useState(true);
+  const [group2Name, setGroup2Name] = useState("Kích cỡ / Size");
+  const [group2Values, setGroup2Values] = useState<string[]>(() => {
+    if (editingProduct?.rawVariants && editingProduct.rawVariants.length > 0) {
+      const sizes = new Set<string>();
+      editingProduct.rawVariants.forEach((v) => {
+        const parts = v.name.split(/[/,•-]/).map((s) => s.trim());
+        if (parts[1]) sizes.add(parts[1]);
+      });
+      if (sizes.size > 0) return Array.from(sizes);
+    }
+    return ["39", "40", "41", "42"];
+  });
+  const [newGroup2Input, setNewGroup2Input] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -148,7 +178,7 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
         if (!brands.some((item) => item.id === (editingProduct?.brand_id ?? null))) {
           setBrandId(null);
         }
-        const initial = categories.find((item) => String(item.id) === category) || categories[0];
+        const initial = categories.find((item) => String(item.id) === initialCat) || categories[0];
         if (initial) {
           setCategory(String(initial.id));
           setCategoryLabel(initial.name);
@@ -159,10 +189,18 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
       .then((attributes) => {
         if (active) {
           setCategoryAttributes(attributes);
-          if (attributes[0]) setGroup1Name(attributes[0].name);
+          if (attributes[0]) {
+            setGroup1Name(attributes[0].name);
+            if (attributes[0].values.length) {
+              setGroup1Values(attributes[0].values.map((value) => value.value));
+            }
+          }
           if (attributes[1]) {
             setGroup2Name(attributes[1].name);
             setEnableGroup2(true);
+            if (attributes[1].values.length) {
+              setGroup2Values(attributes[1].values.map((value) => value.value));
+            }
           } else if (attributes.length === 1 && attributes[0].required) {
             setEnableGroup2(false);
           }
@@ -172,7 +210,7 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
         if (active) setCatalogError(error instanceof Error ? error.message : "Không thể tải danh mục và thương hiệu.");
       });
     return () => { active = false; };
-  }, [editingProduct?.brand_id]);
+  }, [editingProduct?.brand_id, initialCat]);
   const [description, setDescription] = useState(
     editingProduct?.variationSubtitle ||
       "Sản phẩm thiết kế cao cấp, chất liệu bền bỉ và kiểm duyệt chất lượng kỹ càng.",
@@ -207,42 +245,6 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
       suggestedSizes: preset?.suggestedSizes || selected?.suggestedSizes || [],
     };
   }, [category, categoryLabel, categoryOptions]);
-
-  // Attribute Group 1 (Colors)
-  const [group1Name, setGroup1Name] = useState("Màu sắc");
-  const [group1Values, setGroup1Values] = useState<string[]>(() => {
-    if (editingProduct?.rawVariants && editingProduct.rawVariants.length > 0) {
-      const colors = new Set<string>();
-      editingProduct.rawVariants.forEach((v) => {
-        const parts = v.name.split(/[/,•-]/).map((s) => s.trim());
-        if (parts[0]) colors.add(parts[0]);
-      });
-      if (colors.size > 0) return Array.from(colors);
-    }
-    return ["Đen", "Trắng", "Xanh navy"];
-  });
-  const [newGroup1Input, setNewGroup1Input] = useState("");
-
-  // Attribute Group 2 (Sizes)
-  const [enableGroup2, setEnableGroup2] = useState(true);
-  const [group2Name, setGroup2Name] = useState("Kích cỡ / Size");
-  const [group2Values, setGroup2Values] = useState<string[]>(() => {
-    if (editingProduct?.rawVariants && editingProduct.rawVariants.length > 0) {
-      const sizes = new Set<string>();
-      editingProduct.rawVariants.forEach((v) => {
-        const parts = v.name.split(/[/,•-]/).map((s) => s.trim());
-        if (parts[1]) sizes.add(parts[1]);
-      });
-      if (sizes.size > 0) return Array.from(sizes);
-    }
-    return ["39", "40", "41", "42"];
-  });
-
-  useEffect(() => {
-    if (categoryAttributes[0]?.values.length) setGroup1Values(categoryAttributes[0].values.map((value) => value.value));
-    if (categoryAttributes[1]?.values.length) setGroup2Values(categoryAttributes[1].values.map((value) => value.value));
-  }, [categoryAttributes]);
-  const [newGroup2Input, setNewGroup2Input] = useState("");
 
   // Overrides for individual matrix cells (price, stock, sku, enabled)
   const [customCellOverrides, setCustomCellOverrides] = useState<
@@ -433,10 +435,18 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
       try {
         const attributes = await shopCatalogApi.categoryAttributes(found.id);
         setCategoryAttributes(attributes);
-        if (attributes[0]) setGroup1Name(attributes[0].name);
+        if (attributes[0]) {
+          setGroup1Name(attributes[0].name);
+          if (attributes[0].values.length) {
+            setGroup1Values(attributes[0].values.map((value) => value.value));
+          }
+        }
         if (attributes[1]) {
           setGroup2Name(attributes[1].name);
           setEnableGroup2(true);
+          if (attributes[1].values.length) {
+            setGroup2Values(attributes[1].values.map((value) => value.value));
+          }
         } else if (attributes.length === 1 && attributes[0].required) {
           setEnableGroup2(false);
         }

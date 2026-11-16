@@ -21,6 +21,9 @@ export function computeCartSummary(
   shopVouchers: Record<number, ShopVoucher>,
   _threshold?: number
 ): CartSummary {
+  // Keep the optional parameter for existing callers; cart summary no longer uses a threshold.
+  void _threshold;
+
   // Only available and selected items count towards subtotal & checkout
   const selectedItems = items.filter((it) => it.selected && it.is_available !== false);
   const selectedCount = selectedItems.reduce((acc, it) => acc + it.quantity, 0);
