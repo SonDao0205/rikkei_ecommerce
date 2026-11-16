@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { ProductItem, ProductVariant } from "@/domains/storefront/types";
 import { useAppDispatch, useAppSelector } from "@/app/state/store";
-import { addCartItem, selectVariantForCheckout } from "@/domains/customer/state/cartSlice";
+import { addCartItem } from "@/domains/customer/state/cartSlice";
 import { toggleWishlistItem } from "@/domains/customer/state/wishlistSlice";
 import WishlistToast from "@/domains/customer/components/wishlist/WishlistToast";
 import { cleanCategoryName } from "@/domains/storefront/utils/categoryUtils";
@@ -323,9 +323,7 @@ export const ProductOrderSection: React.FC<ProductOrderSectionProps> = ({
     setActionError(null);
     setIsBuyingNow(true);
     try {
-      await dispatch(addCartItem({ variantId, quantity })).unwrap();
-      dispatch(selectVariantForCheckout(variantId));
-      navigate("/checkout");
+      navigate(`/checkout?buy_now_product_id=${product.id}&buy_now_variant_id=${variantId}&quantity=${quantity}`);
     } catch (error) {
       const msg = error instanceof Error ? error.message : t("product.order.cannot_buy_title");
       setActionError(msg);

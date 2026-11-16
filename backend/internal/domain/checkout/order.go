@@ -20,13 +20,14 @@ import (
 )
 
 type createOrderRequest struct {
-	AddressID        int64             `json:"address_id"`
-	ShippingMethodID int64             `json:"shipping_method_id"`
-	PaymentMethodID  int64             `json:"payment_method_id"`
-	CartItemIDs      []int64           `json:"cart_item_ids"`
-	PlatformVoucher  string            `json:"platform_voucher,omitempty"`
-	ShopVouchers     map[string]string `json:"shop_vouchers,omitempty"`
-	Note             string            `json:"note,omitempty"`
+	AddressID        int64                `json:"address_id"`
+	ShippingMethodID int64                `json:"shipping_method_id"`
+	PaymentMethodID  int64                `json:"payment_method_id"`
+	CartItemIDs      []int64              `json:"cart_item_ids"`
+	Items            []directCheckoutItem `json:"items,omitempty"`
+	PlatformVoucher  string               `json:"platform_voucher,omitempty"`
+	ShopVouchers     map[string]string    `json:"shop_vouchers,omitempty"`
+	Note             string               `json:"note,omitempty"`
 }
 
 type itemDetails struct {
@@ -43,6 +44,12 @@ type itemDetails struct {
 	ShopID      int64
 	ShopName    string
 	FlashSaleID *int64
+}
+
+type selectedOrderItem struct {
+	CartItemID int64
+	VariantID  int64
+	Quantity   int64
 }
 
 type shopOrderPlan struct {
@@ -80,18 +87,18 @@ func (h *Handler) createOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.AddressID < 1 || req.ShippingMethodID < 1 || req.PaymentMethodID < 1 || len(req.CartItemIDs) == 0 || len(req.CartItemIDs) > 100 {
-		writeError(w, http.StatusBadRequest, "invalid_order_request", "address, shipping method, payment method and 1 to 100 cart item IDs are required")
+	if req.AddressID < 1 || req.ShippingMethodID < 1 || req.PaymentMethodID < 1 || !validCheckoutSelection(req.CartItemIDs, req.Items) {
+		writeError(w, http.StatusBadRequest, "invalid_order_request", "address, shipping method, payment method and either cart item IDs or 1 to 100 variant items are required")
 		return
 	}
 
-	seenItems := make(map[int64]bool, len(req.CartItemIDs))
-	for _, id := range req.CartItemIDs {
-		if id < 1 || seenItems[id] {
-			writeError(w, http.StatusBadRequest, "invalid_cart_item_ids", "Cart item IDs must be positive and unique")
-			return
-		}
-		seenItems[id] = true
+	if len(req.CartItemIDs) > 0 && !validUniqueIDs(req.CartItemIDs) {
+		writeError(w, http.StatusBadRequest, "invalid_cart_item_ids", "Cart item IDs must be positive and unique")
+		return
+	}
+	if len(req.Items) > 0 && !validDirectCheckoutItems(req.Items) {
+		writeError(w, http.StatusBadRequest, "invalid_checkout_items", "Variant IDs and quantities must be positive and unique")
+		return
 	}
 
 	if len(req.ShopVouchers) > 100 {
@@ -172,48 +179,51 @@ func (h *Handler) createOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 4. Query and verify cart items owned by this user
-	cartPlaceholders := strings.TrimRight(strings.Repeat("?,", len(req.CartItemIDs)), ",")
-	cartArgs := make([]any, 0, len(req.CartItemIDs)+1)
-	cartArgs = append(cartArgs, uid)
-	for _, id := range req.CartItemIDs {
-		cartArgs = append(cartArgs, id)
-	}
-
-	cartRows, err := tx.QueryContext(r.Context(),
-		`SELECT ci.id, ci.variant_id, ci.quantity FROM carts ca JOIN cart_items ci ON ci.cart_id=ca.id WHERE ca.user_id=? AND ci.id IN (`+cartPlaceholders+`)`,
-		cartArgs...,
-	)
-	if err != nil {
-		h.serverError(w, err)
-		return
-	}
-	defer cartRows.Close()
-
-	type cartItemMeta struct {
-		variantID int64
-		quantity  int64
-	}
-	cartItemMap := make(map[int64]cartItemMeta, len(req.CartItemIDs))
-	variantIDs := make([]int64, 0, len(req.CartItemIDs))
-	for cartRows.Next() {
-		var cID, vID, qty int64
-		if err = cartRows.Scan(&cID, &vID, &qty); err != nil {
+	// 4. Resolve the selected cart rows or direct variant items.
+	selectedItems := make([]selectedOrderItem, 0, len(req.CartItemIDs)+len(req.Items))
+	variantIDs := make([]int64, 0, len(req.CartItemIDs)+len(req.Items))
+	if len(req.CartItemIDs) > 0 {
+		cartPlaceholders := strings.TrimRight(strings.Repeat("?,", len(req.CartItemIDs)), ",")
+		cartArgs := make([]any, 0, len(req.CartItemIDs)+1)
+		cartArgs = append(cartArgs, uid)
+		for _, id := range req.CartItemIDs {
+			cartArgs = append(cartArgs, id)
+		}
+		cartRows, queryErr := tx.QueryContext(r.Context(),
+			`SELECT ci.id, ci.variant_id, ci.quantity FROM carts ca JOIN cart_items ci ON ci.cart_id=ca.id WHERE ca.user_id=? AND ci.id IN (`+cartPlaceholders+`)`,
+			cartArgs...,
+		)
+		if queryErr != nil {
+			h.serverError(w, queryErr)
+			return
+		}
+		defer cartRows.Close()
+		for cartRows.Next() {
+			var selected selectedOrderItem
+			if err = cartRows.Scan(&selected.CartItemID, &selected.VariantID, &selected.Quantity); err != nil {
+				h.serverError(w, err)
+				return
+			}
+			selectedItems = append(selectedItems, selected)
+			variantIDs = append(variantIDs, selected.VariantID)
+		}
+		if err = cartRows.Err(); err != nil {
 			h.serverError(w, err)
 			return
 		}
-		cartItemMap[cID] = cartItemMeta{variantID: vID, quantity: qty}
-		variantIDs = append(variantIDs, vID)
-	}
-	if err = cartRows.Err(); err != nil {
-		h.serverError(w, err)
-		return
-	}
-	cartRows.Close()
-
-	if len(cartItemMap) != len(req.CartItemIDs) {
-		writeError(w, http.StatusUnprocessableEntity, "cart_selection_changed", "Some selected cart items no longer belong to your cart")
-		return
+		if err = cartRows.Close(); err != nil {
+			h.serverError(w, err)
+			return
+		}
+		if len(selectedItems) != len(req.CartItemIDs) {
+			writeError(w, http.StatusUnprocessableEntity, "cart_selection_changed", "Some selected cart items no longer belong to your cart")
+			return
+		}
+	} else {
+		for _, item := range req.Items {
+			selectedItems = append(selectedItems, selectedOrderItem{VariantID: item.VariantID, Quantity: item.Quantity})
+			variantIDs = append(variantIDs, item.VariantID)
+		}
 	}
 
 	// 6. Lock product variants in ascending order to prevent deadlocks and oversell
@@ -282,9 +292,9 @@ func (h *Handler) createOrder(w http.ResponseWriter, r *http.Request) {
 	// Reserve available flash-sale quantity in the same order transaction. A
 	// campaign price is applied consistently to every variant of a product.
 	productQuantities := make(map[int64]int64)
-	for _, meta := range cartItemMap {
-		if snap, ok := variantsByID[meta.variantID]; ok {
-			productQuantities[snap.productID] += meta.quantity
+	for _, selected := range selectedItems {
+		if snap, ok := variantsByID[selected.VariantID]; ok {
+			productQuantities[snap.productID] += selected.Quantity
 		}
 	}
 	productIDs := make([]int64, 0, len(productQuantities))
@@ -325,17 +335,16 @@ func (h *Handler) createOrder(w http.ResponseWriter, r *http.Request) {
 	// 7. Validate availability, calculate line totals, and group items by shop
 	shopPlans := make(map[int64]*shopOrderPlan)
 	var totalSubtotalCents int64
-	orderedItems := make([]itemDetails, 0, len(req.CartItemIDs))
+	orderedItems := make([]itemDetails, 0, len(selectedItems))
 
-	for _, cartItemID := range req.CartItemIDs {
-		meta := cartItemMap[cartItemID]
-		snap, found := variantsByID[meta.variantID]
-		if !found || !snap.purchasable || snap.stock < meta.quantity {
+	for _, selected := range selectedItems {
+		snap, found := variantsByID[selected.VariantID]
+		if !found || !snap.purchasable || snap.stock < selected.Quantity {
 			writeError(w, http.StatusUnprocessableEntity, "cart_item_unavailable", "One or more selected products are unavailable or have insufficient stock")
 			return
 		}
 
-		lineCents, ok := lineAmountCents(snap.price, meta.quantity)
+		lineCents, ok := lineAmountCents(snap.price, selected.Quantity)
 		if !ok || totalSubtotalCents > maxAmountCents-lineCents {
 			writeError(w, http.StatusUnprocessableEntity, "cart_total_exceeded", "Selected cart total exceeds the supported order amount")
 			return
@@ -349,7 +358,7 @@ func (h *Handler) createOrder(w http.ResponseWriter, r *http.Request) {
 		}
 
 		item := itemDetails{
-			CartItemID:  cartItemID,
+			CartItemID:  selected.CartItemID,
 			ProductID:   snap.productID,
 			VariantID:   snap.id,
 			ProductName: snap.productName,
@@ -357,7 +366,7 @@ func (h *Handler) createOrder(w http.ResponseWriter, r *http.Request) {
 			SKU:         snap.sku,
 			ImageURL:    finalImage,
 			UnitPrice:   roundMoney(snap.price),
-			Quantity:    meta.quantity,
+			Quantity:    selected.Quantity,
 			LineCents:   lineCents,
 			ShopID:      snap.shopID,
 			ShopName:    snap.shopName,
@@ -722,13 +731,21 @@ func (h *Handler) createOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 17. Delete purchased cart items for this user
-	if _, err = tx.ExecContext(r.Context(),
-		`DELETE ci FROM cart_items ci JOIN carts ca ON ci.cart_id=ca.id WHERE ca.user_id=? AND ci.id IN (`+cartPlaceholders+`)`,
-		cartArgs...,
-	); err != nil {
-		h.serverError(w, err)
-		return
+	// 17. Remove purchased cart rows only for cart checkout. Direct Buy Now never changes the cart.
+	if len(req.CartItemIDs) > 0 {
+		cartPlaceholders := strings.TrimRight(strings.Repeat("?,", len(req.CartItemIDs)), ",")
+		cartArgs := make([]any, 0, len(req.CartItemIDs)+1)
+		cartArgs = append(cartArgs, uid)
+		for _, id := range req.CartItemIDs {
+			cartArgs = append(cartArgs, id)
+		}
+		if _, err = tx.ExecContext(r.Context(),
+			`DELETE ci FROM cart_items ci JOIN carts ca ON ci.cart_id=ca.id WHERE ca.user_id=? AND ci.id IN (`+cartPlaceholders+`)`,
+			cartArgs...,
+		); err != nil {
+			h.serverError(w, err)
+			return
+		}
 	}
 
 	// 18. Build and persist the exact response in the same transaction as the order.

@@ -28,21 +28,29 @@ type method struct {
 	EstimatedDays *string `json:"estimated_days,omitempty"`
 }
 type quoteRequest struct {
-	AddressID        int64             `json:"address_id"`
-	ShippingMethodID int64             `json:"shipping_method_id"`
-	PaymentMethodID  int64             `json:"payment_method_id"`
-	CartItemIDs      []int64           `json:"cart_item_ids"`
-	PlatformVoucher  string            `json:"platform_voucher,omitempty"`
-	ShopVouchers     map[string]string `json:"shop_vouchers,omitempty"`
+	AddressID        int64                `json:"address_id"`
+	ShippingMethodID int64                `json:"shipping_method_id"`
+	PaymentMethodID  int64                `json:"payment_method_id"`
+	CartItemIDs      []int64              `json:"cart_item_ids"`
+	Items            []directCheckoutItem `json:"items,omitempty"`
+	PlatformVoucher  string               `json:"platform_voucher,omitempty"`
+	ShopVouchers     map[string]string    `json:"shop_vouchers,omitempty"`
 }
+
+type directCheckoutItem struct {
+	VariantID int64 `json:"variant_id"`
+	Quantity  int64 `json:"quantity"`
+}
+
 type voucherRequest struct {
-	Code        string  `json:"code"`
-	Scope       string  `json:"scope"`
-	ShopID      int64   `json:"shop_id,omitempty"`
-	CartItemIDs []int64 `json:"cart_item_ids"`
+	Code        string               `json:"code"`
+	Scope       string               `json:"scope"`
+	ShopID      int64                `json:"shop_id,omitempty"`
+	CartItemIDs []int64              `json:"cart_item_ids"`
+	Items       []directCheckoutItem `json:"items,omitempty"`
 }
 type quoteLine struct {
-	CartItemID  int64   `json:"cart_item_id"`
+	CartItemID  int64   `json:"cart_item_id,omitempty"`
 	ShopID      int64   `json:"shop_id"`
 	ShopName    string  `json:"shop_name"`
 	ProductName string  `json:"product_name"`
@@ -58,6 +66,55 @@ type voucherResult struct {
 	Discount float64 `json:"discount_amount"`
 	Scope    string  `json:"scope"`
 	ShopID   *int64  `json:"shop_id,omitempty"`
+}
+
+func validCheckoutSelection(cartItemIDs []int64, items []directCheckoutItem) bool {
+	return (len(cartItemIDs) > 0 && len(cartItemIDs) <= 100 && len(items) == 0) ||
+		(len(cartItemIDs) == 0 && validDirectCheckoutItems(items))
+}
+
+func validUniqueIDs(ids []int64) bool {
+	if len(ids) == 0 || len(ids) > 100 {
+		return false
+	}
+	seen := make(map[int64]struct{}, len(ids))
+	for _, id := range ids {
+		if id < 1 {
+			return false
+		}
+		if _, exists := seen[id]; exists {
+			return false
+		}
+		seen[id] = struct{}{}
+	}
+	return true
+}
+
+func validDirectCheckoutItems(items []directCheckoutItem) bool {
+	if len(items) == 0 || len(items) > 100 {
+		return false
+	}
+	seen := make(map[int64]struct{}, len(items))
+	for _, item := range items {
+		if item.VariantID < 1 || item.Quantity < 1 {
+			return false
+		}
+		if _, exists := seen[item.VariantID]; exists {
+			return false
+		}
+		seen[item.VariantID] = struct{}{}
+	}
+	return true
+}
+
+func directSelectionSQL(items []directCheckoutItem) (string, []any) {
+	selects := make([]string, len(items))
+	args := make([]any, 0, len(items)*2)
+	for i, item := range items {
+		selects[i] = "SELECT ? AS variant_id, ? AS quantity"
+		args = append(args, item.VariantID, item.Quantity)
+	}
+	return "(" + strings.Join(selects, " UNION ALL ") + ") AS selected", args
 }
 
 func (h *Handler) options(w http.ResponseWriter, r *http.Request) {
@@ -116,17 +173,18 @@ func (h *Handler) quote(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 401, "unauthorized", "Authenticated user is invalid")
 		return
 	}
-	if req.AddressID < 1 || req.ShippingMethodID < 1 || req.PaymentMethodID < 1 || len(req.CartItemIDs) == 0 || len(req.CartItemIDs) > 100 {
-		writeError(w, 400, "invalid_quote_request", "address, shipping method, payment method and 1 to 100 cart item IDs are required")
+	if req.AddressID < 1 || req.ShippingMethodID < 1 || req.PaymentMethodID < 1 || !validCheckoutSelection(req.CartItemIDs, req.Items) {
+		writeError(w, 400, "invalid_quote_request", "address, shipping method, payment method and either cart item IDs or 1 to 100 variant items are required")
 		return
 	}
-	seen := map[int64]bool{}
-	for _, id := range req.CartItemIDs {
-		if id < 1 || seen[id] {
+	if len(req.CartItemIDs) > 0 {
+		if !validUniqueIDs(req.CartItemIDs) {
 			writeError(w, 400, "invalid_cart_item_ids", "Cart item IDs must be positive and unique")
 			return
 		}
-		seen[id] = true
+	} else if !validDirectCheckoutItems(req.Items) {
+		writeError(w, 400, "invalid_checkout_items", "Variant IDs and quantities must be positive and unique")
+		return
 	}
 	var recipient, phone, province, district, ward, street string
 	err = h.db.QueryRowContext(r.Context(), `SELECT recipient_name,phone,province,district,ward,street_detail FROM addresses WHERE id=? AND user_id=?`, req.AddressID, uid).Scan(&recipient, &phone, &province, &district, &ward, &street)
@@ -158,21 +216,35 @@ func (h *Handler) quote(w http.ResponseWriter, r *http.Request) {
 		h.serverError(w, err)
 		return
 	}
-	placeholders := strings.TrimRight(strings.Repeat("?,", len(req.CartItemIDs)), ",")
-	args := []any{uid}
-	for _, id := range req.CartItemIDs {
-		args = append(args, id)
-	}
-	rows, err := h.db.QueryContext(r.Context(), `SELECT ci.id,p.id,p.name,v.id,s.id,s.name,ci.quantity,COALESCE((SELECT fs.sale_price FROM flash_sales fs WHERE fs.product_id=p.id AND fs.is_active=1 AND fs.start_at<=UTC_TIMESTAMP() AND fs.end_at>UTC_TIMESTAMP() AND fs.quantity_limit-fs.quantity_sold>=ci.quantity ORDER BY fs.sale_price,fs.id LIMIT 1),v.price),v.stock,
+	var rows *sql.Rows
+	if len(req.CartItemIDs) > 0 {
+		placeholders := strings.TrimRight(strings.Repeat("?,", len(req.CartItemIDs)), ",")
+		args := []any{uid}
+		for _, id := range req.CartItemIDs {
+			args = append(args, id)
+		}
+		rows, err = h.db.QueryContext(r.Context(), `SELECT ci.id,p.id,p.name,v.id,s.id,s.name,ci.quantity,COALESCE((SELECT fs.sale_price FROM flash_sales fs WHERE fs.product_id=p.id AND fs.is_active=1 AND fs.start_at<=UTC_TIMESTAMP() AND fs.end_at>UTC_TIMESTAMP() AND fs.quantity_limit-fs.quantity_sold>=ci.quantity ORDER BY fs.sale_price,fs.id LIMIT 1),v.price),v.stock,
 		(p.status='ACTIVE' AND p.is_deleted=0 AND s.status='ACTIVE' AND c.is_active=1 AND v.status='ACTIVE')
 		FROM carts ca JOIN cart_items ci ON ci.cart_id=ca.id JOIN product_variants v ON v.id=ci.variant_id
 		JOIN products p ON p.id=v.product_id JOIN shops s ON s.id=p.shop_id JOIN categories c ON c.id=p.category_id
 		WHERE ca.user_id=? AND ci.id IN (`+placeholders+`) ORDER BY ci.id`, args...)
+	} else {
+		selectionSQL, args := directSelectionSQL(req.Items)
+		rows, err = h.db.QueryContext(r.Context(), `SELECT 0,p.id,p.name,v.id,s.id,s.name,selected.quantity,COALESCE((SELECT fs.sale_price FROM flash_sales fs WHERE fs.product_id=p.id AND fs.is_active=1 AND fs.start_at<=UTC_TIMESTAMP() AND fs.end_at>UTC_TIMESTAMP() AND fs.quantity_limit-fs.quantity_sold>=selected.quantity ORDER BY fs.sale_price,fs.id LIMIT 1),v.price),v.stock,
+		(p.status='ACTIVE' AND p.is_deleted=0 AND s.status='ACTIVE' AND c.is_active=1 AND v.status='ACTIVE')
+		FROM `+selectionSQL+` JOIN product_variants v ON v.id=selected.variant_id
+		JOIN products p ON p.id=v.product_id JOIN shops s ON s.id=p.shop_id JOIN categories c ON c.id=p.category_id
+		ORDER BY selected.variant_id`, args...)
+	}
 	if err != nil {
 		h.serverError(w, err)
 		return
 	}
-	lines := make([]quoteLine, 0, len(req.CartItemIDs))
+	selectionCount := len(req.CartItemIDs)
+	if selectionCount == 0 {
+		selectionCount = len(req.Items)
+	}
+	lines := make([]quoteLine, 0, selectionCount)
 	shops := map[int64]int64{}
 	var subtotal int64
 	for rows.Next() {
@@ -209,7 +281,7 @@ func (h *Handler) quote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	rows.Close()
-	if len(lines) != len(req.CartItemIDs) {
+	if len(lines) != selectionCount {
 		writeError(w, 422, "cart_selection_changed", "Some selected cart items no longer belong to your cart")
 		return
 	}
@@ -288,22 +360,30 @@ func (h *Handler) validateVoucherRequest(w http.ResponseWriter, r *http.Request)
 	}
 	req.Code = strings.TrimSpace(req.Code)
 	req.Scope = strings.ToUpper(strings.TrimSpace(req.Scope))
-	if req.Code == "" || (req.Scope != "PLATFORM" && req.Scope != "SHOP") || (req.Scope == "SHOP" && req.ShopID < 1) || len(req.CartItemIDs) == 0 || len(req.CartItemIDs) > 100 {
-		writeError(w, 400, "invalid_voucher_request", "code, scope, cart item IDs and a shop ID for shop vouchers are required")
+	if req.Code == "" || (req.Scope != "PLATFORM" && req.Scope != "SHOP") || (req.Scope == "SHOP" && req.ShopID < 1) || !validCheckoutSelection(req.CartItemIDs, req.Items) {
+		writeError(w, 400, "invalid_voucher_request", "code, scope, a valid cart or variant selection, and a shop ID for shop vouchers are required")
 		return
 	}
-	ids := map[int64]bool{}
-	args := []any{uid}
-	for _, id := range req.CartItemIDs {
-		if id < 1 || ids[id] {
-			writeError(w, 400, "invalid_cart_item_ids", "Cart item IDs must be positive and unique")
-			return
-		}
-		ids[id] = true
-		args = append(args, id)
+	if len(req.CartItemIDs) > 0 && !validUniqueIDs(req.CartItemIDs) {
+		writeError(w, 400, "invalid_cart_item_ids", "Cart item IDs must be positive and unique")
+		return
 	}
-	ph := strings.TrimRight(strings.Repeat("?,", len(req.CartItemIDs)), ",")
-	rows, err := h.db.QueryContext(r.Context(), `SELECT s.id,ci.quantity,v.price,v.stock,(p.status='ACTIVE' AND p.is_deleted=0 AND s.status='ACTIVE' AND c.is_active=1 AND v.status='ACTIVE') FROM carts ca JOIN cart_items ci ON ci.cart_id=ca.id JOIN product_variants v ON v.id=ci.variant_id JOIN products p ON p.id=v.product_id JOIN shops s ON s.id=p.shop_id JOIN categories c ON c.id=p.category_id WHERE ca.user_id=? AND ci.id IN (`+ph+`)`, args...)
+	if len(req.Items) > 0 && !validDirectCheckoutItems(req.Items) {
+		writeError(w, 400, "invalid_checkout_items", "Variant IDs and quantities must be positive and unique")
+		return
+	}
+	var rows *sql.Rows
+	if len(req.CartItemIDs) > 0 {
+		args := []any{uid}
+		for _, id := range req.CartItemIDs {
+			args = append(args, id)
+		}
+		ph := strings.TrimRight(strings.Repeat("?,", len(req.CartItemIDs)), ",")
+		rows, err = h.db.QueryContext(r.Context(), `SELECT s.id,ci.quantity,v.price,v.stock,(p.status='ACTIVE' AND p.is_deleted=0 AND s.status='ACTIVE' AND c.is_active=1 AND v.status='ACTIVE') FROM carts ca JOIN cart_items ci ON ci.cart_id=ca.id JOIN product_variants v ON v.id=ci.variant_id JOIN products p ON p.id=v.product_id JOIN shops s ON s.id=p.shop_id JOIN categories c ON c.id=p.category_id WHERE ca.user_id=? AND ci.id IN (`+ph+`)`, args...)
+	} else {
+		selectionSQL, args := directSelectionSQL(req.Items)
+		rows, err = h.db.QueryContext(r.Context(), `SELECT s.id,selected.quantity,v.price,v.stock,(p.status='ACTIVE' AND p.is_deleted=0 AND s.status='ACTIVE' AND c.is_active=1 AND v.status='ACTIVE') FROM `+selectionSQL+` JOIN product_variants v ON v.id=selected.variant_id JOIN products p ON p.id=v.product_id JOIN shops s ON s.id=p.shop_id JOIN categories c ON c.id=p.category_id`, args...)
+	}
 	if err != nil {
 		h.serverError(w, err)
 		return
@@ -343,8 +423,12 @@ func (h *Handler) validateVoucherRequest(w http.ResponseWriter, r *http.Request)
 		h.serverError(w, err)
 		return
 	}
-	if found != len(req.CartItemIDs) {
-		writeError(w, 422, "cart_selection_changed", "Some selected cart items no longer belong to your cart")
+	selectionCount := len(req.CartItemIDs)
+	if selectionCount == 0 {
+		selectionCount = len(req.Items)
+	}
+	if found != selectionCount {
+		writeError(w, 422, "cart_selection_changed", "Some selected cart items no longer belong to your cart or are unavailable")
 		return
 	}
 	var scopeShop *int64

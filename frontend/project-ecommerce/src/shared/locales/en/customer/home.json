@@ -22,6 +22,8 @@
   "catalog": {
     "showing_count": "/ {{total}} products",
     "all_catalog": "All Catalog",
+    "search_results": "Search results: {{query}}",
+    "search_empty": "No products found for “{{query}}”.",
     "sort_label": "Sort:",
     "sort_options": {
       "Relevance": "Relevance",

@@ -22,6 +22,8 @@
   "catalog": {
     "showing_count": "/ {{total}} sản phẩm",
     "all_catalog": "Toàn bộ danh mục",
+    "search_results": "Kết quả tìm kiếm: {{query}}",
+    "search_empty": "Không tìm thấy sản phẩm phù hợp với “{{query}}”.",
     "sort_label": "Sắp xếp:",
     "sort_options": {
       "Relevance": "Phù hợp nhất",

@@ -36,7 +36,9 @@ export const OnboardingHeader: React.FC = () => {
             to="/"
             className="hidden sm:inline-flex items-center gap-space-xs font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors"
           >
-            <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+            <span className="material-symbols-outlined text-[16px]">
+              arrow_back
+            </span>
             Quay lại trang mua sắm (Storefront)
           </Link>
 
@@ -44,15 +46,11 @@ export const OnboardingHeader: React.FC = () => {
             className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-on-primary shadow-sm"
             title="Tài khoản người bán"
           >
-            <span className="material-symbols-outlined text-[18px]">person</span>
+            <span className="material-symbols-outlined text-[18px]">
+              person
+            </span>
           </div>
         </div>
-      </div>
-      <div
-        role="alert"
-        className="px-4 py-1.5 bg-amber-50 border-t border-amber-200 text-center text-xs sm:text-sm text-amber-950"
-      >
-        Bản mô phỏng chưa kết nối BE. Không nhập mật khẩu thật, giấy tờ tùy thân hoặc thông tin ngân hàng.
       </div>
     </header>
   );

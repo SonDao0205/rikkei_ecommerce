@@ -155,11 +155,17 @@ export const cartApi = {
     code: string,
     scope: "PLATFORM" | "SHOP",
     cartItemIds: number[],
-    shopId?: number
+    shopId?: number,
+    items?: Array<{ variant_id: number; quantity: number }>
   ) {
     const response = await axiosClient.post<ApiResponse<VoucherValidation>>(
       "/api/v1/vouchers/validate",
-      { code, scope, shop_id: shopId, cart_item_ids: cartItemIds }
+      {
+        code,
+        scope,
+        shop_id: shopId,
+        ...(items?.length ? { items } : { cart_item_ids: cartItemIds }),
+      }
     );
     return response.data.data;
   },
@@ -266,7 +272,8 @@ export interface CheckoutQuoteRequest {
   address_id: number;
   shipping_method_id: number;
   payment_method_id: number;
-  cart_item_ids: number[];
+  cart_item_ids?: number[];
+  items?: Array<{ variant_id: number; quantity: number }>;
   platform_voucher?: string;
   shop_vouchers?: Record<string, string>;
 }
@@ -281,7 +288,7 @@ export interface CheckoutQuote {
   payment_method: CheckoutMethod;
   address: { recipient_name: string; phone: string; formatted: string };
   items: Array<{
-    cart_item_id: number;
+    cart_item_id?: number;
     product_name: string;
     quantity: number;
     line_total: number;

@@ -5,7 +5,10 @@ import { useAppDispatch, useAppSelector } from "@/app/state/store";
 import { openLogoutModal } from "@/domains/auth/state/authSlice";
 import { getDefaultAvatar } from "@/shared/utils/avatar";
 import { fetchCart, resetCart } from "@/domains/customer/state/cartSlice";
-import { fetchWishlist, resetWishlist } from "@/domains/customer/state/wishlistSlice";
+import {
+  fetchWishlist,
+  resetWishlist,
+} from "@/domains/customer/state/wishlistSlice";
 import { formatCurrencyVND } from "@/shared/utils/currency";
 import { BrandIcon } from "@/shared/components/common/BrandLogo";
 import SwitchToShopModal from "@/shared/components/common/SwitchToShopModal";
@@ -22,18 +25,19 @@ const Header: React.FC<HeaderProps> = ({
   cartTotal = "₫0",
   wishlistCount = 0,
 }) => {
-  const { t } = useTranslation('customer');
+  const { t } = useTranslation("customer");
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
-  const [prevPathname, setPrevPathname] = useState(location.pathname);
 
-  // Reset search input whenever entering any page
-  if (location.pathname !== prevPathname) {
-    setPrevPathname(location.pathname);
-    setSearchQuery("");
-  }
+  useEffect(() => {
+    const isHomePage =
+      location.pathname === "/" || location.pathname === "/home";
+    setSearchQuery(
+      isHomePage ? new URLSearchParams(location.search).get("q") || "" : "",
+    );
+  }, [location.pathname, location.search]);
   const { user, isAuthenticated } = useAppSelector((state) => state.auth);
   const { profile } = useAppSelector((state) => state.profile);
   const cartState = useAppSelector((state) => state.cart);
@@ -44,7 +48,9 @@ const Header: React.FC<HeaderProps> = ({
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   const userAvatar =
-    profile?.avatar_url || user?.avatar_url || getDefaultAvatar(user?.full_name || profile?.full_name);
+    profile?.avatar_url ||
+    user?.avatar_url ||
+    getDefaultAvatar(user?.full_name || profile?.full_name);
   const userRoles = (
     user?.roles?.length ? user.roles : user?.role ? [user.role] : []
   ).map((v) => String(v).toLowerCase().trim());
@@ -63,17 +69,31 @@ const Header: React.FC<HeaderProps> = ({
 
   useEffect(() => {
     if (isAuthenticated) {
-      if (!cartState?.isInitialized && !cartState?.isLoading && !cartState?.loading) {
+      if (
+        !cartState?.isInitialized &&
+        !cartState?.isLoading &&
+        !cartState?.loading
+      ) {
         dispatch(fetchCart());
       }
-      if (!wishlistState?.isInitialized && !wishlistState?.isLoading && !wishlistState?.loading) {
+      if (
+        !wishlistState?.isInitialized &&
+        !wishlistState?.isLoading &&
+        !wishlistState?.loading
+      ) {
         dispatch(fetchWishlist());
       }
     } else {
-      if ((cartState?.items && cartState.items.length > 0) || cartState?.isInitialized) {
+      if (
+        (cartState?.items && cartState.items.length > 0) ||
+        cartState?.isInitialized
+      ) {
         dispatch(resetCart());
       }
-      if ((wishlistState?.items && wishlistState.items.length > 0) || wishlistState?.isInitialized) {
+      if (
+        (wishlistState?.items && wishlistState.items.length > 0) ||
+        wishlistState?.isInitialized
+      ) {
         dispatch(resetWishlist());
       }
     }
@@ -118,10 +138,10 @@ const Header: React.FC<HeaderProps> = ({
     cartTotal !== "₫0"
       ? cartTotal
       : cartState?.summary?.grand_total
-      ? formatCurrencyVND(cartState.summary.grand_total)
-      : cartState?.subtotal
-      ? formatCurrencyVND(cartState.subtotal)
-      : "₫0";
+        ? formatCurrencyVND(cartState.summary.grand_total)
+        : cartState?.subtotal
+          ? formatCurrencyVND(cartState.subtotal)
+          : "₫0";
   const displayWishlistCount =
     wishlistCount > 0
       ? wishlistCount
@@ -157,6 +177,23 @@ const Header: React.FC<HeaderProps> = ({
     dispatch(openLogoutModal());
   };
 
+  const handleSearch = () => {
+    const query = searchQuery.trim();
+    navigate({
+      pathname: "/home",
+      search: query ? `?q=${encodeURIComponent(query)}` : "",
+    });
+  };
+
+  const handleSearchKeyDown = (
+    event: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      handleSearch();
+    }
+  };
+
   return (
     <>
       <header className="fixed top-0 w-full z-40 shadow-[0_1px_8px_rgba(15,23,42,0.06)]">
@@ -170,13 +207,23 @@ const Header: React.FC<HeaderProps> = ({
               <span>{t("header.utility.free_shipping")}</span>
             </div>
             <div className="flex items-center gap-space-lg text-body-sm">
-              <a className="flex items-center gap-1 hover:text-white transition-colors" href="tel:19006868">
-                <span className="material-symbols-outlined text-[15px]">support_agent</span>
+              <a
+                className="flex items-center gap-1 hover:text-white transition-colors"
+                href="tel:19006868"
+              >
+                <span className="material-symbols-outlined text-[15px]">
+                  support_agent
+                </span>
                 <span>{t("header.utility.hotline")}</span>
               </a>
               <span className="text-outline">|</span>
-              <Link className="flex items-center gap-1 hover:text-white transition-colors" to="#">
-                <span className="material-symbols-outlined text-[15px]">inventory_2</span>
+              <Link
+                className="flex items-center gap-1 hover:text-white transition-colors"
+                to="#"
+              >
+                <span className="material-symbols-outlined text-[15px]">
+                  inventory_2
+                </span>
                 <span>{t("header.utility.order_tracking")}</span>
               </Link>
               <span className="text-outline">|</span>
@@ -195,7 +242,9 @@ const Header: React.FC<HeaderProps> = ({
               className="p-2 -ml-1.5 rounded-xl text-on-surface hover:bg-surface-container active:scale-95 transition-all flex items-center justify-center shrink-0 cursor-pointer"
               aria-label="Mở menu điều hướng"
             >
-              <span className="material-symbols-outlined text-[28px]">menu</span>
+              <span className="material-symbols-outlined text-[28px]">
+                menu
+              </span>
             </button>
 
             <div className="flex-1 relative flex items-center h-10 rounded-xl bg-surface-container-low border border-outline-variant focus-within:border-primary-container px-3 gap-2 transition-all">
@@ -208,6 +257,7 @@ const Header: React.FC<HeaderProps> = ({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
               />
             </div>
           </div>
@@ -234,25 +284,28 @@ const Header: React.FC<HeaderProps> = ({
             {/* Search Box */}
             <div className="flex-1 max-w-2xl">
               <div className="relative flex items-center w-full h-12 rounded-xl bg-surface-container-low border border-outline-variant hover:border-primary-container focus-within:border-primary-container transition-all">
-                <div className="flex items-center gap-1 pl-space-md pr-space-sm text-on-surface-variant font-label-md text-label-md shrink-0 border-r border-outline-variant cursor-pointer">
-                  <span>{t("header.search.categories")}</span>
-                  <span className="material-symbols-outlined text-[16px]">expand_more</span>
-                </div>
                 <div className="flex items-center flex-1 px-space-md gap-space-sm">
-                  <span className="material-symbols-outlined text-outline text-[20px]">search</span>
+                  <span className="material-symbols-outlined text-outline text-[20px]">
+                    search
+                  </span>
                   <input
                     className="w-full bg-transparent text-on-surface placeholder:text-outline text-body-md font-body-md focus:outline-none"
                     placeholder={t("header.search.placeholder")}
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={handleSearchKeyDown}
                   />
                 </div>
                 <div className="pr-2 shrink-0 flex items-center gap-space-sm">
                   <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-label-sm text-on-surface-variant bg-surface-container rounded">
                     ⌘K
                   </kbd>
-                  <button className="h-8 px-space-md bg-primary-container text-on-primary font-label-md text-label-md rounded-lg flex items-center justify-center hover:bg-primary transition-colors cursor-pointer">
+                  <button
+                    type="button"
+                    onClick={handleSearch}
+                    className="h-8 px-space-md bg-primary-container text-on-primary font-label-md text-label-md rounded-lg flex items-center justify-center hover:bg-primary transition-colors cursor-pointer"
+                  >
                     {t("header.search.button")}
                   </button>
                 </div>
@@ -268,7 +321,9 @@ const Header: React.FC<HeaderProps> = ({
                     to="/wishlist"
                     title={t("header.actions.wishlist")}
                   >
-                    <span className="material-symbols-outlined text-[24px]">favorite</span>
+                    <span className="material-symbols-outlined text-[24px]">
+                      favorite
+                    </span>
                     <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-tertiary-container text-on-primary text-[10px] font-bold flex items-center justify-center">
                       {displayWishlistCount}
                     </span>
@@ -287,8 +342,12 @@ const Header: React.FC<HeaderProps> = ({
                       </span>
                     </div>
                     <div className="hidden sm:flex flex-col text-left">
-                      <span className="font-label-sm text-label-sm text-outline leading-none">{t("header.actions.cart")}</span>
-                      <span className="font-label-md text-label-md text-on-surface font-bold">{displayCartTotal}</span>
+                      <span className="font-label-sm text-label-sm text-outline leading-none">
+                        {t("header.actions.cart")}
+                      </span>
+                      <span className="font-label-md text-label-md text-on-surface font-bold">
+                        {displayCartTotal}
+                      </span>
                     </div>
                   </Link>
                 </>
@@ -343,8 +402,12 @@ const Header: React.FC<HeaderProps> = ({
                         />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="font-bold text-on-surface truncate">{user.full_name}</p>
-                        <p className="text-outline truncate">{user.email || user.phone}</p>
+                        <p className="font-bold text-on-surface truncate">
+                          {user.full_name}
+                        </p>
+                        <p className="text-outline truncate">
+                          {user.email || user.phone}
+                        </p>
                       </div>
                     </div>
                     <Link
@@ -352,7 +415,9 @@ const Header: React.FC<HeaderProps> = ({
                       onClick={() => setShowUserMenu(false)}
                       className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-on-surface hover:bg-surface-container hover:text-primary transition-colors"
                     >
-                      <span className="material-symbols-outlined text-[16px]">person</span>
+                      <span className="material-symbols-outlined text-[16px]">
+                        person
+                      </span>
                       <span>{t("header.actions.my_profile")}</span>
                     </Link>
 
@@ -362,7 +427,9 @@ const Header: React.FC<HeaderProps> = ({
                         onClick={handleOpenSwitchShop}
                         className="w-full flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-on-surface hover:bg-surface-container hover:text-primary transition-colors cursor-pointer text-left"
                       >
-                        <span className="material-symbols-outlined text-[16px]">storefront</span>
+                        <span className="material-symbols-outlined text-[16px]">
+                          storefront
+                        </span>
                         <span>{t("header.actions.my_shop")}</span>
                       </button>
                     )}
@@ -372,7 +439,9 @@ const Header: React.FC<HeaderProps> = ({
                       onClick={handleOpenLogout}
                       className="w-full flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-error hover:bg-error-container/40 transition-colors text-left cursor-pointer"
                     >
-                      <span className="material-symbols-outlined text-[16px]">logout</span>
+                      <span className="material-symbols-outlined text-[16px]">
+                        logout
+                      </span>
                       <span>{t("header.actions.sign_out")}</span>
                     </button>
                   </div>
@@ -440,152 +509,170 @@ const Header: React.FC<HeaderProps> = ({
 
         {/* Drawer Content: 4 phần từ ảnh thứ 2 */}
         <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2.5">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-outline px-1">
-              {t("header.mobile_drawer.user_features")}
-            </span>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-outline px-1">
+            {t("header.mobile_drawer.user_features")}
+          </span>
 
-            {/* Phần 4: Thông tin tài khoản người dùng */}
-            {isAuthenticated && user ? (
-              <div className="p-3.5 rounded-2xl bg-surface-container-low border border-outline-variant/60 flex flex-col gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="relative shrink-0">
-                    <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-primary/20 bg-surface-container flex items-center justify-center">
-                      <img
-                        src={userAvatar}
-                        alt={user.full_name || "User Avatar"}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-green-500 ring-2 ring-surface-container-lowest"></span>
+          {/* Phần 4: Thông tin tài khoản người dùng */}
+          {isAuthenticated && user ? (
+            <div className="p-3.5 rounded-2xl bg-surface-container-low border border-outline-variant/60 flex flex-col gap-3">
+              <div className="flex items-center gap-3">
+                <div className="relative shrink-0">
+                  <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-primary/20 bg-surface-container flex items-center justify-center">
+                    <img
+                      src={userAvatar}
+                      alt={user.full_name || "User Avatar"}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-bold text-on-surface text-sm truncate">
-                      {user.full_name || "Hoàng Minh Quang"}
-                    </p>
-                    <p className="text-xs text-outline truncate">
-                      {user.email || user.phone || t("header.mobile_drawer.loyal_customer")}
-                    </p>
-                  </div>
+                  <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-green-500 ring-2 ring-surface-container-lowest"></span>
                 </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-bold text-on-surface text-sm truncate">
+                    {user.full_name || "Hoàng Minh Quang"}
+                  </p>
+                  <p className="text-xs text-outline truncate">
+                    {user.email ||
+                      user.phone ||
+                      t("header.mobile_drawer.loyal_customer")}
+                  </p>
+                </div>
+              </div>
 
-                <div className="pt-2 border-t border-outline-variant/50 flex flex-col gap-1">
-                  <Link
-                    to="/profile"
-                    onClick={() => setIsMobileDrawerOpen(false)}
-                    className="flex items-center justify-between px-2 py-2 rounded-xl text-xs font-semibold text-on-surface hover:bg-surface-container transition-colors"
+              <div className="pt-2 border-t border-outline-variant/50 flex flex-col gap-1">
+                <Link
+                  to="/profile"
+                  onClick={() => setIsMobileDrawerOpen(false)}
+                  className="flex items-center justify-between px-2 py-2 rounded-xl text-xs font-semibold text-on-surface hover:bg-surface-container transition-colors"
+                >
+                  <span className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[18px] text-primary">
+                      person
+                    </span>
+                    <span>{t("header.actions.my_profile")}</span>
+                  </span>
+                  <span className="material-symbols-outlined text-outline text-[16px]">
+                    chevron_right
+                  </span>
+                </Link>
+
+                {hasSellerRole && (
+                  <button
+                    type="button"
+                    onClick={handleOpenSwitchShop}
+                    className="w-full flex items-center justify-between px-2 py-2 rounded-xl text-xs font-semibold text-on-surface hover:bg-surface-container transition-colors cursor-pointer text-left"
                   >
                     <span className="flex items-center gap-2">
                       <span className="material-symbols-outlined text-[18px] text-primary">
-                        person
+                        storefront
                       </span>
-                      <span>{t("header.actions.my_profile")}</span>
-                    </span>
-                    <span className="material-symbols-outlined text-outline text-[16px]">
-                      chevron_right
-                    </span>
-                  </Link>
-
-                  {hasSellerRole && (
-                    <button
-                      type="button"
-                      onClick={handleOpenSwitchShop}
-                      className="w-full flex items-center justify-between px-2 py-2 rounded-xl text-xs font-semibold text-on-surface hover:bg-surface-container transition-colors cursor-pointer text-left"
-                    >
-                      <span className="flex items-center gap-2">
-                        <span className="material-symbols-outlined text-[18px] text-primary">
-                          storefront
-                        </span>
-                        <span>{t("header.actions.my_shop")}</span>
-                      </span>
-                      <span className="material-symbols-outlined text-outline text-[16px]">
-                        chevron_right
-                      </span>
-                    </button>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={handleOpenLogout}
-                    className="w-full flex items-center justify-between px-2 py-2 rounded-xl text-xs font-semibold text-error hover:bg-error-container/40 transition-colors text-left cursor-pointer"
-                  >
-                    <span className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-[18px]">logout</span>
-                      <span>{t("header.actions.sign_out")}</span>
+                      <span>{t("header.actions.my_shop")}</span>
                     </span>
                     <span className="material-symbols-outlined text-outline text-[16px]">
                       chevron_right
                     </span>
                   </button>
-                </div>
-              </div>
-            ) : (
-              <div className="p-3.5 rounded-2xl bg-surface-container-low border border-outline-variant/60 flex items-center justify-between">
-                <div>
-                  <p className="font-bold text-on-surface text-sm">{t("header.actions.welcome")}</p>
-                  <p className="text-xs text-outline">{t("header.actions.login_prompt")}</p>
-                </div>
-                <Link
-                  to="/login"
-                  onClick={() => setIsMobileDrawerOpen(false)}
-                  className="px-3.5 py-1.5 rounded-xl bg-primary text-on-primary text-xs font-bold hover:bg-primary/90 transition-colors shadow-xs"
-                >
-                  {t("header.actions.sign_in")}
-                </Link>
-              </div>
-            )}
+                )}
 
-            {/* Phần 3 & 2: Giỏ hàng (Cart) & Yêu thích (Wishlist) chỉ hiển thị khi đã đăng nhập */}
-            {isAuthenticated && (
-              <>
-                <Link
-                  to="/cart"
-                  onClick={() => setIsMobileDrawerOpen(false)}
-                  className="flex items-center justify-between p-3 rounded-2xl bg-[#F0F2FD] hover:bg-[#E5E9FA] border border-[#2E3192]/15 transition-all text-on-surface cursor-pointer"
+                <button
+                  type="button"
+                  onClick={handleOpenLogout}
+                  className="w-full flex items-center justify-between px-2 py-2 rounded-xl text-xs font-semibold text-error hover:bg-error-container/40 transition-colors text-left cursor-pointer"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="relative w-10 h-10 rounded-xl bg-white text-[#2E3192] flex items-center justify-center shadow-xs shrink-0">
-                      <span className="material-symbols-outlined text-[22px] text-[#2E3192]">
-                        shopping_bag
-                      </span>
-                      <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#2E3192] text-white text-[10px] font-bold flex items-center justify-center">
-                        {displayCartCount}
-                      </span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-xs text-outline font-medium">{t("header.actions.cart")} ({displayCartCount})</span>
-                      <span className="text-sm font-bold text-on-surface">{displayCartTotal}</span>
-                    </div>
-                  </div>
-                  <span className="material-symbols-outlined text-outline text-[18px]">
+                  <span className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[18px]">
+                      logout
+                    </span>
+                    <span>{t("header.actions.sign_out")}</span>
+                  </span>
+                  <span className="material-symbols-outlined text-outline text-[16px]">
                     chevron_right
                   </span>
-                </Link>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="p-3.5 rounded-2xl bg-surface-container-low border border-outline-variant/60 flex items-center justify-between">
+              <div>
+                <p className="font-bold text-on-surface text-sm">
+                  {t("header.actions.welcome")}
+                </p>
+                <p className="text-xs text-outline">
+                  {t("header.actions.login_prompt")}
+                </p>
+              </div>
+              <Link
+                to="/login"
+                onClick={() => setIsMobileDrawerOpen(false)}
+                className="px-3.5 py-1.5 rounded-xl bg-primary text-on-primary text-xs font-bold hover:bg-primary/90 transition-colors shadow-xs"
+              >
+                {t("header.actions.sign_in")}
+              </Link>
+            </div>
+          )}
 
-                <Link
-                  to="/wishlist"
-                  onClick={() => setIsMobileDrawerOpen(false)}
-                  className="flex items-center justify-between p-3 rounded-2xl bg-surface-container-low hover:bg-surface-container border border-outline-variant/60 transition-all text-on-surface cursor-pointer"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="relative w-10 h-10 rounded-xl bg-red-50 text-[#9E0038] flex items-center justify-center shadow-xs shrink-0">
-                      <span className="material-symbols-outlined text-[22px] text-red-500">
-                        favorite
-                      </span>
-                      <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#9E0038] text-white text-[10px] font-bold flex items-center justify-center">
-                        {displayWishlistCount}
-                      </span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-sm font-semibold text-on-surface">{t("header.actions.wishlist")}</span>
-                      <span className="text-xs text-outline">{t("header.mobile_drawer.saved_items", { count: displayWishlistCount })}</span>
-                    </div>
+          {/* Phần 3 & 2: Giỏ hàng (Cart) & Yêu thích (Wishlist) chỉ hiển thị khi đã đăng nhập */}
+          {isAuthenticated && (
+            <>
+              <Link
+                to="/cart"
+                onClick={() => setIsMobileDrawerOpen(false)}
+                className="flex items-center justify-between p-3 rounded-2xl bg-[#F0F2FD] hover:bg-[#E5E9FA] border border-[#2E3192]/15 transition-all text-on-surface cursor-pointer"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="relative w-10 h-10 rounded-xl bg-white text-[#2E3192] flex items-center justify-center shadow-xs shrink-0">
+                    <span className="material-symbols-outlined text-[22px] text-[#2E3192]">
+                      shopping_bag
+                    </span>
+                    <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#2E3192] text-white text-[10px] font-bold flex items-center justify-center">
+                      {displayCartCount}
+                    </span>
                   </div>
-                  <span className="material-symbols-outlined text-outline text-[18px]">
-                    chevron_right
-                  </span>
-                </Link>
-              </>
-            )}
+                  <div className="flex flex-col">
+                    <span className="text-xs text-outline font-medium">
+                      {t("header.actions.cart")} ({displayCartCount})
+                    </span>
+                    <span className="text-sm font-bold text-on-surface">
+                      {displayCartTotal}
+                    </span>
+                  </div>
+                </div>
+                <span className="material-symbols-outlined text-outline text-[18px]">
+                  chevron_right
+                </span>
+              </Link>
+
+              <Link
+                to="/wishlist"
+                onClick={() => setIsMobileDrawerOpen(false)}
+                className="flex items-center justify-between p-3 rounded-2xl bg-surface-container-low hover:bg-surface-container border border-outline-variant/60 transition-all text-on-surface cursor-pointer"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="relative w-10 h-10 rounded-xl bg-red-50 text-[#9E0038] flex items-center justify-center shadow-xs shrink-0">
+                    <span className="material-symbols-outlined text-[22px] text-red-500">
+                      favorite
+                    </span>
+                    <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#9E0038] text-white text-[10px] font-bold flex items-center justify-center">
+                      {displayWishlistCount}
+                    </span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-semibold text-on-surface">
+                      {t("header.actions.wishlist")}
+                    </span>
+                    <span className="text-xs text-outline">
+                      {t("header.mobile_drawer.saved_items", {
+                        count: displayWishlistCount,
+                      })}
+                    </span>
+                  </div>
+                </div>
+                <span className="material-symbols-outlined text-outline text-[18px]">
+                  chevron_right
+                </span>
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Drawer Footer */}
