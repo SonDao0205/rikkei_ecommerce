@@ -6,6 +6,7 @@ import type { ProductItem } from "@/shared/types";
 interface CatalogSectionProps {
   products: ProductItem[];
   totalProducts: number;
+  searchQuery?: string;
   sortBy: string;
   onSortChange: (sort: string) => void;
   onAddToCart?: (product: ProductItem) => void | Promise<void>;
@@ -17,6 +18,7 @@ interface CatalogSectionProps {
 const CatalogSection: React.FC<CatalogSectionProps> = ({
   products,
   totalProducts,
+  searchQuery = "",
   sortBy,
   onSortChange,
   onAddToCart,
@@ -48,7 +50,9 @@ const CatalogSection: React.FC<CatalogSectionProps> = ({
                 {t("home.catalog.showing_count", { total: totalProducts })}
               </span>
               <span className="font-label-md text-label-md font-bold text-primary">
-                {t("home.catalog.all_catalog")}
+                {searchQuery
+                  ? t("home.catalog.search_results", { query: searchQuery })
+                  : t("home.catalog.all_catalog")}
               </span>
             </div>
 
@@ -119,6 +123,12 @@ const CatalogSection: React.FC<CatalogSectionProps> = ({
               />
             ))}
           </div>
+
+          {searchQuery && products.length === 0 && (
+            <p className="py-space-xl text-center text-body-md text-on-surface-variant">
+              {t("home.catalog.search_empty", { query: searchQuery })}
+            </p>
+          )}
 
           {products.length < totalProducts && onLoadMore && (
             <button

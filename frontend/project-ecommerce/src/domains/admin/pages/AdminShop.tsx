@@ -97,7 +97,16 @@ export const AdminShop: React.FC = () => {
   // Handle Reset Filters
   const handleClearFilters = () => {
     dispatch(clearFilters());
-    dispatch(getAdminShops({ statusTab: "all", search: "", category: "all", commissionTier: "all", rating: "all", page: 1 }));
+    dispatch(
+      getAdminShops({
+        statusTab: "all",
+        search: "",
+        category: "all",
+        commissionTier: "all",
+        rating: "all",
+        page: 1,
+      }),
+    );
   };
 
   // Handle Page Change
@@ -108,7 +117,12 @@ export const AdminShop: React.FC = () => {
 
   // Quick Actions
   const handleQuickApprove = (shopId: number) => {
-    dispatch(approveShopThunk({ shopId, notes: "Phê duyệt nhanh từ bảng điều khiển quản trị viên" }));
+    dispatch(
+      approveShopThunk({
+        shopId,
+        notes: "Phê duyệt nhanh từ bảng điều khiển quản trị viên",
+      }),
+    );
   };
 
   const handleQuickReject = (shop: AdminShopItem) => {
@@ -128,7 +142,11 @@ export const AdminShop: React.FC = () => {
     dispatch(unlockShopThunk(shopId));
   };
 
-  const handleCommissionConfirm = (shopId: number, tier: ShopTier, rate: number) => {
+  const handleCommissionConfirm = (
+    shopId: number,
+    tier: ShopTier,
+    rate: number,
+  ) => {
     dispatch(updateCommissionTierThunk({ shopId, tier, rate }));
     setEditingShop(null);
   };
@@ -147,14 +165,18 @@ export const AdminShop: React.FC = () => {
               <span className="material-symbols-outlined text-secondary text-[20px]">
                 check_circle
               </span>
-              <span className="font-label-md text-label-md">{successMessage}</span>
+              <span className="font-label-md text-label-md">
+                {successMessage}
+              </span>
             </div>
             <button
               type="button"
               onClick={() => dispatch(clearMessages())}
               className="text-on-secondary-fixed/70 hover:text-on-secondary-fixed cursor-pointer"
             >
-              <span className="material-symbols-outlined text-[18px]">close</span>
+              <span className="material-symbols-outlined text-[18px]">
+                close
+              </span>
             </button>
           </div>
         )}
@@ -162,7 +184,9 @@ export const AdminShop: React.FC = () => {
         {error && (
           <div className="p-4 rounded-xl bg-error-container text-on-error-container border border-error/30 flex items-center justify-between animate-in fade-in slide-in-from-top-2">
             <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-error text-[20px]">error</span>
+              <span className="material-symbols-outlined text-error text-[20px]">
+                error
+              </span>
               <span className="font-label-md text-label-md">{error}</span>
             </div>
             <button
@@ -170,18 +194,12 @@ export const AdminShop: React.FC = () => {
               onClick={() => dispatch(clearMessages())}
               className="text-on-error-container/70 hover:text-on-error-container cursor-pointer"
             >
-              <span className="material-symbols-outlined text-[18px]">close</span>
+              <span className="material-symbols-outlined text-[18px]">
+                close
+              </span>
             </button>
           </div>
         )}
-
-        <div
-          role="note"
-          className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-950 text-sm"
-        >
-          Danh sách, bộ lọc trạng thái và duyệt/từ chối/khóa shop lấy dữ liệu từ BE. Số liệu
-          doanh thu, bật/tắt hiển thị, mở khóa, hoa hồng và xuất CSV chưa có API BE.
-        </div>
 
         {/* 1. Page Header & Quick Metric Strip */}
         <section className="flex flex-col gap-5">
@@ -198,7 +216,9 @@ export const AdminShop: React.FC = () => {
                 </span>
               </div>
               <p className="font-body-md text-body-md text-on-surface-variant max-w-3xl">
-                Monitor registered vendors, approve shop onboarding applications, enforce marketplace policies, and manage commission tiers.
+                Monitor registered vendors, approve shop onboarding
+                applications, enforce marketplace policies, and manage
+                commission tiers.
               </p>
             </div>
 
@@ -269,8 +289,12 @@ export const AdminShop: React.FC = () => {
           shop={selectedShopForKyc}
           isActionLoading={isActionLoading}
           onClose={() => dispatch(closeKycDrawer())}
-          onApprove={(shopId, notes) => dispatch(approveShopThunk({ shopId, notes }))}
-          onReject={(shopId, reason) => dispatch(rejectShopThunk({ shopId, reason }))}
+          onApprove={(shopId, notes) =>
+            dispatch(approveShopThunk({ shopId, notes }))
+          }
+          onReject={(shopId, reason) =>
+            dispatch(rejectShopThunk({ shopId, reason }))
+          }
           onUpdateCommission={(shopId, tier, rate) =>
             dispatch(updateCommissionTierThunk({ shopId, tier, rate }))
           }
@@ -304,7 +328,9 @@ export const AdminShop: React.FC = () => {
             >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-primary-fixed text-primary flex items-center justify-center">
-                  <span className="material-symbols-outlined text-[20px]">add_business</span>
+                  <span className="material-symbols-outlined text-[20px]">
+                    add_business
+                  </span>
                 </div>
                 <div>
                   <h3 className="font-headline-md text-headline-md font-bold text-on-surface">
@@ -362,7 +388,9 @@ export const AdminShop: React.FC = () => {
                   type="button"
                   onClick={() => {
                     setIsOnboardingModalOpen(false);
-                    alert("Đã gửi lời mời khởi tạo gian hàng kèm liên kết KYC qua email!");
+                    alert(
+                      "Đã gửi lời mời khởi tạo gian hàng kèm liên kết KYC qua email!",
+                    );
                   }}
                   className="px-4 py-2 rounded-lg bg-primary-container text-on-primary font-label-md text-label-md shadow-sm hover:bg-primary cursor-pointer"
                 >
