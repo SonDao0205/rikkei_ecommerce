@@ -4,34 +4,23 @@ import type {
   AddProductVariantRow,
   AddProductColorItem,
 } from "@/domains/shop/types/shopAddProduct.types";
-import { CATEGORY_TREE_DATA } from "@/domains/shop/constants/categoryTreeData";
+import type { AddProductCategoryOption } from "@/domains/shop/types/shopAddProduct.types";
+import type { ShopCategoryAttribute } from "@/domains/shop/api/shopCatalogApi";
 
 interface AddProductVariantsProps {
   formData: AddProductFormData;
   onChange: (fields: Partial<AddProductFormData>) => void;
+  categories: AddProductCategoryOption[];
+  attributes: ShopCategoryAttribute[];
 }
-
-const PRESET_COLORS: { name: string; hex: string }[] = [
-  { name: "Đen Tuyền", hex: "#18181b" },
-  { name: "Trắng Kem", hex: "#fef3c7" },
-  { name: "Trắng", hex: "#ffffff" },
-  { name: "Xám Khói", hex: "#64748b" },
-  { name: "Xanh Navy", hex: "#1e3a8a" },
-  { name: "Đỏ Đô", hex: "#991b1b" },
-  { name: "Nâu Đất", hex: "#78350f" },
-  { name: "Xanh Rêu", hex: "#365314" },
-  { name: "Be", hex: "#f5f5dc" },
-  { name: "Cam Đất", hex: "#ea580c" },
-];
-
-const DEFAULT_SHOE_SIZES = ["38", "39", "40", "41", "42", "43", "44"];
 
 export const AddProductVariants: React.FC<AddProductVariantsProps> = ({
   formData,
   onChange,
+  categories,
+  attributes,
 }) => {
   // Batch apply fields
-  const [batchCostPrice, setBatchCostPrice] = useState("");
   const [batchSellPrice, setBatchSellPrice] = useState("");
   const [batchStock, setBatchStock] = useState("");
 
@@ -40,11 +29,11 @@ export const AddProductVariants: React.FC<AddProductVariantsProps> = ({
 
   // Suggested sizes from category or fallback
   const suggestedSizes = useMemo(() => {
-    const category = CATEGORY_TREE_DATA.find((c) => c.id === formData.categoryId);
-    return category?.suggestedSizes && category.suggestedSizes.length > 0
-      ? category.suggestedSizes
-      : DEFAULT_SHOE_SIZES;
-  }, [formData.categoryId]);
+    if (attributes[1]?.values.length) return attributes[1].values.map((value) => value.value);
+    const category = categories.find((c) => c.id === formData.categoryId);
+    return category?.suggestedSizes || [];
+  }, [attributes, categories, formData.categoryId]);
+  const suggestedColors = attributes[0]?.values.map((value) => ({ name: value.value, hex: "#64748b" })) || [];
 
   // Generate SKU helper
   const generateSku = (productName: string, colorName: string, size: string) => {
@@ -182,7 +171,6 @@ export const AddProductVariants: React.FC<AddProductVariantsProps> = ({
       );
     } else {
       // Add variant with 0 / blank default values
-      const defaultCost = batchCostPrice ? Number(batchCostPrice) : 0;
       const defaultSell = batchSellPrice ? Number(batchSellPrice) : 0;
       const defaultStock = batchStock !== "" ? Number(batchStock) : 0;
 
@@ -192,7 +180,6 @@ export const AddProductVariants: React.FC<AddProductVariantsProps> = ({
         size,
         colorHex: colorItem.hex,
         sku: generateSku(formData.name, colorItem.name, size),
-        costPrice: defaultCost,
         sellPrice: defaultSell,
         stock: defaultStock,
         status: defaultStock === 0 ? "out_of_stock" : defaultStock <= 15 ? "low_stock" : "available",
@@ -216,7 +203,6 @@ export const AddProductVariants: React.FC<AddProductVariantsProps> = ({
     );
 
     if (!alreadyExists) {
-      const defaultCost = batchCostPrice ? Number(batchCostPrice) : 0;
       const defaultSell = batchSellPrice ? Number(batchSellPrice) : 0;
       const defaultStock = batchStock !== "" ? Number(batchStock) : 0;
 
@@ -226,7 +212,6 @@ export const AddProductVariants: React.FC<AddProductVariantsProps> = ({
         size: trimmedSize,
         colorHex: colorItem.hex,
         sku: generateSku(formData.name, colorItem.name, trimmedSize),
-        costPrice: defaultCost,
         sellPrice: defaultSell,
         stock: defaultStock,
         status: defaultStock === 0 ? "out_of_stock" : defaultStock <= 15 ? "low_stock" : "available",
@@ -273,7 +258,6 @@ export const AddProductVariants: React.FC<AddProductVariantsProps> = ({
 
   // Batch Apply
   const handleApplyBatch = () => {
-    const cost = batchCostPrice ? Number(batchCostPrice) : undefined;
     const sell = batchSellPrice ? Number(batchSellPrice) : undefined;
     const stock = batchStock !== "" ? Number(batchStock) : undefined;
 
@@ -281,7 +265,6 @@ export const AddProductVariants: React.FC<AddProductVariantsProps> = ({
       const nextStock = stock !== undefined ? stock : v.stock;
       return {
         ...v,
-        costPrice: cost !== undefined ? cost : v.costPrice,
         sellPrice: sell !== undefined ? sell : v.sellPrice,
         stock: nextStock,
         status:
@@ -359,21 +342,6 @@ export const AddProductVariants: React.FC<AddProductVariantsProps> = ({
               value={formData.singleSku}
               onChange={(e) => onChange({ singleSku: e.target.value })}
               placeholder="Ví dụ: SKU-BASIC-01"
-              className="bg-surface-container-lowest text-on-surface px-3 py-2 rounded-xl border border-outline-variant/40 outline-none focus:border-primary text-sm font-body-sm"
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="font-label-md text-label-md text-on-surface">Giá vốn (₫)</label>
-            <input
-              type="number"
-              min={0}
-              value={formData.singleCostPrice === 0 ? "" : formData.singleCostPrice}
-              onChange={(e) =>
-                onChange({
-                  singleCostPrice: e.target.value === "" ? 0 : Math.max(0, Number(e.target.value)),
-                })
-              }
-              placeholder="Ví dụ: 450.000"
               className="bg-surface-container-lowest text-on-surface px-3 py-2 rounded-xl border border-outline-variant/40 outline-none focus:border-primary text-sm font-body-sm"
             />
           </div>
@@ -502,7 +470,7 @@ export const AddProductVariants: React.FC<AddProductVariantsProps> = ({
                     {/* 1. Color Selector & Input */}
                     <div className="flex flex-col gap-2">
                       <label className="font-label-md text-label-md text-on-surface font-semibold flex items-center gap-1.5">
-                        <span>Màu sắc:</span>
+                        <span>{attributes[0]?.name || "Màu sắc"}:</span>
                         <span className="text-xs font-normal text-outline">
                           (Nhập tên màu hoặc chọn nhanh từ bảng màu gợi ý)
                         </span>
@@ -537,7 +505,7 @@ export const AddProductVariants: React.FC<AddProductVariantsProps> = ({
                         {/* Quick preset chips */}
                         <div className="flex flex-wrap items-center gap-1.5">
                           <span className="text-xs text-outline font-medium mr-1">Gợi ý:</span>
-                          {PRESET_COLORS.map((preset) => {
+                          {suggestedColors.map((preset) => {
                             const isCurrent =
                               colorItem.name.toLowerCase() === preset.name.toLowerCase();
                             return (
@@ -571,7 +539,7 @@ export const AddProductVariants: React.FC<AddProductVariantsProps> = ({
                             straighten
                           </span>
                           <span>
-                            Chọn các kích cỡ (Size) cho màu &quot;{colorItem.name || "này"}&quot;:
+                            Chọn {attributes[1]?.name || "kích cỡ (Size)"} cho {attributes[0]?.name || "màu"} &quot;{colorItem.name || "này"}&quot;:
                           </span>
                         </label>
                         <span className="text-xs text-outline">
@@ -654,7 +622,6 @@ export const AddProductVariants: React.FC<AddProductVariantsProps> = ({
                               <tr className="bg-surface-container-high/40 font-label-md text-label-md text-on-surface border-b border-outline-variant/20">
                                 <th className="py-2.5 px-3">Kích cỡ (Size)</th>
                                 <th className="py-2.5 px-3">Mã SKU Phân loại</th>
-                                <th className="py-2.5 px-3">Giá vốn (₫)</th>
                                 <th className="py-2.5 px-3">Giá bán (₫)</th>
                                 <th className="py-2.5 px-3">Số lượng (Kho)</th>
                                 <th className="py-2.5 px-3 text-center">Trạng thái</th>
@@ -681,22 +648,6 @@ export const AddProductVariants: React.FC<AddProductVariantsProps> = ({
                                       }
                                       placeholder="Mã SKU (VD: RR-BLK-39)"
                                       className="w-36 bg-surface-container-low px-2 py-1 rounded-lg font-mono text-xs outline-none ring-1 ring-outline-variant/30 focus:ring-2 focus:ring-primary"
-                                    />
-                                  </td>
-                                  <td className="py-2 px-3">
-                                    <input
-                                      type="number"
-                                      min={0}
-                                      value={v.costPrice === 0 ? "" : v.costPrice}
-                                      onChange={(e) =>
-                                        handleUpdateVariantField(
-                                          v.id,
-                                          "costPrice",
-                                          e.target.value === "" ? 0 : Math.max(0, Number(e.target.value))
-                                        )
-                                      }
-                                      placeholder="Giá vốn ₫"
-                                      className="w-24 bg-surface-container-low px-2 py-1 rounded-lg text-xs outline-none ring-1 ring-outline-variant/30 focus:ring-2 focus:ring-primary text-right"
                                     />
                                   </td>
                                   <td className="py-2 px-3">
@@ -796,16 +747,6 @@ export const AddProductVariants: React.FC<AddProductVariantsProps> = ({
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              <div className="relative w-32 sm:w-36">
-                <input
-                  type="number"
-                  min={0}
-                  value={batchCostPrice}
-                  onChange={(e) => setBatchCostPrice(e.target.value)}
-                  placeholder="Giá vốn ₫"
-                  className="w-full bg-surface-container-lowest text-on-surface font-body-sm text-body-sm px-3 py-2 rounded-xl outline-none ring-1 ring-outline-variant/40 focus:ring-2 focus:ring-primary"
-                />
-              </div>
               <div className="relative w-32 sm:w-36">
                 <input
                   type="number"

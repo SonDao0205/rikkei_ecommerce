@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import CustomerLayout from '@/app/layout/CustomerLayout';
 import { useAppDispatch, useAppSelector } from '@/app/state/store';
@@ -24,6 +24,8 @@ import OrderToast from '@/domains/customer/components/user/order/OrderToast';
 export const MyOrderDetail: React.FC = () => {
   const { t } = useTranslation("customer");
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const shopOrderId = Number(searchParams.get("shopOrderId")) || undefined;
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
 
@@ -57,12 +59,12 @@ export const MyOrderDetail: React.FC = () => {
 
   useEffect(() => {
     if (id) {
-      dispatch(getUserOrderDetail(id));
+      dispatch(getUserOrderDetail({ orderId: id, shopOrderId }));
     }
     return () => {
       dispatch(clearCurrentOrderDetail());
     };
-  }, [dispatch, id]);
+  }, [dispatch, id, shopOrderId]);
 
   const handlePrintInvoice = () => {
     window.print();
@@ -75,7 +77,7 @@ export const MyOrderDetail: React.FC = () => {
   const handleConfirmReceived = async () => {
     if (!order) return;
     try {
-      await dispatch(confirmReceivedAction(order.id)).unwrap();
+      await dispatch(confirmReceivedAction({ orderId: order.id, shopOrderId: order.shopOrderId })).unwrap();
       setIsReceiveModalOpen(false);
       showToast(t("profile.orders.detail.toasts.received_success"));
     } catch {
@@ -85,7 +87,7 @@ export const MyOrderDetail: React.FC = () => {
 
   const handleConfirmCancel = async (orderId: number | string, reason: string) => {
     try {
-      await dispatch(cancelOrderAction({ orderId, cancelReason: reason })).unwrap();
+      await dispatch(cancelOrderAction({ orderId, cancelReason: reason, shopOrderId: order?.shopOrderId })).unwrap();
       setIsCancelModalOpen(false);
       showToast(
         t("profile.orders.detail.toasts.cancel_success", { code: order?.orderCode || orderId }),
@@ -162,7 +164,7 @@ export const MyOrderDetail: React.FC = () => {
               />
 
               {/* 2. Visual Tracking Stepper & Carrier Timeline */}
-              <OrderDetailStepper order={order} onShowToast={showToast} />
+              {order.shops.length <= 1 && <OrderDetailStepper order={order} onShowToast={showToast} />}
 
               {/* 3. Delivery & Customer Information Grid */}
               <OrderDetailDeliveryGrid order={order} />
@@ -177,13 +179,15 @@ export const MyOrderDetail: React.FC = () => {
               />
 
               {/* 6. Bottom Sticky / Footer Action Bar */}
-              <OrderDetailFooterBar
-                order={order}
-                onOpenReceiveModal={() => setIsReceiveModalOpen(true)}
-                onOpenCancelModal={() => setIsCancelModalOpen(true)}
-                onReturnRequest={handleReturnRequest}
-                onContactSupport={handleContactSupport}
-              />
+              {order.shops.length <= 1 && (
+                <OrderDetailFooterBar
+                  order={order}
+                  onOpenReceiveModal={() => setIsReceiveModalOpen(true)}
+                  onOpenCancelModal={() => setIsCancelModalOpen(true)}
+                  onReturnRequest={handleReturnRequest}
+                  onContactSupport={handleContactSupport}
+                />
+              )}
 
               {/* Receive Order Confirmation Modal */}
               <ConfirmReceiveModal

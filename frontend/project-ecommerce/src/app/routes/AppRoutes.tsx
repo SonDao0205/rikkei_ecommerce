@@ -36,6 +36,7 @@ import ShoppingCart from "@/domains/customer/pages/ShoppingCart";
 import Wishlist from "@/domains/customer/pages/Wishlist";
 import Checkout from "@/domains/order/pages/Checkout";
 import CompleteOrder from "@/domains/order/pages/CompleteOrder";
+import PaymentResult from "@/domains/order/pages/PaymentResult";
 import ProtectedRoute from "@/app/routes/ProtectedRoute";
 import GuestRoute from "@/app/routes/GuestRoute";
 import StorefrontRoute from "@/app/routes/StorefrontRoute";
@@ -106,6 +107,14 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute allowedRoles={["client", "CLIENT"]}>
         <CompleteOrder />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/payment/result",
+    element: (
+      <ProtectedRoute allowedRoles={["client", "CLIENT"]}>
+        <PaymentResult />
       </ProtectedRoute>
     ),
   },

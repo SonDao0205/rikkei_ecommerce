@@ -1,9 +1,11 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import type {
   ShopProductItem,
   BackendSellerProductVariant,
 } from "@/domains/shop/types/shopProduct.types";
 import { DEFAULT_PRODUCT_IMAGE } from "@/domains/shop/api/shopProductApi";
+import { shopCatalogApi, type ShopBrandOption, type ShopCategoryAttribute } from "@/domains/shop/api/shopCatalogApi";
+import type { AddProductCategoryOption } from "@/domains/shop/types/shopAddProduct.types";
 
 interface CategoryOption {
   id: string;
@@ -82,43 +84,6 @@ const SUGGESTED_COLORS = [
   { name: "Hồng", hex: "#ec4899" },
 ];
 
-const SAMPLE_PRESETS: Record<
-  string,
-  {
-    name: string;
-    sku: string;
-    price: number;
-    colors: string[];
-    sizes: string[];
-    img: string;
-  }
-> = {
-  shoes: {
-    name: "Giày Sneaker Retro Runner V2 Da Lộn Thủ Công",
-    sku: "VN-SNK-V2",
-    price: 850000,
-    colors: ["Đen Tuyền", "Trắng Kem", "Xanh Navy"],
-    sizes: ["39", "40", "41", "42", "43"],
-    img: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800",
-  },
-  apparel: {
-    name: "Áo Thun Heavyweight Vintage Washed Boxy Fit",
-    sku: "VN-TEE-HVY",
-    price: 350000,
-    colors: ["Đen Washed", "Trắng Mộc", "Xám Khói"],
-    sizes: ["S", "M", "L", "XL"],
-    img: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800",
-  },
-  hoodie: {
-    name: "Áo Khoác Gió Kháng Nước Windbreaker Minimal",
-    sku: "VN-JKT-WND",
-    price: 650000,
-    colors: ["Đen", "Xanh Rêu", "Xám Bạc"],
-    sizes: ["M", "L", "XL", "XXL"],
-    img: "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=800",
-  },
-};
-
 interface VariantMatrixRow {
   key: string;
   val1: string;
@@ -159,48 +124,19 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
   onClose,
   onSave,
 }) => {
-  const initialCat =
-    editingProduct?.category || String(editingProduct?.categoryId || "930011");
+  const initialCat = editingProduct?.category || String(editingProduct?.categoryId || "");
 
   const [name, setName] = useState(editingProduct?.name || "");
   const [baseSku, setBaseSku] = useState(editingProduct?.sku || "VN-SNK-88219");
   const [category, setCategory] = useState(initialCat);
   const [categoryLabel, setCategoryLabel] = useState(
-    editingProduct?.categoryLabel ||
-      PRODUCT_CATEGORIES.find((c) => c.id === initialCat)?.name ||
-      "Giày dép",
+    editingProduct?.categoryLabel || "",
   );
-  const [brand, setBrand] = useState("An Nhiên");
-  const [description, setDescription] = useState(
-    editingProduct?.variationSubtitle ||
-      "Sản phẩm thiết kế cao cấp, chất liệu bền bỉ và kiểm duyệt chất lượng kỹ càng.",
-  );
-  const [imageUrl, setImageUrl] = useState(
-    editingProduct?.imageUrl ||
-      "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800",
-  );
-
-  // Single product fallback pricing
-  const [singlePrice, setSinglePrice] = useState(
-    editingProduct?.price || 850000,
-  );
-  const [singleStock, setSingleStock] = useState(editingProduct?.stock ?? 25);
-
-  // Variants Toggle
-  const [hasVariants, setHasVariants] = useState<boolean>(() => {
-    if (editingProduct?.rawVariants && editingProduct.rawVariants.length > 1) {
-      return true;
-    }
-    return true; // Default enabled to easily configure size/color
-  });
-
-  // Category info
-  const currentCategoryOption = useMemo(() => {
-    return (
-      PRODUCT_CATEGORIES.find((c) => c.id === category) || PRODUCT_CATEGORIES[0]
-    );
-  }, [category]);
-
+  const [categoryOptions, setCategoryOptions] = useState<AddProductCategoryOption[]>([]);
+  const [brandOptions, setBrandOptions] = useState<ShopBrandOption[]>([]);
+  const [categoryAttributes, setCategoryAttributes] = useState<ShopCategoryAttribute[]>([]);
+  const [brandId, setBrandId] = useState<number | null>(editingProduct?.brand_id ?? null);
+  const [catalogError, setCatalogError] = useState<string | null>(null);
   // Attribute Group 1 (Colors)
   const [group1Name, setGroup1Name] = useState("Màu sắc");
   const [group1Values, setGroup1Values] = useState<string[]>(() => {
@@ -231,6 +167,84 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
     return ["39", "40", "41", "42"];
   });
   const [newGroup2Input, setNewGroup2Input] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([shopCatalogApi.categories(), shopCatalogApi.brands()])
+      .then(([categories, brands]) => {
+        if (!active) return [] as ShopCategoryAttribute[];
+        setCategoryOptions(categories);
+        setBrandOptions(brands);
+        if (!brands.some((item) => item.id === (editingProduct?.brand_id ?? null))) {
+          setBrandId(null);
+        }
+        const initial = categories.find((item) => String(item.id) === initialCat) || categories[0];
+        if (initial) {
+          setCategory(String(initial.id));
+          setCategoryLabel(initial.name);
+          return shopCatalogApi.categoryAttributes(initial.id);
+        }
+        return [] as ShopCategoryAttribute[];
+      })
+      .then((attributes) => {
+        if (active) {
+          setCategoryAttributes(attributes);
+          if (attributes[0]) {
+            setGroup1Name(attributes[0].name);
+            if (attributes[0].values.length) {
+              setGroup1Values(attributes[0].values.map((value) => value.value));
+            }
+          }
+          if (attributes[1]) {
+            setGroup2Name(attributes[1].name);
+            setEnableGroup2(true);
+            if (attributes[1].values.length) {
+              setGroup2Values(attributes[1].values.map((value) => value.value));
+            }
+          } else if (attributes.length === 1 && attributes[0].required) {
+            setEnableGroup2(false);
+          }
+        }
+      })
+      .catch((error: unknown) => {
+        if (active) setCatalogError(error instanceof Error ? error.message : "Không thể tải danh mục và thương hiệu.");
+      });
+    return () => { active = false; };
+  }, [editingProduct?.brand_id, initialCat]);
+  const [description, setDescription] = useState(
+    editingProduct?.variationSubtitle ||
+      "Sản phẩm thiết kế cao cấp, chất liệu bền bỉ và kiểm duyệt chất lượng kỹ càng.",
+  );
+  const [imageUrl, setImageUrl] = useState(
+    editingProduct?.imageUrl ||
+      "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800",
+  );
+
+  // Single product fallback pricing
+  const [singlePrice, setSinglePrice] = useState(
+    editingProduct?.price || 850000,
+  );
+  const [singleStock, setSingleStock] = useState(editingProduct?.stock ?? 25);
+
+  // Variants Toggle
+  const [hasVariants, setHasVariants] = useState<boolean>(() => {
+    if (editingProduct?.rawVariants && editingProduct.rawVariants.length > 1) {
+      return true;
+    }
+    return true; // Default enabled to easily configure size/color
+  });
+
+  // Category info
+  const currentCategoryOption = useMemo(() => {
+    const selected = categoryOptions.find((item) => String(item.id) === category);
+    const preset = PRODUCT_CATEGORIES.find((item) => item.id === category);
+    return {
+      id: category,
+      name: selected?.name || categoryLabel,
+      attrName: preset?.attrName || "Kích cỡ / Phân loại",
+      suggestedSizes: preset?.suggestedSizes || selected?.suggestedSizes || [],
+    };
+  }, [category, categoryLabel, categoryOptions]);
 
   // Overrides for individual matrix cells (price, stock, sku, enabled)
   const [customCellOverrides, setCustomCellOverrides] = useState<
@@ -360,20 +374,6 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
     }
   };
 
-  // Quick preset loader
-  const handleLoadPreset = (presetKey: keyof typeof SAMPLE_PRESETS) => {
-    const p = SAMPLE_PRESETS[presetKey];
-    if (!p) return;
-    setName(p.name);
-    setBaseSku(p.sku);
-    setSinglePrice(p.price);
-    setImageUrl(p.img);
-    setGroup1Values(p.colors);
-    setGroup2Values(p.sizes);
-    setEnableGroup2(true);
-    setHasVariants(true);
-  };
-
   // Batch Apply to all active rows
   const handleBatchApply = () => {
     const pNum = Number(batchPrice);
@@ -425,12 +425,34 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
   );
 
   // Category switch
-  const handleCategoryChange = (val: string) => {
+  const handleCategoryChange = async (val: string) => {
+    setCatalogError(null);
+    setCategoryAttributes([]);
     setCategory(val);
-    const found = PRODUCT_CATEGORIES.find((c) => c.id === val);
-    setCategoryLabel(found ? found.name : "Ngành hàng chung");
-    if (found?.suggestedSizes && found.suggestedSizes.length > 0) {
-      setGroup2Name(found.attrName);
+    const found = categoryOptions.find((c) => String(c.id) === val);
+    setCategoryLabel(found?.name || "");
+    if (found) {
+      try {
+        const attributes = await shopCatalogApi.categoryAttributes(found.id);
+        setCategoryAttributes(attributes);
+        if (attributes[0]) {
+          setGroup1Name(attributes[0].name);
+          if (attributes[0].values.length) {
+            setGroup1Values(attributes[0].values.map((value) => value.value));
+          }
+        }
+        if (attributes[1]) {
+          setGroup2Name(attributes[1].name);
+          setEnableGroup2(true);
+          if (attributes[1].values.length) {
+            setGroup2Values(attributes[1].values.map((value) => value.value));
+          }
+        } else if (attributes.length === 1 && attributes[0].required) {
+          setEnableGroup2(false);
+        }
+      } catch (error: unknown) {
+        setCatalogError(error instanceof Error ? error.message : "Không thể tải thuộc tính danh mục.");
+      }
     }
   };
 
@@ -461,6 +483,22 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
   // Submit Handler
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (catalogError) return;
+
+    if (!categoryOptions.some((item) => String(item.id) === category)) {
+      setCatalogError("Danh mục chưa tải được từ máy chủ. Vui lòng thử tải lại trang.");
+      return;
+    }
+    const requiredAttributes = categoryAttributes.filter((attribute) => attribute.required);
+    if (requiredAttributes.length > 2) {
+      setCatalogError("Danh mục yêu cầu hơn 2 thuộc tính bắt buộc; biểu mẫu hiện chưa hỗ trợ cấu hình này.");
+      return;
+    }
+    if (requiredAttributes.length > 0 && !hasVariants) {
+      setCatalogError("Danh mục này yêu cầu thuộc tính biến thể. Hãy bật chế độ biến thể trước khi lưu.");
+      return;
+    }
 
     if (!name.trim()) {
       alert("Vui lòng nhập tên sản phẩm");
@@ -500,7 +538,11 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
             price: Number(r.price),
             stock: Number(r.stock),
             image_url: imageUrl,
-            attribute_value_ids: [],
+            attribute_value_ids: categoryAttributes.flatMap((attribute, index) => {
+              const selectedValue = index === 0 ? r.val1 : index === 1 ? r.val2 : undefined;
+              const value = attribute.values.find((option) => option.value === selectedValue);
+              return value ? [value.id] : [];
+            }),
           }))
         : [
             {
@@ -513,6 +555,18 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
             },
           ];
 
+    if (requiredAttributes.length > 0 && finalVariants.some((variant) => {
+      const requiredIds = requiredAttributes.map((attribute) => attribute.id);
+      const selectedIds = variant.attribute_value_ids.flatMap((valueId) => {
+        const owner = categoryAttributes.find((attribute) => attribute.values.some((value) => value.id === valueId));
+        return owner ? [owner.id] : [];
+      });
+      return requiredIds.some((attributeId) => !selectedIds.includes(attributeId));
+    })) {
+      setCatalogError("Chọn các giá trị thuộc tính bắt buộc được cung cấp bởi danh mục.");
+      return;
+    }
+
     onSave({
       id: editingProduct?.id,
       name: name.trim(),
@@ -520,6 +574,7 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
       category,
       categoryId: Number(category),
       categoryLabel,
+      brand_id: brandId,
       price: finalPrice,
       formattedPrice: new Intl.NumberFormat("vi-VN").format(finalPrice) + " ₫",
       stock: finalStock,
@@ -575,31 +630,6 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Quick Sample Presets */}
-            {!editingProduct && (
-              <div className="hidden sm:flex items-center gap-1.5 mr-2">
-                <span className="font-label-sm text-xs text-outline">
-                  Mẫu nhanh:
-                </span>
-                <button
-                  type="button"
-                  onClick={() => handleLoadPreset("shoes")}
-                  className="px-2.5 py-1 rounded-lg bg-surface-container-high hover:bg-primary-fixed hover:text-on-primary-fixed text-on-surface font-label-sm text-xs transition-colors cursor-pointer"
-                  title="Điền mẫu Giày Sneaker kèm Size và Màu sắc"
-                >
-                  👟 Giày Sneaker
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleLoadPreset("apparel")}
-                  className="px-2.5 py-1 rounded-lg bg-surface-container-high hover:bg-primary-fixed hover:text-on-primary-fixed text-on-surface font-label-sm text-xs transition-colors cursor-pointer"
-                  title="Điền mẫu Áo thun thời trang"
-                >
-                  👕 Áo thun
-                </button>
-              </div>
-            )}
-
             <button
               type="button"
               onClick={onClose}
@@ -653,9 +683,9 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
                   onChange={(e) => handleCategoryChange(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/50 font-body-sm text-body-sm focus:outline-none focus:border-primary shadow-xs cursor-pointer"
                 >
-                  {PRODUCT_CATEGORIES.map((cat) => (
+                  {categoryOptions.map((cat) => (
                     <option key={cat.id} value={cat.id}>
-                      {cat.name}
+                      {[...cat.parentPath, cat.name].join(" / ")}
                     </option>
                   ))}
                 </select>
@@ -665,13 +695,15 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
                 <label className="block font-label-md text-label-md font-semibold text-on-surface mb-1.5">
                   Thương hiệu (Brand)
                 </label>
-                <input
-                  type="text"
-                  value={brand}
-                  onChange={(e) => setBrand(e.target.value)}
-                  placeholder="Ví dụ: An Nhiên, Nike, Adidas..."
+                <select
+                  value={brandId == null ? "" : String(brandId)}
+                  onChange={(event) => setBrandId(event.target.value ? Number(event.target.value) : null)}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/50 font-body-sm text-body-sm focus:outline-none focus:border-primary shadow-xs"
-                />
+                >
+                  {brandOptions.map((option) => (
+                    <option key={option.id ?? "none"} value={option.id ?? ""}>{option.name}</option>
+                  ))}
+                </select>
               </div>
 
               <div>
@@ -688,6 +720,7 @@ const ShopProductModalForm: React.FC<ShopProductModalFormProps> = ({
                 />
               </div>
             </div>
+            {catalogError && <p className="text-sm text-error" role="alert">{catalogError}</p>}
 
             <div>
               <label className="block font-label-md text-label-md font-semibold text-on-surface mb-1.5">

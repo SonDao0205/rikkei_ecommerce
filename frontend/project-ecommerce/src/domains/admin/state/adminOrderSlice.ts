@@ -1,4 +1,8 @@
-import { createSlice, createAsyncThunk, type PayloadAction } from "@reduxjs/toolkit";
+import {
+  createSlice,
+  createAsyncThunk,
+  type PayloadAction,
+} from "@reduxjs/toolkit";
 import { adminOrderApi } from "@/domains/admin/api/adminOrderApi";
 import type {
   AdminOrderItem,
@@ -15,7 +19,7 @@ interface AdminOrderState {
   currentOrderDetail: AdminOrderDetailData | null;
   filters: {
     search: string;
-    statusTab: 'all' | 'pending' | 'shipping' | 'delivered' | 'cancelled';
+    statusTab: "all" | "pending" | "shipping" | "delivered" | "cancelled";
     dateRange: string;
     paymentMethod: string;
     vendor: string;
@@ -61,25 +65,42 @@ export const getAdminOrders = createAsyncThunk<
   { orders: AdminOrderItem[]; total: number },
   OrderFilterParams | void,
   { rejectValue: string }
->("adminOrders/getAdminOrders", async (params, { getState, rejectWithValue }) => {
-  try {
-    const filter = (params || {}) as OrderFilterParams;
-    const state = (getState() as { adminOrder: AdminOrderState }).adminOrder;
-    const effectiveParams: OrderFilterParams = {
-      search: filter.search !== undefined ? filter.search : state.filters.search,
-      statusTab: filter.statusTab !== undefined ? filter.statusTab : state.filters.statusTab,
-      dateRange: filter.dateRange !== undefined ? filter.dateRange : state.filters.dateRange,
-      paymentMethod: filter.paymentMethod !== undefined ? filter.paymentMethod : state.filters.paymentMethod,
-      vendor: filter.vendor !== undefined ? filter.vendor : state.filters.vendor,
-      courier: filter.courier !== undefined ? filter.courier : state.filters.courier,
-      page: filter.page || state.currentPage,
-      pageSize: filter.pageSize || state.pageSize,
-    };
-    return await adminOrderApi.fetchOrders(effectiveParams);
-  } catch (err: unknown) {
-    return rejectWithValue(err instanceof Error ? err.message : "Failed to load orders");
-  }
-});
+>(
+  "adminOrders/getAdminOrders",
+  async (params, { getState, rejectWithValue }) => {
+    try {
+      const filter = (params || {}) as OrderFilterParams;
+      const state = (getState() as { adminOrder: AdminOrderState }).adminOrder;
+      const effectiveParams: OrderFilterParams = {
+        search:
+          filter.search !== undefined ? filter.search : state.filters.search,
+        statusTab:
+          filter.statusTab !== undefined
+            ? filter.statusTab
+            : state.filters.statusTab,
+        dateRange:
+          filter.dateRange !== undefined
+            ? filter.dateRange
+            : state.filters.dateRange,
+        paymentMethod:
+          filter.paymentMethod !== undefined
+            ? filter.paymentMethod
+            : state.filters.paymentMethod,
+        vendor:
+          filter.vendor !== undefined ? filter.vendor : state.filters.vendor,
+        courier:
+          filter.courier !== undefined ? filter.courier : state.filters.courier,
+        page: filter.page || state.currentPage,
+        pageSize: filter.pageSize || state.pageSize,
+      };
+      return await adminOrderApi.fetchOrders(effectiveParams);
+    } catch (err: unknown) {
+      return rejectWithValue(
+        err instanceof Error ? err.message : "Failed to load orders",
+      );
+    }
+  },
+);
 
 export const getOrderStatusCounts = createAsyncThunk<
   OrderStatusCounts,
@@ -89,7 +110,9 @@ export const getOrderStatusCounts = createAsyncThunk<
   try {
     return await adminOrderApi.fetchStatusCounts();
   } catch (err: unknown) {
-    return rejectWithValue(err instanceof Error ? err.message : "Failed to load counts");
+    return rejectWithValue(
+      err instanceof Error ? err.message : "Failed to load counts",
+    );
   }
 });
 
@@ -101,7 +124,9 @@ export const confirmOrderThunk = createAsyncThunk<
   try {
     return await adminOrderApi.confirmOrder(orderId);
   } catch (err: unknown) {
-    return rejectWithValue(err instanceof Error ? err.message : "Failed to confirm order");
+    return rejectWithValue(
+      err instanceof Error ? err.message : "Failed to confirm order",
+    );
   }
 });
 
@@ -113,7 +138,9 @@ export const bulkConfirmOrdersThunk = createAsyncThunk<
   try {
     return await adminOrderApi.bulkConfirmOrders(orderIds);
   } catch (err: unknown) {
-    return rejectWithValue(err instanceof Error ? err.message : "Failed to bulk confirm");
+    return rejectWithValue(
+      err instanceof Error ? err.message : "Failed to bulk confirm",
+    );
   }
 });
 
@@ -125,7 +152,9 @@ export const cancelOrderThunk = createAsyncThunk<
   try {
     return await adminOrderApi.cancelOrder(orderId);
   } catch (err: unknown) {
-    return rejectWithValue(err instanceof Error ? err.message : "Failed to cancel order");
+    return rejectWithValue(
+      err instanceof Error ? err.message : "Failed to cancel order",
+    );
   }
 });
 
@@ -145,7 +174,9 @@ export const exportOrdersCsvThunk = createAsyncThunk<
     document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
   } catch (err: unknown) {
-    return rejectWithValue(err instanceof Error ? err.message : "Export failed");
+    return rejectWithValue(
+      err instanceof Error ? err.message : "Export failed",
+    );
   }
 });
 
@@ -157,7 +188,9 @@ export const getOrderDetailThunk = createAsyncThunk<
   try {
     return await adminOrderApi.getOrderDetailById(orderId);
   } catch (err: unknown) {
-    return rejectWithValue(err instanceof Error ? err.message : "Failed to load order detail");
+    return rejectWithValue(
+      err instanceof Error ? err.message : "Failed to load order detail",
+    );
   }
 });
 
@@ -165,20 +198,30 @@ export const changeCourierThunk = createAsyncThunk<
   { courierName: string; trackingCode: string },
   { orderId: string; courierName: string; trackingCode: string },
   { rejectValue: string }
->("adminOrders/changeCourier", async ({ orderId, courierName, trackingCode }, { rejectWithValue }) => {
-  try {
-    await adminOrderApi.changeCourier(orderId, courierName, trackingCode);
-    return { courierName, trackingCode };
-  } catch (err: unknown) {
-    return rejectWithValue(err instanceof Error ? err.message : "Failed to change courier");
-  }
-});
+>(
+  "adminOrders/changeCourier",
+  async ({ orderId, courierName, trackingCode }, { rejectWithValue }) => {
+    try {
+      await adminOrderApi.changeCourier(orderId, courierName, trackingCode);
+      return { courierName, trackingCode };
+    } catch (err: unknown) {
+      return rejectWithValue(
+        err instanceof Error ? err.message : "Failed to change courier",
+      );
+    }
+  },
+);
 
 export const adminOrderSlice = createSlice({
   name: "adminOrder",
   initialState,
   reducers: {
-    setStatusTab: (state, action: PayloadAction<'all' | 'pending' | 'shipping' | 'delivered' | 'cancelled'>) => {
+    setStatusTab: (
+      state,
+      action: PayloadAction<
+        "all" | "pending" | "shipping" | "delivered" | "cancelled"
+      >,
+    ) => {
       state.filters.statusTab = action.payload;
     },
     setSearchQuery: (state, action: PayloadAction<string>) => {
@@ -265,13 +308,15 @@ export const adminOrderSlice = createSlice({
           state.currentOrderDetail.status = "shipping";
           state.currentOrderDetail.statusLabel = "Đang giao hàng";
           state.currentOrderDetail.isUrgent = false;
-          state.currentOrderDetail.financial.paymentStatus = "Chờ giao hàng / Thu COD";
+          state.currentOrderDetail.financial.paymentStatus =
+            "Chờ giao hàng / Thu COD";
           if (state.currentOrderDetail.shipping.timeline[1]) {
             state.currentOrderDetail.shipping.timeline[1].status = "completed";
           }
           if (state.currentOrderDetail.shipping.timeline[2]) {
             state.currentOrderDetail.shipping.timeline[2].status = "current";
-            state.currentOrderDetail.shipping.timeline[2].time = "Đang tiến hành xuất kho";
+            state.currentOrderDetail.shipping.timeline[2].time =
+              "Đang tiến hành xuất kho";
           }
         }
       })
@@ -281,7 +326,7 @@ export const adminOrderSlice = createSlice({
         state.orders = state.orders.map((o) =>
           confirmedIds.includes(o.id)
             ? { ...o, status: "shipping", statusLabel: "Đang giao hàng" }
-            : o
+            : o,
         );
         state.selectedIds = [];
       })
@@ -317,8 +362,10 @@ export const adminOrderSlice = createSlice({
       // Change Courier
       .addCase(changeCourierThunk.fulfilled, (state, action) => {
         if (state.currentOrderDetail) {
-          state.currentOrderDetail.shipping.courier = action.payload.courierName;
-          state.currentOrderDetail.shipping.trackingCode = action.payload.trackingCode;
+          state.currentOrderDetail.shipping.courier =
+            action.payload.courierName;
+          state.currentOrderDetail.shipping.trackingCode =
+            action.payload.trackingCode;
         }
       })
       // Export

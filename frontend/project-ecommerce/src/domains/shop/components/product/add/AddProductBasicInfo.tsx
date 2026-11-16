@@ -1,17 +1,19 @@
 import React from "react";
 import type { AddProductFormData } from "@/domains/shop/types/shopAddProduct.types";
-import { AVAILABLE_BRANDS } from "@/domains/shop/constants/brandData";
+import type { ShopBrandOption } from "@/domains/shop/api/shopCatalogApi";
 
 interface AddProductBasicInfoProps {
   formData: AddProductFormData;
   onChange: (fields: Partial<AddProductFormData>) => void;
   onOpenCategoryModal: () => void;
+  brands: ShopBrandOption[];
 }
 
 export const AddProductBasicInfo: React.FC<AddProductBasicInfoProps> = ({
   formData,
   onChange,
   onOpenCategoryModal,
+  brands,
 }) => {
   const nameLen = formData.name.length;
   const isNameOverLimit = nameLen > 120;
@@ -171,7 +173,7 @@ export const AddProductBasicInfo: React.FC<AddProductBasicInfoProps> = ({
                   onChange({ brand: "No Brand", brandId: null, isBrandVerified: false });
                 } else {
                   const bId = Number(val);
-                  const matchedBrand = AVAILABLE_BRANDS.find((b) => b.id === bId);
+                  const matchedBrand = brands.find((b) => b.id === bId);
                   onChange({
                     brand: matchedBrand?.name || "No Brand",
                     brandId: bId,
@@ -181,7 +183,7 @@ export const AddProductBasicInfo: React.FC<AddProductBasicInfoProps> = ({
               }}
               className="w-full bg-surface-container-low focus:bg-surface-container-lowest text-on-surface font-body-md text-body-md px-4 py-2.5 rounded-xl outline-none ring-1 ring-outline-variant/40 focus:ring-2 focus:ring-primary transition-all cursor-pointer appearance-none pr-10"
             >
-              {AVAILABLE_BRANDS.map((brand) => (
+              {brands.map((brand) => (
                 <option
                   key={brand.id === null ? "no-brand" : brand.id}
                   value={brand.id === null ? "no-brand" : String(brand.id)}

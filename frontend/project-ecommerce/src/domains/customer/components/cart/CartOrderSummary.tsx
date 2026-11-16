@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { CartSummary, PlatformVoucher } from "@/domains/customer/types/cart.types";
 import { formatCurrencyVND } from "@/shared/utils/currency";
-import { AVAILABLE_PLATFORM_VOUCHERS } from "@/domains/customer/data/availableVouchers";
+import { fetchPlatformVouchers, type AvailableVoucher } from "@/domains/customer/data/availableVouchers";
 
 export interface CartOrderSummaryProps {
   summary: CartSummary;
@@ -22,9 +22,18 @@ export const CartOrderSummary: React.FC<CartOrderSummaryProps> = ({
   isCheckingOut = false,
 }) => {
   const { t } = useTranslation("customer");
-  const [couponCode, setCouponCode] = useState(
-    platformVoucher?.code || "RETRO50"
-  );
+  const [couponCode, setCouponCode] = useState(platformVoucher?.code || "");
+  const [vouchers, setVouchers] = useState<AvailableVoucher[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    fetchPlatformVouchers().then((result) => {
+      if (active) setVouchers(result);
+    }).catch(() => {
+      if (active) setVouchers([]);
+    });
+    return () => { active = false; };
+  }, []);
   const [isApplying, setIsApplying] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -73,7 +82,7 @@ export const CartOrderSummary: React.FC<CartOrderSummaryProps> = ({
 
         {/* List of Available Platform Vouchers */}
         <div className="flex flex-col gap-1.5">
-          {AVAILABLE_PLATFORM_VOUCHERS.map((v) => {
+          {vouchers.map((v) => {
             const isThisApplied =
               platformVoucher?.is_applied && platformVoucher.code === v.code;
             const isEligible = summary.items_subtotal >= v.minOrderValue;
@@ -222,7 +231,7 @@ export const CartOrderSummary: React.FC<CartOrderSummaryProps> = ({
           <span className="text-on-surface">
             {summary.estimated_shipping > 0
               ? formatCurrencyVND(summary.estimated_shipping)
-              : "0 ₫"}
+              : t("cart.summary.shipping_calculated_at_checkout")}
           </span>
         </div>
 

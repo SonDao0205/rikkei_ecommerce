@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { CartItem, ShopVoucher } from "@/domains/customer/types/cart.types";
 import CartItemRow from "./CartItemRow";
 import { formatCurrencyVND } from "@/shared/utils/currency";
-import { getAvailableShopVouchers } from "@/domains/customer/data/availableVouchers";
+import { fetchShopVouchers, type AvailableVoucher } from "@/domains/customer/data/availableVouchers";
 
 export interface CartShopGroupProps {
   shopId: number;
@@ -44,6 +44,17 @@ export const CartShopGroup: React.FC<CartShopGroupProps> = ({
   const [isApplyingVoucher, setIsApplyingVoucher] = useState(false);
   const [showVoucherInput, setShowVoucherInput] = useState(false);
   const [voucherErrorMessage, setVoucherErrorMessage] = useState<string | null>(null);
+  const [availableVouchers, setAvailableVouchers] = useState<AvailableVoucher[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    fetchShopVouchers(shopId).then((result) => {
+      if (active) setAvailableVouchers(result);
+    }).catch(() => {
+      if (active) setAvailableVouchers([]);
+    });
+    return () => { active = false; };
+  }, [shopId]);
 
   const isAllShopItemsSelected = items.length > 0 && items.every((i) => i.selected);
   const selectedItems = items.filter((i) => i.selected);
@@ -180,7 +191,7 @@ export const CartShopGroup: React.FC<CartShopGroupProps> = ({
 
         {/* Available Vouchers Pills & Selection */}
         <div className="flex flex-wrap items-center gap-2 pt-0.5">
-          {getAvailableShopVouchers(shopId).slice(0, 3).map((v) => {
+          {availableVouchers.slice(0, 3).map((v) => {
             const isThisApplied = voucher?.is_applied && voucher.code === v.code;
             const isEligible = shopSubtotal >= v.minOrderValue;
 

@@ -15,6 +15,7 @@ import {
 import { formatCurrencyVND } from "@/shared/utils/currency";
 import { userOrderApi } from "@/domains/customer/api/orderApi";
 import type { UserOrder } from "@/domains/order/types";
+import type { UserOrderTimelineLog } from "@/domains/order/types/order.types";
 
 export interface CompleteOrderState {
   orderCode?: string;
@@ -26,6 +27,8 @@ export interface CompleteOrderState {
   carrierName?: string;
   trackingCode?: string;
   estimatedDeliveryDate?: string;
+  currentStepIndex?: number;
+  timeline?: UserOrderTimelineLog[];
   orderTime?: string;
   paymentMethodName?: string;
   paymentMethodCode?: string;
@@ -40,7 +43,9 @@ export interface CompleteOrderState {
 
 function mapUserOrderToCompleteState(order: UserOrder): CompleteOrderState {
   const shopGroups: CompleteOrderShopGroup[] = (order.shops || []).map((shop) => {
-    const shopItems = order.items.filter((item) => item.shopId === shop.shopId);
+    const shopItems = shop.items?.length
+      ? shop.items
+      : order.items.filter((item) => item.shopId === shop.shopId);
     const subtotal = shopItems.reduce((acc, it) => acc + it.unitPrice * it.quantity, 0);
     return {
       shopId: shop.shopId,
@@ -70,9 +75,11 @@ function mapUserOrderToCompleteState(order: UserOrder): CompleteOrderState {
     customerPhone: order.recipient?.phone || "",
     deliveryAddress: order.recipient?.address || "Địa chỉ nhận hàng",
     deliveryNote: order.note,
-    carrierName: order.shippingCarrier || order.courierName || "Giao hàng tiêu chuẩn",
+    carrierName: order.shippingCarrier || order.courierName || "",
     trackingCode: order.trackingCode || "",
-    estimatedDeliveryDate: order.estimatedDeliveryDate || "2-4 ngày làm việc",
+    currentStepIndex: orderStatusStep(order.status),
+    estimatedDeliveryDate: order.estimatedDeliveryDate,
+    timeline: order.timeline || [],
     orderTime: order.createdAt,
     paymentMethodName: order.paymentStatusText,
     paymentMethodCode: order.paymentMethod || "COD",
@@ -86,6 +93,15 @@ function mapUserOrderToCompleteState(order: UserOrder): CompleteOrderState {
   };
 }
 
+function orderStatusStep(status: UserOrder["status"]): number {
+  switch (status) {
+    case "completed": return 4;
+    case "shipping": return 3;
+    case "packing": return 2;
+    default: return 1;
+  }
+}
+
 export const CompleteOrder: React.FC = () => {
   const { t } = useTranslation("customer");
   const location = useLocation();
@@ -95,17 +111,14 @@ export const CompleteOrder: React.FC = () => {
   const passedData = (location.state as CompleteOrderState) || {};
   const queryOrderCode =
     searchParams.get("orderCode") || searchParams.get("code") || searchParams.get("id");
-  const hasFullData = Boolean(
-    passedData.orderCode && passedData.shopGroups && passedData.shopGroups.length > 0
-  );
-  const targetCode = passedData.orderCode || queryOrderCode;
+  const targetCode = queryOrderCode || passedData.orderCode;
 
   const [orderData, setOrderData] = useState<CompleteOrderState>(passedData);
-  const [loading, setLoading] = useState<boolean>(() => !hasFullData && Boolean(targetCode));
+  const [loading, setLoading] = useState<boolean>(() => Boolean(targetCode));
   const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (hasFullData || !targetCode) {
+    if (!targetCode) {
       return;
     }
 
@@ -115,7 +128,15 @@ export const CompleteOrder: React.FC = () => {
       .fetchUserOrderDetail(targetCode)
       .then((order) => {
         if (!isMounted) return;
-        setOrderData(mapUserOrderToCompleteState(order));
+        setOrderData((current) => ({
+          ...current,
+          ...mapUserOrderToCompleteState(order),
+          customerEmail: current.customerEmail,
+          deliveryNote: order.note || current.deliveryNote,
+          carrierName: order.shippingCarrier || order.courierName || current.carrierName || "",
+          trackingCode: order.trackingCode || current.trackingCode || "",
+          estimatedDeliveryDate: order.estimatedDeliveryDate || current.estimatedDeliveryDate,
+        }));
       })
       .catch((err: unknown) => {
         if (!isMounted) return;
@@ -132,7 +153,7 @@ export const CompleteOrder: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [targetCode, hasFullData]);
+  }, [targetCode]);
 
   const orderCode = orderData.orderCode || "";
   const customerEmail = orderData.customerEmail || "";
@@ -140,10 +161,9 @@ export const CompleteOrder: React.FC = () => {
   const customerPhone = orderData.customerPhone || "";
   const deliveryAddress = orderData.deliveryAddress || "";
   const deliveryNote = orderData.deliveryNote || t("order_complete.shipping.default_delivery_note");
-  const carrierName = orderData.carrierName || t("order_complete.shipping.standard_delivery");
+  const carrierName = orderData.carrierName || "";
   const trackingCode = orderData.trackingCode || "";
-  const estimatedDeliveryDate =
-    orderData.estimatedDeliveryDate || t("order_complete.shipping.default_estimated_days");
+  const estimatedDeliveryDate = orderData.estimatedDeliveryDate;
   const orderTime = orderData.orderTime || new Date().toLocaleString("vi-VN");
   const paymentMethodCode = orderData.paymentMethodCode || "COD";
   const paymentMethodName =
@@ -173,7 +193,7 @@ export const CompleteOrder: React.FC = () => {
     );
   }
 
-  if (!orderCode && !loading) {
+  if ((!orderCode || loadError) && !loading) {
     return (
       <CustomerLayout cartItemCount={0} cartTotal={formatCurrencyVND(0)}>
         <div className="w-full pb-16">
@@ -244,7 +264,7 @@ export const CompleteOrder: React.FC = () => {
             carrierName={carrierName}
             trackingCode={trackingCode}
             estimatedDeliveryDate={estimatedDeliveryDate}
-            currentStepIndex={1}
+            timeline={orderData.timeline || []}
           />
 
           {/* 4. Itemized Product Summary & Financial Breakdown */}

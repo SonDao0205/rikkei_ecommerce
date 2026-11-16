@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import type { AddProductCategoryOption } from "@/domains/shop/types/shopAddProduct.types";
-import { CATEGORY_TREE_DATA } from "@/domains/shop/constants/categoryTreeData";
 
 interface AddProductCategoryModalProps {
   isOpen: boolean;
   selectedCategoryId: number;
   onClose: () => void;
   onSelectCategory: (category: AddProductCategoryOption) => void;
+  categories: AddProductCategoryOption[];
 }
 
 export const AddProductCategoryModal: React.FC<AddProductCategoryModalProps> = ({
@@ -14,12 +14,13 @@ export const AddProductCategoryModal: React.FC<AddProductCategoryModalProps> = (
   selectedCategoryId,
   onClose,
   onSelectCategory,
+  categories,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
 
   if (!isOpen) return null;
 
-  const filteredCategories = CATEGORY_TREE_DATA.filter((cat) => {
+  const filteredCategories = categories.filter((cat) => {
     const fullText = `${cat.parentPath.join(" ")} ${cat.name}`.toLowerCase();
     return fullText.includes(searchTerm.toLowerCase().trim());
   });

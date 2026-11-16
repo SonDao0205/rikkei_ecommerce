@@ -7,7 +7,7 @@ import type { UserOrder } from "@/shared/types";
 interface OrderCardProps {
   order: UserOrder;
   onCancelClick?: (order: UserOrder) => void;
-  onConfirmReceived?: (orderId: number) => void;
+  onConfirmReceived?: (order: UserOrder) => void;
   onRepurchase?: (order: UserOrder) => void;
   actionLoading?: boolean;
 }
@@ -88,7 +88,9 @@ export const OrderCard: React.FC<OrderCardProps> = ({
   };
 
   const cleanOrderCode = order.orderCode.replace(/^#/, "");
-  const orderDetailUrl = `/profile/orders/${cleanOrderCode}`;
+  const orderDetailUrl = order.shopOrderId
+    ? `/profile/orders/${order.id}?shopOrderId=${order.shopOrderId}`
+    : `/profile/orders/${cleanOrderCode}`;
 
   return (
     <article className="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden transition-all duration-200 hover:shadow-md border border-outline-variant/40">
@@ -296,17 +298,18 @@ export const OrderCard: React.FC<OrderCardProps> = ({
 
       {/* ================= BOTTOM ACTION BUTTONS RAIL ================= */}
       <div className="p-4 bg-surface-container-lowest flex flex-wrap items-center justify-between gap-3 border-t border-outline-variant/15">
-        {/* Left note / Order time */}
-        {order.status === "pending" || order.status === "packing" ? (
-          <span className="font-body-sm text-[12px] text-amber-800 bg-amber-50 px-2.5 py-1 rounded-md">
-            {t("profile.orders.card.seller_preparing")}
-          </span>
-        ) : (
+        {/* Always show when the parent order was placed. */}
+        <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-1.5 text-body-sm font-body-sm text-outline text-xs">
             <span className="material-symbols-outlined text-[16px]">schedule</span>
             <span>{t("profile.orders.card.ordered_at", { time: order.createdAt })}</span>
           </div>
-        )}
+          {(order.status === "pending" || order.status === "packing") && (
+            <span className="font-body-sm text-[12px] text-amber-800 bg-amber-50 px-2.5 py-1 rounded-md">
+              {t("profile.orders.card.seller_preparing")}
+            </span>
+          )}
+        </div>
 
         {/* Right buttons rail */}
         <div className="flex items-center gap-2.5 flex-wrap ml-auto">
@@ -335,7 +338,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
               <button
                 type="button"
                 disabled={actionLoading}
-                onClick={() => onConfirmReceived && onConfirmReceived(order.id)}
+                onClick={() => onConfirmReceived && onConfirmReceived(order)}
                 className="px-5 py-2.5 rounded-lg bg-primary hover:bg-primary-container text-on-primary font-label-lg text-label-lg font-bold transition-all shadow-sm cursor-pointer disabled:opacity-50"
               >
                 {t("profile.orders.card.received_btn")}
