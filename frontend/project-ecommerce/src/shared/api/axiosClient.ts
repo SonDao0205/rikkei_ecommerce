@@ -12,6 +12,9 @@ export const getInMemoryAccessToken = (): string | null => {
 };
 
 export const shouldFallbackToMock = (error: unknown): boolean => {
+    // Mocks are for local development only. A production API outage must never
+    // silently replace real account/order data with in-memory demo data.
+    if (!import.meta.env.DEV) return false;
     if (
         typeof error !== "object" ||
         error === null ||

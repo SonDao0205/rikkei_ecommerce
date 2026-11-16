@@ -66,7 +66,9 @@ export const normalizeBackendUser = (bu: BackendUserItem): AdminUserItem => {
     primaryRole,
     status,
     emailVerified: Boolean(bu.email_verified),
-    phoneVerified: Boolean(bu.phone),
+    // The backend does not currently return phone verification state. Do not
+    // infer verification from the mere presence of a phone number.
+    phoneVerified: false,
     createdAt: bu.created_at || new Date().toISOString(),
     lastLoginAt: null,
     totalOrders: 0,

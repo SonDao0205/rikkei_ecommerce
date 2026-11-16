@@ -16,32 +16,33 @@ type OrderItemView struct {
 }
 
 type ShopOrderView struct {
-	ID               int64           `json:"id"`
-	OrderID          int64           `json:"order_id"`
-	ShopID           int64           `json:"shop_id"`
-	ShopName         string          `json:"shop_name"`
-	ShopOrderCode    string          `json:"shop_order_code"`
-	Status           string          `json:"status"`
-	StatusLabel      string          `json:"status_label"`
-	Subtotal         float64         `json:"subtotal"`
-	ShippingFee      float64         `json:"shipping_fee"`
-	ShopDiscount     float64         `json:"shop_discount"`
-	PlatformDiscount float64         `json:"platform_discount"`
-	TotalAmount      float64         `json:"total_amount"`
-	CommissionRate   float64         `json:"commission_rate,omitempty"`
-	CommissionAmount float64         `json:"commission_amount,omitempty"`
-	SellerPayout     float64         `json:"seller_payout,omitempty"`
-	Carrier          *string         `json:"carrier,omitempty"`
-	TrackingCode     *string         `json:"tracking_code,omitempty"`
-	CancelReason     *string         `json:"cancel_reason,omitempty"`
-	ConfirmedAt      *time.Time      `json:"confirmed_at,omitempty"`
-	PackedAt         *time.Time      `json:"packed_at,omitempty"`
-	ShippedAt        *time.Time      `json:"shipped_at,omitempty"`
-	CompletedAt      *time.Time      `json:"completed_at,omitempty"`
-	CancelledAt      *time.Time      `json:"cancelled_at,omitempty"`
-	CreatedAt        time.Time       `json:"created_at"`
-	UpdatedAt        time.Time       `json:"updated_at"`
-	Items            []OrderItemView `json:"items"`
+	ID               int64             `json:"id"`
+	OrderID          int64             `json:"order_id"`
+	ShopID           int64             `json:"shop_id"`
+	ShopName         string            `json:"shop_name"`
+	ShopOrderCode    string            `json:"shop_order_code"`
+	Status           string            `json:"status"`
+	StatusLabel      string            `json:"status_label"`
+	Subtotal         float64           `json:"subtotal"`
+	ShippingFee      float64           `json:"shipping_fee"`
+	ShopDiscount     float64           `json:"shop_discount"`
+	PlatformDiscount float64           `json:"platform_discount"`
+	TotalAmount      float64           `json:"total_amount"`
+	CommissionRate   float64           `json:"commission_rate,omitempty"`
+	CommissionAmount float64           `json:"commission_amount,omitempty"`
+	SellerPayout     float64           `json:"seller_payout,omitempty"`
+	Carrier          *string           `json:"carrier,omitempty"`
+	TrackingCode     *string           `json:"tracking_code,omitempty"`
+	CancelReason     *string           `json:"cancel_reason,omitempty"`
+	ConfirmedAt      *time.Time        `json:"confirmed_at,omitempty"`
+	PackedAt         *time.Time        `json:"packed_at,omitempty"`
+	ShippedAt        *time.Time        `json:"shipped_at,omitempty"`
+	CompletedAt      *time.Time        `json:"completed_at,omitempty"`
+	CancelledAt      *time.Time        `json:"cancelled_at,omitempty"`
+	CreatedAt        time.Time         `json:"created_at"`
+	UpdatedAt        time.Time         `json:"updated_at"`
+	Items            []OrderItemView   `json:"items"`
+	Timeline         []TimelineLogView `json:"timeline,omitempty"`
 }
 
 type PaymentInfoView struct {
@@ -72,6 +73,8 @@ type TimelineLogView struct {
 type CustomerOrderSummary struct {
 	ID                int64           `json:"id"`
 	OrderCode         string          `json:"order_code"`
+	ParentOrderCode   string          `json:"parent_order_code,omitempty"`
+	ShopOrderID       int64           `json:"shop_order_id,omitempty"`
 	Status            string          `json:"status"`
 	StatusLabel       string          `json:"status_label"`
 	Subtotal          float64         `json:"subtotal"`
@@ -92,6 +95,9 @@ type CustomerOrderSummary struct {
 type CustomerOrderDetail struct {
 	ID                int64             `json:"id"`
 	OrderCode         string            `json:"order_code"`
+	ParentOrderCode   string            `json:"parent_order_code,omitempty"`
+	ShopOrderCode     string            `json:"shop_order_code,omitempty"`
+	ShopOrderID       int64             `json:"shop_order_id,omitempty"`
 	Status            string            `json:"status"`
 	StatusLabel       string            `json:"status_label"`
 	Subtotal          float64           `json:"subtotal"`

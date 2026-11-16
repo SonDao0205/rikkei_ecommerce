@@ -91,6 +91,7 @@ export interface ShopProductItem {
   category: string;
   categoryId?: number;
   categoryLabel: string;
+  brand_id?: number | null;
   imageUrl: string;
   videoUrl?: string;
   imageAlt: string;

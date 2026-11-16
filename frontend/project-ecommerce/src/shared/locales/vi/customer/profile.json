@@ -388,6 +388,7 @@
       "back_to_orders": "Quay lại danh sách đơn hàng",
       "breadcrumb_detail": "Chi tiết đơn {{code}}",
       "page_title": "Chi tiết đơn hàng {{code}}",
+      "status_per_shop": "Theo dõi trạng thái từng shop bên dưới",
       "ordered_at": "Đặt lúc {{time}}",
       "updated_recent": "Cập nhật gần đây",
       "print_vat": "In hóa đơn VAT",
@@ -449,6 +450,7 @@
         "prepare_cash_hint": "Bưu tá thu đúng số tiền này, không phụ phí"
       },
       "shop_section": {
+        "shop_order_timeline": "Trạng thái đơn của shop",
         "official_mall": "MALL CHÍNH HÃNG",
         "artisan": "ARTISAN",
         "stats": "Tỉ lệ phản hồi {{rate}}% • Đánh giá {{rating}}/5 ★",

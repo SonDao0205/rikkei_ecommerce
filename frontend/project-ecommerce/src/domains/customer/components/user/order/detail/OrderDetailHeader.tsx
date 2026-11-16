@@ -19,6 +19,7 @@ export const OrderDetailHeader: React.FC<OrderDetailHeaderProps> = ({
   const { t } = useTranslation("customer");
 
   const getStatusBadge = () => {
+    if (order.shops.length > 1) return "bg-primary-fixed text-primary";
     switch (order.status) {
       case "pending":
         return "bg-amber-100 text-amber-900";
@@ -38,6 +39,7 @@ export const OrderDetailHeader: React.FC<OrderDetailHeaderProps> = ({
   };
 
   const getStatusLabel = () => {
+    if (order.shops.length > 1) return t("profile.orders.detail.status_per_shop");
     switch (order.status) {
       case "pending":
         return t("profile.orders.statuses.pending");
@@ -112,7 +114,7 @@ export const OrderDetailHeader: React.FC<OrderDetailHeaderProps> = ({
             <div
               className={`inline-flex items-center gap-2 px-3 py-1 rounded-full font-label-sm text-label-sm font-bold shadow-xs uppercase tracking-wider ${getStatusBadge()}`}
             >
-              {order.status === "shipping" && (
+              {order.shops.length <= 1 && order.status === "shipping" && (
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75" />
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-secondary" />

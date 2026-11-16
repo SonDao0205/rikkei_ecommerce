@@ -1,4 +1,8 @@
-import { createSlice, createAsyncThunk, type PayloadAction } from "@reduxjs/toolkit";
+import {
+  createSlice,
+  createAsyncThunk,
+  type PayloadAction,
+} from "@reduxjs/toolkit";
 import { userOrderApi } from "@/domains/customer/api/orderApi";
 import type {
   UserOrder,
@@ -53,7 +57,7 @@ export const getUserOrders = createAsyncThunk<
     return await userOrderApi.fetchUserOrders(params);
   } catch (err: unknown) {
     return rejectWithValue(
-      err instanceof Error ? err.message : "Không thể tải danh sách đơn hàng"
+      err instanceof Error ? err.message : "Không thể tải danh sách đơn hàng",
     );
   }
 });
@@ -65,50 +69,77 @@ export const getUserOrderCounts = createAsyncThunk<UserOrderStatusCounts>(
       return await userOrderApi.fetchUserOrderStatusCounts();
     } catch (err: unknown) {
       return rejectWithValue(
-        err instanceof Error ? err.message : "Không thể lấy số lượng trạng thái đơn"
+        err instanceof Error
+          ? err.message
+          : "Không thể lấy số lượng trạng thái đơn",
       );
     }
-  }
+  },
 );
 
 export const cancelOrderAction = createAsyncThunk<
   UserOrder,
-  { orderId: number | string; cancelReason: string }
->("userOrder/cancelOrder", async ({ orderId, cancelReason }, { rejectWithValue }) => {
-  try {
-    return await userOrderApi.cancelUserOrder(orderId, cancelReason);
-  } catch (err: unknown) {
-    return rejectWithValue(
-      err instanceof Error ? err.message : "Hủy đơn hàng thất bại"
-    );
-  }
-});
-
-export const confirmReceivedAction = createAsyncThunk<UserOrder, number | string>(
-  "userOrder/confirmReceived",
-  async (orderId, { rejectWithValue }) => {
+  { orderId: number | string; cancelReason: string; shopOrderId?: number }
+>(
+  "userOrder/cancelOrder",
+  async ({ orderId, cancelReason, shopOrderId }, { rejectWithValue }) => {
     try {
-      return await userOrderApi.confirmOrderReceived(orderId);
+      return await userOrderApi.cancelUserOrder(
+        orderId,
+        cancelReason,
+        shopOrderId,
+      );
     } catch (err: unknown) {
       return rejectWithValue(
-        err instanceof Error ? err.message : "Xác nhận nhận hàng thất bại"
+        err instanceof Error ? err.message : "Hủy đơn hàng thất bại",
       );
     }
-  }
+  },
+);
+
+// export const confirmReceivedAction = createAsyncThunk<UserOrder,{ orderId: number | string, shopOrderId?: number }>("userOrder/confirmReceived", async ({ orderId, shopOrderId }, { rejectWithValue }) => {
+//     try {
+//       return await userOrderApi.confirmOrderReceived(orderId, shopOrderId);
+//     } catch (err: unknown) {
+//       return rejectWithValue(
+//         err instanceof Error ? err.message : "Xác nhận nhận hàng thất bại"
+//       );
+//     }
+//   }
+// });
+
+export const confirmReceivedAction = createAsyncThunk<
+  UserOrder,
+  { orderId: number | string; shopOrderId?: number },
+  { rejectValue: string }
+>(
+  "userOrder/confirmReceived",
+  async ({ orderId, shopOrderId }, { rejectWithValue }) => {
+    try {
+      return await userOrderApi.confirmOrderReceived(orderId, shopOrderId);
+    } catch (err: unknown) {
+      return rejectWithValue(
+        err instanceof Error ? err.message : "Xác nhận nhận hàng thất bại",
+      );
+    }
+  },
 );
 
 export const getUserOrderDetail = createAsyncThunk<
   UserOrder,
-  string | number
->("userOrder/getUserOrderDetail", async (orderIdOrCode, { rejectWithValue }) => {
-  try {
-    return await userOrderApi.fetchUserOrderDetail(orderIdOrCode);
-  } catch (err: unknown) {
-    return rejectWithValue(
-      err instanceof Error ? err.message : "Không thể tải chi tiết đơn hàng"
-    );
-  }
-});
+  { orderId: string | number; shopOrderId?: number }
+>(
+  "userOrder/getUserOrderDetail",
+  async ({ orderId, shopOrderId }, { rejectWithValue }) => {
+    try {
+      return await userOrderApi.fetchUserOrderDetail(orderId, shopOrderId);
+    } catch (err: unknown) {
+      return rejectWithValue(
+        err instanceof Error ? err.message : "Không thể tải chi tiết đơn hàng",
+      );
+    }
+  },
+);
 
 export const userOrderSlice = createSlice({
   name: "userOrder",
@@ -176,15 +207,28 @@ export const userOrderSlice = createSlice({
     });
     builder.addCase(cancelOrderAction.fulfilled, (state, action) => {
       state.actionLoading = false;
+      const previous =
+        state.orders.find(
+          (o) =>
+            o.id === action.payload.id &&
+            o.shopOrderId === action.payload.shopOrderId,
+        ) || state.selectedOrderForCancel;
       state.selectedOrderForCancel = null;
-      const index = state.orders.findIndex((o) => o.id === action.payload.id);
+      const index = state.orders.findIndex(
+        (o) =>
+          o.id === action.payload.id &&
+          o.shopOrderId === action.payload.shopOrderId,
+      );
       if (index !== -1) {
         state.orders[index] = action.payload;
       }
       if (state.currentOrderDetail?.id === action.payload.id) {
         state.currentOrderDetail = action.payload;
       }
-      state.counts.pending = Math.max(0, state.counts.pending - 1);
+      if (previous?.status === "pending")
+        state.counts.pending = Math.max(0, state.counts.pending - 1);
+      if (previous?.status === "packing")
+        state.counts.packing = Math.max(0, state.counts.packing - 1);
       state.counts.cancelled += 1;
     });
     builder.addCase(cancelOrderAction.rejected, (state, action) => {
@@ -198,7 +242,11 @@ export const userOrderSlice = createSlice({
     });
     builder.addCase(confirmReceivedAction.fulfilled, (state, action) => {
       state.actionLoading = false;
-      const index = state.orders.findIndex((o) => o.id === action.payload.id);
+      const index = state.orders.findIndex(
+        (o) =>
+          o.id === action.payload.id &&
+          o.shopOrderId === action.payload.shopOrderId,
+      );
       if (index !== -1) {
         state.orders[index] = action.payload;
       }

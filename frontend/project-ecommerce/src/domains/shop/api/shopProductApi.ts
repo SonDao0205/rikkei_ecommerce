@@ -67,22 +67,6 @@ export const normalizeSellerProduct = (
     .filter(Boolean)
     .join(", ");
 
-  let costPrice = Math.round(product.price * 0.6);
-  try {
-    const storedCosts = JSON.parse(
-      localStorage.getItem("marketpulse_product_cost_prices") || "{}"
-    );
-    if (storedCosts[product.id] !== undefined) {
-      costPrice = Number(storedCosts[product.id]);
-    } else if (storedCosts[primarySku] !== undefined) {
-      costPrice = Number(storedCosts[primarySku]);
-    } else if (primarySku.includes("GN-ENT")) {
-      costPrice = 12000;
-    }
-  } catch {
-    // ignore
-  }
-
   return {
     id: String(product.id),
     name: product.name,
@@ -90,6 +74,7 @@ export const normalizeSellerProduct = (
     category: String(product.category_id),
     categoryId: product.category_id,
     categoryLabel: catName,
+    brand_id: product.brand_id,
     imageUrl: primaryImg,
     imageAlt: product.name,
     soldCount: 0,
@@ -97,8 +82,6 @@ export const normalizeSellerProduct = (
     variationSubtitle: variationNames || "Tiêu chuẩn",
     price: product.price,
     formattedPrice: new Intl.NumberFormat("vi-VN").format(product.price) + " ₫",
-    costPrice,
-    formattedCostPrice: new Intl.NumberFormat("vi-VN").format(costPrice) + " ₫",
     stock: totalStock,
     stockStatus,
     stockStatusLabel,

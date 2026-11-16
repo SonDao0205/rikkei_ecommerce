@@ -823,7 +823,7 @@ func (h *SellerHandler) completeSellerOrder(w http.ResponseWriter, r *http.Reque
 
 	// If COD, mark payment as PAID
 	_, _ = tx.ExecContext(r.Context(),
-		`UPDATE payments SET status = 'PAID', paid_at = NOW(), updated_at = NOW() WHERE order_id = ? AND status = 'PENDING'`,
+		`UPDATE payments p JOIN payment_methods pm ON pm.id=p.payment_method_id SET p.status = 'PAID', p.paid_at = NOW(), p.updated_at = NOW() WHERE p.order_id = ? AND p.status = 'PENDING' AND pm.code = 'COD'`,
 		orderID,
 	)
 
@@ -993,18 +993,12 @@ func (h *SellerHandler) cancelSellerOrder(w http.ResponseWriter, r *http.Request
 
 	refundStatus := "NOT_APPLICABLE"
 	refundMessage := "Đơn hàng COD đã được hủy. Không phát sinh hoàn tiền."
-	if pmCode != "COD" || payStatus == "PAID" {
-		refundStatus = "REFUND_PROCESSING"
-		refundMessage = "Đã hủy đơn hàng thành công. Tiền sẽ được hoàn lại cho khách trong vòng 3 ngày làm việc."
-		_, _ = tx.ExecContext(r.Context(),
-			`UPDATE payments SET status = 'REFUNDED', updated_at = NOW() WHERE id = ?`,
-			payID,
-		)
-	} else {
-		_, _ = tx.ExecContext(r.Context(),
-			`UPDATE payments SET status = 'FAILED', updated_at = NOW() WHERE id = ? AND status = 'PENDING'`,
-			payID,
-		)
+	if payStatus == "PAID" {
+		refundStatus = "REFUND_REQUIRES_MANUAL_REVIEW"
+		refundMessage = "Đơn hàng của shop đã hủy. Khoản thanh toán toàn đơn chưa được hoàn tự động và cần quản trị viên đối soát; trạng thái payment được giữ nguyên."
+	} else if pmCode != "COD" {
+		refundStatus = "NOT_PAID"
+		refundMessage = "Đơn hàng của shop đã hủy trước khi thanh toán; chưa phát sinh khoản tiền cần hoàn."
 	}
 
 	if err = tx.Commit(); err != nil {
@@ -1148,7 +1142,7 @@ func (h *SellerHandler) approveSellerReturn(w http.ResponseWriter, r *http.Reque
 	}
 	req.Note = strings.TrimSpace(req.Note)
 	if req.Note == "" {
-		req.Note = "Chủ gian hàng đã chấp thuận yêu cầu đổi trả và hoàn tiền"
+		req.Note = "Chủ gian hàng đã chấp thuận yêu cầu đổi trả; cần đối soát thanh toán riêng"
 	}
 	if utf8.RuneCountInString(req.Note) > 500 {
 		writeError(w, http.StatusBadRequest, "invalid_note", "Ghi chú không được vượt quá 500 ký tự")
@@ -1274,11 +1268,7 @@ func (h *SellerHandler) approveSellerReturn(w http.ResponseWriter, r *http.Reque
 		}
 	}
 
-	// Trigger refund on payments
-	_, _ = tx.ExecContext(r.Context(),
-		`UPDATE payments SET status = 'REFUNDED', updated_at = NOW() WHERE order_id = ?`,
-		orderID,
-	)
+	// Return approval updates inventory/order state only. Payment refunds require a separately confirmed provider transaction.
 
 	if err = tx.Commit(); err != nil {
 		serverError(w, h.logger, err)
@@ -1287,13 +1277,13 @@ func (h *SellerHandler) approveSellerReturn(w http.ResponseWriter, r *http.Reque
 
 	writeJSON(w, http.StatusOK, map[string]any{
 		"success": true,
-		"message": "Đã chấp thuận yêu cầu trả hàng. Tồn kho đã được hoàn lại và hệ thống sẽ hoàn tiền cho khách trong vòng 3 ngày làm việc.",
+		"message": "Đã chấp thuận yêu cầu trả hàng và cập nhật tồn kho. Khoản hoàn tiền cần được quản trị viên đối soát và xử lý riêng.",
 		"data": map[string]any{
 			"return_request_id": returnID,
 			"shop_order_id":     shopOrderID,
 			"status":            "APPROVED",
-			"refund_status":     "REFUND_PROCESSING",
-			"refund_message":    "Yêu cầu hoàn tiền đã được ghi nhận. Tiền sẽ được hoàn lại vào tài khoản của quý khách trong vòng 3 ngày làm việc.",
+			"refund_status":     "REFUND_REQUIRES_MANUAL_REVIEW",
+			"refund_message":    "Chưa thực hiện hoàn tiền tự động; quản trị viên cần đối soát và xử lý riêng.",
 		},
 	})
 }

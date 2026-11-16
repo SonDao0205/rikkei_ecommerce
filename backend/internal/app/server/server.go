@@ -12,6 +12,7 @@ import (
 	"rikkei-ecommerce/internal/domain/checkout"
 	"rikkei-ecommerce/internal/domain/media"
 	"rikkei-ecommerce/internal/domain/order"
+	"rikkei-ecommerce/internal/domain/payment"
 	"rikkei-ecommerce/internal/domain/promotion"
 	"rikkei-ecommerce/internal/domain/review"
 	"rikkei-ecommerce/internal/domain/seller"
@@ -29,6 +30,7 @@ func NewHandler(config auth.Config, db *sql.DB, logger *log.Logger) http.Handler
 	cart.RegisterRoutes(mux, security, db, logger)
 	checkout.RegisterRoutes(mux, security, db, logger)
 	order.RegisterRoutes(mux, security, db, logger)
+	payment.RegisterRoutes(mux, security, db, config, logger)
 	promotion.RegisterRoutes(mux, security, db, logger)
 	review.RegisterRoutes(mux, security, db, logger)
 	wishlist.RegisterRoutes(mux, security, db, logger)

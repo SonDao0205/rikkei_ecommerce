@@ -239,12 +239,12 @@ export const ShopProductTable: React.FC<ShopProductTableProps> = ({
                     <div className="flex flex-col">
                       <span className="font-label-md text-label-md font-semibold text-on-surface font-mono">
                         {item.formattedCostPrice ||
-                          (item.costPrice
+                          (item.costPrice != null
                             ? new Intl.NumberFormat("vi-VN").format(item.costPrice) + " ₫"
-                            : new Intl.NumberFormat("vi-VN").format(Math.round(item.price * 0.6)) + " ₫")}
+                            : "—")}
                       </span>
                       <span className="font-body-sm text-[11px] text-outline">
-                        Giá vốn nhập
+                        Chưa có dữ liệu backend
                       </span>
                     </div>
                   </td>

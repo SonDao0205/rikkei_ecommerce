@@ -1,97 +1,12 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { UserOrder, UserOrderTimelineLog } from "@/shared/types";
+import type { UserOrder } from "@/shared/types";
 
 export interface OrderDetailStepperProps {
   order: UserOrder;
   onCopySuccess?: (msg: string) => void;
   onShowToast?: (msg: string) => void;
 }
-
-// Standardized milestone timeline generator matching stepper stages
-const getStandardTimeline = (order: UserOrder): UserOrderTimelineLog[] => {
-  if (order.status === "completed") {
-    return [
-      {
-        id: "std-log-5",
-        time: "28/10 14:30",
-        title: "Giao hàng thành công",
-        subtitle: "Người nhận đã ký nhận kiện hàng",
-        isLatest: true,
-      },
-      {
-        id: "std-log-4",
-        time: "27/10 08:15",
-        title: "Đang vận chuyển",
-        subtitle: "Bưu tá phụ trách: Trần Minh Quân",
-      },
-      {
-        id: "std-log-3",
-        time: "26/10 18:30",
-        title: "Chờ lấy đơn hàng",
-        subtitle: "Shop đã đóng gói và chuẩn bị bàn giao cho bưu tá",
-      },
-      {
-        id: "std-log-2",
-        time: "26/10 14:45",
-        title: "Chờ xác nhận",
-        subtitle: "Người bán đang kiểm tra và xác nhận đơn hàng",
-      },
-      {
-        id: "std-log-1",
-        time: "26/10 14:20",
-        title: "Đơn hàng đã đặt",
-        subtitle: "Hệ thống ghi nhận đơn hàng thành công",
-      },
-    ];
-  }
-
-  if (order.status === "cancelled") {
-    return [
-      {
-        id: "std-log-cancel",
-        time: order.cancelledAt || "15/10 12:40",
-        title: "Đơn hàng đã được hủy",
-        subtitle: `Lý do: ${order.cancelReason || "Đổi ý không muốn mua nữa"}`,
-        isLatest: true,
-      },
-      {
-        id: "std-log-confirm",
-        time: "26/10 14:20",
-        title: "Đơn hàng đã đặt",
-      },
-    ];
-  }
-
-  // All other orders (shipping, pending, packing, etc.) follow the standard timeline
-  return [
-    {
-      id: "std-log-4",
-      time: "27/10 08:15",
-      title: "Đang vận chuyển",
-      subtitle: "Bưu tá phụ trách: Trần Minh Quân - Dự kiến giao hôm nay",
-      isLatest: true,
-    },
-    {
-      id: "std-log-3",
-      time: "26/10 18:30",
-      title: "Chờ lấy đơn hàng",
-      subtitle: "Shop đã đóng gói và chuẩn bị bàn giao cho bưu tá",
-    },
-    {
-      id: "std-log-2",
-      time: "26/10 14:45",
-      title: "Chờ xác nhận",
-      subtitle: "Người bán đang kiểm tra và xác nhận đơn hàng",
-    },
-    {
-      id: "std-log-1",
-      time: "26/10 14:20",
-      title: "Đơn hàng đã đặt",
-      subtitle: "Hệ thống ghi nhận đơn hàng thành công",
-    },
-  ];
-};
 
 export const OrderDetailStepper: React.FC<OrderDetailStepperProps> = ({
   order,
@@ -136,25 +51,10 @@ export const OrderDetailStepper: React.FC<OrderDetailStepperProps> = ({
     });
   };
 
-  const trackingCode = order.trackingCode || "GHN88391204VN";
-  const courierName = order.courierName || "Giao Hàng Nhanh (GHN Express)";
-  const estimatedDate = order.estimatedDeliveryDate || "28/10/2026";
-
-  const isOldVerboseLog = (logs?: UserOrderTimelineLog[]) => {
-    if (!logs || logs.length === 0) return true;
-    return logs.some(
-      (l) =>
-        l.title.includes("kho") ||
-        l.title.includes("Xe") ||
-        l.title.includes("Shipper") ||
-        l.title.includes("MarketPulse")
-    );
-  };
-
-  const timelineLogs =
-    !order.timeline || isOldVerboseLog(order.timeline)
-      ? getStandardTimeline(order)
-      : order.timeline;
+  const trackingCode = order.trackingCode || "";
+  const courierName = order.courierName || order.shippingCarrier || "";
+  const estimatedDate = order.estimatedDeliveryDate || "";
+  const timelineLogs = order.timeline || [];
 
   const localizeLogTitle = (title: string) => {
     const lower = title.toLowerCase();
@@ -179,32 +79,10 @@ export const OrderDetailStepper: React.FC<OrderDetailStepperProps> = ({
     return title;
   };
 
-  const localizeLogSubtitle = (subtitle?: string) => {
-    if (!subtitle) return "";
-    if (subtitle.includes("ký nhận") || subtitle.includes("signed")) {
-      return t("profile.orders.detail.stepper.timeline.delivered_subtitle");
-    }
-    if (subtitle.includes("Dự kiến giao hôm nay") || subtitle.includes("today")) {
-      return t("profile.orders.detail.stepper.timeline.shipping_subtitle_delivered_today");
-    }
-    if (subtitle.includes("Trần Minh Quân") || subtitle.includes("courier")) {
-      return t("profile.orders.detail.stepper.timeline.shipping_subtitle");
-    }
-    if (subtitle.includes("bàn giao") || subtitle.includes("handover")) {
-      return t("profile.orders.detail.stepper.timeline.packing_subtitle");
-    }
-    if (subtitle.includes("kiểm tra và xác nhận") || subtitle.includes("confirming")) {
-      return t("profile.orders.detail.stepper.timeline.pending_subtitle");
-    }
-    if (subtitle.includes("khởi tạo thành công") || subtitle.includes("ghi nhận đơn hàng")) {
-      return t("profile.orders.detail.stepper.timeline.placed_subtitle");
-    }
-    if (subtitle.startsWith("Lý do:")) {
-      const reason = subtitle.replace(/^Lý do:\s*/, "");
-      return t("profile.orders.detail.stepper.timeline.cancel_reason_prefix", { reason });
-    }
-    return subtitle;
-  };
+  const completedEvent = timelineLogs.find((log) => {
+    const title = log.title.toLowerCase();
+    return title.includes("thành công") || title.includes("hoàn thành") || title.includes("completed");
+  });
 
   return (
     <section className="bg-surface-container-lowest rounded-2xl p-6 md:p-8 shadow-sm border border-outline-variant/40 flex flex-col gap-8">
@@ -229,7 +107,9 @@ export const OrderDetailStepper: React.FC<OrderDetailStepperProps> = ({
             event_available
           </span>
           <span>
-            {t("profile.orders.detail.stepper.estimated_arrival", { date: estimatedDate })}
+            {estimatedDate
+              ? t("profile.orders.detail.stepper.estimated_arrival", { date: estimatedDate })
+              : "Chưa có thông tin giao dự kiến"}
           </span>
         </div>
       </div>
@@ -390,7 +270,11 @@ export const OrderDetailStepper: React.FC<OrderDetailStepperProps> = ({
               {t("profile.orders.detail.stepper.step_completed")}
             </span>
             <span className="font-body-sm text-body-sm text-outline mt-0.5">
-              {order.status === "completed" ? "28/10 14:30" : t("profile.orders.detail.stepper.est_prefix", { date: estimatedDate })}
+              {order.status === "completed"
+                ? completedEvent?.time || ""
+                : estimatedDate
+                ? t("profile.orders.detail.stepper.est_prefix", { date: estimatedDate })
+                : ""}
             </span>
           </div>
         </div>
@@ -408,20 +292,12 @@ export const OrderDetailStepper: React.FC<OrderDetailStepperProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-headline-md text-headline-md text-on-surface font-bold">
-                  {courierName}
-                </span>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-secondary-fixed text-on-secondary-fixed uppercase tracking-wider">
-                  {t("profile.orders.detail.stepper.carrier_express")}
-                </span>
+                {courierName && <span className="font-headline-md text-headline-md text-on-surface font-bold">{courierName}</span>}
               </div>
               <div className="flex items-center gap-2 mt-1">
-                <span className="font-body-sm text-body-sm text-outline">
-                  {t("profile.orders.detail.stepper.tracking_code")}
-                </span>
-                <span className="font-label-md text-label-md font-mono font-bold text-on-surface tracking-wide">
-                  {trackingCode}
-                </span>
+                {trackingCode ? <>
+                <span className="font-body-sm text-body-sm text-outline">{t("profile.orders.detail.stepper.tracking_code")}</span>
+                <span className="font-label-md text-label-md font-mono font-bold text-on-surface tracking-wide">{trackingCode}</span>
                 <button
                   type="button"
                   onClick={() => handleCopy(trackingCode)}
@@ -432,21 +308,12 @@ export const OrderDetailStepper: React.FC<OrderDetailStepperProps> = ({
                     content_copy
                   </span>
                 </button>
+                </> : <span className="font-body-sm text-body-sm text-outline">Chưa có mã vận đơn</span>}
               </div>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <a
-              href="https://ghn.vn"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-surface-container-lowest hover:bg-surface-container-high text-primary font-label-md text-label-md transition-colors shadow-xs"
-            >
-              <span>{t("profile.orders.detail.stepper.track_on_website", { carrier: "GHN" })}</span>
-              <span className="material-symbols-outlined text-[16px]">open_in_new</span>
-            </a>
-
             <button
               type="button"
               onClick={() => setIsTimelineCollapsed(!isTimelineCollapsed)}
@@ -463,7 +330,7 @@ export const OrderDetailStepper: React.FC<OrderDetailStepperProps> = ({
         {/* Detailed Timeline Log */}
         {!isTimelineCollapsed && (
           <div className="flex flex-col gap-4 pl-2 pr-1 transition-all duration-300 animate-fade-in">
-            {timelineLogs.map((log, index) => {
+            {timelineLogs.length ? timelineLogs.map((log, index) => {
               const isLast = index === timelineLogs.length - 1;
 
               return (
@@ -503,13 +370,13 @@ export const OrderDetailStepper: React.FC<OrderDetailStepperProps> = ({
 
                     {log.subtitle && (
                       <span className="font-body-sm text-body-sm text-outline block mt-0.5">
-                        {localizeLogSubtitle(log.subtitle)}
+                        {log.subtitle}
                       </span>
                     )}
                   </div>
                 </div>
               );
-            })}
+            }) : <p className="font-body-sm text-body-sm text-outline">Chưa có cập nhật trạng thái đơn hàng.</p>}
           </div>
         )}
       </div>
