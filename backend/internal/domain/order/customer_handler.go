@@ -54,6 +54,10 @@ func (h *CustomerHandler) listCustomerOrders(w http.ResponseWriter, r *http.Requ
 	}
 
 	search := strings.TrimSpace(r.URL.Query().Get("search"))
+	if strings.EqualFold(strings.TrimSpace(r.URL.Query().Get("group_by")), "shop") {
+		h.listCustomerShopOrders(w, r, uid, page, limit, tab, search)
+		return
+	}
 
 	// 1. Fetch all parent orders for this user along with their shop orders to calculate counts and derive statuses
 	metaQuery := `SELECT o.id, o.order_code, o.created_at, so.status
@@ -200,6 +204,135 @@ func (h *CustomerHandler) listCustomerOrders(w http.ResponseWriter, r *http.Requ
 	})
 }
 
+type customerShopOrderRef struct {
+	orderID       int64
+	orderCode     string
+	shopOrderID   int64
+	shopOrderCode string
+	status        string
+}
+
+// listCustomerShopOrders returns one list row per shop order so status tabs,
+// counts, and pagination follow the lifecycle of each shop independently.
+func (h *CustomerHandler) listCustomerShopOrders(w http.ResponseWriter, r *http.Request, uid int64, page, limit int, tab, search string) {
+	rows, err := h.db.QueryContext(r.Context(), `SELECT o.id, o.order_code, so.id, so.shop_order_code, so.status
+		FROM orders o
+		JOIN shop_orders so ON so.order_id = o.id
+		JOIN shops s ON s.id = so.shop_id
+		WHERE o.user_id = ? AND (? = '' OR LOWER(o.order_code) LIKE LOWER(?) OR LOWER(so.shop_order_code) LIKE LOWER(?) OR LOWER(s.name) LIKE LOWER(?))
+		ORDER BY o.created_at DESC, o.id DESC, so.id ASC`,
+		uid, search, "%"+search+"%", "%"+search+"%", "%"+search+"%")
+	if err != nil {
+		serverError(w, h.logger, err)
+		return
+	}
+	defer rows.Close()
+
+	var candidates []customerShopOrderRef
+	var counts OrderStatusCounts
+	for rows.Next() {
+		var item customerShopOrderRef
+		if err := rows.Scan(&item.orderID, &item.orderCode, &item.shopOrderID, &item.shopOrderCode, &item.status); err != nil {
+			serverError(w, h.logger, err)
+			return
+		}
+		status := strings.ToLower(item.status)
+		counts.All++
+		switch status {
+		case "pending":
+			counts.Pending++
+		case "confirmed", "packing":
+			counts.Packing++
+		case "shipping":
+			counts.Shipping++
+		case "completed":
+			counts.Completed++
+		case "cancelled":
+			counts.Cancelled++
+		case "returned":
+			counts.Returned++
+		}
+		if customerOrderTabMatches(tab, status) {
+			candidates = append(candidates, item)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		serverError(w, h.logger, err)
+		return
+	}
+	counts.Confirmed = counts.Packing
+	counts.Preparing = counts.Packing
+
+	total := len(candidates)
+	start := (page - 1) * limit
+	if start > total {
+		start = total
+	}
+	end := start + limit
+	if end > total {
+		end = total
+	}
+	pageRefs := candidates[start:end]
+
+	parentIDs := make([]int64, 0, len(pageRefs))
+	seen := make(map[int64]bool)
+	for _, ref := range pageRefs {
+		if !seen[ref.orderID] {
+			seen[ref.orderID] = true
+			parentIDs = append(parentIDs, ref.orderID)
+		}
+	}
+	summaries, err := h.loadParentOrderSummaries(r.Context(), parentIDs)
+	if err != nil {
+		serverError(w, h.logger, err)
+		return
+	}
+	summaryByID := make(map[int64]CustomerOrderSummary, len(summaries))
+	for _, summary := range summaries {
+		summaryByID[summary.ID] = summary
+	}
+
+	orders := make([]CustomerOrderSummary, 0, len(pageRefs))
+	for _, ref := range pageRefs {
+		summary, ok := summaryByID[ref.orderID]
+		if !ok {
+			continue
+		}
+		for _, shop := range summary.Shops {
+			if shop.ID != ref.shopOrderID {
+				continue
+			}
+			parentCode := summary.OrderCode
+			summary.ParentOrderCode = parentCode
+			summary.ShopOrderID = shop.ID
+			summary.OrderCode = ref.shopOrderCode
+			summary.Status = shop.Status
+			summary.StatusLabel = shop.StatusLabel
+			summary.Subtotal = shop.Subtotal
+			summary.ShippingFee = shop.ShippingFee
+			summary.ShopDiscountTotal = shop.ShopDiscount
+			summary.PlatformDiscount = shop.PlatformDiscount
+			summary.TotalAmount = shop.TotalAmount
+			summary.Shops = []ShopOrderView{shop}
+			orders = append(orders, summary)
+			break
+		}
+	}
+
+	totalPages := 0
+	if total > 0 {
+		totalPages = (total + limit - 1) / limit
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"success": true,
+		"data": map[string]any{
+			"orders":     orders,
+			"counts":     counts,
+			"pagination": map[string]any{"page": page, "limit": limit, "total": total, "total_pages": totalPages},
+		},
+	})
+}
+
 func (h *CustomerHandler) loadParentOrderSummaries(ctx context.Context, orderIDs []int64) ([]CustomerOrderSummary, error) {
 	if len(orderIDs) == 0 {
 		return []CustomerOrderSummary{}, nil
@@ -339,7 +472,47 @@ func (h *CustomerHandler) getCustomerOrderDetail(w http.ResponseWriter, r *http.
 		serverError(w, h.logger, err)
 		return
 	}
-	o.Shops = shopOrders
+	for i := range shopOrders {
+		shopID := shopOrders[i].ID
+		shopTimeline, timelineErr := h.loadOrderTimeline(r.Context(), orderID, &shopID)
+		if timelineErr != nil {
+			serverError(w, h.logger, timelineErr)
+			return
+		}
+		shopOrders[i].Timeline = shopTimeline
+	}
+	var shopOrderID int64
+	if rawShopOrderID := strings.TrimSpace(r.URL.Query().Get("shop_order_id")); rawShopOrderID != "" {
+		shopOrderID, err = strconv.ParseInt(rawShopOrderID, 10, 64)
+		if err != nil || shopOrderID < 1 {
+			writeError(w, http.StatusBadRequest, "invalid_shop_order_id", "Invalid shop order ID")
+			return
+		}
+		filtered := make([]ShopOrderView, 0, 1)
+		for _, shop := range shopOrders {
+			if shop.ID == shopOrderID {
+				filtered = append(filtered, shop)
+				statuses = []string{shop.Status}
+				break
+			}
+		}
+		if len(filtered) == 0 {
+			writeError(w, http.StatusNotFound, "shop_order_not_found", "Shop order does not belong to this order")
+			return
+		}
+		o.ShopOrderID = shopOrderID
+		o.ParentOrderCode = o.OrderCode
+		o.ShopOrderCode = filtered[0].ShopOrderCode
+		o.OrderCode = filtered[0].ShopOrderCode
+		o.Shops = filtered
+		o.Subtotal = filtered[0].Subtotal
+		o.ShippingFee = filtered[0].ShippingFee
+		o.ShopDiscountTotal = filtered[0].ShopDiscount
+		o.PlatformDiscount = filtered[0].PlatformDiscount
+		o.TotalAmount = filtered[0].TotalAmount
+	} else {
+		o.Shops = shopOrders
+	}
 	o.Status, o.StatusLabel = deriveParentStatus(statuses)
 
 	// Build refund info if applicable
@@ -365,7 +538,11 @@ func (h *CustomerHandler) getCustomerOrderDetail(w http.ResponseWriter, r *http.
 	}
 
 	// Load timeline logs across shop orders
-	timeline, err := h.loadOrderTimeline(r.Context(), orderID)
+	var timelineShopOrderID *int64
+	if shopOrderID > 0 {
+		timelineShopOrderID = &shopOrderID
+	}
+	timeline, err := h.loadOrderTimeline(r.Context(), orderID, timelineShopOrderID)
 	if err != nil {
 		serverError(w, h.logger, err)
 		return
@@ -641,6 +818,12 @@ func (h *CustomerHandler) confirmCustomerReceived(w http.ResponseWriter, r *http
 		writeError(w, http.StatusBadRequest, "invalid_id", "Order ID or code is required")
 		return
 	}
+	var req struct {
+		ShopOrderID *int64 `json:"shop_order_id,omitempty"`
+	}
+	if r.ContentLength != 0 && !httpx.Decode(w, r, &req) {
+		return
+	}
 
 	tx, err := h.db.BeginTx(r.Context(), nil)
 	if err != nil {
@@ -665,10 +848,18 @@ func (h *CustomerHandler) confirmCustomerReceived(w http.ResponseWriter, r *http
 	}
 
 	// Find shop orders that are in SHIPPING
-	rows, err := tx.QueryContext(r.Context(),
-		`SELECT id FROM shop_orders WHERE order_id = ? AND status = 'SHIPPING' FOR UPDATE`,
-		orderID,
-	)
+	var rows *sql.Rows
+	if req.ShopOrderID != nil && *req.ShopOrderID > 0 {
+		rows, err = tx.QueryContext(r.Context(),
+			`SELECT id FROM shop_orders WHERE order_id = ? AND id = ? AND status = 'SHIPPING' FOR UPDATE`,
+			orderID, *req.ShopOrderID,
+		)
+	} else {
+		rows, err = tx.QueryContext(r.Context(),
+			`SELECT id FROM shop_orders WHERE order_id = ? AND status = 'SHIPPING' FOR UPDATE`,
+			orderID,
+		)
+	}
 	if err != nil {
 		serverError(w, h.logger, err)
 		return
@@ -705,11 +896,21 @@ func (h *CustomerHandler) confirmCustomerReceived(w http.ResponseWriter, r *http
 		}
 	}
 
-	// If COD, mark payment as PAID
-	_, _ = tx.ExecContext(r.Context(),
-		`UPDATE payments SET status = 'PAID', paid_at = NOW(), updated_at = NOW() WHERE order_id = ? AND status = 'PENDING'`,
+	// A split COD payment is complete only after every non-cancelled package is received.
+	var unfinished int
+	if err = tx.QueryRowContext(r.Context(),
+		`SELECT COUNT(*) FROM shop_orders WHERE order_id = ? AND status NOT IN ('COMPLETED', 'CANCELLED', 'RETURNED')`,
 		orderID,
-	)
+	).Scan(&unfinished); err != nil {
+		serverError(w, h.logger, err)
+		return
+	}
+	if unfinished == 0 {
+		_, _ = tx.ExecContext(r.Context(),
+			`UPDATE payments SET status = 'PAID', paid_at = NOW(), updated_at = NOW() WHERE order_id = ? AND status = 'PENDING'`,
+			orderID,
+		)
+	}
 
 	if err = tx.Commit(); err != nil {
 		serverError(w, h.logger, err)
@@ -972,15 +1173,19 @@ func (h *CustomerHandler) loadOrderItems(ctx context.Context, shopOrderID int64)
 	return items, rows.Err()
 }
 
-func (h *CustomerHandler) loadOrderTimeline(ctx context.Context, orderID int64) ([]TimelineLogView, error) {
-	rows, err := h.db.QueryContext(ctx,
-		`SELECT osh.id, osh.from_status, osh.to_status, osh.note, osh.created_at
+func (h *CustomerHandler) loadOrderTimeline(ctx context.Context, orderID int64, shopOrderID *int64) ([]TimelineLogView, error) {
+	query := `SELECT osh.id, osh.from_status, osh.to_status, osh.note, osh.created_at
 		FROM order_status_history osh
 		JOIN shop_orders so ON osh.shop_order_id = so.id
 		WHERE so.order_id = ?
-		ORDER BY osh.created_at ASC, osh.id ASC`,
-		orderID,
-	)
+		`
+	args := []any{orderID}
+	if shopOrderID != nil {
+		query += ` AND so.id = ?`
+		args = append(args, *shopOrderID)
+	}
+	query += ` ORDER BY osh.created_at ASC, osh.id ASC`
+	rows, err := h.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}

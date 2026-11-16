@@ -388,6 +388,7 @@
       "back_to_orders": "Back to order list",
       "breadcrumb_detail": "Order details #{{code}}",
       "page_title": "Order Details #{{code}}",
+      "status_per_shop": "Order status is shown separately for each shop below",
       "ordered_at": "Ordered at {{time}}",
       "updated_recent": "Recently updated",
       "print_vat": "Print VAT Invoice",
@@ -449,6 +450,7 @@
         "prepare_cash_hint": "Courier collects this exact amount, no extra fees"
       },
       "shop_section": {
+        "shop_order_timeline": "Shop order status",
         "official_mall": "OFFICIAL MALL",
         "artisan": "ARTISAN",
         "stats": "Response rate {{rate}}% • Rating {{rating}}/5 ★",

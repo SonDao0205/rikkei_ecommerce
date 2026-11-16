@@ -35,6 +35,10 @@ export const OrderDetailShopSection: React.FC<OrderDetailShopSectionProps> = ({
         shopId: shop.shopId,
         shopName: shop.shopName,
         shopAvatar: shop.logoUrl,
+        status: shop.status,
+        statusLabel: shop.statusLabel,
+        shopOrderCode: shop.shopOrderCode,
+        timeline: shop.timeline,
         isMall: shop.shopBadge === 'MALL',
         isArtisan: shop.shopBadge === 'ARTISAN',
         rating: 4.9,
@@ -71,12 +75,26 @@ export const OrderDetailShopSection: React.FC<OrderDetailShopSectionProps> = ({
     }
   };
 
-  const isOrderCompleted =
-    order.status === 'completed' || (order.status as string) === 'COMPLETED';
+  const getStatusBadgeClass = (status?: UserOrder["status"]) => {
+    switch (status) {
+      case "pending": return "bg-amber-100 text-amber-900";
+      case "packing": return "bg-blue-100 text-blue-900";
+      case "shipping": return "bg-secondary-fixed text-on-secondary-fixed";
+      case "completed": return "bg-emerald-100 text-emerald-900";
+      case "cancelled": return "bg-surface-container-high text-on-surface-variant";
+      case "returned": return "bg-purple-100 text-purple-900";
+      default: return "bg-surface-container text-on-surface";
+    }
+  };
 
   return (
     <div className="flex flex-col gap-6">
       {shopGroups.map((shop, sIdx) => {
+        const shopStatus = shop.status || order.status;
+        const shopStatusLabel = t(`profile.orders.statuses.${shopStatus}`, {
+          defaultValue: shop.statusLabel || order.statusLabel,
+        });
+        const isShopCompleted = shopStatus === "completed";
 
         return (
           <section
@@ -128,6 +146,9 @@ export const OrderDetailShopSection: React.FC<OrderDetailShopSectionProps> = ({
 
               {/* Shop Actions */}
               <div className="flex items-center gap-2.5">
+                <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusBadgeClass(shopStatus)}`}>
+                  {shopStatusLabel}
+                </span>
                 <Link
                   to={`/shop/${shop.shopId}`}
                   className="px-3.5 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-colors flex items-center gap-1"
@@ -145,6 +166,26 @@ export const OrderDetailShopSection: React.FC<OrderDetailShopSectionProps> = ({
                 </button>
               </div>
             </div>
+
+            {shop.timeline && shop.timeline.length > 0 && (
+              <div className="rounded-xl border border-outline-variant/30 bg-surface-container-low p-4">
+                <h3 className="text-sm font-bold text-on-surface mb-3">{t("profile.orders.detail.shop_section.shop_order_timeline")}</h3>
+                <ol className="space-y-3">
+                  {[...shop.timeline].reverse().map((event, index) => (
+                    <li key={event.id} className="flex items-start gap-2.5">
+                      <span className={`material-symbols-outlined text-base ${index === 0 ? "text-primary" : "text-outline"}`}>
+                        {index === 0 ? "radio_button_checked" : "check_circle"}
+                      </span>
+                      <div>
+                        <p className="text-xs font-semibold text-on-surface">{event.title}</p>
+                        <p className="text-[11px] text-outline">{event.time}</p>
+                        {event.subtitle && <p className="text-[11px] text-on-surface-variant">{event.subtitle}</p>}
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
 
             {/* Item Rows for this shop */}
             <div className="flex flex-col gap-4">
@@ -178,6 +219,9 @@ export const OrderDetailShopSection: React.FC<OrderDetailShopSectionProps> = ({
                         >
                           {item.productName}
                         </Link>
+                        <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold self-start ${getStatusBadgeClass(shopStatus)}`}>
+                          {shopStatusLabel}
+                        </span>
                         {item.variantName && (
                           <p className="font-body-md text-body-md text-outline">
                             {t("profile.orders.detail.shop_section.variant_prefix")}{' '}
@@ -216,21 +260,21 @@ export const OrderDetailShopSection: React.FC<OrderDetailShopSectionProps> = ({
                         <div className="relative group/tooltip">
                           <button
                             type="button"
-                            disabled={!isOrderCompleted}
+                            disabled={!isShopCompleted}
                             onClick={() => {
-                              if (isOrderCompleted && onShowToast) {
+                              if (isShopCompleted && onShowToast) {
                                 onShowToast(t("profile.orders.detail.shop_section.review_toast", { name: item.productName }));
                               }
                             }}
                             className={`px-3 py-1.5 rounded-lg font-label-md text-label-md transition-colors ${
-                              isOrderCompleted
+                              isShopCompleted
                                 ? 'bg-primary-container text-on-primary hover:bg-primary shadow-sm'
                                 : 'bg-surface-container text-outline cursor-not-allowed opacity-75'
                             }`}
                           >
                             {t("profile.orders.detail.shop_section.review_product")}
                           </button>
-                          {!isOrderCompleted && (
+                          {!isShopCompleted && (
                             <div className="absolute bottom-full right-0 mb-2 hidden group-hover/tooltip:block z-30 w-48 p-2 rounded-lg bg-inverse-surface text-inverse-on-surface font-body-sm text-body-sm text-center shadow-lg">
                               {t("profile.orders.detail.shop_section.review_tooltip")}
                             </div>

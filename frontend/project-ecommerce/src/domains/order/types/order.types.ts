@@ -15,6 +15,15 @@ export interface UserOrderShop {
   shopName: string;
   shopBadge?: "MALL" | "ARTISAN" | "OFFICIAL";
   logoUrl?: string;
+  shopOrderId?: number;
+  shopOrderCode?: string;
+  status?: UserOrder["status"];
+  statusLabel?: string;
+  carrier?: string;
+  trackingCode?: string;
+  cancelReason?: string;
+  timeline?: UserOrderTimelineLog[];
+  items?: UserOrderItem[];
 }
 
 export interface UserOrderItem {
@@ -53,6 +62,8 @@ export interface UserOrderRecipient {
 export interface UserOrder {
   id: number;
   orderCode: string;
+  parentOrderCode?: string;
+  shopOrderId?: number;
   userId: number;
   status: UserOrderStatusTab;
   statusLabel: string;
@@ -88,6 +99,10 @@ export interface ShopOrderGroup {
   isArtisan?: boolean;
   rating?: number;
   responseRate?: number;
+  status?: UserOrder["status"];
+  statusLabel?: string;
+  shopOrderCode?: string;
+  timeline?: UserOrderTimelineLog[];
   items: UserOrderItem[];
 }
 

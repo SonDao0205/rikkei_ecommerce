@@ -91,9 +91,14 @@ export const MyOrder: React.FC = () => {
   const handleConfirmCancel = async (orderId: number | string, reason: string) => {
     const cancelledCode = selectedOrderForCancel?.orderCode || String(orderId);
     try {
-      await dispatch(cancelOrderAction({ orderId, cancelReason: reason })).unwrap();
+      await dispatch(cancelOrderAction({
+        orderId,
+        cancelReason: reason,
+        shopOrderId: selectedOrderForCancel?.shopOrderId,
+      })).unwrap();
       dispatch(closeCancelModal());
       dispatch(getUserOrderCounts());
+      dispatch(getUserOrders({ tab: currentTab, search: searchQuery, page: currentPage, pageSize }));
       setToastConfig({
         isOpen: true,
         title: t("profile.orders.toast.cancel_success_title"),
@@ -111,11 +116,12 @@ export const MyOrder: React.FC = () => {
     }
   };
 
-  const handleConfirmReceived = async (orderId: number) => {
+  const handleConfirmReceived = async (order: UserOrder) => {
     if (window.confirm(t("profile.orders.dialog.confirm_received"))) {
       try {
-        await dispatch(confirmReceivedAction(orderId)).unwrap();
+        await dispatch(confirmReceivedAction({ orderId: order.id, shopOrderId: order.shopOrderId })).unwrap();
         dispatch(getUserOrderCounts());
+        dispatch(getUserOrders({ tab: currentTab, search: searchQuery, page: currentPage, pageSize }));
         alert(t("profile.orders.dialog.received_success"));
       } catch (err: unknown) {
         const msg = typeof err === "string" ? err : (err as Error)?.message || "Error";
@@ -250,7 +256,7 @@ export const MyOrder: React.FC = () => {
                 <div className="flex flex-col gap-5">
                   {orders.map((order) => (
                     <OrderCard
-                      key={order.id}
+                      key={`${order.id}-${order.shopOrderId ?? "parent"}`}
                       order={order}
                       onCancelClick={handleCancelClick}
                       onConfirmReceived={handleConfirmReceived}

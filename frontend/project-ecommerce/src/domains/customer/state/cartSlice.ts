@@ -13,19 +13,13 @@ import {
   INITIAL_PLATFORM_VOUCHER,
   INITIAL_SHOP_VOUCHERS,
 } from "@/domains/customer/api/cartApi";
-import {
-  AVAILABLE_PLATFORM_VOUCHERS,
-  AVAILABLE_SHOP_VOUCHERS,
-} from "@/domains/customer/data/availableVouchers";
 
-const FREE_SHIPPING_THRESHOLD = 500000;
-const BASE_SHIPPING_FEE = 35000;
 
 export function computeCartSummary(
   items: CartItem[],
   platformVoucher: PlatformVoucher | null,
   shopVouchers: Record<number, ShopVoucher>,
-  threshold: number = FREE_SHIPPING_THRESHOLD
+  _threshold?: number
 ): CartSummary {
   // Only available and selected items count towards subtotal & checkout
   const selectedItems = items.filter((it) => it.selected && it.is_available !== false);
@@ -42,8 +36,8 @@ export function computeCartSummary(
     0
   );
 
-  const estimatedShipping = selectedCount > 0 ? BASE_SHIPPING_FEE : 0;
-  // Free shipping rules are not backed by server-side voucher/shipping policy yet.
+  // The authoritative shipping quote is calculated by the backend at checkout.
+  const estimatedShipping = 0;
   const isFreeShipping = false;
   const shippingDiscount = 0;
 
@@ -92,9 +86,6 @@ export function computeCartSummary(
     storeVouchersDiscount +
     platformVoucherDiscount;
 
-  const progress = Math.min(100, Math.round((itemsSubtotal / threshold) * 100));
-  const amountLeft = Math.max(0, threshold - itemsSubtotal);
-
   return {
     total_items: totalItems,
     selected_count: selectedCount,
@@ -105,9 +96,9 @@ export function computeCartSummary(
     platform_voucher_discount: platformVoucherDiscount,
     grand_total: grandTotal,
     total_savings: totalSavings,
-    free_shipping_threshold: threshold,
-    free_shipping_progress: progress,
-    amount_left_for_free_shipping: amountLeft,
+    free_shipping_threshold: 0,
+    free_shipping_progress: 0,
+    amount_left_for_free_shipping: 0,
     is_free_shipping_eligible: isFreeShipping,
   };
 }
@@ -142,9 +133,9 @@ const emptySummary: CartSummary = {
   platform_voucher_discount: 0,
   grand_total: 0,
   total_savings: 0,
-  free_shipping_threshold: FREE_SHIPPING_THRESHOLD,
+  free_shipping_threshold: 0,
   free_shipping_progress: 0,
-  amount_left_for_free_shipping: FREE_SHIPPING_THRESHOLD,
+  amount_left_for_free_shipping: 0,
   is_free_shipping_eligible: false,
 };
 
@@ -156,7 +147,7 @@ const initialState: CartState = {
   subtotal: 0,
   platformVoucher: INITIAL_PLATFORM_VOUCHER,
   shopVouchers: INITIAL_SHOP_VOUCHERS,
-  freeShippingThreshold: FREE_SHIPPING_THRESHOLD,
+  freeShippingThreshold: 0,
   summary: emptySummary,
   loading: false,
   updating: false,
@@ -292,7 +283,6 @@ export const applyPlatformVoucherAction = createAsyncThunk<
   const ids = state.cart.items
     .filter((item) => item.selected && item.is_available)
     .map((item) => item.id);
-  const subtotal = state.cart.summary.items_subtotal;
 
   try {
     const result = await cartApi.validateVoucher(cleanCode, "PLATFORM", ids);
@@ -304,29 +294,6 @@ export const applyPlatformVoucherAction = createAsyncThunk<
       description: result.title,
     };
   } catch (err: unknown) {
-    // If backend reports voucher_invalid, check if it's one of the UI preset vouchers
-    const preset = AVAILABLE_PLATFORM_VOUCHERS.find((v) => v.code === cleanCode);
-    if (preset) {
-      if (subtotal < preset.minOrderValue) {
-        return rejectWithValue(
-          `Đơn hàng cần đạt tối thiểu ${preset.minOrderValue.toLocaleString("vi-VN")}₫ để áp dụng mã ${preset.code}`
-        );
-      }
-      let discount = preset.discountValue;
-      if (preset.discountType === "PERCENT") {
-        discount = Math.round((subtotal * preset.discountValue) / 100);
-        if (preset.maxDiscountAmount && discount > preset.maxDiscountAmount) {
-          discount = preset.maxDiscountAmount;
-        }
-      }
-      return {
-        code: preset.code,
-        discount_amount: discount,
-        min_order_amount: preset.minOrderValue,
-        is_applied: true,
-        description: preset.title,
-      };
-    }
     return rejectWithValue(errorMessage(err, "Mã voucher không hợp lệ"));
   }
 });
@@ -343,14 +310,6 @@ export const applyShopVoucherAction = createAsyncThunk<
     const ids = state.cart.items
       .filter((item) => item.selected && item.is_available)
       .map((item) => item.id);
-    const shopItems = state.cart.items.filter(
-      (it) => it.shop_id === shopId && it.selected && it.is_available
-    );
-    const shopSubtotal = shopItems.reduce(
-      (s, it) => s + (it.unit_price ?? it.price ?? 0) * it.quantity,
-      0
-    );
-
     try {
       const result = await cartApi.validateVoucher(cleanCode, "SHOP", ids, shopId);
       const voucher: ShopVoucher = {
@@ -363,31 +322,6 @@ export const applyShopVoucherAction = createAsyncThunk<
       };
       return { shopId, voucher };
     } catch (err: unknown) {
-      // If backend reports voucher_invalid, check if it's one of the UI preset vouchers
-      const preset = AVAILABLE_SHOP_VOUCHERS.find((v) => v.code === cleanCode);
-      if (preset) {
-        if (shopSubtotal < preset.minOrderValue) {
-          return rejectWithValue(
-            `Đơn hàng của shop cần đạt tối thiểu ${preset.minOrderValue.toLocaleString("vi-VN")}₫ để áp dụng mã ${preset.code}`
-          );
-        }
-        let discount = preset.discountValue;
-        if (preset.discountType === "PERCENT") {
-          discount = Math.round((shopSubtotal * preset.discountValue) / 100);
-          if (preset.maxDiscountAmount && discount > preset.maxDiscountAmount) {
-            discount = preset.maxDiscountAmount;
-          }
-        }
-        const voucher: ShopVoucher = {
-          shop_id: shopId,
-          code: preset.code,
-          discount_amount: discount,
-          min_order_amount: preset.minOrderValue,
-          is_applied: true,
-          label: preset.title,
-        };
-        return { shopId, voucher };
-      }
       return rejectWithValue(errorMessage(err, "Mã shop voucher không hợp lệ"));
     }
   }

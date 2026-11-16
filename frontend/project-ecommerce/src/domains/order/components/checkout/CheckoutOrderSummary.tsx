@@ -1,12 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { CheckoutQuote } from "@/domains/customer/api/cartApi";
 import type { PlatformVoucher } from "@/domains/customer/types/cart.types";
 import { formatCurrencyVND } from "@/shared/utils/currency";
-import {
-  AVAILABLE_PLATFORM_VOUCHERS,
-  type AvailableVoucher,
-} from "@/domains/customer/data/availableVouchers";
+import { fetchPlatformVouchers, type AvailableVoucher } from "@/domains/customer/data/availableVouchers";
 
 interface CheckoutOrderSummaryProps {
   quote: CheckoutQuote | null;
@@ -45,6 +42,17 @@ export const CheckoutOrderSummary: React.FC<CheckoutOrderSummaryProps> = ({
   const [customCode, setCustomCode] = useState<string>("");
   const [isApplying, setIsApplying] = useState<boolean>(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [availableVouchers, setAvailableVouchers] = useState<AvailableVoucher[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    fetchPlatformVouchers().then((result) => {
+      if (active) setAvailableVouchers(result);
+    }).catch(() => {
+      if (active) setAvailableVouchers([]);
+    });
+    return () => { active = false; };
+  }, []);
 
   // Values precedence: quote data if available, otherwise fallbacks
   const subtotal = quote ? quote.subtotal : fallbackSubtotal;
@@ -113,7 +121,7 @@ export const CheckoutOrderSummary: React.FC<CheckoutOrderSummaryProps> = ({
 
         {/* Available Platform Vouchers List */}
         <div className="flex flex-col gap-1.5">
-          {AVAILABLE_PLATFORM_VOUCHERS.map((v: AvailableVoucher) => {
+          {availableVouchers.map((v: AvailableVoucher) => {
             const isApplied =
               platformVoucher?.is_applied && platformVoucher.code === v.code;
             const isEligible = subtotal >= v.minOrderValue;

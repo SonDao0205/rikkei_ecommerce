@@ -77,13 +77,20 @@ export const OrderDetailDeliveryGrid: React.FC<OrderDetailDeliveryGridProps> = (
             </h3>
           </div>
           <div className="flex flex-col gap-2 mt-2">
-            <div className="flex items-center gap-2">
-              <span className="font-label-lg text-label-lg text-on-surface font-bold">
-                {order.shippingCarrier || t("profile.orders.detail.delivery_grid.default_carrier")}
-              </span>
-            </div>
+            {order.shops.length > 1 ? order.shops.map((shop) => (
+              <div key={shop.shopId} className="flex items-center justify-between gap-3 text-sm">
+                <span className="text-on-surface-variant">{shop.shopName}</span>
+                <span className="font-semibold text-on-surface">{shop.carrier || "Chưa có đơn vị vận chuyển"}</span>
+              </div>
+            )) : (
+              <div className="flex items-center gap-2">
+                <span className="font-label-lg text-label-lg text-on-surface font-bold">
+                  {order.shippingCarrier || "Chưa có thông tin đơn vị vận chuyển"}
+                </span>
+              </div>
+            )}
             <p className="font-body-md text-body-md text-on-surface-variant">
-              {t("profile.orders.detail.delivery_grid.est_delivery_title")} <strong className="text-on-surface">{order.estimatedDeliveryDate || '28/10/2026'}</strong>
+              {t("profile.orders.detail.delivery_grid.est_delivery_title")} <strong className="text-on-surface">{order.estimatedDeliveryDate || "Chưa có dữ liệu"}</strong>
             </p>
             <div className="mt-3 p-3.5 rounded-xl bg-surface-container flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-surface-container-lowest flex items-center justify-center shrink-0 text-primary">

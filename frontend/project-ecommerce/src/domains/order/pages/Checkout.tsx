@@ -31,6 +31,16 @@ import {
 import type { CartItem } from "@/domains/customer/types/cart.types";
 import { formatCurrencyVND } from "@/shared/utils/currency";
 
+const orderStatusStep = (status: string): number => {
+  switch (status.toUpperCase()) {
+    case "COMPLETED": return 4;
+    case "SHIPPING": return 3;
+    case "PACKING": return 2;
+    case "CONFIRMED": return 2;
+    default: return 1;
+  }
+};
+
 export const Checkout: React.FC = () => {
   const { t } = useTranslation("customer");
   const navigate = useNavigate();
@@ -120,37 +130,8 @@ export const Checkout: React.FC = () => {
       try {
         await dispatch(fetchCart()).unwrap();
         const [loadedAddresses, options] = await Promise.all([
-          cartApi.getAddresses().catch(() => [] as CheckoutAddress[]),
-          cartApi.getCheckoutOptions().catch(() => ({
-            shipping_methods: [
-              {
-                id: 980001,
-                code: "STANDARD",
-                name: "Giao hàng tiêu chuẩn",
-                base_fee: 30000,
-                estimated_days: "2-4 ngày",
-              },
-              {
-                id: 980002,
-                code: "EXPRESS",
-                name: "Giao hàng nhanh",
-                base_fee: 50000,
-                estimated_days: "1-2 ngày",
-              },
-            ],
-            payment_methods: [
-              {
-                id: 980101,
-                code: "COD",
-                name: "Thanh toán khi nhận hàng (COD)",
-              },
-              {
-                id: 980102,
-                code: "BANK_TRANSFER",
-                name: "Chuyển khoản ngân hàng",
-              },
-            ],
-          })),
+          cartApi.getAddresses(),
+          cartApi.getCheckoutOptions(),
         ]);
 
         setAddresses(loadedAddresses);
@@ -418,7 +399,7 @@ export const Checkout: React.FC = () => {
 
   // Fallback financial calculations in case server quote is loading/failed
   const fallbackShippingFee =
-    shippingMethods.find((m) => m.id === selectedShippingId)?.base_fee ?? 30000;
+    shippingMethods.find((m) => m.id === selectedShippingId)?.base_fee ?? 0;
   const fallbackSubtotal = summary.items_subtotal;
   const fallbackShopDiscount = summary.store_vouchers_discount;
   const fallbackPlatformDiscount = summary.platform_voucher_discount;
@@ -588,8 +569,9 @@ export const Checkout: React.FC = () => {
               customerName: selectedAddr?.recipient_name || "Quý khách",
               customerPhone: selectedAddr?.phone || "",
               deliveryAddress: createdOrder.shipping_address || fullAddress,
-              carrierName: selectedShippingMethod?.name || "GHN Express",
-              estimatedDeliveryDate: selectedShippingMethod?.estimated_days || "2-4 ngày tới",
+              carrierName: selectedShippingMethod?.name || "",
+              estimatedDeliveryDate: selectedShippingMethod?.estimated_days || undefined,
+              currentStepIndex: orderStatusStep(createdOrder.status),
               paymentMethodName: selectedPaymentMethod?.name || "Thu hộ COD",
               paymentMethodCode: selectedPaymentCode,
               itemsSubtotal: createdOrder.subtotal,

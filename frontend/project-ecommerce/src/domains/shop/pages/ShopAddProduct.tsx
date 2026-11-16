@@ -1,9 +1,10 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import ShopLayout from "@/app/layout/ShopLayout";
 import { useAppDispatch } from "@/app/state/store";
 import { saveShopProductItem, fetchShopProductList } from "@/domains/shop/state/shopProductSlice";
 import type { AddProductFormData, AddProductCategoryOption } from "@/domains/shop/types/shopAddProduct.types";
+import { shopCatalogApi, type ShopBrandOption, type ShopCategoryAttribute } from "@/domains/shop/api/shopCatalogApi";
 import {
   AddProductBasicInfo,
   AddProductMedia,
@@ -30,7 +31,6 @@ const INITIAL_FORM_DATA: AddProductFormData = {
   sizes: [],
   variants: [],
   singleSku: "",
-  singleCostPrice: 0,
   singleSellPrice: 0,
   singleStock: 0,
   weightGram: 0,
@@ -44,25 +44,85 @@ export const ShopAddProduct: React.FC = () => {
   const dispatch = useAppDispatch();
 
   const [formData, setFormData] = useState<AddProductFormData>(INITIAL_FORM_DATA);
+  const [categories, setCategories] = useState<AddProductCategoryOption[]>([]);
+  const [brands, setBrands] = useState<ShopBrandOption[]>([]);
+  const [categoryAttributes, setCategoryAttributes] = useState<ShopCategoryAttribute[]>([]);
+  const [catalogLoading, setCatalogLoading] = useState(true);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isMediaUploading, setIsMediaUploading] = useState(false);
   const [toast, setToast] = useState<{ message: string; isError?: boolean } | null>(null);
   const [showSeoGuide, setShowSeoGuide] = useState(false);
 
+  useEffect(() => {
+    let active = true;
+    Promise.all([shopCatalogApi.categories(), shopCatalogApi.brands()])
+      .then(([loadedCategories, loadedBrands]) => {
+        if (!active) return;
+        setCategories(loadedCategories);
+        setBrands(loadedBrands);
+      })
+      .catch((error: unknown) => {
+        if (active) setToast({
+          message: error instanceof Error ? error.message : "Không thể tải danh mục và thương hiệu.",
+          isError: true,
+        });
+      })
+      .finally(() => {
+        if (active) setCatalogLoading(false);
+      });
+    return () => { active = false; };
+  }, []);
+
   const handleFormChange = (fields: Partial<AddProductFormData>) => {
     setFormData((prev) => ({ ...prev, ...fields }));
   };
 
-  const handleSelectCategory = (category: AddProductCategoryOption) => {
+  const handleSelectCategory = async (category: AddProductCategoryOption) => {
+    let attributes: ShopCategoryAttribute[] = [];
+    try {
+      attributes = await shopCatalogApi.categoryAttributes(category.id);
+      setCategoryAttributes(attributes);
+    } catch (error: unknown) {
+      showToast(error instanceof Error ? error.message : "Không thể tải thuộc tính danh mục.", true);
+      setCategoryAttributes([]);
+      return;
+    }
+
+    const firstAttribute = attributes[0];
+    const secondAttribute = attributes[1];
+    const colors = firstAttribute?.values.length
+      ? firstAttribute.values.map((value) => ({ id: `attribute-${value.id}`, name: value.value, hex: "#64748b" }))
+      : category.suggestedColors;
+    const sizes = secondAttribute?.values.map((value) => value.value) || category.suggestedSizes;
+    const hasRequiredAttributes = attributes.some((attribute) => attribute.required);
+    const firstColor = colors[0]?.name || "";
+    const firstSize = sizes[0] || "";
+
     setFormData((prev) => {
       const nextCategoryPath = [...category.parentPath, category.name];
       return {
         ...prev,
         categoryId: category.id,
         categoryPath: nextCategoryPath,
-        sizes: category.suggestedSizes,
-        colors: category.suggestedColors,
+        sizes,
+        colors,
+        hasVariants: hasRequiredAttributes,
+        variants: hasRequiredAttributes && firstColor
+          ? [{
+              id: `attribute-default-${category.id}`,
+              color: firstColor,
+              size: firstSize,
+              sku: `${prev.name.trim().slice(0, 3).toUpperCase() || "PRD"}-${category.id}`,
+              sellPrice: 0,
+              stock: 0,
+              status: "out_of_stock",
+              attribute_value_ids: [
+                firstAttribute?.values[0]?.id,
+                secondAttribute?.required ? secondAttribute.values[0]?.id : undefined,
+              ].filter((id): id is number => typeof id === "number"),
+            }]
+          : [],
       };
     });
   };
@@ -150,11 +210,11 @@ export const ShopAddProduct: React.FC = () => {
       showToast("Tên sản phẩm không được vượt quá 120 ký tự", true);
       return;
     }
-    if (!formData.categoryId || formData.categoryPath.length === 0) {
+    if (catalogLoading || !formData.categoryId || formData.categoryPath.length === 0) {
       showToast("Vui lòng chọn ngành hàng & danh mục sản phẩm", true);
       return;
     }
-    if (!formData.brand.trim()) {
+    if (!formData.brand.trim() || (formData.brandId != null && !brands.some((brand) => brand.id === formData.brandId))) {
       showToast("Vui lòng chọn thương hiệu sản phẩm", true);
       return;
     }
@@ -164,6 +224,10 @@ export const ShopAddProduct: React.FC = () => {
     }
     if (formData.hasVariants && formData.variants.length === 0) {
       showToast("Vui lòng thêm ít nhất một biến thể (màu sắc & kích cỡ)", true);
+      return;
+    }
+    if (categoryAttributes.filter((attribute) => attribute.required).length > 2) {
+      showToast("Danh mục yêu cầu hơn 2 thuộc tính bắt buộc; biểu mẫu hiện chưa hỗ trợ cấu hình này.", true);
       return;
     }
     if (!formData.hasVariants && (formData.singleSellPrice <= 0 || formData.singleStock <= 0)) {
@@ -194,7 +258,11 @@ export const ShopAddProduct: React.FC = () => {
             price: v.sellPrice,
             stock: v.stock,
             image_url: null,
-            attribute_value_ids: [],
+            attribute_value_ids: categoryAttributes.flatMap((attribute, index) => {
+              const selectedValue = index === 0 ? v.color : index === 1 ? v.size : undefined;
+              const value = attribute.values.find((option) => option.value === selectedValue);
+              return value ? [value.id] : [];
+            }),
           }))
         : [
             {
@@ -234,22 +302,6 @@ export const ShopAddProduct: React.FC = () => {
       const result = await dispatch(saveShopProductItem(payload));
 
       if (saveShopProductItem.fulfilled.match(result)) {
-        const primaryCostPrice = formData.hasVariants
-          ? formData.variants[0]?.costPrice || Math.round(primaryPrice * 0.6)
-          : formData.singleCostPrice || Math.round(primaryPrice * 0.6);
-        try {
-          const storedCosts = JSON.parse(
-            localStorage.getItem("marketpulse_product_cost_prices") || "{}"
-          );
-          storedCosts[result.payload.id] = primaryCostPrice;
-          storedCosts[primarySku] = primaryCostPrice;
-          localStorage.setItem(
-            "marketpulse_product_cost_prices",
-            JSON.stringify(storedCosts)
-          );
-        } catch {
-          // ignore
-        }
         showToast("Thêm sản phẩm thành công! Đang chuyển hướng...");
         dispatch(fetchShopProductList());
         setTimeout(() => {
@@ -403,6 +455,7 @@ export const ShopAddProduct: React.FC = () => {
             formData={formData}
             onChange={handleFormChange}
             onOpenCategoryModal={() => setIsCategoryModalOpen(true)}
+            brands={brands}
           />
 
           {/* 2. Media Management */}
@@ -414,7 +467,7 @@ export const ShopAddProduct: React.FC = () => {
           />
 
           {/* 3. Variants & SKU Matrix */}
-          <AddProductVariants formData={formData} onChange={handleFormChange} />
+          <AddProductVariants formData={formData} onChange={handleFormChange} categories={categories} attributes={categoryAttributes} />
 
           {/* 4. Shipping & Packaging */}
           <AddProductShipping formData={formData} onChange={handleFormChange} />
@@ -431,6 +484,7 @@ export const ShopAddProduct: React.FC = () => {
         <AddProductCategoryModal
           isOpen={isCategoryModalOpen}
           selectedCategoryId={formData.categoryId}
+          categories={categories}
           onClose={() => setIsCategoryModalOpen(false)}
           onSelectCategory={handleSelectCategory}
         />

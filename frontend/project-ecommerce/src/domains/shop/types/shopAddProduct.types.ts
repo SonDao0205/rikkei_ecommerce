@@ -4,10 +4,10 @@ export interface AddProductVariantRow {
   size: string;
   colorHex?: string;
   sku: string;
-  costPrice: number;
   sellPrice: number;
   stock: number;
   status: "available" | "low_stock" | "out_of_stock";
+  attribute_value_ids?: number[];
 }
 
 export interface AddProductColorItem {
@@ -40,7 +40,6 @@ export interface AddProductFormData {
   variants: AddProductVariantRow[];
   // Simple / single SKU fields when hasVariants is false
   singleSku: string;
-  singleCostPrice: number;
   singleSellPrice: number;
   singleStock: number;
   // Shipping info

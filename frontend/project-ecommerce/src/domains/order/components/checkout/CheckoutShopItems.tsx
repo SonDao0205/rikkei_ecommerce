@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { CartItem, ShopVoucher } from "@/domains/customer/types/cart.types";
 import { formatCurrencyVND } from "@/shared/utils/currency";
-import { getAvailableShopVouchers } from "@/domains/customer/data/availableVouchers";
+import { fetchShopVouchers, type AvailableVoucher } from "@/domains/customer/data/availableVouchers";
 
 export interface ShopOrderGroup {
   shopId: number;
@@ -31,6 +31,19 @@ export const CheckoutShopItems: React.FC<CheckoutShopItemsProps> = ({
   const [manualCodeInputs, setManualCodeInputs] = useState<Record<number, string>>({});
   const [showManualInputs, setShowManualInputs] = useState<Record<number, boolean>>({});
   const [shopErrors, setShopErrors] = useState<Record<number, string | null>>({});
+  const [vouchersByShop, setVouchersByShop] = useState<Record<number, AvailableVoucher[]>>({});
+
+  useEffect(() => {
+    let active = true;
+    Promise.all(groups.map(async (group) => [group.shopId, await fetchShopVouchers(group.shopId)] as const))
+      .then((entries) => {
+        if (active) setVouchersByShop(Object.fromEntries(entries));
+      })
+      .catch(() => {
+        if (active) setVouchersByShop({});
+      });
+    return () => { active = false; };
+  }, [groups]);
 
   const handleCustomSubmit = async (shopId: number, e: React.FormEvent) => {
     e.preventDefault();
@@ -75,7 +88,7 @@ export const CheckoutShopItems: React.FC<CheckoutShopItemsProps> = ({
       <div className="flex flex-col gap-6">
         {groups.map((group) => {
           const appliedVoucher = shopVouchers[group.shopId];
-          const availableVouchers = getAvailableShopVouchers(group.shopId);
+          const availableVouchers = vouchersByShop[group.shopId] || [];
           const currentShopSubtotal = group.shopSubtotal;
 
           return (

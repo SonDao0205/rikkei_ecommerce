@@ -1,5 +1,5 @@
-import React, { useRef } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useRef } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAppDispatch } from "@/app/state/store";
 import { openLogoutModal } from "@/domains/auth/state/authSlice";
@@ -32,7 +32,12 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
 }) => {
   const { t } = useTranslation("customer");
   const dispatch = useAppDispatch();
+  const { pathname } = useLocation();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [pathname]);
 
   const defaultAvatar = getDefaultAvatar(profile?.full_name);
 
@@ -66,24 +71,11 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
       badge: t("profile.sidebar.nav.orders_active"),
       badgeType: "primary",
     },
-    {
-      id: "voucher-wallet",
-      label: t("profile.sidebar.nav.voucher_wallet"),
-      icon: "confirmation_number",
-      href: "#voucher-wallet",
-      badge: t("profile.sidebar.nav.vouchers_available"),
-      badgeType: "tertiary",
-    },
-    {
-      id: "notifications",
-      label: t("profile.sidebar.nav.notifications"),
-      icon: "notifications",
-      href: "#notifications",
-      badgeType: "dot",
-    },
   ];
 
-  const handleAvatarFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarFileSelect = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
@@ -139,7 +131,9 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
             title={t("profile.sidebar.update_photo")}
             type="button"
           >
-            <span className="material-symbols-outlined text-[15px]">photo_camera</span>
+            <span className="material-symbols-outlined text-[15px]">
+              photo_camera
+            </span>
           </button>
         </div>
 
@@ -178,7 +172,11 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                 <span className="flex items-center gap-3">
                   <span
                     className="material-symbols-outlined text-[20px]"
-                    style={isActive ? { fontVariationSettings: "'FILL' 1" } : undefined}
+                    style={
+                      isActive
+                        ? { fontVariationSettings: "'FILL' 1" }
+                        : undefined
+                    }
                   >
                     {item.icon}
                   </span>
@@ -186,7 +184,7 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                 </span>
 
                 {/* Badges / Subtext indicator */}
-                {isActive && item.badgeType === "dot" && (
+                {/* {isActive && item.badgeType === "dot" && (
                   <span className="w-2 h-2 rounded-full bg-primary" />
                 )}
                 {!isActive && item.subtext && (
@@ -204,9 +202,11 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                     {item.badge}
                   </span>
                 )}
-                {!isActive && item.id === "notifications" && item.badgeType === "dot" && (
-                  <span className="w-2 h-2 rounded-full bg-error" />
-                )}
+                {!isActive &&
+                  item.id === "notifications" &&
+                  item.badgeType === "dot" && (
+                    <span className="w-2 h-2 rounded-full bg-error" />
+                  )} */}
               </>
             );
 
@@ -242,7 +242,9 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
               className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-on-surface-variant hover:bg-error-container hover:text-on-error-container transition-colors font-label-md text-label-md text-left cursor-pointer"
               type="button"
             >
-              <span className="material-symbols-outlined text-[20px]">logout</span>
+              <span className="material-symbols-outlined text-[20px]">
+                logout
+              </span>
               <span>{t("profile.sidebar.nav.logout")}</span>
             </button>
           </div>
