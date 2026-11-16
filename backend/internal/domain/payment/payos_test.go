@@ -66,6 +66,23 @@ func TestPayOSDescriptionStaysWithinBankTransferLimit(t *testing.T) {
 	}
 }
 
+func TestRefreshPayOSPaymentRequiresMatchingProviderOrderAndAmount(t *testing.T) {
+	h := &Handler{
+		cfg: auth.Config{PayOSClientID: "client", PayOSAPIKey: "api-key"},
+		client: &http.Client{Transport: payOSRoundTripper(func(r *http.Request) (*http.Response, error) {
+			if r.Method != http.MethodGet || r.URL.Path != "/v2/payment-requests/123" {
+				t.Fatalf("unexpected PayOS lookup: %s %s", r.Method, r.URL)
+			}
+			body := `{"code":"00","data":{"orderCode":123,"amount":40000,"status":"PAID"}}`
+			return &http.Response{StatusCode: http.StatusOK, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(body))}, nil
+		})},
+	}
+
+	if _, err := h.refreshPayOSPayment(context.Background(), 123, 40001); err == nil {
+		t.Fatal("mismatched provider amount was accepted")
+	}
+}
+
 func TestVerifyPayOSSignature(t *testing.T) {
 	data := map[string]any{"orderCode": float64(123), "amount": float64(250000), "reference": "bank-ref", "code": "00", "description": "PAY123", "counterAccountName": ""}
 	keys := []string{"amount", "code", "counterAccountName", "description", "orderCode", "reference"}

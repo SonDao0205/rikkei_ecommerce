@@ -50,6 +50,7 @@ type payOSLinkResponse struct {
 		QRCode        string `json:"qrCode"`
 		Status        string `json:"status"`
 		OrderCode     int64  `json:"orderCode"`
+		Amount        int64  `json:"amount"`
 	} `json:"data"`
 }
 
@@ -310,6 +311,16 @@ func (h *Handler) getPayment(w http.ResponseWriter, r *http.Request) {
 		h.fail(w, e)
 		return
 	}
+	if method == "BANK_TRANSFER" && (status == "PENDING" || status == "FAILED") {
+		// Webhooks are the primary notification path, but a delivery can be delayed or
+		// temporarily unavailable. Reconcile from the authenticated PayOS API while
+		// the customer checks payment status; a browser redirect alone is never proof.
+		if refreshed, refreshErr := h.refreshPayOSPayment(r.Context(), paymentID, int64(amount)); refreshErr != nil {
+			h.logger.Printf("payOS status reconciliation deferred payment_id=%d: %v", paymentID, refreshErr)
+		} else if refreshed {
+			status = "PAID"
+		}
+	}
 	data := map[string]any{"payment_id": paymentID, "amount": amount, "status": status, "method": method, "transaction_ref": txn}
 	if paidAt.Valid {
 		data["paid_at"] = paidAt.Time
@@ -327,6 +338,52 @@ func (h *Handler) getPayment(w http.ResponseWriter, r *http.Request) {
 		data["qr_code"] = qr.String
 	}
 	writeJSON(w, 200, map[string]any{"success": true, "data": data})
+}
+
+func (h *Handler) refreshPayOSPayment(ctx context.Context, paymentID, expectedAmount int64) (bool, error) {
+	provider, err := h.getPayOSLink(ctx, strconv.FormatInt(paymentID, 10))
+	if err != nil {
+		return false, err
+	}
+	if provider.Code != "00" {
+		return false, fmt.Errorf("payOS status lookup rejected request code=%s", provider.Code)
+	}
+	if provider.Data.OrderCode != paymentID || provider.Data.Amount != expectedAmount {
+		return false, fmt.Errorf("payOS status lookup did not match local payment")
+	}
+	status := strings.ToUpper(strings.TrimSpace(provider.Data.Status))
+	if status != "PAID" {
+		return false, nil
+	}
+
+	tx, err := h.db.BeginTx(ctx, nil)
+	if err != nil {
+		return false, err
+	}
+	defer tx.Rollback()
+	var paymentStatus string
+	var attemptID int64
+	err = tx.QueryRowContext(ctx, `SELECT p.status,a.id FROM payments p JOIN payment_attempts a ON a.payment_id=p.id WHERE p.id=? AND a.provider='PAYOS' AND a.provider_order_code=? FOR UPDATE`, paymentID, paymentID).Scan(&paymentStatus, &attemptID)
+	if err != nil {
+		return false, err
+	}
+	if paymentStatus == "PENDING" || paymentStatus == "FAILED" {
+		if paymentStatus == "FAILED" {
+			h.logger.Printf("late payOS success requires refund/reconciliation payment_id=%d", paymentID)
+		}
+		if _, err = tx.ExecContext(ctx, `UPDATE payments SET status='PAID',paid_at=COALESCE(paid_at,UTC_TIMESTAMP()),updated_at=UTC_TIMESTAMP() WHERE id=? AND status IN ('PENDING','FAILED')`, paymentID); err != nil {
+			return false, err
+		}
+	}
+	if paymentStatus != "REFUNDED" {
+		if _, err = tx.ExecContext(ctx, `UPDATE payment_attempts SET status='PAID',failure_code=NULL WHERE id=?`, attemptID); err != nil {
+			return false, err
+		}
+	}
+	if err = tx.Commit(); err != nil {
+		return false, err
+	}
+	return paymentStatus != "REFUNDED", nil
 }
 
 type webhookPayload struct {
@@ -404,7 +461,11 @@ func (h *Handler) payOSWebhook(w http.ResponseWriter, r *http.Request) {
 			if paymentStatus == "FAILED" {
 				h.logger.Printf("late payOS success requires refund/reconciliation payment_id=%d", paymentID)
 			}
-			if _, e = tx.ExecContext(r.Context(), `UPDATE payments SET status='PAID',paid_at=UTC_TIMESTAMP(),transaction_ref=?,provider_data=?,updated_at=UTC_TIMESTAMP() WHERE id=? AND status IN ('PENDING','FAILED')`, ref, string(encoded), paymentID); e != nil {
+		}
+		// Also persist the provider reference when a prior status reconciliation
+		// already marked the payment PAID before this webhook arrived.
+		if paymentStatus == "PENDING" || paymentStatus == "FAILED" || paymentStatus == "PAID" {
+			if _, e = tx.ExecContext(r.Context(), `UPDATE payments SET status='PAID',paid_at=COALESCE(paid_at,UTC_TIMESTAMP()),transaction_ref=COALESCE(NULLIF(transaction_ref,''),?),provider_data=?,updated_at=UTC_TIMESTAMP() WHERE id=? AND status IN ('PENDING','FAILED','PAID')`, ref, string(encoded), paymentID); e != nil {
 				http.Error(w, "temporary failure", 500)
 				return
 			}
@@ -423,6 +484,7 @@ func (h *Handler) payOSWebhook(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "temporary failure", 500)
 		return
 	}
+	h.logger.Printf("payOS webhook processed payment_id=%d order_code=%d result=%s", paymentID, orderCode, code)
 	writeJSON(w, 200, map[string]any{"success": true, "data": map[string]any{"acknowledged": true}})
 }
 

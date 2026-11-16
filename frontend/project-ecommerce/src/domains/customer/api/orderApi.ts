@@ -67,6 +67,7 @@ type BackendOrderList = {
   counts: UserOrderStatusCounts;
   pagination: { total: number };
 };
+type BackendPaymentStatus = { status: string };
 
 function uiStatus(status: string): UserOrder["status"] {
   switch (status.toUpperCase()) {
@@ -186,8 +187,32 @@ export const userOrderApi = {
         limit: params?.pageSize ?? 6,
       },
     });
+    const backendOrders = response.data.data.orders;
+    // The PayOS webhook is the primary update path. Recheck a small number of
+    // recent unpaid transfers as a recovery path in case the provider callback
+    // was delayed or missed. The backend only marks PAID after an authenticated,
+    // amount and order-code matched PayOS lookup.
+    const pendingTransfers = backendOrders
+      .filter((order) => order.payment_method_code === "BANK_TRANSFER" && ["PENDING", "FAILED"].includes(order.payment_status))
+      .slice(0, 6);
+    const refreshed = await Promise.allSettled(
+      pendingTransfers.map(async (order) => {
+        const rawID = String(order.id);
+        const payment = await axiosClient.get<APIEnvelope<BackendPaymentStatus>>(
+          `/api/v1/orders/${encodeURIComponent(rawID)}/payment`
+        );
+        return { order, status: payment.data.data.status };
+      })
+    );
+    for (const result of refreshed) {
+      if (result.status === "fulfilled" && result.value.status === "PAID") {
+        result.value.order.payment_status = "PAID";
+        if (result.value.order.payment) result.value.order.payment.status = "PAID";
+      }
+    }
+
     return {
-      orders: response.data.data.orders.map(mapCustomerBackendOrder),
+      orders: backendOrders.map(mapCustomerBackendOrder),
       total: response.data.data.pagination.total,
     };
   },

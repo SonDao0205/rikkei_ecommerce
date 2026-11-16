@@ -14,7 +14,7 @@ Customer routes require `CLIENT` and verify ownership through `orders.user_id`:
 - `GET /api/v1/orders/{orderId}/payment` — authoritative payment state for polling after returning from PayOS.
 - `POST /api/v1/webhooks/payos` — public provider callback. HMAC signature, stable provider order code, amount, and transaction reference are verified; duplicate references are idempotent.
 
-Only a signed webhook can mark an online payment `PAID`. A lost browser connection is recovered by repeating the POST or polling GET.
+The signed webhook is the primary way to mark an online payment `PAID`. As a recovery path, `GET /api/v1/orders/{orderId}/payment` also checks a pending/failed transfer against PayOS's authenticated payment lookup and updates local state only when provider order code and amount match. This covers delayed/missed webhooks and lets the order-history screen refresh recent unpaid transfers. Browser return parameters alone never mark a payment paid.
 
 ## Configuration
 
