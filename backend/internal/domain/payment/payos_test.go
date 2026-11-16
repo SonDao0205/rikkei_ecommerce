@@ -1,12 +1,70 @@
 package payment
 
 import (
+	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"io"
+	"net/http"
+	"strings"
 	"testing"
+
+	"rikkei-ecommerce/internal/domain/auth"
 )
+
+type payOSRoundTripper func(*http.Request) (*http.Response, error)
+
+func (f payOSRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
+
+func TestCreatePayOSLinkRequestUsesSupportedPayloadAndPaymentLinkID(t *testing.T) {
+	h := &Handler{
+		cfg: auth.Config{
+			PayOSClientID: "test-client", PayOSAPIKey: "test-api-key", PayOSChecksumKey: "test-checksum",
+			PayOSReturnURL: "https://shop.example/payment/result", PayOSCancelURL: "https://shop.example/payment/result",
+			PublicAPIURL: "https://shop.example",
+		},
+		client: &http.Client{Transport: payOSRoundTripper(func(r *http.Request) (*http.Response, error) {
+			if r.Method != http.MethodPost || r.URL.Path != "/v2/payment-requests" {
+				t.Fatalf("unexpected PayOS request: %s %s", r.Method, r.URL)
+			}
+			var payload map[string]any
+			if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+				t.Fatalf("decode request body: %v", err)
+			}
+			if _, exists := payload["webhookUrl"]; exists {
+				t.Fatal("webhookUrl must not be sent when creating a payment request")
+			}
+			if payload["orderCode"] != float64(995005) || payload["amount"] != float64(40000) {
+				t.Fatalf("unexpected payment fields: %#v", payload)
+			}
+			if payload["description"] != "PAY995005" {
+				t.Fatalf("unexpected short payment description: %#v", payload["description"])
+			}
+			if payload["returnUrl"] != "https://shop.example/payment/result?orderId=990005" || payload["cancelUrl"] != "https://shop.example/payment/result?orderId=990005" {
+				t.Fatalf("order result URLs missing: %#v", payload)
+			}
+			body := `{"code":"00","desc":"success","data":{"paymentLinkId":"provider-link-123","checkoutUrl":"https://pay.payos.vn/web/provider-link-123","qrCode":"qr-payload","orderCode":995005}}`
+			return &http.Response{StatusCode: http.StatusOK, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(body))}, nil
+		})},
+	}
+	got, err := h.createPayOSLinkRequest(context.Background(), 995005, 990005, 40000)
+	if err != nil {
+		t.Fatalf("createPayOSLinkRequest() error = %v", err)
+	}
+	if got.Data.ID != "provider-link-123" || got.Data.CheckoutURL == "" || got.Data.QRCode != "qr-payload" {
+		t.Fatalf("PayOS response fields not normalized: %#v", got.Data)
+	}
+}
+
+func TestPayOSDescriptionStaysWithinBankTransferLimit(t *testing.T) {
+	for _, paymentID := range []int64{1, 995005, 1234567, 999999999} {
+		if got := payOSDescription(paymentID); len(got) > 9 {
+			t.Fatalf("payOSDescription(%d) = %q (%d chars)", paymentID, got, len(got))
+		}
+	}
+}
 
 func TestVerifyPayOSSignature(t *testing.T) {
 	data := map[string]any{"orderCode": float64(123), "amount": float64(250000), "reference": "bank-ref", "code": "00", "description": "PAY123", "counterAccountName": ""}

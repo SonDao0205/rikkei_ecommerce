@@ -29,7 +29,7 @@ PAYOS_CANCEL_URL=http://localhost:5173/payment/result
 PUBLIC_API_URL=https://public-api.example.com
 ```
 
-PayOS must reach `PUBLIC_API_URL/api/v1/webhooks/payos` over HTTPS. Localhost is not reachable by PayOS; use a temporary secure tunnel for development and register/confirm its webhook URL with PayOS. API keys remain backend-only. Empty credentials disable transfer link creation while COD continues working; partial credential sets fail startup.
+PayOS must reach `PUBLIC_API_URL/api/v1/webhooks/payos` over HTTPS. Configure/confirm that URL on the PayOS payment channel (or through PayOS's `confirm-webhook` API); it is not a field in the create-payment-link request. Localhost is not reachable by PayOS; use a temporary secure tunnel for development and register/confirm its webhook URL with PayOS. API keys remain backend-only. Empty credentials disable transfer link creation while COD continues working; partial credential sets fail startup.
 
 The payment migration creates `payment_attempts` and `payment_webhook_events`. Development Compose applies migrations at startup; production must run the migration command before deploying the API.
 

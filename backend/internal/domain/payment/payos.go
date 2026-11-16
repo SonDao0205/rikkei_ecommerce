@@ -44,11 +44,12 @@ type payOSLinkResponse struct {
 	Code string `json:"code"`
 	Desc string `json:"desc"`
 	Data struct {
-		ID          string `json:"id"`
-		CheckoutURL string `json:"checkoutUrl"`
-		QRCode      string `json:"qrCode"`
-		Status      string `json:"status"`
-		OrderCode   int64  `json:"orderCode"`
+		ID            string `json:"id"`
+		PaymentLinkID string `json:"paymentLinkId"`
+		CheckoutURL   string `json:"checkoutUrl"`
+		QRCode        string `json:"qrCode"`
+		Status        string `json:"status"`
+		OrderCode     int64  `json:"orderCode"`
 	} `json:"data"`
 }
 
@@ -69,8 +70,14 @@ func (h *Handler) createPayOSLink(w http.ResponseWriter, r *http.Request) {
 	}
 	var payID int64
 	var amount float64
-	var methodCode, paymentStatus, orderStatus string
-	err = h.db.QueryRowContext(r.Context(), `SELECT p.id,p.amount,pm.code,p.status,o.status FROM payments p JOIN payment_methods pm ON pm.id=p.payment_method_id JOIN orders o ON o.id=p.order_id WHERE p.order_id=? AND o.user_id=?`, orderID, uid).Scan(&payID, &amount, &methodCode, &paymentStatus, &orderStatus)
+	var methodCode, paymentStatus string
+	var hasTerminalShopOrder bool
+	err = h.db.QueryRowContext(r.Context(), `SELECT p.id,p.amount,pm.code,p.status,
+		EXISTS(SELECT 1 FROM shop_orders so WHERE so.order_id=o.id AND so.status IN ('CANCELLED','RETURNED'))
+		FROM payments p
+		JOIN payment_methods pm ON pm.id=p.payment_method_id
+		JOIN orders o ON o.id=p.order_id
+		WHERE p.order_id=? AND o.user_id=?`, orderID, uid).Scan(&payID, &amount, &methodCode, &paymentStatus, &hasTerminalShopOrder)
 	if errors.Is(err, sql.ErrNoRows) {
 		writeError(w, http.StatusNotFound, "order_not_found", "Không tìm thấy đơn hàng.")
 		return
@@ -87,7 +94,7 @@ func (h *Handler) createPayOSLink(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusConflict, "already_paid", "Đơn hàng đã được thanh toán.")
 		return
 	}
-	if paymentStatus != "PENDING" || strings.EqualFold(orderStatus, "CANCELLED") {
+	if paymentStatus != "PENDING" || hasTerminalShopOrder {
 		writeError(w, http.StatusConflict, "payment_not_payable", "Đơn hàng hiện không thể thanh toán.")
 		return
 	}
@@ -212,8 +219,7 @@ func (h *Handler) getPayOSLink(ctx context.Context, id string) (payOSLinkRespons
 func (h *Handler) createPayOSLinkRequest(ctx context.Context, paymentID, orderID, amount int64) (payOSLinkResponse, error) {
 	var out payOSLinkResponse
 	orderCode := paymentID
-	description := fmt.Sprintf("PAY%d", paymentID)
-	webhook := h.cfg.PublicAPIURL + "/api/v1/webhooks/payos"
+	description := payOSDescription(paymentID)
 	returnURL := h.cfg.PayOSReturnURL
 	if strings.Contains(returnURL, "?") {
 		returnURL += "&"
@@ -232,7 +238,7 @@ func (h *Handler) createPayOSLinkRequest(ctx context.Context, paymentID, orderID
 	mac := hmac.New(sha256.New, []byte(h.cfg.PayOSChecksumKey))
 	_, _ = mac.Write([]byte(canonical))
 	sig := hex.EncodeToString(mac.Sum(nil))
-	body := map[string]any{"orderCode": orderCode, "amount": amount, "description": description, "returnUrl": returnURL, "cancelUrl": cancelURL, "webhookUrl": webhook, "signature": sig}
+	body := map[string]any{"orderCode": orderCode, "amount": amount, "description": description, "returnUrl": returnURL, "cancelUrl": cancelURL, "signature": sig}
 	data, e := json.Marshal(body)
 	if e != nil {
 		return out, e
@@ -256,11 +262,25 @@ func (h *Handler) createPayOSLinkRequest(ctx context.Context, paymentID, orderID
 		return out, fmt.Errorf("payOS create status %d", resp.StatusCode)
 	}
 	e = json.Unmarshal(b, &out)
+	if e == nil && out.Data.ID == "" {
+		out.Data.ID = out.Data.PaymentLinkID
+	}
 	if e == nil && out.Code != "00" {
-		e = fmt.Errorf("payOS rejected payment request")
+		desc := strings.TrimSpace(out.Desc)
+		if desc == "" {
+			desc = "no description returned"
+		}
+		e = fmt.Errorf("payOS rejected payment request code=%s desc=%q", out.Code, desc)
 	}
 	return out, e
 }
+
+func payOSDescription(paymentID int64) string {
+	// Some bank accounts limit transfer descriptions to nine characters.
+	// orderCode remains the unique payment identifier; this is only a display reference.
+	return fmt.Sprintf("PAY%06d", paymentID%1_000_000)
+}
+
 func (h *Handler) authorize(r *http.Request) {
 	r.Header.Set("x-client-id", h.cfg.PayOSClientID)
 	r.Header.Set("x-api-key", h.cfg.PayOSAPIKey)

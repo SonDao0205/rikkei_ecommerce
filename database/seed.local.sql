@@ -11,8 +11,6 @@ INSERT INTO users (id,email,phone,password_hash,full_name,email_verified,status,
  (900002,'seed-seller-a@local.test','+84910000002','$2a$12$lk6XmQ5LPsgzOv8RKJmux.tjH81CcAGXZHCboFl099d6B8.mHTzgO','Nguyễn Minh Anh',1,'ACTIVE','seller'),
  (900003,'seed-buyer@local.test','+84910000003','$2a$12$lk6XmQ5LPsgzOv8RKJmux.tjH81CcAGXZHCboFl099d6B8.mHTzgO','Trần Ngọc Hà',1,'ACTIVE','client'),
  (900004,'seed-seller-b@local.test','+84910000004','$2a$12$lk6XmQ5LPsgzOv8RKJmux.tjH81CcAGXZHCboFl099d6B8.mHTzgO','Lê Hoàng Nam',1,'ACTIVE','client'),
- (900005,'seed-locked@local.test','+84910000005','$2a$12$lk6XmQ5LPsgzOv8RKJmux.tjH81CcAGXZHCboFl099d6B8.mHTzgO','Tài khoản kiểm thử khóa',1,'LOCKED','client'),
- (900006,'seed-unverified@local.test','+84910000006','$2a$12$lk6XmQ5LPsgzOv8RKJmux.tjH81CcAGXZHCboFl099d6B8.mHTzgO','Tài khoản chưa xác minh',0,'ACTIVE','client'),
  (900007,'seed-seller-tech@local.test','+84910000007','$2a$12$lk6XmQ5LPsgzOv8RKJmux.tjH81CcAGXZHCboFl099d6B8.mHTzgO','Phạm Minh Đức',1,'ACTIVE','seller')
 ON DUPLICATE KEY UPDATE email=VALUES(email),phone=VALUES(phone),password_hash=VALUES(password_hash),full_name=VALUES(full_name),email_verified=VALUES(email_verified),status=VALUES(status),role=VALUES(role);
 
@@ -117,7 +115,10 @@ INSERT INTO products (id,shop_id,category_id,brand_id,name,slug,description,thum
  (960033,920003,930012,940009,'Bàn phím cơ Logitech K835','ban-phim-co-logitech-k835','Bàn phím cơ layout đầy đủ, khung nhôm và switch tactile.','https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=800',1290000,0,0,0,'ACTIVE',0),
  (960034,920003,930012,NULL,'Hub USB-C 6 trong 1','hub-usb-c-6-trong-1','Hub USB-C gồm HDMI, USB-A, đầu đọc thẻ và sạc xuyên qua USB-C.','https://images.unsplash.com/photo-1625842268584-8f3296236761?w=800',650000,0,0,0,'ACTIVE',0),
  (960035,920001,930003,940002,'Bình giữ nhiệt inox 750ml','binh-giu-nhiet-inox-750ml','Bình inox hai lớp giữ nóng lạnh, nắp kín chống rò và dung tích 750ml.','https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=800',390000,0,0,0,'ACTIVE',0),
- (960036,920001,930003,940002,'Ghế làm việc lưng lưới','ghe-lam-viec-lung-luoi','Ghế làm việc lưng lưới có tựa đầu, điều chỉnh chiều cao và tay vịn.','https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800',3200000,0,0,0,'ACTIVE',0)
+ (960036,920001,930003,940002,'Ghế làm việc lưng lưới','ghe-lam-viec-lung-luoi','Ghế làm việc lưng lưới có tựa đầu, điều chỉnh chiều cao và tay vịn.','https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800',3200000,0,0,0,'ACTIVE',0),
+ (960037,920001,930009,940010,'Cà phê Arabica gói thử 50g','ca-phe-arabica-goi-thu-50g','Gói cà phê Arabica rang vừa 50g, phù hợp pha thử tại nhà.','https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=800',10000,0,0,0,'ACTIVE',0),
+ (960038,920001,930009,940010,'Trà xanh túi lọc 10 gói','tra-xanh-tui-loc-10-goi','Hộp trà xanh túi lọc nhỏ gọn, tiện dùng tại nhà hoặc văn phòng.','https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=800',15000,0,0,0,'ACTIVE',0),
+ (960039,920001,930003,NULL,'Sổ tay ghi chú mini A6','so-tay-ghi-chu-mini-a6','Sổ tay khổ A6 bìa kraft, giấy trơn phù hợp ghi chú hằng ngày.','https://images.unsplash.com/photo-1531346878377-a5be20888e57?w=800',20000,0,0,0,'ACTIVE',0)
 ON DUPLICATE KEY UPDATE shop_id=VALUES(shop_id),category_id=VALUES(category_id),brand_id=VALUES(brand_id),name=VALUES(name),slug=VALUES(slug),description=VALUES(description),thumbnail_url=VALUES(thumbnail_url),price=VALUES(price),sold_count=VALUES(sold_count),rating_avg=VALUES(rating_avg),rating_count=VALUES(rating_count),status=VALUES(status),is_deleted=VALUES(is_deleted);
 
 INSERT INTO product_images (id,product_id,url,sort_order,is_primary) VALUES
@@ -157,7 +158,10 @@ INSERT INTO product_images (id,product_id,url,sort_order,is_primary) VALUES
  (960134,960033,'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=800',1,1),
  (960135,960034,'https://images.unsplash.com/photo-1625842268584-8f3296236761?w=800',1,1),
  (960136,960035,'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=800',1,1),
- (960137,960036,'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800',1,1)
+ (960137,960036,'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800',1,1),
+ (960138,960037,'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=800',1,1),
+ (960139,960038,'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=800',1,1),
+ (960140,960039,'https://images.unsplash.com/photo-1531346878377-a5be20888e57?w=800',1,1)
 ON DUPLICATE KEY UPDATE product_id=VALUES(product_id),url=VALUES(url),sort_order=VALUES(sort_order),is_primary=VALUES(is_primary);
 
 INSERT INTO product_variants (id,product_id,sku,name,price,stock,status) VALUES
@@ -202,7 +206,10 @@ INSERT INTO product_variants (id,product_id,sku,name,price,stock,status) VALUES
  (961039,960033,'LOGITECH-K835-KEYBOARD','Switch tactile / USB',1290000,6,'ACTIVE'),
  (961040,960034,'USB-C-HUB-6IN1','HDMI / USB-C / USB-A',650000,12,'ACTIVE'),
  (961041,960035,'BEPVIET-THERMAL-BOTTLE-750','Inox / 750ml',390000,22,'ACTIVE'),
- (961042,960036,'BEPVIET-MESH-OFFICE-CHAIR','Lưng lưới / điều chỉnh',3200000,3,'ACTIVE')
+ (961042,960036,'BEPVIET-MESH-OFFICE-CHAIR','Lưng lưới / điều chỉnh',3200000,3,'ACTIVE'),
+ (961043,960037,'AN-NHIEN-ARABICA-50G','Gói 50g',10000,100,'ACTIVE'),
+ (961044,960038,'AN-NHIEN-GREEN-TEA-10','Hộp 10 gói',15000,100,'ACTIVE'),
+ (961045,960039,'AN-NHIEN-NOTEBOOK-A6','Khổ A6 / bìa kraft',20000,100,'ACTIVE')
 ON DUPLICATE KEY UPDATE product_id=VALUES(product_id),name=VALUES(name),price=VALUES(price),stock=VALUES(stock),status=VALUES(status);
 
 INSERT INTO variant_attribute_values (variant_id,attribute_value_id) VALUES
@@ -261,7 +268,10 @@ INSERT INTO stock_movements (id,variant_id,change_qty,stock_after,reason,created
  (962041,961039,6,6,'RESTOCK',900007),
  (962042,961040,12,12,'RESTOCK',900007),
  (962043,961041,22,22,'RESTOCK',900002),
- (962044,961042,3,3,'RESTOCK',900002)
+ (962044,961042,3,3,'RESTOCK',900002),
+ (962045,961043,100,100,'RESTOCK',900002),
+ (962046,961044,100,100,'RESTOCK',900002),
+ (962047,961045,100,100,'RESTOCK',900002)
 ON DUPLICATE KEY UPDATE variant_id=VALUES(variant_id),change_qty=VALUES(change_qty),stock_after=VALUES(stock_after),reason=VALUES(reason),created_by=VALUES(created_by);
 
 INSERT INTO carts (id,user_id) VALUES (970001,900003)
@@ -277,8 +287,7 @@ INSERT INTO shipping_methods (id,code,name,base_fee,estimated_days,is_active) VA
 ON DUPLICATE KEY UPDATE name=VALUES(name),base_fee=VALUES(base_fee),estimated_days=VALUES(estimated_days),is_active=VALUES(is_active);
 INSERT INTO payment_methods (id,code,name,is_active,sort_order) VALUES
  (980101,'COD','Thanh toán khi nhận hàng',1,1),
- (980102,'BANK_TRANSFER','Chuyển khoản ngân hàng',1,2),
- (980103,'MOCK_CARD','Thẻ thử nghiệm (không kết nối cổng thanh toán)',1,3)
+ (980102,'BANK_TRANSFER','Chuyển khoản ngân hàng',1,2)
 ON DUPLICATE KEY UPDATE name=VALUES(name),is_active=VALUES(is_active),sort_order=VALUES(sort_order);
 
 INSERT INTO vouchers (id,code,scope,shop_id,title,description,discount_type,discount_value,max_discount_amount,min_order_value,usage_limit,usage_per_user,used_count,start_at,end_at,is_active,created_by) VALUES

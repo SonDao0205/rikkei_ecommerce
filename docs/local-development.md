@@ -20,7 +20,7 @@ Các biến bắt buộc cho Compose: `DB_USERNAME`, `DB_PASSWORD`, `DB_NAME`, `
 
 ## Nạp dữ liệu mẫu cho local
 
-`database/scriptDb.sql` tạo schema gồm các bảng auth và commerce nhưng không seed dữ liệu. BE tự chạy migration bảo mật và bổ sung `addresses.address_type`, `shops.approval_notes` còn thiếu khi `AUTO_MIGRATE=true`; khi triển khai thủ công, chạy `go run ./cmd/migrate` trước khi nâng BE. Không chạy lại `scriptDb.sql` thủ công trên database đã có dữ liệu: file này có lệnh xóa và tạo lại database.
+`database/scriptDb.sql` tạo schema gồm các bảng auth và commerce nhưng không xóa database hiện có. Khi MySQL khởi tạo một volume mới trong `APP_ENV=development`, Compose chạy schema trước rồi chạy `seed.local.sql` tự động qua `database/init-local-seed.sh`. Docker/MySQL chỉ chạy các file init ở lần đầu volume được tạo; `docker compose up --build` không nạp lại seed vào volume đã tồn tại. Không xóa volume chỉ để cập nhật seed nếu còn dữ liệu cần giữ. BE tự chạy migration bổ sung khi `AUTO_MIGRATE=true`; khi triển khai thủ công, chạy `go run ./cmd/migrate` trước khi nâng BE.
 
 Khi các container đã chạy, nạp dữ liệu mẫu bằng PowerShell tại thư mục gốc repository:
 
@@ -28,7 +28,7 @@ Khi các container đã chạy, nạp dữ liệu mẫu bằng PowerShell tại 
 .\database\seed-local.ps1
 ```
 
-Seed dùng các ID cố định khai báo trong file và có thể chạy lại; nó cập nhật lại các hàng mẫu đó, không xóa dữ liệu khác trong database. Tài khoản kiểm thử dùng chung mật khẩu `LocalTest123!`:
+Với volume local đang tồn tại, nạp/cập nhật các fixture mới bằng `database/seed-local.ps1`. Script upsert các ID mẫu, không xóa dữ liệu khác. `database/reset-local.ps1` là lựa chọn mạnh hơn: backup rồi xóa toàn bộ database local và dựng lại fixture; chỉ dùng khi muốn reset sạch, nhập `RESET LOCAL` để xác nhận. Không chạy reset trên dữ liệu nhóm/staging/production. Tài khoản kiểm thử dùng chung mật khẩu `LocalTest123!`:
 
 | Tài khoản            | Email                         | Vai trò/trạng thái                          |
 | -------------------- | ----------------------------- | ------------------------------------------- |
@@ -37,14 +37,12 @@ Seed dùng các ID cố định khai báo trong file và có thể chạy lại;
 | Người mua            | `seed-buyer@local.test`       | client, hoạt động                           |
 | Người đăng ký shop B | `seed-seller-b@local.test`    | client, shop chờ duyệt; chưa có role seller |
 | Người bán công nghệ  | `seed-seller-tech@local.test` | seller, shop Tech An Việt hoạt động         |
-| Tài khoản khóa       | `seed-locked@local.test`      | client, bị khóa để thử đăng nhập            |
-| Chưa xác minh email  | `seed-unverified@local.test`  | client, `email_verified=0`                  |
 
 Seed tạo dữ liệu liên kết cho địa chỉ, shop, danh mục, thương hiệu, thuộc tính, sản phẩm/biến thể, kho, giỏ hàng, wishlist, voucher, phương thức giao hàng/thanh toán, đơn hàng, thanh toán, hoàn tiền, đánh giá, thông báo và audit log. Script không chèn vào `refresh_tokens`, `auth_refresh_history`, `password_reset_otps` vì đây là trạng thái phiên/OTP sống; không nên seed token giả.
 
-Seed có 36 sản phẩm thuộc 12 danh mục và 10 thương hiệu, gồm thời trang, đồ gia dụng, cà phê, điện thoại và máy tính. Mỗi sản phẩm có ảnh và ít nhất một biến thể còn hàng; áo khoác có thuộc tính màu/kích cỡ, laptop có CPU/RAM và tùy chọn dung lượng lưu trữ. Có hai sản phẩm chờ duyệt để thử trạng thái seller; cửa hàng chờ duyệt không xuất hiện trong catalog công khai. Đơn hàng `SEED-ORDER-001` gồm sản phẩm từ hai shop đang hoạt động, có tổng tiền, phí, voucher, thanh toán, tồn kho và đánh giá liên kết nhất quán.
+Seed có 39 sản phẩm thuộc 12 danh mục và 10 thương hiệu, gồm thời trang, đồ gia dụng, cà phê, điện thoại và máy tính. Mỗi sản phẩm có ảnh và ít nhất một biến thể còn hàng; ba sản phẩm mới có giá 10.000đ, 15.000đ và 20.000đ. Áo khoác có thuộc tính màu/kích cỡ, laptop có CPU/RAM và tùy chọn dung lượng lưu trữ. Có sản phẩm chờ duyệt để thử trạng thái seller; cửa hàng chờ duyệt không xuất hiện trong catalog công khai. Đơn hàng `SEED-ORDER-001` gồm sản phẩm từ hai shop đang hoạt động, có tổng tiền, phí, voucher, thanh toán, tồn kho và đánh giá liên kết nhất quán.
 
-Các tên/description thương mại được dùng trên catalog; tài khoản bị khóa/chưa xác minh, shop pending và sản phẩm `960009` là fixture chuyên biệt để thử auth, duyệt shop và Postman. Giữ nguyên ID `960009` vì collection Postman dùng nó để kiểm thử tồn kho.
+Các tài khoản seed chỉ giữ các vai trò cần cho thao tác admin, buyer, seller và duyệt shop; không còn tài khoản khóa/chưa xác minh chuyên biệt. Shop pending và sản phẩm `960009` vẫn là fixture cho luồng duyệt shop và Postman. Giữ nguyên ID `960009` vì collection Postman dùng nó để kiểm thử tồn kho.
 
 FE storefront gọi trực tiếp BE để tải danh mục, danh sách/tìm kiếm/chi tiết sản phẩm và shop công khai; auth, hồ sơ và sổ địa chỉ cũng dùng API BE. Adapter FE không tự tạo giá giảm, phần trăm Flash Sale, đánh giá 5 sao hay nhãn shop đã xác minh khi BE không trả các dữ liệu đó. Có thể kiểm tra nhanh qua FE tại `http://localhost:5173`, hoặc gọi `GET /api/v1/categories`, `GET /api/v1/products?limit=36`, `GET /api/v1/products?q=iphone+pro+max` và `GET /api/v1/products/960004`. Sản phẩm iPhone 15 Pro Max phải đứng trên sản phẩm phụ kiện khi tìm kiếm theo ba từ.
 

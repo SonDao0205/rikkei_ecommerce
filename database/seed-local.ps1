@@ -26,6 +26,9 @@ if ($settings['APP_ENV'] -ne 'development') {
 if ($settings['DB_NAME'] -ne 'rikkei_ecommerce') {
   throw 'Seed chỉ được phép chạy với DB_NAME=rikkei_ecommerce.'
 }
+if ($settings['DB_HOST'] -ne 'mysql') {
+  throw 'Seed chỉ được phép chạy với DB_HOST=mysql trong Docker Compose local.'
+}
 $confirmation = Read-Host 'Seed sẽ upsert các fixture ID cố định trong database local rikkei_ecommerce. Nhập SEED LOCAL để tiếp tục'
 if ($confirmation -cne 'SEED LOCAL') { throw 'Đã hủy seed.' }
 
@@ -45,9 +48,14 @@ try {
   & $dockerPath compose exec -T -e "MYSQL_PWD=$($settings['DB_PASSWORD'])" mysql mysql "-u$($settings['DB_USERNAME'])" $settings['DB_NAME'] -e 'source /tmp/seed.local.sql'
   if ($LASTEXITCODE -ne 0) { throw 'Nạp seed thất bại. Kiểm tra lỗi SQL phía trên.' }
 
-  & $dockerPath compose exec -T -e "MYSQL_PWD=$($settings['DB_PASSWORD'])" mysql mysql "-u$($settings['DB_USERNAME'])" $settings['DB_NAME'] -e 'SELECT COUNT(*) AS seed_users FROM users WHERE id BETWEEN 900001 AND 900007; SELECT COUNT(*) AS seed_categories FROM categories WHERE id BETWEEN 930001 AND 930012; SELECT COUNT(*) AS seed_products FROM products WHERE id BETWEEN 960001 AND 960036; SELECT COUNT(*) AS public_products FROM products p JOIN shops s ON s.id=p.shop_id WHERE p.id BETWEEN 960001 AND 960036 AND p.status=''ACTIVE'' AND p.is_deleted=0 AND s.status=''ACTIVE''; SELECT COUNT(*) AS stock_movement_mismatches FROM product_variants v WHERE v.id BETWEEN 961001 AND 961042 AND v.stock<>COALESCE((SELECT SUM(sm.change_qty) FROM stock_movements sm WHERE sm.variant_id=v.id),0); SELECT COUNT(*) AS seed_orders FROM orders WHERE id=990001; SELECT o.total_amount AS order_total, SUM(so.total_amount) AS shop_order_total, SUM(oi.line_total) AS item_subtotal FROM orders o JOIN shop_orders so ON so.order_id=o.id JOIN order_items oi ON oi.shop_order_id=so.id WHERE o.id=990001 GROUP BY o.id;'
+  & $dockerPath compose exec -T -e "MYSQL_PWD=$($settings['DB_PASSWORD'])" mysql mysql "-u$($settings['DB_USERNAME'])" $settings['DB_NAME'] -e 'SELECT COUNT(*) AS seed_users FROM users WHERE id BETWEEN 900001 AND 900007; SELECT COUNT(*) AS seed_categories FROM categories WHERE id BETWEEN 930001 AND 930012; SELECT COUNT(*) AS seed_products FROM products WHERE id BETWEEN 960001 AND 960039; SELECT COUNT(*) AS public_products FROM products p JOIN shops s ON s.id=p.shop_id WHERE p.id BETWEEN 960001 AND 960039 AND p.status=''ACTIVE'' AND p.is_deleted=0 AND s.status=''ACTIVE''; SELECT COUNT(*) AS stock_movement_mismatches FROM product_variants v WHERE v.id BETWEEN 961001 AND 961045 AND v.stock<>COALESCE((SELECT SUM(sm.change_qty) FROM stock_movements sm WHERE sm.variant_id=v.id),0); SELECT id,name,price FROM products WHERE id BETWEEN 960037 AND 960039 ORDER BY price; SELECT COUNT(*) AS seed_orders FROM orders WHERE id=990001; SELECT o.total_amount AS order_total, SUM(so.total_amount) AS shop_order_total, SUM(oi.line_total) AS item_subtotal FROM orders o JOIN shop_orders so ON so.order_id=o.id JOIN order_items oi ON oi.shop_order_id=so.id WHERE o.id=990001 GROUP BY o.id;'
   if ($LASTEXITCODE -ne 0) { throw 'Không đọc được số lượng dữ liệu seed.' }
+  $publicLowPriceCount = & $dockerPath compose exec -T -e "MYSQL_PWD=$($settings['DB_PASSWORD'])" mysql mysql -N -B "-u$($settings['DB_USERNAME'])" $settings['DB_NAME'] -e 'SELECT COUNT(*) FROM products p JOIN shops s ON s.id=p.shop_id JOIN categories c ON c.id=p.category_id WHERE p.id BETWEEN 960037 AND 960039 AND p.status=''ACTIVE'' AND p.is_deleted=0 AND s.status=''ACTIVE'' AND c.is_active=1;'
+  if ($LASTEXITCODE -ne 0 -or [int](($publicLowPriceCount -join '').Trim()) -ne 3) {
+    throw 'Seed SQL ran, but the three low-price products are not all public. Check active shop/category state and SQL output.'
+  }
   Write-Host 'Đã nạp dữ liệu local. Chạy lại script sẽ cập nhật các bản ghi seed có ID cố định.'
+  Write-Host 'Đã xác nhận 3 sản phẩm giá thấp đang được catalog công khai.'
 } finally {
   Pop-Location
 }
