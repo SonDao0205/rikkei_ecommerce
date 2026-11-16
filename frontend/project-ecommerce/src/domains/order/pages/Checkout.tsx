@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import CustomerLayout from "@/app/layout/CustomerLayout";
 import { CartBreadcrumbStepper } from "@/domains/customer/components/cart/CartBreadcrumbStepper";
@@ -30,6 +30,7 @@ import {
 } from "@/domains/customer/api/cartApi";
 import type { CartItem } from "@/domains/customer/types/cart.types";
 import { formatCurrencyVND } from "@/shared/utils/currency";
+import { productApi } from "@/domains/storefront/api/productApi";
 
 const orderStatusStep = (status: string): number => {
   switch (status.toUpperCase()) {
@@ -44,6 +45,11 @@ const orderStatusStep = (status: string): number => {
 export const Checkout: React.FC = () => {
   const { t } = useTranslation("customer");
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const buyNowProductId = Number(searchParams.get("buy_now_product_id")) || 0;
+  const buyNowVariantId = Number(searchParams.get("buy_now_variant_id")) || 0;
+  const buyNowQuantity = Number(searchParams.get("quantity")) || 1;
+  const isBuyNow = buyNowProductId > 0 && buyNowVariantId > 0;
   const dispatch = useAppDispatch();
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
   const { items, shopVouchers, platformVoucher, summary } = useAppSelector(
@@ -69,6 +75,9 @@ export const Checkout: React.FC = () => {
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState<boolean>(false);
   const [createdOrderCode, setCreatedOrderCode] = useState<string>("");
   const [createdOrder, setCreatedOrder] = useState<CreatedOrder | null>(null);
+  const [directItem, setDirectItem] = useState<CartItem | null>(null);
+  const [directPlatformVoucher, setDirectPlatformVoucher] = useState<typeof platformVoucher>(null);
+  const [directShopVouchers, setDirectShopVouchers] = useState<typeof shopVouchers>({});
   const submissionInFlight = useRef(false);
   const activeSubmissionKey = useRef<{ fingerprint: string; key: string } | null>(null);
   const submissionStorageKey = `checkout.idempotency.v1:${user?.id ?? "anonymous"}`;
@@ -83,8 +92,23 @@ export const Checkout: React.FC = () => {
 
   // Filter selected & available items for checkout
   const selectedItems = useMemo(
-    () => items.filter((it) => it.selected && it.is_available !== false),
-    [items]
+    () => isBuyNow ? (directItem ? [directItem] : []) : items.filter((it) => it.selected && it.is_available !== false),
+    [directItem, isBuyNow, items]
+  );
+
+  const activePlatformVoucher = isBuyNow ? directPlatformVoucher : platformVoucher;
+  const activeShopVouchers = isBuyNow ? directShopVouchers : shopVouchers;
+  const selectedVariantItems = useMemo(
+    () => isBuyNow && directItem
+      ? [{ variant_id: directItem.variant_id, quantity: directItem.quantity }]
+      : [],
+    [directItem, isBuyNow]
+  );
+  const checkoutSelection = useMemo(
+    () => isBuyNow
+      ? { items: selectedVariantItems }
+      : { cart_item_ids: selectedItems.map((item) => item.id) },
+    [isBuyNow, selectedItems, selectedVariantItems]
   );
 
   // Group selected items by shop
@@ -128,11 +152,45 @@ export const Checkout: React.FC = () => {
     const loadData = async () => {
       setIsLoadingInitialData(true);
       try {
-        await dispatch(fetchCart()).unwrap();
-        const [loadedAddresses, options] = await Promise.all([
+        if (!isBuyNow) await dispatch(fetchCart()).unwrap();
+        const [loadedAddresses, options, productDetail] = await Promise.all([
           cartApi.getAddresses(),
           cartApi.getCheckoutOptions(),
+          isBuyNow ? productApi.fetchProductDetail(buyNowProductId) : Promise.resolve(null),
         ]);
+
+        if (productDetail) {
+          const variant = productDetail.variants.find((item) => item.id === buyNowVariantId);
+          if (!variant || buyNowQuantity < 1) {
+            setDirectItem(null);
+            setQuoteError("Phiên bản sản phẩm không còn khả dụng.");
+          } else {
+            setDirectItem({
+              id: 0,
+              product_id: productDetail.product.id,
+              product_name: productDetail.product.name,
+              product_slug: productDetail.product.slug,
+              product_thumbnail_url: productDetail.product.thumbnail_url,
+              shop_id: productDetail.product.shop_id,
+              shop_name: productDetail.product.shop_name,
+              variant_id: variant.id,
+              variant_sku: variant.sku,
+              variant_name: variant.name,
+              unit_price: variant.price,
+              quantity: buyNowQuantity,
+              available_stock: variant.stock,
+              is_available: variant.stock >= buyNowQuantity,
+              line_total: variant.price * buyNowQuantity,
+              name: productDetail.product.name,
+              price: variant.price,
+              max_stock: variant.stock,
+              selected: true,
+              image_url: variant.image_url || productDetail.product.thumbnail_url || undefined,
+              variant_label: variant.name || variant.sku,
+              shop_badge: productDetail.product.shop_badge,
+            });
+          }
+        }
 
         setAddresses(loadedAddresses);
         setShippingMethods(options.shipping_methods);
@@ -203,7 +261,7 @@ export const Checkout: React.FC = () => {
     };
 
     loadData();
-  }, [isAuthenticated, dispatch, navigate, user?.id, submissionStorageKey]);
+  }, [isAuthenticated, dispatch, navigate, user?.id, submissionStorageKey, isBuyNow, buyNowProductId, buyNowVariantId, buyNowQuantity]);
 
   // Recalculate quote with Backend API
   const calculateServerQuote = useCallback(async () => {
@@ -222,7 +280,7 @@ export const Checkout: React.FC = () => {
 
       // Collect active shop vouchers
       const shopCodes: Record<string, string> = {};
-      for (const [idStr, voucher] of Object.entries(shopVouchers)) {
+      for (const [idStr, voucher] of Object.entries(activeShopVouchers)) {
         if (voucher.is_applied && voucher.code) {
           shopCodes[idStr] = voucher.code;
         }
@@ -232,8 +290,8 @@ export const Checkout: React.FC = () => {
         address_id: selectedAddressId,
         shipping_method_id: selectedShippingId,
         payment_method_id: selectedPaymentId,
-        cart_item_ids: selectedItems.map((it) => it.id),
-        ...(platformVoucher?.is_applied ? { platform_voucher: platformVoucher.code } : {}),
+        ...checkoutSelection,
+        ...(activePlatformVoucher?.is_applied ? { platform_voucher: activePlatformVoucher.code } : {}),
         ...(Object.keys(shopCodes).length > 0 ? { shop_vouchers: shopCodes } : {}),
       });
 
@@ -252,7 +310,7 @@ export const Checkout: React.FC = () => {
               address_id: selectedAddressId,
               shipping_method_id: selectedShippingId,
               payment_method_id: selectedPaymentId,
-              cart_item_ids: selectedItems.map((it) => it.id),
+              ...checkoutSelection,
             });
             setCheckoutQuote(baseQuote);
             setQuoteError(apiErrorMessage(err, "Mã ưu đãi không hợp lệ trên máy chủ."));
@@ -276,8 +334,9 @@ export const Checkout: React.FC = () => {
     selectedShippingId,
     selectedPaymentId,
     selectedItems,
-    shopVouchers,
-    platformVoucher,
+    activeShopVouchers,
+    activePlatformVoucher,
+    checkoutSelection,
   ]);
 
   // Recalculate when dependencies change
@@ -300,33 +359,68 @@ export const Checkout: React.FC = () => {
     selectedAddressId,
     selectedShippingId,
     selectedPaymentId,
-    shopVouchers,
-    platformVoucher,
+    activeShopVouchers,
+    activePlatformVoucher,
     calculateServerQuote,
   ]);
 
   // Voucher Handlers
   const handleApplyShopVoucher = async (shopId: number, code: string) => {
+    if (isBuyNow) {
+      const result = await cartApi.validateVoucher(code, "SHOP", [], shopId, selectedVariantItems);
+      setDirectShopVouchers((previous) => ({
+        ...previous,
+        [shopId]: {
+          shop_id: shopId,
+          code: result.code,
+          discount_amount: result.discount_amount,
+          min_order_amount: result.min_order_amount,
+          is_applied: result.is_applied,
+          label: result.title,
+        },
+      }));
+      return;
+    }
     await dispatch(applyShopVoucherAction({ shopId, code })).unwrap();
   };
 
   const handleRemoveShopVoucher = (shopId: number) => {
-    dispatch(removeShopVoucher(shopId));
+    if (isBuyNow) {
+      setDirectShopVouchers((previous) => {
+        const next = { ...previous };
+        delete next[shopId];
+        return next;
+      });
+    } else {
+      dispatch(removeShopVoucher(shopId));
+    }
   };
 
   const handleApplyPlatformVoucher = async (code: string) => {
+    if (isBuyNow) {
+      const result = await cartApi.validateVoucher(code, "PLATFORM", [], undefined, selectedVariantItems);
+      setDirectPlatformVoucher({
+        code: result.code,
+        discount_amount: result.discount_amount,
+        min_order_amount: result.min_order_amount,
+        is_applied: result.is_applied,
+        description: result.title,
+      });
+      return;
+    }
     await dispatch(applyPlatformVoucherAction(code)).unwrap();
   };
 
   const handleRemovePlatformVoucher = () => {
-    dispatch(removePlatformVoucher());
+    if (isBuyNow) setDirectPlatformVoucher(null);
+    else dispatch(removePlatformVoucher());
   };
 
   // Submit Order Handler
   const handlePlaceOrder = async () => {
     if (submissionInFlight.current) return;
-    if (selectedItems.length === 0) {
-      setQuoteError("Không có sản phẩm nào trong giỏ hàng để thanh toán.");
+    if (selectedItems.length === 0 || selectedItems.some((item) => !item.is_available)) {
+      setQuoteError(isBuyNow ? "Sản phẩm đã hết hàng hoặc không còn khả dụng." : "Không có sản phẩm nào trong giỏ hàng để thanh toán.");
       return;
     }
 
@@ -341,15 +435,15 @@ export const Checkout: React.FC = () => {
     }
 
     const shopCodes: Record<string, string> = {};
-    for (const [idStr, voucher] of Object.entries(shopVouchers)) {
+    for (const [idStr, voucher] of Object.entries(activeShopVouchers)) {
       if (voucher.is_applied && voucher.code) shopCodes[idStr] = voucher.code;
     }
     const request = {
       address_id: selectedAddressId,
       shipping_method_id: selectedShippingId,
       payment_method_id: selectedPaymentId,
-      cart_item_ids: selectedItems.map((item) => item.id),
-      ...(platformVoucher?.is_applied ? { platform_voucher: platformVoucher.code } : {}),
+      ...checkoutSelection,
+      ...(activePlatformVoucher?.is_applied ? { platform_voucher: activePlatformVoucher.code } : {}),
       ...(Object.keys(shopCodes).length ? { shop_vouchers: shopCodes } : {}),
     };
     const fingerprint = JSON.stringify(request);
@@ -420,9 +514,15 @@ export const Checkout: React.FC = () => {
   // Fallback financial calculations in case server quote is loading/failed
   const fallbackShippingFee =
     shippingMethods.find((m) => m.id === selectedShippingId)?.base_fee ?? 0;
-  const fallbackSubtotal = summary.items_subtotal;
-  const fallbackShopDiscount = summary.store_vouchers_discount;
-  const fallbackPlatformDiscount = summary.platform_voucher_discount;
+  const fallbackSubtotal = isBuyNow
+    ? selectedItems.reduce((total, item) => total + item.unit_price * item.quantity, 0)
+    : summary.items_subtotal;
+  const fallbackShopDiscount = isBuyNow
+    ? Object.values(activeShopVouchers).reduce((total, voucher) => total + (voucher.is_applied ? voucher.discount_amount : 0), 0)
+    : summary.store_vouchers_discount;
+  const fallbackPlatformDiscount = isBuyNow
+    ? (activePlatformVoucher?.is_applied ? activePlatformVoucher.discount_amount : 0)
+    : summary.platform_voucher_discount;
   const fallbackTotal = Math.max(
     0,
     fallbackSubtotal +
@@ -512,7 +612,7 @@ export const Checkout: React.FC = () => {
                 {/* 1. Items Grouped by Shop with Available Shop Vouchers */}
                 <CheckoutShopItems
                   groups={groupedShopItems}
-                  shopVouchers={shopVouchers}
+                  shopVouchers={activeShopVouchers}
                   onApplyShopVoucher={handleApplyShopVoucher}
                   onRemoveShopVoucher={handleRemoveShopVoucher}
                   isCalculating={isCalculatingQuote}
@@ -550,7 +650,7 @@ export const Checkout: React.FC = () => {
                   fallbackShopDiscount={fallbackShopDiscount}
                   fallbackPlatformDiscount={fallbackPlatformDiscount}
                   fallbackTotal={fallbackTotal}
-                  platformVoucher={platformVoucher}
+                  platformVoucher={activePlatformVoucher}
                   onApplyPlatformVoucher={handleApplyPlatformVoucher}
                   onRemovePlatformVoucher={handleRemovePlatformVoucher}
                   onSubmitOrder={handlePlaceOrder}

@@ -510,8 +510,8 @@ Catalog dùng MySQL parameterized queries, allowlist sort, giới hạn phân tr
 The checkout domain exposes these CLIENT-authenticated APIs:
 
 - `GET /api/v1/checkout/options` returns active shipping and payment methods from the database.
-- `POST /api/v1/vouchers/validate` checks a voucher against selected cart lines, scope/shop, active period, minimum subtotal, global usage limit, and per-user usage limit. Body: `{"code":"SEED-WELCOME","scope":"PLATFORM","cart_item_ids":[123]}`; shop vouchers also require `shop_id`.
-- `POST /api/v1/checkout/quote` accepts `address_id`, `shipping_method_id`, `payment_method_id`, `cart_item_ids`, optional `platform_voucher`, and optional `shop_vouchers` keyed by shop ID. It re-reads current prices, stock and product availability, verifies address ownership and active methods, then returns the line items and total.
+- `POST /api/v1/vouchers/validate` checks a voucher against selected cart lines or direct variant items, scope/shop, active period, minimum subtotal, global usage limit, and per-user usage limit. Use either `cart_item_ids` or `items: [{"variant_id":123,"quantity":1}]`; shop vouchers also require `shop_id`.
+- `POST /api/v1/checkout/quote` accepts `address_id`, `shipping_method_id`, `payment_method_id`, and either `cart_item_ids` or direct `items: [{"variant_id":123,"quantity":1}]`, plus optional `platform_voucher` and `shop_vouchers` keyed by shop ID. It re-reads current prices, stock and product availability, verifies address ownership and active methods, then returns the line items and total.
 
 Shipping `base_fee` is currently charged once per checkout quote, including multi-shop carts, in line with the order-level `orders.shipping_fee` field. Shop vouchers apply only to selected lines from their shop. The platform discount is applied after shop discounts, and combined discounts cannot exceed the merchandise subtotal. Amounts use the schema precision of two decimal places.
 
@@ -519,7 +519,7 @@ Payment method `MOCK_CARD` is intentionally excluded from customer checkout beca
 
 Successful response data includes `address`, `shipping_method`, `payment_method`, selected `items`, `subtotal`, `shipping_fee`, `shop_vouchers`, `shop_discount`, `platform_voucher`, `platform_discount`, and `total`. Invalid input returns `400`; unauthenticated or wrong-role callers return `401`/`403`; stale addresses/methods/cart items or invalid vouchers return `422`; database failures return a generic `500` while details are logged server-side. Common error codes include `address_unavailable`, `shipping_method_unavailable`, `payment_method_unavailable`, `cart_item_unavailable`, `cart_selection_changed`, `voucher_invalid`, `voucher_unavailable`, `voucher_minimum_not_met`, `voucher_shop_mismatch`, and `cart_total_exceeded`.
 
-A quote is advisory: it does not create an order, reserve stock, or consume a voucher. The order-creation endpoint `POST /api/v1/checkout/orders` executes inside a single database transaction, atomically locking and updating stock and voucher usage, creating parent and sub-orders per shop, recording payment, and clearing purchased cart items.
+A quote is advisory: it does not create an order, reserve stock, or consume a voucher. The order-creation endpoint `POST /api/v1/checkout/orders` executes inside a single database transaction, atomically locking and updating stock and voucher usage, creating parent and sub-orders per shop, and recording payment. Cart checkout sends `cart_item_ids` and removes those purchased lines; Buy Now sends direct `items` and leaves the customer's cart unchanged.
 
 Example quote body:
 
@@ -534,17 +534,29 @@ Example quote body:
 }
 ```
 
+For Buy Now, replace `cart_item_ids` with direct variant items:
+
+```json
+{
+  "address_id": 12,
+  "shipping_method_id": 980001,
+  "payment_method_id": 980101,
+  "items": [{"variant_id": 960004, "quantity": 1}]
+}
+```
+
 ### Order creation: `POST /api/v1/checkout/orders`
 
 Send a unique `Idempotency-Key` header (16–128 ASCII letters, digits, `-`, `_`, `.`, or `:`). The key is scoped to the authenticated user and bound to a SHA-256 fingerprint of the canonical JSON request (the note is trimmed before hashing). Replaying the same key and request returns the original status/body with `Idempotency-Replayed: true`; using the same key for a different body returns `409 idempotency_key_reused`. The key, resulting order, stock/voucher changes, cart cleanup, and replay response are committed atomically. A failed transaction leaves no key reservation, so the same key can safely retry.
 
-Tạo đơn hàng từ giỏ hàng được bảo vệ bởi role `CLIENT`, thực thi toàn bộ trong một transaction cơ sở dữ liệu duy nhất:
+Tạo đơn hàng từ giỏ hàng hoặc Mua ngay được bảo vệ bởi role `CLIENT`, thực thi toàn bộ trong một transaction cơ sở dữ liệu duy nhất:
 
 - **Input:**
   - `address_id` (ID địa chỉ nhận hàng của chính người dùng).
   - `shipping_method_id` (phương thức vận chuyển đang hoạt động).
   - `payment_method_id` (`COD` hoặc `BANK_TRANSFER`; phương thức `MOCK_CARD` bị từ chối).
   - `cart_item_ids` (mảng 1–100 ID dòng giỏ hàng thuộc về người dùng, không trùng lặp).
+  - Hoặc `items` (mảng 1–100 dòng mua trực tiếp gồm `variant_id` và `quantity`, mỗi biến thể chỉ xuất hiện một lần); chỉ gửi một trong hai trường này.
   - `platform_voucher` (tùy chọn: mã voucher toàn sàn).
   - `shop_vouchers` (tùy chọn: map mã voucher theo shop ID `{"920001": "SEED-MAY10"}`).
   - `note` (tùy chọn: tối đa 500 ký tự).
@@ -569,7 +581,7 @@ Tạo đơn hàng từ giỏ hàng được bảo vệ bởi role `CLIENT`, th�
   - Khóa voucher `FOR UPDATE`, kiểm tra hạn dùng, điều kiện tối thiểu và giới hạn `usage_limit`, `usage_per_user`.
   - Tăng số lượt dùng nguyên tử `used_count = used_count + 1`.
   - Lưu lịch sử dùng vào `voucher_usages`.
-  - Xóa chính xác các sản phẩm đã mua khỏi bảng `cart_items`.
+  - Với checkout từ giỏ hàng, xóa chính xác các sản phẩm đã mua khỏi bảng `cart_items`. Checkout Mua ngay không thêm hoặc xóa dòng giỏ hàng.
 - **Response `201 Created`:** Trả về thông tin đầy đủ đơn hàng cha, phương thức thanh toán, hướng dẫn thanh toán `payment`, và danh sách các đơn con `shop_orders`.
 
 PayOS configuration, payment endpoints, retry behavior, and webhook operation are described in `[docs/payment-flow.md](../docs/payment-flow.md)`. Configure `PAYOS_CLIENT_ID`, `PAYOS_API_KEY`, `PAYOS_CHECKSUM_KEY`, `PAYOS_RETURN_URL`, `PAYOS_CANCEL_URL`, and public HTTPS `PUBLIC_API_URL`. `GET /api/v1/orders/{id}/payment` is the authoritative state used by the FE after provider redirects or lost browser connections.

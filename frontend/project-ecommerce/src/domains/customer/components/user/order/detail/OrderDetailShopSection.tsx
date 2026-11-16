@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { UserOrder, ShopOrderGroup, OrderItem } from '@/domains/order/types';
 import { getShopDefaultLogo } from '@/shared/utils/avatar';
+import ReviewProductModal from '@/domains/customer/components/user/order/ReviewProductModal';
 
 interface OrderDetailShopSectionProps {
   order: UserOrder;
@@ -15,6 +16,7 @@ export const OrderDetailShopSection: React.FC<OrderDetailShopSectionProps> = ({
 }) => {
   const { t } = useTranslation("customer");
   const navigate = useNavigate();
+  const [reviewTarget, setReviewTarget] = React.useState<OrderItem | null>(null);
 
   // Helper format currency
   const formatCurrency = (val: number) => `${val.toLocaleString('vi-VN')} ₫`;
@@ -260,12 +262,8 @@ export const OrderDetailShopSection: React.FC<OrderDetailShopSectionProps> = ({
                         <div className="relative group/tooltip">
                           <button
                             type="button"
-                            disabled={!isShopCompleted}
-                            onClick={() => {
-                              if (isShopCompleted && onShowToast) {
-                                onShowToast(t("profile.orders.detail.shop_section.review_toast", { name: item.productName }));
-                              }
-                            }}
+                            disabled={!isShopCompleted || !item.id}
+                            onClick={() => isShopCompleted && setReviewTarget(item)}
                             className={`px-3 py-1.5 rounded-lg font-label-md text-label-md transition-colors ${
                               isShopCompleted
                                 ? 'bg-primary-container text-on-primary hover:bg-primary shadow-sm'
@@ -289,6 +287,14 @@ export const OrderDetailShopSection: React.FC<OrderDetailShopSectionProps> = ({
           </section>
         );
       })}
+      {reviewTarget && (
+        <ReviewProductModal
+          orderItemId={reviewTarget.id}
+          productName={reviewTarget.productName}
+          onClose={() => setReviewTarget(null)}
+          onSubmitted={() => onShowToast?.(`Đã gửi đánh giá cho ${reviewTarget.productName}.`)}
+        />
+      )}
     </div>
   );
 };

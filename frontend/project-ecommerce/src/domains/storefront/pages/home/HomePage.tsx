@@ -26,6 +26,7 @@ const HomePage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [banners, setBanners] = useState<PromotionBanner[]>([]);
   const categoryParam = searchParams.get("category_id");
+  const searchQuery = (searchParams.get("q") || "").trim();
 
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
   const roles = user?.roles?.map((role) => role.toLowerCase()) ?? (user?.role ? [user.role] : []);
@@ -51,7 +52,7 @@ const HomePage: React.FC = () => {
       if (!isNaN(parsedId) && parsedId !== selectedCategoryId) {
         dispatch(setSelectedCategory(parsedId));
       }
-    } else if (selectedCategoryId !== 0 && !location.search) {
+    } else if (selectedCategoryId !== 0) {
       dispatch(setSelectedCategory(0));
     }
   }, [categoryParam, location.search, dispatch, selectedCategoryId]);
@@ -73,11 +74,12 @@ const HomePage: React.FC = () => {
   useEffect(() => {
     dispatch(
       getCatalogProducts({
-        category_id: selectedCategoryId,
+        q: searchQuery,
+        category_id: searchQuery ? undefined : selectedCategoryId,
         sort: sortBy,
       })
     );
-  }, [dispatch, selectedCategoryId, sortBy]);
+  }, [dispatch, searchQuery, selectedCategoryId, sortBy]);
 
   const handleSelectCategory = (categoryId: number) => {
     dispatch(setSelectedCategory(categoryId));
@@ -95,7 +97,8 @@ const HomePage: React.FC = () => {
   const handleLoadMore = () => {
     dispatch(
       getCatalogProducts({
-        category_id: selectedCategoryId,
+        q: searchQuery,
+        category_id: searchQuery ? undefined : selectedCategoryId,
         sort: sortBy,
         limit: catalogProducts.length + 20,
       })
@@ -127,31 +130,36 @@ const HomePage: React.FC = () => {
 
   return (
     <CustomerLayout>
-      {/* Top Notification Flash Strip */}
-      <FlashNotificationBar />
-      <PromotionBannerStrip banners={banners} />
+      {!searchQuery && (
+        <>
+          {/* Top Notification Flash Strip */}
+          <FlashNotificationBar />
+          <PromotionBannerStrip banners={banners} />
 
-      {/* SECTION 1: Category Circles Bar */}
-      <CategoryBar
-        categories={categories}
-        selectedCategoryId={selectedCategoryId}
-        onSelectCategory={handleSelectCategory}
-      />
+          {/* SECTION 1: Category Circles Bar */}
+          <CategoryBar
+            categories={categories}
+            selectedCategoryId={selectedCategoryId}
+            onSelectCategory={handleSelectCategory}
+          />
 
-      {/* SECTION 2: Featured products from the backend */}
-      <FlashSaleSection
-        products={flashSaleProducts}
-        categoryName={selectedCategoryName}
-        loading={flashSaleLoading}
-        onQuickAdd={handleQuickAdd}
-        onSelectProduct={handleSelectProduct}
-        onSelectShop={handleSelectShop}
-      />
+          {/* SECTION 2: Featured products from the backend */}
+          <FlashSaleSection
+            products={flashSaleProducts}
+            categoryName={selectedCategoryName}
+            loading={flashSaleLoading}
+            onQuickAdd={handleQuickAdd}
+            onSelectProduct={handleSelectProduct}
+            onSelectShop={handleSelectShop}
+          />
+        </>
+      )}
 
       {/* SECTION 3: Full Marketplace Filter & Browsing Catalog */}
       <CatalogSection
         products={catalogProducts}
         totalProducts={totalCatalogProducts}
+        searchQuery={searchQuery}
         sortBy={sortBy}
         onSortChange={handleSortChange}
         onAddToCart={handleQuickAdd}

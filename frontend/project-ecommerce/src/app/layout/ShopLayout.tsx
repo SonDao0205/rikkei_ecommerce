@@ -83,13 +83,6 @@ export const ShopLayout: React.FC<ShopLayoutProps> = ({ children }) => {
       icon: "confirmation_number",
     },
     { label: "Đánh giá", path: "/shop/reviews", icon: "rate_review" },
-    {
-      label: "Chăm sóc khách",
-      path: "/shop/customer-chat",
-      icon: "chat",
-      badge: "3",
-      badgeVariant: "secondary" as const,
-    },
     { label: "Cài đặt gian hàng", path: "/shop/settings", icon: "settings" },
   ];
 
