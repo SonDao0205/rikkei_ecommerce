@@ -20,6 +20,73 @@ export interface HeaderProps {
   wishlistCount?: number;
 }
 
+interface HeaderSearchInputProps {
+  variant: "mobile" | "desktop";
+  initialQuery: string;
+  placeholder: string;
+  buttonLabel?: string;
+  onSearch: (query: string) => void;
+}
+
+const HeaderSearchInput: React.FC<HeaderSearchInputProps> = ({
+  variant,
+  initialQuery,
+  placeholder,
+  buttonLabel,
+  onSearch,
+}) => {
+  const [query, setQuery] = useState(initialQuery);
+  const submit = () => onSearch(query);
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      submit();
+    }
+  };
+
+  if (variant === "mobile") {
+    return (
+      <div className="flex-1 relative flex items-center h-10 rounded-xl bg-surface-container-low border border-outline-variant focus-within:border-primary-container px-3 gap-2 transition-all">
+        <span className="material-symbols-outlined text-outline text-[20px] shrink-0">search</span>
+        <input
+          className="w-full bg-transparent text-on-surface placeholder:text-outline text-body-sm font-body-sm focus:outline-none"
+          placeholder={placeholder}
+          type="text"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          onKeyDown={handleKeyDown}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative flex items-center w-full h-12 rounded-xl bg-surface-container-low border border-outline-variant hover:border-primary-container focus-within:border-primary-container transition-all">
+      <div className="flex items-center flex-1 px-space-md gap-space-sm">
+        <span className="material-symbols-outlined text-outline text-[20px]">search</span>
+        <input
+          className="w-full bg-transparent text-on-surface placeholder:text-outline text-body-md font-body-md focus:outline-none"
+          placeholder={placeholder}
+          type="text"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          onKeyDown={handleKeyDown}
+        />
+      </div>
+      <div className="pr-2 shrink-0 flex items-center gap-space-sm">
+        <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-label-sm text-on-surface-variant bg-surface-container rounded">⌘K</kbd>
+        <button
+          type="button"
+          onClick={submit}
+          className="h-8 px-space-md bg-primary-container text-on-primary font-label-md text-label-md rounded-lg flex items-center justify-center hover:bg-primary transition-colors cursor-pointer"
+        >
+          {buttonLabel}
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const Header: React.FC<HeaderProps> = ({
   cartItemCount = 0,
   cartTotal = "₫0",
@@ -29,15 +96,11 @@ const Header: React.FC<HeaderProps> = ({
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchQuery, setSearchQuery] = useState("");
-
-  useEffect(() => {
-    const isHomePage =
-      location.pathname === "/" || location.pathname === "/home";
-    setSearchQuery(
-      isHomePage ? new URLSearchParams(location.search).get("q") || "" : "",
-    );
-  }, [location.pathname, location.search]);
+  const isHomePage = location.pathname === "/" || location.pathname === "/home";
+  const initialSearchQuery = isHomePage
+    ? new URLSearchParams(location.search).get("q") || ""
+    : "";
+  const searchInputKey = `${location.pathname}${location.search}`;
   const { user, isAuthenticated } = useAppSelector((state) => state.auth);
   const { profile } = useAppSelector((state) => state.profile);
   const cartState = useAppSelector((state) => state.cart);
@@ -177,21 +240,12 @@ const Header: React.FC<HeaderProps> = ({
     dispatch(openLogoutModal());
   };
 
-  const handleSearch = () => {
-    const query = searchQuery.trim();
+  const handleSearch = (searchText: string) => {
+    const query = searchText.trim();
     navigate({
       pathname: "/home",
       search: query ? `?q=${encodeURIComponent(query)}` : "",
     });
-  };
-
-  const handleSearchKeyDown = (
-    event: React.KeyboardEvent<HTMLInputElement>,
-  ) => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      handleSearch();
-    }
   };
 
   return (
@@ -247,19 +301,13 @@ const Header: React.FC<HeaderProps> = ({
               </span>
             </button>
 
-            <div className="flex-1 relative flex items-center h-10 rounded-xl bg-surface-container-low border border-outline-variant focus-within:border-primary-container px-3 gap-2 transition-all">
-              <span className="material-symbols-outlined text-outline text-[20px] shrink-0">
-                search
-              </span>
-              <input
-                className="w-full bg-transparent text-on-surface placeholder:text-outline text-body-sm font-body-sm focus:outline-none"
-                placeholder={t("header.search.mobile_placeholder")}
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={handleSearchKeyDown}
-              />
-            </div>
+            <HeaderSearchInput
+              key={searchInputKey}
+              variant="mobile"
+              initialQuery={initialSearchQuery}
+              placeholder={t("header.search.mobile_placeholder")}
+              onSearch={handleSearch}
+            />
           </div>
 
           {/* Desktop Header (hidden md:flex) */}
@@ -283,33 +331,14 @@ const Header: React.FC<HeaderProps> = ({
 
             {/* Search Box */}
             <div className="flex-1 max-w-2xl">
-              <div className="relative flex items-center w-full h-12 rounded-xl bg-surface-container-low border border-outline-variant hover:border-primary-container focus-within:border-primary-container transition-all">
-                <div className="flex items-center flex-1 px-space-md gap-space-sm">
-                  <span className="material-symbols-outlined text-outline text-[20px]">
-                    search
-                  </span>
-                  <input
-                    className="w-full bg-transparent text-on-surface placeholder:text-outline text-body-md font-body-md focus:outline-none"
-                    placeholder={t("header.search.placeholder")}
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyDown={handleSearchKeyDown}
-                  />
-                </div>
-                <div className="pr-2 shrink-0 flex items-center gap-space-sm">
-                  <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-label-sm text-on-surface-variant bg-surface-container rounded">
-                    ⌘K
-                  </kbd>
-                  <button
-                    type="button"
-                    onClick={handleSearch}
-                    className="h-8 px-space-md bg-primary-container text-on-primary font-label-md text-label-md rounded-lg flex items-center justify-center hover:bg-primary transition-colors cursor-pointer"
-                  >
-                    {t("header.search.button")}
-                  </button>
-                </div>
-              </div>
+              <HeaderSearchInput
+                key={searchInputKey}
+                variant="desktop"
+                initialQuery={initialSearchQuery}
+                placeholder={t("header.search.placeholder")}
+                buttonLabel={t("header.search.button")}
+                onSearch={handleSearch}
+              />
             </div>
 
             {/* Right Action Icons - Chỉ hiển thị Wishlist và Giỏ hàng khi đã đăng nhập */}
