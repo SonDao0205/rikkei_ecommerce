@@ -1,4 +1,4 @@
-import axiosClient, { shouldFallbackToMock } from "@/shared/api/axiosClient";
+import axiosClient from "@/shared/api/axiosClient";
 import type {
   ShopProductItem,
   ShopProductStats,
@@ -402,7 +402,6 @@ export const shopProductApi = {
             },
           ];
 
-    const totalStock = variantsToSubmit.reduce((sum, v) => sum + v.stock, 0);
     const minPrice = Math.min(...variantsToSubmit.map((v) => v.price));
 
     if (product.id && !isNaN(Number(product.id))) {
@@ -417,53 +416,7 @@ export const shopProductApi = {
         variants: variantsToSubmit,
       };
 
-      try {
-        return await shopProductApi.updateProduct(product.id, updatePayload);
-      } catch (err) {
-        if (!shouldFallbackToMock(err)) {
-          throw err;
-        }
-        // Resilient fallback if backend server is offline
-        return {
-          id: String(product.id),
-          name,
-          sku,
-          category: String(parsedCategoryId),
-          categoryId: parsedCategoryId,
-          categoryLabel: product.categoryLabel || "Danh mục",
-          imageUrl: imgUrl,
-          imageAlt: name,
-          soldCount: product.soldCount || 0,
-          variationTitle:
-            product.variationTitle || `${variantsToSubmit.length} biến thể`,
-          variationSubtitle:
-            product.variationSubtitle ||
-            variantsToSubmit.map((v) => v.name).join(", "),
-          price: minPrice,
-          formattedPrice:
-            new Intl.NumberFormat("vi-VN").format(minPrice) + " ₫",
-          stock: totalStock,
-          stockStatus:
-            totalStock > 20
-              ? "abundant"
-              : totalStock > 5
-              ? "safe"
-              : totalStock > 0
-              ? "low"
-              : "out",
-          stockStatusLabel:
-            totalStock > 20
-              ? "Đủ hàng"
-              : totalStock > 5
-              ? "An toàn"
-              : totalStock > 0
-              ? "Sắp hết"
-              : "Hết hàng",
-          status: product.status || "ACTIVE",
-          rawVariants: variantsToSubmit,
-          rawImages: imagesToSubmit,
-        };
-      }
+      return await shopProductApi.updateProduct(product.id, updatePayload);
     } else {
       const createPayload: CreateSellerProductPayload = {
         name,
@@ -483,54 +436,7 @@ export const shopProductApi = {
         })),
       };
 
-      try {
-        return await shopProductApi.createProduct(createPayload);
-      } catch (err) {
-        if (!shouldFallbackToMock(err)) {
-          throw err;
-        }
-        // Resilient fallback for newly created product if backend offline
-        const newId = String(Date.now());
-        return {
-          id: newId,
-          name,
-          sku,
-          category: String(parsedCategoryId),
-          categoryId: parsedCategoryId,
-          categoryLabel: product.categoryLabel || "Danh mục",
-          imageUrl: imgUrl,
-          imageAlt: name,
-          soldCount: 0,
-          variationTitle:
-            product.variationTitle || `${variantsToSubmit.length} biến thể`,
-          variationSubtitle:
-            product.variationSubtitle ||
-            variantsToSubmit.map((v) => v.name).join(", "),
-          price: minPrice,
-          formattedPrice:
-            new Intl.NumberFormat("vi-VN").format(minPrice) + " ₫",
-          stock: totalStock,
-          stockStatus:
-            totalStock > 20
-              ? "abundant"
-              : totalStock > 5
-              ? "safe"
-              : totalStock > 0
-              ? "low"
-              : "out",
-          stockStatusLabel:
-            totalStock > 20
-              ? "Đủ hàng"
-              : totalStock > 5
-              ? "An toàn"
-              : totalStock > 0
-              ? "Sắp hết"
-              : "Hết hàng",
-          status: "ACTIVE",
-          rawVariants: variantsToSubmit,
-          rawImages: imagesToSubmit,
-        };
-      }
+      return await shopProductApi.createProduct(createPayload);
     }
   },
 };

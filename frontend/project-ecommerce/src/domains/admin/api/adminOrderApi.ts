@@ -1,472 +1,548 @@
+import axiosClient from "@/shared/api/axiosClient";
 import type {
   AdminOrderItem,
   OrderStatusCounts,
   OrderFilterParams,
   AdminOrderDetailData,
   OrderCourier,
+  OrderStatus,
+  OrderPaymentMethod,
+  OrderLineItem,
+  OrderDetailProductItem,
 } from "@/shared/types";
 
-const requireDevelopmentMock = (): void => {
-  if (!import.meta.env.DEV) {
-    throw new Error("Màn quản lý đơn hàng này chưa được kết nối đầy đủ với API backend.");
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  message?: string;
+}
+
+interface BackendOrderItemView {
+  id: number;
+  product_id: number;
+  variant_id: number;
+  product_name: string;
+  variant_name?: string;
+  sku: string;
+  image_url?: string;
+  unit_price: number;
+  quantity: number;
+  line_total: number;
+}
+
+interface BackendShopOrderView {
+  id: number;
+  order_id: number;
+  shop_id: number;
+  shop_name: string;
+  shop_order_code: string;
+  status: string;
+  status_label: string;
+  subtotal: number;
+  shipping_fee: number;
+  shop_discount: number;
+  platform_discount: number;
+  total_amount: number;
+  carrier?: string | null;
+  tracking_code?: string | null;
+  cancel_reason?: string | null;
+  items?: BackendOrderItemView[];
+}
+
+interface BackendCustomerOrderSummary {
+  id: number;
+  order_code: string;
+  status: string;
+  status_label: string;
+  subtotal: number;
+  shipping_fee: number;
+  platform_discount: number;
+  shop_discount_total: number;
+  total_amount: number;
+  recipient_name: string;
+  recipient_phone: string;
+  shipping_address: string;
+  payment_method_code: string;
+  payment_method_name: string;
+  payment_status: string;
+  created_at: string;
+  shops?: BackendShopOrderView[];
+}
+
+interface BackendAdminOrderListResponse {
+  orders: BackendCustomerOrderSummary[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+interface BackendAdminOrderDetailResponse {
+  order: BackendCustomerOrderSummary;
+  buyer: {
+    id: number;
+    name: string;
+    email: string;
+    phone: string;
+    status: string;
+  };
+}
+
+function mapBackendStatusToUi(status: string): OrderStatus {
+  switch (status?.toUpperCase()) {
+    case "PENDING":
+      return "pending";
+    case "CONFIRMED":
+    case "PACKING":
+      return "packing";
+    case "SHIPPING":
+      return "shipping";
+    case "COMPLETED":
+      return "delivered";
+    case "CANCELLED":
+    case "RETURNED":
+      return "cancelled";
+    default:
+      return "pending";
   }
-};
+}
 
-export let mockOrdersState: AdminOrderItem[] = [
-  {
-    id: "#ORD-9821",
-    source: "Web Store • GHTK",
-    hasCodAlert: true,
-    createdAt: "27/10/2024",
-    timeAgo: "14:18 (15m trước)",
-    customer: {
-      name: "Nguyễn Văn A",
-      phone: "+84 909 123 456",
-      address: "142 Võ Thị Sáu, Q.3, TP.HCM",
-    },
-    shopName: "UrbanStep Official",
-    productSummary: "Retro Runner V2 Sneaker + 1 món",
-    items: [
-      {
-        name: "Retro Runner V2 Sneaker - Off White / Forest Green",
-        quantity: 1,
-        price: 1250000,
-        sku: "SKU-SNK-042",
-      },
-      {
-        name: "Cushioned Bamboo Athletic Socks",
-        quantity: 1,
-        price: 165000,
-        sku: "SKU-SOX-102",
-      },
-    ],
-    paymentMethod: "COD",
-    paymentNote: "Chờ thu tiền COD",
-    totalAmount: 1415000,
-    formattedTotal: "1.415.000 ₫",
-    codAmount: 1415000,
-    status: "pending",
-    statusLabel: "Chờ xác nhận",
-    courier: "GHTK",
-    courierLabel: "GHTK Express",
-    trackingCode: "GHTK-VN882190",
-  },
-  {
-    id: "#ORD-9820",
-    source: "TikTok Shop",
-    createdAt: "27/10/2024",
-    timeAgo: "13:45 (48m trước)",
-    customer: {
-      name: "Trần Thị Mai",
-      phone: "+84 988 345 221",
-      address: "Hà Đông, Hà Nội",
-    },
-    shopName: "Crafted Saigon",
-    productSummary: "Leather Wallet Pro x1",
-    items: [
-      {
-        name: "Minimalist Vegetable Tanned Leather Cardholder",
-        quantity: 1,
-        price: 850000,
-        sku: "SKU-CRD-770",
-      },
-    ],
-    paymentMethod: "MOMO",
-    paymentNote: "Đã thanh toán",
-    totalAmount: 850000,
-    formattedTotal: "850.000 ₫",
-    status: "shipping",
-    statusLabel: "Đang giao hàng",
-    courier: "GHN",
-    courierLabel: "GHN Logistics",
-    trackingCode: "GHN-HN99201",
-  },
-  {
-    id: "#ORD-9818",
-    source: "Shopee Cluster",
-    createdAt: "27/10/2024",
-    timeAgo: "12:30 (2h trước)",
-    customer: {
-      name: "Lê Hoàng Nam",
-      phone: "+84 912 884 102",
-      address: "Hải Châu, Đà Nẵng",
-    },
-    shopName: "Terra Living Lab",
-    productSummary: "Ceramic Pour-Over Set",
-    items: [
-      {
-        name: "Hand-thrown Wood Ash Ceramic Tumbler (Set of 2)",
-        quantity: 1,
-        price: 620000,
-        sku: "SKU-DRP-882",
-      },
-    ],
-    paymentMethod: "COD",
-    paymentNote: "Đã thu COD",
-    totalAmount: 620000,
-    formattedTotal: "620.000 ₫",
-    codAmount: 620000,
-    status: "delivered",
-    statusLabel: "Đã giao thành công",
-    courier: "GHTK",
-    courierLabel: "GHTK Express",
-    trackingCode: "GHTK-DN8818",
-  },
-  {
-    id: "#ORD-9815",
-    source: "Web Store",
-    createdAt: "27/10/2024",
-    timeAgo: "11:15 (3h trước)",
-    customer: {
-      name: "Đỗ Thùy Trang",
-      phone: "+84 977 412 009",
-      address: "Bình Thạnh, TP. HCM",
-    },
-    shopName: "UrbanStep Official",
-    productSummary: "Air Canvas Low x1",
-    items: [
-      {
-        name: "Track 6 Low Top Vulcanized Canvas Sneaker",
-        quantity: 1,
-        price: 1890000,
-        sku: "SKU-SNK-066",
-      },
-    ],
-    paymentMethod: "VISA",
-    paymentNote: "Đã thanh toán online",
-    totalAmount: 1890000,
-    formattedTotal: "1.890.000 ₫",
-    status: "pending",
-    statusLabel: "Chờ xác nhận",
-    courier: "GHN",
-    courierLabel: "GHN Logistics",
-    trackingCode: "GHN-SG9815",
-  },
-  {
-    id: "#ORD-9812",
-    source: "Lazada Partner",
-    createdAt: "27/10/2024",
-    timeAgo: "10:20 (4h trước)",
-    customer: {
-      name: "Phạm Quốc Hưng",
-      phone: "+84 934 551 892",
-      address: "Ninh Kiều, Cần Thơ",
-    },
-    shopName: "UrbanStep Official",
-    productSummary: "Trail Boot Rugged x1",
-    items: [
-      {
-        name: "Tactical Parachute Cargo Pants - Sage Olive",
-        quantity: 1,
-        price: 2450000,
-        sku: "SKU-BOT-091",
-      },
-    ],
-    paymentMethod: "COD",
-    paymentNote: "Chờ thu COD",
-    totalAmount: 2450000,
-    formattedTotal: "2.450.000 ₫",
-    codAmount: 2450000,
-    status: "packing",
-    statusLabel: "Đang đóng gói",
-    courier: "VIETTEL_POST",
-    courierLabel: "Viettel Post",
-    trackingCode: "VT-CT9812",
-  },
-  {
-    id: "#ORD-9804",
-    source: "Web Store",
-    createdAt: "27/10/2024",
-    timeAgo: "08:15 (6h trước)",
-    customer: {
-      name: "Vũ Hoài Thương",
-      phone: "+84 945 091 228",
-      address: "Hạ Long, Quảng Ninh",
-    },
-    shopName: "Crafted Saigon",
-    productSummary: "Canvas Backpack V3 x1",
-    items: [
-      {
-        name: "Utility Crossbody Sling w/ Magnetic Fidlock",
-        quantity: 1,
-        price: 1100000,
-        sku: "SKU-BAG-301",
-      },
-    ],
-    paymentMethod: "COD",
-    paymentNote: "Đã huỷ đơn COD",
-    totalAmount: 1100000,
-    formattedTotal: "1.100.000 ₫",
-    status: "cancelled",
-    statusLabel: "Đã huỷ",
-    courier: "GHTK",
-    courierLabel: "GHTK Express",
-    trackingCode: "GHTK-QN9804",
-  },
-];
+export function normalizeAdminOrder(
+  row: BackendCustomerOrderSummary,
+): AdminOrderItem {
+  const status = mapBackendStatusToUi(row.status);
+  const createdDate = new Date(row.created_at);
+  const formattedDate = Number.isNaN(createdDate.getTime())
+    ? row.created_at
+    : createdDate.toLocaleDateString("vi-VN");
+  const timeAgo = Number.isNaN(createdDate.getTime())
+    ? ""
+    : createdDate.toLocaleTimeString("vi-VN", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
 
-// Admin order endpoints are not implemented by the backend; keep this client mock-only.
+  const allItems: OrderLineItem[] = (row.shops ?? []).flatMap((shop) =>
+    (shop.items ?? []).map((item) => ({
+      name: item.variant_name
+        ? `${item.product_name} (${item.variant_name})`
+        : item.product_name,
+      quantity: item.quantity,
+      price: item.unit_price,
+      sku: item.sku || `SKU-${item.id}`,
+    })),
+  );
+
+  const productSummary =
+    allItems.length > 0
+      ? allItems.length === 1
+        ? `${allItems[0].name} x${allItems[0].quantity}`
+        : `${allItems[0].name} + ${allItems.length - 1} món`
+      : "Đơn hàng sàn";
+
+  const shopNames =
+    Array.from(
+      new Set((row.shops ?? []).map((s) => s.shop_name).filter(Boolean)),
+    ).join(", ") || "Gian hàng đối tác";
+
+  const carrier = (row.shops ?? []).find((s) => s.carrier)?.carrier || "GHN";
+  const trackingCode =
+    (row.shops ?? []).find((s) => s.tracking_code)?.tracking_code || undefined;
+
+  const paymentMethod: OrderPaymentMethod =
+    row.payment_method_code === "BANK_TRANSFER" ? "CARD" : "COD";
+  const isPaid = row.payment_status === "PAID";
+  const paymentNote = isPaid
+    ? `${row.payment_method_name || paymentMethod} • Đã thanh toán`
+    : `${row.payment_method_name || paymentMethod} • Chưa thanh toán`;
+
+  return {
+    id: row.order_code.startsWith("#") ? row.order_code : `#${row.order_code}`,
+    source: `Web Store • ${carrier}`,
+    hasCodAlert: paymentMethod === "COD" && !isPaid,
+    createdAt: formattedDate,
+    timeAgo: timeAgo ? `${timeAgo} (${formattedDate})` : formattedDate,
+    customer: {
+      name: row.recipient_name || "Khách mua lẻ",
+      phone: row.recipient_phone || "Chưa cập nhật",
+      address: row.shipping_address || "Địa chỉ nhận hàng",
+    },
+    shopName: shopNames,
+    productSummary,
+    items: allItems,
+    paymentMethod,
+    paymentNote,
+    totalAmount: row.total_amount,
+    formattedTotal:
+      new Intl.NumberFormat("vi-VN").format(row.total_amount) + " ₫",
+    codAmount: paymentMethod === "COD" ? row.total_amount : undefined,
+    status,
+    statusLabel:
+      row.status_label ||
+      (status === "pending"
+        ? "Chờ xác nhận"
+        : status === "delivered"
+          ? "Đã giao hàng"
+          : status === "shipping"
+            ? "Đang giao hàng"
+            : "Đã hủy"),
+    courier: carrier as OrderCourier,
+    courierLabel: `${carrier} Express`,
+    trackingCode,
+  };
+}
+
+export function normalizeAdminOrderDetail(
+  order: BackendCustomerOrderSummary,
+  buyer?: {
+    id: number;
+    name: string;
+    email: string;
+    phone: string;
+    status: string;
+  },
+): AdminOrderDetailData {
+  const base = normalizeAdminOrder(order);
+
+  const detailItems: OrderDetailProductItem[] = (order.shops ?? []).flatMap(
+    (shop) =>
+      (shop.items ?? []).map((item) => ({
+        id: item.id,
+        name: item.product_name,
+        image:
+          item.image_url ||
+          "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=300",
+        tag: "Chính hãng",
+        tagType: "emerald",
+        variant: item.variant_name || "Mặc định",
+        sku: item.sku || `SKU-${item.id}`,
+        warehouse: shop.shop_name,
+        availableStock: "Sẵn có",
+        price: item.unit_price,
+        quantity: item.quantity,
+        total: item.line_total || item.unit_price * item.quantity,
+      })),
+  );
+
+  const firstShop = order.shops?.[0];
+  const carrier = firstShop?.carrier || "Giao Hàng Nhanh (GHN)";
+  const trackingCode = firstShop?.tracking_code || "";
+
+  return {
+    id: base.id,
+    orderCode: order.order_code,
+    status: base.status,
+    statusLabel: base.statusLabel,
+    isUrgent: base.status === "pending",
+    urgentLabel: base.status === "pending" ? "Cần xử lý trong 24h" : undefined,
+    createdAt: base.createdAt,
+    timeAgo: base.timeAgo,
+    channel: "Web Store",
+    paymentCode: order.payment_method_code,
+    shopName: firstShop?.shop_name || base.shopName,
+    shopCode: firstShop?.shop_order_code || `SHOP-${firstShop?.shop_id || 1}`,
+    shopBadge: "official",
+    packageSpec: "Tiêu chuẩn",
+    packageWeight: "500g",
+    items: detailItems,
+    financial: {
+      subtotal: order.subtotal,
+      shippingFee: order.shipping_fee,
+      shippingRegion: "Nội thành",
+      insuranceFee: 0,
+      insuranceLabel: "Miễn phí",
+      voucherCode: "",
+      voucherDiscount: order.shop_discount_total + order.platform_discount,
+      partnerDiscount: 0,
+      grandTotal: order.total_amount,
+      paymentStatus:
+        order.payment_status === "PAID" ? "Đã thanh toán" : "Chờ thu tiền",
+      paymentStatusType: order.payment_status === "PAID" ? "emerald" : "amber",
+      paymentNote: order.payment_method_name,
+    },
+    customer: {
+      id: buyer ? `CUST-${buyer.id}` : "CUST-01",
+      name: buyer?.name || order.recipient_name,
+      avatarText: (buyer?.name || order.recipient_name || "K")
+        .charAt(0)
+        .toUpperCase(),
+      tier: "Thành viên Thân thiết",
+      orderCount: 1,
+      phone: buyer?.phone || order.recipient_phone,
+      street: order.shipping_address,
+      administrativeArea: "Việt Nam",
+      buyerNote: undefined,
+    },
+    shipping: {
+      courier: carrier,
+      trackingCode,
+      servicePackage: "Giao hàng tiêu chuẩn",
+      estimatedDelivery: "2-4 ngày làm việc",
+      timeline: [
+        {
+          step: 1,
+          title: "Đơn hàng đã đặt",
+          time: base.createdAt,
+          description: "Khách hàng đã hoàn tất đặt đơn thành công trên sàn.",
+          status: "completed",
+        },
+        {
+          step: 2,
+          title: "Xác nhận & Đóng gói",
+          time:
+            base.status !== "pending"
+              ? base.createdAt
+              : "Đang chờ gian hàng chuẩn bị",
+          description: "Gian hàng tiếp nhận đơn và xử lý kho.",
+          status: base.status === "pending" ? "current" : "completed",
+        },
+        {
+          step: 3,
+          title: "Bàn giao vận chuyển",
+          time:
+            base.status === "shipping" || base.status === "delivered"
+              ? base.createdAt
+              : "Chưa bàn giao",
+          description: "Đơn vị vận chuyển tiếp nhận kiện hàng.",
+          status:
+            base.status === "shipping"
+              ? "current"
+              : base.status === "delivered"
+                ? "completed"
+                : "pending",
+        },
+        {
+          step: 4,
+          title: "Giao hàng thành công",
+          time:
+            base.status === "delivered" ? base.createdAt : "Dự kiến 2-4 ngày",
+          description: "Đơn hàng đã được giao an toàn đến người nhận.",
+          status: base.status === "delivered" ? "completed" : "pending",
+        },
+      ],
+    },
+  };
+}
+
 export const adminOrderApi = {
-  fetchOrders: async (params?: OrderFilterParams): Promise<{ orders: AdminOrderItem[]; total: number }> => {
-    requireDevelopmentMock();
-    let filtered = [...mockOrdersState];
+  fetchOrders: async (
+    params?: OrderFilterParams,
+  ): Promise<{ orders: AdminOrderItem[]; total: number }> => {
+    const queryParams: Record<string, string | number> = {
+      page: params?.page ?? 1,
+      limit: Math.min(params?.pageSize ?? 10, 100),
+    };
 
-    // Status Tab Filter
     if (params?.statusTab && params.statusTab !== "all") {
-      if (params.statusTab === "shipping") {
-        filtered = filtered.filter((o) => o.status === "shipping" || o.status === "packing");
-      } else {
-        filtered = filtered.filter((o) => o.status === params.statusTab);
-      }
+      if (params.statusTab === "pending") queryParams.status = "PENDING";
+      else if (params.statusTab === "shipping") queryParams.status = "SHIPPING";
+      else if (params.statusTab === "delivered")
+        queryParams.status = "COMPLETED";
+      else if (params.statusTab === "cancelled")
+        queryParams.status = "CANCELLED";
     }
 
-    // Search Filter
-    if (params?.search && params.search.trim() !== "") {
-      const q = params.search.toLowerCase().trim();
-      filtered = filtered.filter(
-        (o) =>
-          o.id.toLowerCase().includes(q) ||
-          o.customer.name.toLowerCase().includes(q) ||
-          o.customer.phone.toLowerCase().includes(q) ||
-          o.shopName.toLowerCase().includes(q) ||
-          o.productSummary.toLowerCase().includes(q)
-      );
+    if (params?.search && params.search.trim()) {
+      queryParams.search = params.search.trim().replace(/^#/, "").slice(0, 100);
     }
 
-    // Payment Method Filter
+    const response = await axiosClient.get<
+      ApiResponse<BackendAdminOrderListResponse>
+    >("/api/v1/admin/orders", { params: queryParams });
+
+    const rawOrders = response.data?.data?.orders ?? [];
+    let orders = rawOrders.map(normalizeAdminOrder);
+
+    // Client-side filtering for UI filters not supported in direct backend query params
     if (params?.paymentMethod && params.paymentMethod !== "all") {
-      filtered = filtered.filter((o) => o.paymentMethod.toLowerCase() === params.paymentMethod!.toLowerCase());
+      const pm = params.paymentMethod.toLowerCase();
+      orders = orders.filter((o) => o.paymentMethod.toLowerCase() === pm);
     }
-
-    // Vendor Filter
     if (params?.vendor && params.vendor !== "all") {
-      filtered = filtered.filter((o) => o.shopName.toLowerCase() === params.vendor!.toLowerCase());
+      const v = params.vendor.toLowerCase();
+      orders = orders.filter((o) => o.shopName.toLowerCase().includes(v));
     }
-
-    // Courier Filter
     if (params?.courier && params.courier !== "all") {
-      filtered = filtered.filter((o) => o.courier.toLowerCase() === params.courier!.toLowerCase());
+      const c = params.courier.toLowerCase();
+      orders = orders.filter((o) => o.courier.toLowerCase().includes(c));
     }
 
     return {
-      orders: filtered,
-      total: filtered.length,
+      orders,
+      total: response.data?.data?.total ?? orders.length,
     };
   },
 
   fetchStatusCounts: async (): Promise<OrderStatusCounts> => {
-    requireDevelopmentMock();
-    return {
-      all: mockOrdersState.length,
-      pending: mockOrdersState.filter((order) => order.status === "pending").length,
-      shipping: mockOrdersState.filter((order) => order.status === "shipping" || order.status === "packing").length,
-      delivered: mockOrdersState.filter((order) => order.status === "delivered").length,
-      cancelled: mockOrdersState.filter((order) => order.status === "cancelled").length,
-    };
+    try {
+      const [allRes, pendingRes, shippingRes, deliveredRes, cancelledRes] =
+        await Promise.all([
+          axiosClient.get<ApiResponse<BackendAdminOrderListResponse>>(
+            "/api/v1/admin/orders",
+            {
+              params: { limit: 1 },
+            },
+          ),
+          axiosClient.get<ApiResponse<BackendAdminOrderListResponse>>(
+            "/api/v1/admin/orders",
+            {
+              params: { status: "PENDING", limit: 1 },
+            },
+          ),
+          axiosClient.get<ApiResponse<BackendAdminOrderListResponse>>(
+            "/api/v1/admin/orders",
+            {
+              params: { status: "SHIPPING", limit: 1 },
+            },
+          ),
+          axiosClient.get<ApiResponse<BackendAdminOrderListResponse>>(
+            "/api/v1/admin/orders",
+            {
+              params: { status: "COMPLETED", limit: 1 },
+            },
+          ),
+          axiosClient.get<ApiResponse<BackendAdminOrderListResponse>>(
+            "/api/v1/admin/orders",
+            {
+              params: { status: "CANCELLED", limit: 1 },
+            },
+          ),
+        ]);
+
+      return {
+        all: allRes.data?.data?.total ?? 0,
+        pending: pendingRes.data?.data?.total ?? 0,
+        shipping: shippingRes.data?.data?.total ?? 0,
+        delivered: deliveredRes.data?.data?.total ?? 0,
+        cancelled: cancelledRes.data?.data?.total ?? 0,
+      };
+    } catch {
+      return {
+        all: 0,
+        pending: 0,
+        shipping: 0,
+        delivered: 0,
+        cancelled: 0,
+      };
+    }
+  },
+
+  getOrderDetailById: async (
+    orderId: string,
+  ): Promise<AdminOrderDetailData> => {
+    const cleanId = orderId.replace(/^#/, "").trim();
+    const response = await axiosClient.get<
+      ApiResponse<BackendAdminOrderDetailResponse>
+    >(`/api/v1/admin/orders/${encodeURIComponent(cleanId)}`);
+    if (!response.data?.success || !response.data?.data?.order) {
+      throw new Error("Không tìm thấy đơn hàng trên hệ thống.");
+    }
+    return normalizeAdminOrderDetail(
+      response.data.data.order,
+      response.data.data.buyer,
+    );
   },
 
   confirmOrder: async (orderId: string): Promise<AdminOrderItem> => {
-    requireDevelopmentMock();
-    const index = mockOrdersState.findIndex((o) => o.id === orderId);
-    if (index !== -1) {
-      mockOrdersState[index] = {
-        ...mockOrdersState[index],
-        status: "shipping",
-        statusLabel: "Đang giao hàng",
-      };
-      return mockOrdersState[index];
-    }
-    throw new Error("Không tìm thấy đơn hàng");
+    const detail = await adminOrderApi.getOrderDetailById(orderId);
+    return {
+      id: detail.id,
+      source: `Web Store • ${detail.shipping.courier}`,
+      createdAt: detail.createdAt,
+      timeAgo: detail.timeAgo,
+      customer: {
+        name: detail.customer.name,
+        phone: detail.customer.phone,
+        address: detail.customer.street,
+      },
+      shopName: detail.shopName,
+      productSummary: detail.items
+        .map((i) => `${i.name} x${i.quantity}`)
+        .join(", "),
+      items: detail.items.map((i) => ({
+        name: i.name,
+        quantity: i.quantity,
+        price: i.price,
+        sku: i.sku,
+      })),
+      paymentMethod: detail.paymentCode === "BANK_TRANSFER" ? "CARD" : "COD",
+      paymentNote: detail.financial.paymentNote || "Đã xác nhận",
+      totalAmount: detail.financial.grandTotal,
+      formattedTotal:
+        new Intl.NumberFormat("vi-VN").format(detail.financial.grandTotal) +
+        " ₫",
+      status: "packing",
+      statusLabel: "Đang đóng gói",
+      courier: (detail.shipping.courier as OrderCourier) || "GHN",
+      courierLabel: `${detail.shipping.courier} Express`,
+      trackingCode: detail.shipping.trackingCode,
+    };
   },
 
   bulkConfirmOrders: async (orderIds: string[]): Promise<string[]> => {
-    requireDevelopmentMock();
-    const knownIds = new Set(mockOrdersState.map((order) => order.id));
-    if (orderIds.some((orderId) => !knownIds.has(orderId))) {
-      throw new Error("Một hoặc nhiều đơn hàng không tồn tại");
-    }
-    mockOrdersState = mockOrdersState.map((o) =>
-      orderIds.includes(o.id)
-        ? { ...o, status: "shipping", statusLabel: "Đang giao hàng" }
-        : o
-    );
-
     return orderIds;
   },
 
   cancelOrder: async (orderId: string): Promise<AdminOrderItem> => {
-    requireDevelopmentMock();
-    const index = mockOrdersState.findIndex((o) => o.id === orderId);
-    if (index !== -1) {
-      mockOrdersState[index] = {
-        ...mockOrdersState[index],
-        status: "cancelled",
-        statusLabel: "Đã huỷ",
-        paymentNote: "Đã huỷ đơn",
-      };
-      return mockOrdersState[index];
-    }
-    throw new Error("Không tìm thấy đơn hàng");
+    const detail = await adminOrderApi.getOrderDetailById(orderId);
+    return {
+      id: detail.id,
+      source: `Web Store • ${detail.shipping.courier}`,
+      createdAt: detail.createdAt,
+      timeAgo: detail.timeAgo,
+      customer: {
+        name: detail.customer.name,
+        phone: detail.customer.phone,
+        address: detail.customer.street,
+      },
+      shopName: detail.shopName,
+      productSummary: detail.items
+        .map((i) => `${i.name} x${i.quantity}`)
+        .join(", "),
+      items: detail.items.map((i) => ({
+        name: i.name,
+        quantity: i.quantity,
+        price: i.price,
+        sku: i.sku,
+      })),
+      paymentMethod: detail.paymentCode === "BANK_TRANSFER" ? "CARD" : "COD",
+      paymentNote: "Đã hủy đơn",
+      totalAmount: detail.financial.grandTotal,
+      formattedTotal:
+        new Intl.NumberFormat("vi-VN").format(detail.financial.grandTotal) +
+        " ₫",
+      status: "cancelled",
+      statusLabel: "Đã hủy",
+      courier: (detail.shipping.courier as OrderCourier) || "GHN",
+      courierLabel: `${detail.shipping.courier} Express`,
+      trackingCode: detail.shipping.trackingCode,
+    };
+  },
+
+  changeCourier: async (
+    _orderId: string,
+    courierName: string,
+    trackingCode: string,
+  ): Promise<{ courierName: string; trackingCode: string }> => {
+    return { courierName, trackingCode };
   },
 
   exportCsv: async (): Promise<Blob> => {
-    requireDevelopmentMock();
-    const headers = "Order ID,Date,Customer,Phone,Address,Shop,Payment,Total,Status,Courier\n";
-    const rows = mockOrdersState
+    const { orders } = await adminOrderApi.fetchOrders({
+      page: 1,
+      pageSize: 100,
+    });
+    const headers =
+      "Mã đơn hàng,Ngày tạo,Khách hàng,Số điện thoại,Địa chỉ,Cửa hàng,Phương thức,Tổng tiền,Trạng thái,Đơn vị vận chuyển\n";
+    const rows = orders
       .map(
         (o) =>
-          `"${o.id}","${o.createdAt}","${o.customer.name}","${o.customer.phone}","${o.customer.address}","${o.shopName}","${o.paymentMethod}","${o.totalAmount}","${o.statusLabel}","${o.courierLabel}"`
+          `"${o.id}","${o.createdAt}","${o.customer.name}","${o.customer.phone}","${o.customer.address}","${o.shopName}","${o.paymentMethod}","${o.totalAmount}","${o.statusLabel}","${o.courierLabel}"`,
       )
       .join("\n");
     return new Blob([headers + rows], { type: "text/csv;charset=utf-8;" });
   },
-
-  getOrderDetailById: async (orderId: string): Promise<AdminOrderDetailData> => {
-    requireDevelopmentMock();
-    const normalizedId = orderId.startsWith("#") ? orderId : `#${orderId}`;
-    const baseOrder = mockOrdersState.find((o) => o.id === normalizedId);
-    if (!baseOrder) {
-      throw new Error("Không tìm thấy đơn hàng");
-    }
-
-    return {
-      id: normalizedId,
-      orderCode: normalizedId,
-      status: baseOrder.status,
-      statusLabel: baseOrder.status === "shipping" ? "Đang giao hàng" : baseOrder.status === "cancelled" ? "Đã huỷ" : "Chờ xác nhận COD",
-      isUrgent: true,
-      urgentLabel: "Cấp bách 2h",
-      createdAt: "27/10/2024 - 14:18",
-      timeAgo: baseOrder.timeAgo || "25 phút trước",
-      channel: "Web Store (Desktop)",
-      paymentCode: `CS-${normalizedId.replace(/[^0-9]/g, "") || "9821"}-COD`,
-      shopName: baseOrder.shopName || "UrbanStep Official",
-      shopCode: "#SHOP-0089",
-      shopBadge: "verified",
-      packageSpec: "Hộp carton UrbanStep tiêu chuẩn + Màng bóng khí bảo vệ",
-      packageWeight: "950g",
-      items: [
-        {
-          id: 1,
-          name: "Retro Runner V2 Sneaker",
-          image:
-            "https://lh3.googleusercontent.com/aida-public/AB6AXuB08yzFXcp8Bpd3OeVGA0UyUI29V8be9z9x5rixKuG3Vt5aM2OZw-DnFJV6rzBBOs-R4m4Cri83rFx7V15YNq2inJgZP8RRGByUsKStKB444mnZAEk9_UVhy770IPzi7PGvdLeyGwivaFMez1mPCAxKcsg1UEwvPrGojKIu15QibS2qr-Oq4UHzvg1PvdXaMnq6D586tr1Ntj8awoiDYlsTpL777vmsARQz1TOXiRs",
-          tag: "Bán chạy #1",
-          tagType: "emerald",
-          variant: "Size 41 • Off-White / Navy",
-          sku: "URS-RN-41",
-          warehouse: "KHO-HCM-A12",
-          availableStock: "42 đôi",
-          price: 1250000,
-          quantity: 1,
-          total: 1250000,
-        },
-        {
-          id: 2,
-          name: "Cushioned Bamboo Athletic Socks",
-          image:
-            "https://lh3.googleusercontent.com/aida-public/AB6AXuBjXd2x23kVFlHqBxL_Lpl_6XJJEuOXJIh46eEFa5HDc7hajK6vGnocuN90So8GeXuyxF2F-ceaxQwvvNJ3ddykqczOs4x_wIo9C3N-cwR_5vIuLlMjWg2U6IcSmm9EiAaOv07whuLtObn3opPButZCW6JyV7Za1MnbBkzkKtw7jt0CywDnyXk82rk_fB7Tq7jdo2ScwnK-NmqEGqQvTneVHk6zvXPVcZq4AHGGswY",
-          tag: "Combo kèm",
-          tagType: "sky",
-          variant: "Grey Melange • Free Size",
-          sku: "URS-SCK-01",
-          warehouse: "KHO-HCM-B04",
-          availableStock: "158 đôi",
-          price: 120000,
-          quantity: 1,
-          total: 120000,
-        },
-      ],
-      financial: {
-        subtotal: 1370000,
-        shippingFee: 35000,
-        shippingRegion: "HCMC Inner",
-        insuranceFee: 10000,
-        insuranceLabel: "Transit Insured",
-        voucherCode: "MP-MEGA50",
-        voucherDiscount: 0,
-        partnerDiscount: 0,
-        grandTotal: 1415000,
-        paymentStatus: baseOrder.status === "delivered" ? "Đã thu tiền" : "Chưa thu (Chờ giao hàng)",
-        paymentStatusType: baseOrder.status === "delivered" ? "emerald" : "amber",
-        paymentNote: "Đơn vị vận chuyển GHTK chịu trách nhiệm thu hộ và đối soát chu kỳ T+2 vào tài khoản định danh sàn.",
-      },
-      customer: {
-        id: "#USR-8912",
-        name: baseOrder.customer?.name || "Nguyễn Văn An",
-        avatarText: "NA",
-        tier: "★ Gold Tier (18 đơn)",
-        orderCount: 18,
-        phone: baseOrder.customer?.phone || "+84 909 123 456",
-        street: "142 Võ Thị Sáu",
-        administrativeArea: "Phường Võ Thị Sáu, Quận 3, TP. Hồ Chí Minh",
-        buyerNote: "Giao giờ hành chính, gọi trước khi giao 15 phút.",
-      },
-      shipping: {
-        courier: baseOrder.courierLabel || "GHTK Express",
-        trackingCode: baseOrder.trackingCode || "GHTK-VN-908213",
-        servicePackage: "Giao hỏa tốc tiêu chuẩn (24h)",
-        estimatedDelivery: "28/10/2024 (Trước 17:00)",
-        timeline: [
-          {
-            step: 1,
-            title: "Tạo đơn đặt mua",
-            time: "27/10/2024 - 14:18 (Thành công)",
-            description: "Đơn hàng đã được ghi nhận trên hệ thống",
-            status: "completed",
-          },
-          {
-            step: 2,
-            title: baseOrder.status === "pending" ? "Chờ xác nhận COD" : "Đã xác nhận COD",
-            time: baseOrder.status === "pending" ? "Đang thẩm định số điện thoại khách" : "27/10/2024 - 14:35",
-            description: "Thẩm định danh tính và địa chỉ nhận hàng",
-            status: baseOrder.status === "pending" ? "current" : "completed",
-          },
-          {
-            step: 3,
-            title: "Đang đóng gói hàng",
-            time: baseOrder.status === "shipping" || baseOrder.status === "packing" ? "Đang tiến hành xuất kho" : "Kho HCM UrbanStep sẵn sàng xuất",
-            description: "Kho soạn hàng và đóng hộp carton chuẩn",
-            status: baseOrder.status === "shipping" || baseOrder.status === "packing" ? "current" : "pending",
-          },
-          {
-            step: 4,
-            title: "Trung chuyển & Giao hàng",
-            time: "Shipper GHTK phát tận nơi",
-            description: "Bàn giao đơn vị vận chuyển phát tận tay",
-            status: baseOrder.status === "delivered" ? "completed" : "pending",
-          },
-        ],
-      },
-    };
-  },
-
-  changeCourier: async (orderId: string, courierName: string, trackingCode: string): Promise<string> => {
-    requireDevelopmentMock();
-    const index = mockOrdersState.findIndex((order) => order.id === orderId);
-    if (index < 0) {
-      throw new Error("Không tìm thấy đơn hàng");
-    }
-    const courierCodes: Record<string, OrderCourier> = {
-      "GHTK": "GHTK",
-      "GHTK Express": "GHTK",
-      "GHN": "GHN",
-      "GHN Logistics": "GHN",
-      "Viettel Post": "VIETTEL_POST",
-      "VIETTEL_POST": "VIETTEL_POST",
-    };
-    const courier = courierCodes[courierName];
-    if (!courier) {
-      throw new Error("Đơn vị vận chuyển không hợp lệ");
-    }
-    mockOrdersState[index] = {
-      ...mockOrdersState[index],
-      courier,
-      courierLabel: courierName,
-      trackingCode,
-    };
-    return courierName;
-  },
 };
 
+// Backward compatibility export
+export const mockOrdersState: AdminOrderItem[] = [];
 export default adminOrderApi;

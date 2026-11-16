@@ -602,7 +602,7 @@ export const Checkout: React.FC = () => {
                 .join(", ")
             : "Địa chỉ nhận hàng";
 
-          navigate("/order/complete", {
+          navigate(`/order/complete?orderCode=${encodeURIComponent(createdOrder.order_code)}`, {
             state: {
               orderCode: createdOrder.order_code,
               customerName: selectedAddr?.recipient_name || "Quý khách",
