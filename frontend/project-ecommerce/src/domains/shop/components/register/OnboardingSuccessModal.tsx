@@ -45,7 +45,9 @@ export const OnboardingSuccessModal: React.FC<OnboardingSuccessModalProps> = ({
         </h2>
 
         <p className="font-body-md text-body-md text-on-surface-variant mt-space-xs max-w-md">
-          Hồ sơ gian hàng của bạn đã được chuyển đến bộ phận Thẩm định Người bán. Kết quả xét duyệt sẽ được thông báo qua SMS và Email trong 24h làm việc.
+          Hồ sơ gian hàng của bạn đã được chuyển đến bộ phận Thẩm định Người
+          bán. Kết quả xét duyệt sẽ được thông báo qua SMS và Email trong 24h
+          làm việc.
         </p>
 
         {/* Ticket Metadata Box */}
@@ -78,14 +80,6 @@ export const OnboardingSuccessModal: React.FC<OnboardingSuccessModalProps> = ({
 
         {/* Modal Action Buttons */}
         <div className="w-full flex flex-col sm:flex-row gap-space-sm mt-space-lg">
-          <Link
-            to="/shop/dashboard"
-            onClick={onClose}
-            className="grow py-3 px-space-md rounded-lg bg-primary-container text-on-primary font-label-md text-label-md font-bold hover:bg-primary transition-colors flex items-center justify-center gap-space-xs shadow-sm cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-[18px]">dashboard</span>
-            <span>Vào tham quan Seller Center</span>
-          </Link>
           <button
             onClick={onClose}
             type="button"

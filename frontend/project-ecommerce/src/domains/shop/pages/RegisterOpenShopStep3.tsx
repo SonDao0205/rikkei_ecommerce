@@ -18,11 +18,11 @@ export const RegisterOpenShopStep3: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isEditingPendingShop = Boolean(
-    (location.state as { editPendingShop?: boolean } | null)?.editPendingShop
+    (location.state as { editPendingShop?: boolean } | null)?.editPendingShop,
   );
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const { formData, isSavingDraft, lastSavedAt } = useAppSelector(
-    (state) => state.shopRegister
+    (state) => state.shopRegister,
   );
 
   useEffect(() => {
@@ -60,7 +60,13 @@ export const RegisterOpenShopStep3: React.FC = () => {
       await dispatch(saveDraftShopRegistration(formData)).unwrap();
       setToastMessage("Bản nháp đã được lưu trên máy chủ.");
     } catch (error: unknown) {
-      setToastMessage(error instanceof Error ? error.message : typeof error === "string" ? error : "Không thể lưu bản nháp.");
+      setToastMessage(
+        error instanceof Error
+          ? error.message
+          : typeof error === "string"
+            ? error
+            : "Không thể lưu bản nháp.",
+      );
     }
   };
 
@@ -80,15 +86,6 @@ export const RegisterOpenShopStep3: React.FC = () => {
             <div className="w-full flex flex-col gap-space-lg mb-20">
               {/* Hero / Legal Disclaimer Alert Callout */}
               <Step3HeroBanner />
-
-              <section className="rounded-xl border border-amber-300 bg-amber-50 p-6 text-amber-950">
-                <h2 className="font-semibold">Xác minh danh tính và thanh toán chưa được hỗ trợ</h2>
-                <p className="mt-2 text-sm">
-                  BE hiện chỉ tiếp nhận hồ sơ shop cơ bản. Không nhập hoặc tải lên CCCD, thông tin
-                  ngân hàng hay dữ liệu nhạy cảm ở bước này. Các thông tin đó sẽ chỉ được yêu cầu
-                  khi có API lưu trữ và quy trình bảo vệ phù hợp.
-                </p>
-              </section>
 
               {/* Action Footer Bar (In-flow card layout, non-sticky like Step 1 & Step 2) */}
               <Step3FooterBar
