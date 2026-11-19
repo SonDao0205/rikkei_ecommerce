@@ -66,7 +66,7 @@
       },
       "bank_transfer": {
         "name": "Chuyển khoản ngân hàng",
-        "desc": "Chuyển khoản qua ngân hàng nội địa hoặc quét mã VietQR tự động xác nhận đơn hàng nhanh chóng."
+        "desc": "Quét mã VietQR để thanh toán trong vòng 15 phút kể từ khi đặt hàng. Đơn sẽ tự hủy nếu hết hạn mà chưa thanh toán."
       },
       "cards_wallets": {
         "name": "Thẻ tín dụng / Ghi nợ & Ví điện tử (MoMo, VNPay-QR, ZaloPay)",

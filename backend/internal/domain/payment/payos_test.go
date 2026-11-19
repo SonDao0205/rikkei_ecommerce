@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/hmac"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"io"
@@ -39,6 +40,9 @@ func TestCreatePayOSLinkRequestUsesSupportedPayloadAndPaymentLinkID(t *testing.T
 			if payload["orderCode"] != float64(995005) || payload["amount"] != float64(40000) {
 				t.Fatalf("unexpected payment fields: %#v", payload)
 			}
+			if payload["expiredAt"] != float64(1768000000) {
+				t.Fatalf("payment deadline missing: %#v", payload)
+			}
 			if payload["description"] != "PAY995005" {
 				t.Fatalf("unexpected short payment description: %#v", payload["description"])
 			}
@@ -49,7 +53,7 @@ func TestCreatePayOSLinkRequestUsesSupportedPayloadAndPaymentLinkID(t *testing.T
 			return &http.Response{StatusCode: http.StatusOK, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(body))}, nil
 		})},
 	}
-	got, err := h.createPayOSLinkRequest(context.Background(), 995005, 990005, 40000)
+	got, err := h.createPayOSLinkRequest(context.Background(), 995005, 990005, 40000, 1768000000)
 	if err != nil {
 		t.Fatalf("createPayOSLinkRequest() error = %v", err)
 	}
@@ -78,7 +82,8 @@ func TestRefreshPayOSPaymentRequiresMatchingProviderOrderAndAmount(t *testing.T)
 		})},
 	}
 
-	if _, err := h.refreshPayOSPayment(context.Background(), 123, 40001); err == nil {
+	p := payOSPayment{id: 123, amount: 40001, attemptID: sql.NullInt64{Int64: 1, Valid: true}}
+	if err := h.refreshPayOSPayment(context.Background(), p); err == nil {
 		t.Fatal("mismatched provider amount was accepted")
 	}
 }

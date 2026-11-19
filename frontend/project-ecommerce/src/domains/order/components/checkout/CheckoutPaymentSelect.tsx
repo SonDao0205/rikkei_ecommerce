@@ -45,7 +45,7 @@ export const CheckoutPaymentSelect: React.FC<CheckoutPaymentSelectProps> = ({
               })
             : t("checkout.payment.methods.bank_transfer.desc", {
                 defaultValue:
-                  "Chuyển khoản qua ngân hàng nội địa hoặc quét mã VietQR tự động xác nhận đơn hàng nhanh chóng.",
+                  "Quét mã VietQR để thanh toán trong vòng 15 phút kể từ khi đặt hàng. Đơn sẽ tự hủy nếu hết hạn mà chưa thanh toán.",
               });
 
           return (
