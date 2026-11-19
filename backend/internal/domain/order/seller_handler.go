@@ -485,6 +485,10 @@ func (h *SellerHandler) confirmSellerOrder(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	if !h.canFulfillShopOrder(w, r, tx, soID) {
+		return
+	}
+
 	_, err = tx.ExecContext(r.Context(),
 		`UPDATE shop_orders SET status = 'CONFIRMED', confirmed_at = NOW(), updated_at = NOW() WHERE id = ?`,
 		soID,
@@ -513,6 +517,24 @@ func (h *SellerHandler) confirmSellerOrder(w http.ResponseWriter, r *http.Reques
 			"status_label":  "Đã xác nhận",
 		},
 	})
+}
+
+func (h *SellerHandler) canFulfillShopOrder(w http.ResponseWriter, r *http.Request, tx *sql.Tx, shopOrderID int64) bool {
+	var unpaid bool
+	err := tx.QueryRowContext(r.Context(), `SELECT EXISTS(
+		SELECT 1 FROM shop_orders so JOIN payments p ON p.order_id=so.order_id
+		JOIN payment_methods pm ON pm.id=p.payment_method_id
+		WHERE so.id=? AND pm.code='BANK_TRANSFER' AND p.status<>'PAID'
+	)`, shopOrderID).Scan(&unpaid)
+	if err != nil {
+		serverError(w, h.logger, err)
+		return false
+	}
+	if unpaid {
+		writeError(w, http.StatusConflict, "payment_pending", "Đơn chuyển khoản phải được thanh toán trước khi xử lý.")
+		return false
+	}
+	return true
 }
 
 func (h *SellerHandler) bulkConfirmSellerOrders(w http.ResponseWriter, r *http.Request) {
@@ -566,6 +588,9 @@ func (h *SellerHandler) bulkConfirmSellerOrders(w http.ResponseWriter, r *http.R
 		}
 		if !strings.EqualFold(status, "PENDING") {
 			writeError(w, http.StatusUnprocessableEntity, "invalid_status", "All selected orders must be PENDING")
+			return
+		}
+		if !h.canFulfillShopOrder(w, r, tx, id) {
 			return
 		}
 	}
@@ -627,6 +652,10 @@ func (h *SellerHandler) packSellerOrder(w http.ResponseWriter, r *http.Request) 
 	if !canStartPacking(status) {
 		writeError(w, http.StatusUnprocessableEntity, "invalid_status",
 			fmt.Sprintf("Chỉ có thể chuẩn bị đóng gói đơn hàng ở trạng thái Chờ xác nhận hoặc Đã xác nhận. Trạng thái hiện tại: %s", statusLabel(status)))
+		return
+	}
+
+	if !h.canFulfillShopOrder(w, r, tx, soID) {
 		return
 	}
 
@@ -726,6 +755,10 @@ func (h *SellerHandler) shipSellerOrder(w http.ResponseWriter, r *http.Request) 
 	if !canShipOrder(status) {
 		writeError(w, http.StatusUnprocessableEntity, "invalid_status",
 			fmt.Sprintf("Chỉ có thể bàn giao vận chuyển đơn hàng đang đóng gói hoặc đã xác nhận. Trạng thái hiện tại: %s", statusLabel(status)))
+		return
+	}
+
+	if !h.canFulfillShopOrder(w, r, tx, soID) {
 		return
 	}
 

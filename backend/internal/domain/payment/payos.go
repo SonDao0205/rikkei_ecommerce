@@ -33,8 +33,12 @@ type Handler struct {
 	client *http.Client
 }
 
+func newHandler(db *sql.DB, cfg auth.Config, logger *log.Logger) *Handler {
+	return &Handler{db: db, cfg: cfg, logger: logger, client: &http.Client{Timeout: 12 * time.Second}}
+}
+
 func RegisterRoutes(mux *http.ServeMux, security *auth.App, db *sql.DB, cfg auth.Config, logger *log.Logger) {
-	h := &Handler{db: db, cfg: cfg, logger: logger, client: &http.Client{Timeout: 12 * time.Second}}
+	h := newHandler(db, cfg, logger)
 	mux.Handle("POST /api/v1/orders/{id}/payment", security.RequireRole("CLIENT", h.createPayOSLink))
 	mux.Handle("GET /api/v1/orders/{id}/payment", security.RequireRole("CLIENT", h.getPayment))
 	mux.HandleFunc("POST /api/v1/webhooks/payos", h.payOSWebhook)
@@ -51,6 +55,7 @@ type payOSLinkResponse struct {
 		Status        string `json:"status"`
 		OrderCode     int64  `json:"orderCode"`
 		Amount        int64  `json:"amount"`
+		AmountPaid    int64  `json:"amountPaid"`
 	} `json:"data"`
 }
 
@@ -69,16 +74,16 @@ func (h *Handler) createPayOSLink(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid_order", "Đơn hàng không hợp lệ.")
 		return
 	}
-	var payID int64
+	p := payOSPayment{orderID: orderID}
 	var amount float64
-	var methodCode, paymentStatus string
+	var methodCode string
 	var hasTerminalShopOrder bool
-	err = h.db.QueryRowContext(r.Context(), `SELECT p.id,p.amount,pm.code,p.status,
+	err = h.db.QueryRowContext(r.Context(), `SELECT p.id,p.amount,pm.code,p.status,UNIX_TIMESTAMP(p.created_at)+?,
 		EXISTS(SELECT 1 FROM shop_orders so WHERE so.order_id=o.id AND so.status IN ('CANCELLED','RETURNED'))
 		FROM payments p
 		JOIN payment_methods pm ON pm.id=p.payment_method_id
 		JOIN orders o ON o.id=p.order_id
-		WHERE p.order_id=? AND o.user_id=?`, orderID, uid).Scan(&payID, &amount, &methodCode, &paymentStatus, &hasTerminalShopOrder)
+		WHERE p.order_id=? AND o.user_id=?`, payOSPaymentWindowSeconds, orderID, uid).Scan(&p.id, &amount, &methodCode, &p.status, &p.expiresAt, &hasTerminalShopOrder)
 	if errors.Is(err, sql.ErrNoRows) {
 		writeError(w, http.StatusNotFound, "order_not_found", "Không tìm thấy đơn hàng.")
 		return
@@ -91,11 +96,11 @@ func (h *Handler) createPayOSLink(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusConflict, "payment_method_mismatch", "Đơn hàng không sử dụng chuyển khoản.")
 		return
 	}
-	if paymentStatus == "PAID" {
+	if p.status == "PAID" {
 		writeError(w, http.StatusConflict, "already_paid", "Đơn hàng đã được thanh toán.")
 		return
 	}
-	if paymentStatus != "PENDING" || hasTerminalShopOrder {
+	if p.status != "PENDING" || hasTerminalShopOrder {
 		writeError(w, http.StatusConflict, "payment_not_payable", "Đơn hàng hiện không thể thanh toán.")
 		return
 	}
@@ -103,121 +108,175 @@ func (h *Handler) createPayOSLink(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnprocessableEntity, "invalid_payment_amount", "Số tiền đơn hàng không hợp lệ để thanh toán.")
 		return
 	}
-	var attemptID int64
+	p.amount = int64(amount)
 	var state, checkoutURL, qr string
 	var linkID sql.NullString
 	var updatedAt time.Time
-	err = h.db.QueryRowContext(r.Context(), `SELECT id,status,COALESCE(checkout_url,''),COALESCE(qr_code,''),provider_link_id,updated_at FROM payment_attempts WHERE payment_id=?`, payID).Scan(&attemptID, &state, &checkoutURL, &qr, &linkID, &updatedAt)
-	if err == nil && state == "PENDING" && checkoutURL != "" {
-		// Refresh provider state before returning a cached URL. The browser return itself is never payment proof.
-		providerState, lookupErr := h.getPayOSLink(r.Context(), strconv.FormatInt(payID, 10))
-		if lookupErr == nil && providerState.Data.Status != "" && providerState.Data.Status != "PENDING" {
-			terminal := strings.ToUpper(providerState.Data.Status)
-			if terminal == "CANCELLED" || terminal == "EXPIRED" {
-				_, _ = h.db.ExecContext(r.Context(), `UPDATE payment_attempts SET status=? WHERE id=? AND status='PENDING'`, terminal, attemptID)
-				writeError(w, http.StatusConflict, "payment_link_ended", "Liên kết thanh toán đã kết thúc. Liên hệ hỗ trợ để được cấp lại liên kết an toàn.")
-				return
-			}
-		}
-		writeJSON(w, http.StatusOK, map[string]any{"success": true, "data": map[string]any{"status": state, "checkout_url": checkoutURL, "qr_code": qr, "payment_link_id": linkID.String}})
-		return
-	}
+	err = h.db.QueryRowContext(r.Context(), `SELECT id,status,COALESCE(checkout_url,''),COALESCE(qr_code,''),provider_link_id,updated_at FROM payment_attempts WHERE payment_id=?`, p.id).Scan(&p.attemptID, &state, &checkoutURL, &qr, &linkID, &updatedAt)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		h.fail(w, err)
 		return
 	}
-	if errors.Is(err, sql.ErrNoRows) {
-		// PayOS orderCode is based on our unique payment row id, so retry/recovery always addresses the same provider request.
-		res, e := h.db.ExecContext(r.Context(), `INSERT IGNORE INTO payment_attempts(payment_id,provider,provider_order_code,status) VALUES (?,'PAYOS',?,'CREATING')`, payID, payID)
-		if e != nil {
-			h.fail(w, e)
-			return
+	p.hasLink = linkID.Valid
+	if p.expired() || state == "CANCELLED" || state == "EXPIRED" {
+		if !(state == "CREATING" && time.Since(updatedAt) < payOSCreationLease) {
+			if refreshErr := h.refreshPayOSPayment(r.Context(), p); refreshErr != nil {
+				h.logger.Printf("PayOS reconciliation deferred payment_id=%d: %v", p.id, refreshErr)
+			}
 		}
-		if n, _ := res.RowsAffected(); n == 0 {
-			writeError(w, http.StatusConflict, "payment_initializing", "Đang khởi tạo thanh toán. Vui lòng tải lại sau ít giây.")
-			return
-		}
-		attemptID, _ = res.LastInsertId()
-	} else if state == "CREATING" {
-		if time.Since(updatedAt) < 45*time.Second {
-			writeError(w, http.StatusConflict, "payment_initializing", "Đang khởi tạo thanh toán. Vui lòng tải lại sau ít giây.")
-			return
-		}
-		res, updateErr := h.db.ExecContext(r.Context(), `UPDATE payment_attempts SET updated_at=UTC_TIMESTAMP() WHERE id=? AND status='CREATING' AND updated_at=?`, attemptID, updatedAt)
-		if updateErr != nil {
-			h.fail(w, updateErr)
-			return
-		}
-		if changed, _ := res.RowsAffected(); changed == 0 {
-			writeError(w, http.StatusConflict, "payment_initializing", "Đang khởi tạo thanh toán. Vui lòng tải lại sau ít giây.")
-			return
-		}
-	} else {
-		res, updateErr := h.db.ExecContext(r.Context(), `UPDATE payment_attempts SET status='CREATING',failure_code=NULL WHERE id=? AND status IN ('FAILED','CANCELLED','EXPIRED')`, attemptID)
-		if updateErr != nil {
-			h.fail(w, updateErr)
-			return
-		}
-		if changed, _ := res.RowsAffected(); changed == 0 {
-			writeError(w, http.StatusConflict, "payment_initializing", "Đang khởi tạo thanh toán. Vui lòng tải lại sau ít giây.")
-			return
-		}
-	}
-	// First query by our stable orderCode to recover a provider-side create that succeeded before the HTTP connection was lost.
-	result, queryErr := h.getPayOSLink(r.Context(), strconv.FormatInt(payID, 10))
-	if queryErr == nil && result.Data.ID != "" && (strings.EqualFold(result.Data.Status, "CANCELLED") || strings.EqualFold(result.Data.Status, "EXPIRED")) {
-		terminal := strings.ToUpper(result.Data.Status)
-		_, _ = h.db.ExecContext(r.Context(), `UPDATE payment_attempts SET status=? WHERE id=? AND status IN ('CREATING','PENDING')`, terminal, attemptID)
-		writeError(w, http.StatusConflict, "payment_link_ended", "Liên kết PayOS đã bị hủy hoặc hết hạn. Đơn hàng vẫn được giữ; vui lòng liên hệ hỗ trợ để tạo liên kết thanh toán mới.")
+		writeError(w, http.StatusConflict, "payment_link_ended", "Đã hết thời gian mở liên kết. Hãy xem kết quả thanh toán của đơn hàng.")
 		return
 	}
-	if queryErr != nil || result.Data.ID == "" {
-		result, err = h.createPayOSLinkRequest(r.Context(), payID, orderID, int64(amount))
-		if err != nil {
-			_, _ = h.db.ExecContext(context.Background(), `UPDATE payment_attempts SET status='FAILED',failure_code='PROVIDER_UNAVAILABLE' WHERE id=?`, attemptID)
-			h.logger.Printf("payOS link creation failed payment_id=%d: %v", payID, err)
-			writeError(w, http.StatusBadGateway, "payment_provider_error", "Không tạo được liên kết thanh toán. Bạn có thể thử lại an toàn.")
+	if state == "PENDING" && checkoutURL != "" {
+		if refreshErr := h.refreshPayOSPayment(r.Context(), p); refreshErr != nil {
+			h.logger.Printf("PayOS reconciliation deferred payment_id=%d: %v", p.id, refreshErr)
+		}
+		if err := h.db.QueryRowContext(r.Context(), `SELECT status FROM payments WHERE id=?`, p.id).Scan(&p.status); err != nil {
+			h.fail(w, err)
 			return
 		}
-	}
-	if result.Data.OrderCode != 0 && result.Data.OrderCode != payID {
-		h.fail(w, fmt.Errorf("payOS returned unexpected orderCode"))
+		if p.status != "PENDING" {
+			writeError(w, http.StatusConflict, "payment_link_ended", "Liên kết đã kết thúc. Hãy xem kết quả thanh toán của đơn hàng.")
+			return
+		}
+		writePayOSLink(w, checkoutURL, qr, linkID.String)
 		return
 	}
-	if result.Data.CheckoutURL == "" || result.Data.ID == "" {
-		h.fail(w, fmt.Errorf("payOS response missing payment link fields"))
-		return
+
+	var res sql.Result
+	switch {
+	case !p.attemptID.Valid:
+		// Claim the link only while the payment is open. Reconciliation locks this payment
+		// before expiring a checkout that has no attempt.
+		res, err = h.db.ExecContext(r.Context(), `INSERT IGNORE INTO payment_attempts(payment_id,provider,provider_order_code,status)
+			SELECT id,'PAYOS',id,'CREATING' FROM payments WHERE id=? AND status='PENDING' AND UNIX_TIMESTAMP() < ?`, p.id, p.expiresAt)
+	case state == "CREATING" && time.Since(updatedAt) >= payOSCreationLease:
+		res, err = h.db.ExecContext(r.Context(), `UPDATE payment_attempts SET updated_at=CURRENT_TIMESTAMP
+			WHERE id=? AND status='CREATING' AND updated_at=? AND UNIX_TIMESTAMP() < ?`, p.attemptID.Int64, updatedAt, p.expiresAt)
+	case state == "FAILED":
+		res, err = h.db.ExecContext(r.Context(), `UPDATE payment_attempts SET status='CREATING',failure_code=NULL
+			WHERE id=? AND status='FAILED' AND UNIX_TIMESTAMP() < ?`, p.attemptID.Int64, p.expiresAt)
 	}
-	if _, err = h.db.ExecContext(r.Context(), `UPDATE payment_attempts SET provider_link_id=?,checkout_url=?,qr_code=?,status='PENDING' WHERE id=? AND status='CREATING'`, result.Data.ID, result.Data.CheckoutURL, result.Data.QRCode, attemptID); err != nil {
+	if err != nil {
 		h.fail(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"success": true, "data": map[string]any{"status": "PENDING", "checkout_url": result.Data.CheckoutURL, "qr_code": result.Data.QRCode, "payment_link_id": result.Data.ID}})
+	if res == nil {
+		writeError(w, http.StatusConflict, "payment_initializing", "Đang khởi tạo thanh toán. Vui lòng tải lại sau ít giây.")
+		return
+	}
+	changed, _ := res.RowsAffected()
+	if changed == 0 {
+		writeError(w, http.StatusConflict, "payment_initializing", "Hãy tải lại trang để cập nhật trạng thái thanh toán.")
+		return
+	}
+	if !p.attemptID.Valid {
+		p.attemptID.Int64, err = res.LastInsertId()
+		if err != nil {
+			h.fail(w, err)
+			return
+		}
+		p.attemptID.Valid = true
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 16*time.Second)
+	defer cancel()
+	// Recover a provider-side create that completed before the HTTP connection was lost.
+	result, lookupErr := h.getPayOSLink(ctx, strconv.FormatInt(p.id, 10))
+	if lookupErr == nil && result.Code == "00" && result.Data.ID != "" {
+		if err := result.validatePayment(p); err != nil {
+			h.fail(w, err)
+			return
+		}
+		status := strings.ToUpper(result.Data.Status)
+		switch status {
+		case "PAID", "CANCELLED", "EXPIRED":
+			if err := h.applyPayOSStatus(r.Context(), p, status); err != nil {
+				h.fail(w, err)
+				return
+			}
+			writeError(w, http.StatusConflict, "payment_link_ended", "Liên kết đã kết thúc. Hãy xem kết quả thanh toán của đơn hàng.")
+			return
+		case "PENDING":
+			if result.Data.CheckoutURL == "" {
+				result.Data.CheckoutURL = "https://pay.payos.vn/web/" + url.PathEscape(result.Data.ID)
+			}
+		}
+	} else if !p.expired() {
+		result, err = h.createPayOSLinkRequest(ctx, p.id, orderID, p.amount, p.expiresAt)
+		if err != nil {
+			_, _ = h.db.ExecContext(r.Context(), `UPDATE payment_attempts SET status='FAILED',failure_code='PROVIDER_UNAVAILABLE' WHERE id=? AND status='CREATING'`, p.attemptID.Int64)
+			h.logger.Printf("PayOS link creation failed payment_id=%d: %v", p.id, err)
+			writeError(w, http.StatusBadGateway, "payment_provider_error", "Không tạo được liên kết thanh toán. Bạn có thể thử lại trong thời hạn thanh toán.")
+			return
+		}
+	}
+	if p.expired() {
+		writeError(w, http.StatusConflict, "payment_link_ended", "Đã hết thời gian mở liên kết. Hãy xem kết quả thanh toán của đơn hàng.")
+		return
+	}
+	if err := result.validatePayment(p); err != nil {
+		h.fail(w, err)
+		return
+	}
+	if !strings.EqualFold(result.Data.Status, "PENDING") || result.Data.CheckoutURL == "" || result.Data.ID == "" {
+		h.fail(w, fmt.Errorf("payOS response missing an active payment link"))
+		return
+	}
+	res, err = h.db.ExecContext(r.Context(), `UPDATE payment_attempts a JOIN payments p ON p.id=a.payment_id
+		SET a.provider_link_id=?,a.checkout_url=?,a.qr_code=?,a.expires_at=FROM_UNIXTIME(?),a.status='PENDING'
+		WHERE a.id=? AND a.status='CREATING' AND p.status='PENDING'`, result.Data.ID, result.Data.CheckoutURL, result.Data.QRCode, p.expiresAt, p.attemptID.Int64)
+	if err != nil {
+		h.fail(w, err)
+		return
+	}
+	if changed, _ := res.RowsAffected(); changed == 0 {
+		writeError(w, http.StatusConflict, "payment_link_ended", "Hãy xem kết quả thanh toán của đơn hàng.")
+		return
+	}
+	writePayOSLink(w, result.Data.CheckoutURL, result.Data.QRCode, result.Data.ID)
 }
 
+func writePayOSLink(w http.ResponseWriter, checkoutURL, qr, linkID string) {
+	writeJSON(w, http.StatusOK, map[string]any{"success": true, "data": map[string]any{"status": "PENDING", "checkout_url": checkoutURL, "qr_code": qr, "payment_link_id": linkID}})
+}
+
+var errPayOSLinkNotFound = errors.New("PayOS payment link not found")
+
 func (h *Handler) getPayOSLink(ctx context.Context, id string) (payOSLinkResponse, error) {
+	return h.payOSLinkRequest(ctx, url.PathEscape(id), nil)
+}
+
+func (h *Handler) payOSLinkRequest(ctx context.Context, path string, body []byte) (payOSLinkResponse, error) {
 	var out payOSLinkResponse
-	req, e := http.NewRequestWithContext(ctx, http.MethodGet, payOSBaseURL+"/v2/payment-requests/"+url.PathEscape(id), nil)
-	if e != nil {
-		return out, e
+	method := http.MethodGet
+	if body != nil {
+		method = http.MethodPost
+	}
+	req, err := http.NewRequestWithContext(ctx, method, payOSBaseURL+"/v2/payment-requests/"+path, bytes.NewReader(body))
+	if err != nil {
+		return out, err
+	}
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
 	}
 	h.authorize(req)
-	resp, e := h.client.Do(req)
-	if e != nil {
-		return out, e
+	resp, err := h.client.Do(req)
+	if err != nil {
+		return out, err
 	}
 	defer resp.Body.Close()
-	b, e := io.ReadAll(io.LimitReader(resp.Body, maxPayOSBody))
-	if e != nil {
-		return out, e
+	if resp.StatusCode == http.StatusNotFound {
+		return out, errPayOSLinkNotFound
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return out, fmt.Errorf("payOS lookup status %d", resp.StatusCode)
+		return out, fmt.Errorf("payOS payment request status %d", resp.StatusCode)
 	}
-	e = json.Unmarshal(b, &out)
-	return out, e
+	err = json.NewDecoder(io.LimitReader(resp.Body, maxPayOSBody)).Decode(&out)
+	return out, err
 }
-func (h *Handler) createPayOSLinkRequest(ctx context.Context, paymentID, orderID, amount int64) (payOSLinkResponse, error) {
+
+func (h *Handler) createPayOSLinkRequest(ctx context.Context, paymentID, orderID, amount, expiresAt int64) (payOSLinkResponse, error) {
 	var out payOSLinkResponse
 	orderCode := paymentID
 	description := payOSDescription(paymentID)
@@ -239,7 +298,7 @@ func (h *Handler) createPayOSLinkRequest(ctx context.Context, paymentID, orderID
 	mac := hmac.New(sha256.New, []byte(h.cfg.PayOSChecksumKey))
 	_, _ = mac.Write([]byte(canonical))
 	sig := hex.EncodeToString(mac.Sum(nil))
-	body := map[string]any{"orderCode": orderCode, "amount": amount, "description": description, "returnUrl": returnURL, "cancelUrl": cancelURL, "signature": sig}
+	body := map[string]any{"orderCode": orderCode, "amount": amount, "description": description, "returnUrl": returnURL, "cancelUrl": cancelURL, "signature": sig, "expiredAt": expiresAt}
 	data, e := json.Marshal(body)
 	if e != nil {
 		return out, e
@@ -298,12 +357,22 @@ func (h *Handler) getPayment(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 400, "invalid_order", "Đơn hàng không hợp lệ.")
 		return
 	}
-	var paymentID int64
+	p := payOSPayment{orderID: orderID}
 	var amount float64
-	var status, method, txn string
-	var paidAt sql.NullTime
-	e = h.db.QueryRowContext(r.Context(), `SELECT p.id,p.amount,p.status,pm.code,COALESCE(p.transaction_ref,''),p.paid_at FROM payments p JOIN payment_methods pm ON pm.id=p.payment_method_id JOIN orders o ON o.id=p.order_id WHERE o.id=? AND o.user_id=?`, orderID, uid).Scan(&paymentID, &amount, &status, &method, &txn, &paidAt)
-	if errors.Is(e, sql.ErrNoRows) {
+	var method, txn, attemptStatus string
+	var paidAt, attemptUpdatedAt sql.NullTime
+	var link, qr sql.NullString
+	var orderCancelled bool
+	load := func() error {
+		return h.db.QueryRowContext(r.Context(), `SELECT p.id,p.amount,p.status,pm.code,COALESCE(p.transaction_ref,''),p.paid_at,
+			UNIX_TIMESTAMP(p.created_at)+?,a.id,a.provider_link_id IS NOT NULL,COALESCE(a.status,''),a.updated_at,a.checkout_url,a.qr_code,
+			NOT EXISTS(SELECT 1 FROM shop_orders so WHERE so.order_id=o.id AND so.status<>'CANCELLED')
+			FROM payments p JOIN payment_methods pm ON pm.id=p.payment_method_id JOIN orders o ON o.id=p.order_id
+			LEFT JOIN payment_attempts a ON a.payment_id=p.id AND a.provider='PAYOS'
+			WHERE o.id=? AND o.user_id=?`, payOSPaymentWindowSeconds, orderID, uid).
+			Scan(&p.id, &amount, &p.status, &method, &txn, &paidAt, &p.expiresAt, &p.attemptID, &p.hasLink, &attemptStatus, &attemptUpdatedAt, &link, &qr, &orderCancelled)
+	}
+	if e = load(); errors.Is(e, sql.ErrNoRows) {
 		writeError(w, 404, "order_not_found", "Không tìm thấy đơn hàng.")
 		return
 	}
@@ -311,79 +380,33 @@ func (h *Handler) getPayment(w http.ResponseWriter, r *http.Request) {
 		h.fail(w, e)
 		return
 	}
-	if method == "BANK_TRANSFER" && (status == "PENDING" || status == "FAILED") {
-		// Webhooks are the primary notification path, but a delivery can be delayed or
-		// temporarily unavailable. Reconcile from the authenticated PayOS API while
-		// the customer checks payment status; a browser redirect alone is never proof.
-		if refreshed, refreshErr := h.refreshPayOSPayment(r.Context(), paymentID, int64(amount)); refreshErr != nil {
-			h.logger.Printf("payOS status reconciliation deferred payment_id=%d: %v", paymentID, refreshErr)
-		} else if refreshed {
-			status = "PAID"
+	if method == "BANK_TRANSFER" && (p.status == "PENDING" || (p.status == "FAILED" && !orderCancelled)) &&
+		!(attemptStatus == "CREATING" && time.Since(attemptUpdatedAt.Time) < payOSCreationLease) {
+		p.amount = int64(amount)
+		if err := h.refreshPayOSPayment(r.Context(), p); err != nil {
+			h.logger.Printf("PayOS reconciliation deferred payment_id=%d: %v", p.id, err)
+		} else if err := load(); err != nil {
+			h.fail(w, err)
+			return
 		}
 	}
-	data := map[string]any{"payment_id": paymentID, "amount": amount, "status": status, "method": method, "transaction_ref": txn}
+	data := map[string]any{"payment_id": p.id, "amount": amount, "status": p.status, "method": method, "transaction_ref": txn, "order_cancelled": orderCancelled}
 	if paidAt.Valid {
 		data["paid_at"] = paidAt.Time
 	}
-	var link, qr sql.NullString
-	e = h.db.QueryRowContext(r.Context(), `SELECT checkout_url,qr_code FROM payment_attempts WHERE payment_id=?`, paymentID).Scan(&link, &qr)
-	if e != nil && !errors.Is(e, sql.ErrNoRows) {
-		h.fail(w, e)
-		return
+	if method == "BANK_TRANSFER" && p.status == "PENDING" && !p.expired() && !orderCancelled {
+		if link.Valid {
+			data["checkout_url"] = link.String
+		}
+		if qr.Valid {
+			data["qr_code"] = qr.String
+		}
 	}
-	if link.Valid {
-		data["checkout_url"] = link.String
-	}
-	if qr.Valid {
-		data["qr_code"] = qr.String
+	if method == "BANK_TRANSFER" {
+		data["expires_at"] = time.Unix(p.expiresAt, 0).UTC()
+		data["link_expired"] = p.expired()
 	}
 	writeJSON(w, 200, map[string]any{"success": true, "data": data})
-}
-
-func (h *Handler) refreshPayOSPayment(ctx context.Context, paymentID, expectedAmount int64) (bool, error) {
-	provider, err := h.getPayOSLink(ctx, strconv.FormatInt(paymentID, 10))
-	if err != nil {
-		return false, err
-	}
-	if provider.Code != "00" {
-		return false, fmt.Errorf("payOS status lookup rejected request code=%s", provider.Code)
-	}
-	if provider.Data.OrderCode != paymentID || provider.Data.Amount != expectedAmount {
-		return false, fmt.Errorf("payOS status lookup did not match local payment")
-	}
-	status := strings.ToUpper(strings.TrimSpace(provider.Data.Status))
-	if status != "PAID" {
-		return false, nil
-	}
-
-	tx, err := h.db.BeginTx(ctx, nil)
-	if err != nil {
-		return false, err
-	}
-	defer tx.Rollback()
-	var paymentStatus string
-	var attemptID int64
-	err = tx.QueryRowContext(ctx, `SELECT p.status,a.id FROM payments p JOIN payment_attempts a ON a.payment_id=p.id WHERE p.id=? AND a.provider='PAYOS' AND a.provider_order_code=? FOR UPDATE`, paymentID, paymentID).Scan(&paymentStatus, &attemptID)
-	if err != nil {
-		return false, err
-	}
-	if paymentStatus == "PENDING" || paymentStatus == "FAILED" {
-		if paymentStatus == "FAILED" {
-			h.logger.Printf("late payOS success requires refund/reconciliation payment_id=%d", paymentID)
-		}
-		if _, err = tx.ExecContext(ctx, `UPDATE payments SET status='PAID',paid_at=COALESCE(paid_at,UTC_TIMESTAMP()),updated_at=UTC_TIMESTAMP() WHERE id=? AND status IN ('PENDING','FAILED')`, paymentID); err != nil {
-			return false, err
-		}
-	}
-	if paymentStatus != "REFUNDED" {
-		if _, err = tx.ExecContext(ctx, `UPDATE payment_attempts SET status='PAID',failure_code=NULL WHERE id=?`, attemptID); err != nil {
-			return false, err
-		}
-	}
-	if err = tx.Commit(); err != nil {
-		return false, err
-	}
-	return paymentStatus != "REFUNDED", nil
 }
 
 type webhookPayload struct {
@@ -432,10 +455,15 @@ func (h *Handler) payOSWebhook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tx.Rollback()
-	var attemptID, paymentID int64
-	var expected int64
+	var attemptID, paymentID, orderID, expected int64
 	var paymentStatus string
-	e = tx.QueryRowContext(r.Context(), `SELECT a.id,p.id,CAST(p.amount AS SIGNED),p.status FROM payment_attempts a JOIN payments p ON p.id=a.payment_id WHERE a.provider='PAYOS' AND a.provider_order_code=? FOR UPDATE`, orderCode).Scan(&attemptID, &paymentID, &expected, &paymentStatus)
+	e = tx.QueryRowContext(r.Context(), `SELECT id FROM orders WHERE id=(SELECT order_id FROM payments WHERE id=?) FOR UPDATE`, orderCode).Scan(&orderID)
+	if e == nil {
+		e = tx.QueryRowContext(r.Context(), `SELECT a.id,p.id,CAST(p.amount AS SIGNED),p.status
+			FROM payments p JOIN payment_attempts a ON p.id=a.payment_id
+			WHERE p.id=? AND a.provider='PAYOS' AND a.provider_order_code=? FOR UPDATE`, orderCode, orderCode).
+			Scan(&attemptID, &paymentID, &expected, &paymentStatus)
+	}
 	if errors.Is(e, sql.ErrNoRows) {
 		http.Error(w, "payment not found", 404)
 		return
@@ -457,20 +485,8 @@ func (h *Handler) payOSWebhook(w http.ResponseWriter, r *http.Request) {
 	}
 	n, _ := res.RowsAffected()
 	if n > 0 && code == "00" && p.Success {
-		if paymentStatus == "PENDING" || paymentStatus == "FAILED" {
-			if paymentStatus == "FAILED" {
-				h.logger.Printf("late payOS success requires refund/reconciliation payment_id=%d", paymentID)
-			}
-		}
-		// Also persist the provider reference when a prior status reconciliation
-		// already marked the payment PAID before this webhook arrived.
-		if paymentStatus == "PENDING" || paymentStatus == "FAILED" || paymentStatus == "PAID" {
-			if _, e = tx.ExecContext(r.Context(), `UPDATE payments SET status='PAID',paid_at=COALESCE(paid_at,UTC_TIMESTAMP()),transaction_ref=COALESCE(NULLIF(transaction_ref,''),?),provider_data=?,updated_at=UTC_TIMESTAMP() WHERE id=? AND status IN ('PENDING','FAILED','PAID')`, ref, string(encoded), paymentID); e != nil {
-				http.Error(w, "temporary failure", 500)
-				return
-			}
-		}
-		if _, e = tx.ExecContext(r.Context(), `UPDATE payment_attempts SET status='PAID' WHERE id=?`, attemptID); e != nil {
+		if e = h.recordPayOSPaid(r.Context(), tx, paymentID, orderID, attemptID, paymentStatus, ref, string(encoded)); e != nil {
+			h.logger.Printf("PayOS webhook settlement failed payment_id=%d: %v", paymentID, e)
 			http.Error(w, "temporary failure", 500)
 			return
 		}
