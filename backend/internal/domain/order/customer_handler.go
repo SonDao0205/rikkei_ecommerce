@@ -697,57 +697,9 @@ func (h *CustomerHandler) cancelCustomerOrder(w http.ResponseWriter, r *http.Req
 			return
 		}
 
-		// Restore stock and decrement sold_count atomically
-		itemRows, err := tx.QueryContext(r.Context(),
-			`SELECT variant_id, product_id, quantity, flash_sale_id FROM order_items WHERE shop_order_id = ? FOR UPDATE`,
-			t.id,
-		)
-		if err != nil {
+		if err = RestoreShopOrderInventory(r.Context(), tx, t.id); err != nil {
 			serverError(w, h.logger, err)
 			return
-		}
-
-		type itemRestock struct {
-			variantID   int64
-			productID   int64
-			qty         int64
-			flashSaleID sql.NullInt64
-		}
-		var restocks []itemRestock
-		for itemRows.Next() {
-			var ir itemRestock
-			if err := itemRows.Scan(&ir.variantID, &ir.productID, &ir.qty, &ir.flashSaleID); err != nil {
-				itemRows.Close()
-				serverError(w, h.logger, err)
-				return
-			}
-			restocks = append(restocks, ir)
-		}
-		itemRows.Close()
-
-		for _, ir := range restocks {
-			_, err = tx.ExecContext(r.Context(),
-				`UPDATE product_variants SET stock = stock + ? WHERE id = ?`,
-				ir.qty, ir.variantID,
-			)
-			if err != nil {
-				serverError(w, h.logger, err)
-				return
-			}
-			_, err = tx.ExecContext(r.Context(),
-				`UPDATE products SET sold_count = GREATEST(sold_count - ?, 0) WHERE id = ?`,
-				ir.qty, ir.productID,
-			)
-			if err != nil {
-				serverError(w, h.logger, err)
-				return
-			}
-			if ir.flashSaleID.Valid {
-				if _, err = tx.ExecContext(r.Context(), `UPDATE flash_sales SET quantity_sold=GREATEST(quantity_sold-?,0) WHERE id=?`, ir.qty, ir.flashSaleID.Int64); err != nil {
-					serverError(w, h.logger, err)
-					return
-				}
-			}
 		}
 	}
 
@@ -907,7 +859,7 @@ func (h *CustomerHandler) confirmCustomerReceived(w http.ResponseWriter, r *http
 	}
 	if unfinished == 0 {
 		_, _ = tx.ExecContext(r.Context(),
-			`UPDATE payments SET status = 'PAID', paid_at = NOW(), updated_at = NOW() WHERE order_id = ? AND status = 'PENDING'`,
+			`UPDATE payments p JOIN payment_methods pm ON pm.id=p.payment_method_id SET p.status='PAID',p.paid_at=NOW(),p.updated_at=NOW() WHERE p.order_id=? AND p.status='PENDING' AND pm.code='COD'`,
 			orderID,
 		)
 	}

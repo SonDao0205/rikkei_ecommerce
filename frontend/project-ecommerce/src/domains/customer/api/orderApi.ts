@@ -90,7 +90,7 @@ async function fetchBackendOrderPage(params: Record<string, string | number>): P
   return response.data.data;
 }
 
-async function refreshPendingBankTransfers(orders: BackendCustomerOrder[]): Promise<void> {
+async function refreshPendingBankTransfers(orders: BackendCustomerOrder[]): Promise<boolean> {
   const uniquePendingTransfers = new Map<number, BackendCustomerOrder>();
   for (const order of orders) {
     if (
@@ -108,20 +108,11 @@ async function refreshPendingBankTransfers(orders: BackendCustomerOrder[]): Prom
       const payment = await axiosClient.get<APIEnvelope<BackendPaymentStatus>>(
         `/api/v1/orders/${encodeURIComponent(String(order.id))}/payment`
       );
-      return { orderID: order.id, status: payment.data.data.status };
+      return payment.data.data.status !== (order.payment?.status || order.payment_status);
     })
   );
 
-  const paidOrderIDs = new Set(
-    refreshed.flatMap((result) =>
-      result.status === "fulfilled" && result.value.status === "PAID" ? [result.value.orderID] : []
-    )
-  );
-  for (const order of orders) {
-    if (!paidOrderIDs.has(order.id)) continue;
-    order.payment_status = "PAID";
-    if (order.payment) order.payment.status = "PAID";
-  }
+  return refreshed.some((result) => result.status === "fulfilled" && result.value);
 }
 
 function expandParentOrders(parents: BackendCustomerOrder[]): BackendCustomerOrder[] {
@@ -177,7 +168,12 @@ async function loadLegacyShopOrders(firstPage: BackendOrderList): Promise<Backen
     const response = await fetchBackendOrderPage({ group_by: "shop", page, limit: pageSize });
     parentOrders.push(...response.orders);
   }
-  await refreshPendingBankTransfers(parentOrders);
+  if (await refreshPendingBankTransfers(parentOrders)) {
+    const pages = await Promise.all(Array.from({ length: pageCount }, (_, index) =>
+      fetchBackendOrderPage({ group_by: "shop", page: index + 1, limit: pageSize })
+    ));
+    return expandParentOrders(pages.flatMap((page) => page.orders));
+  }
   return expandParentOrders(parentOrders);
 }
 
@@ -315,14 +311,17 @@ export const userOrderApi = {
     const probe = await fetchBackendOrderPage({ group_by: "shop", page: 1, limit: 50 });
     const supportsShopGrouping = probe.orders.length === 0 || probe.orders.every((order) => order.shop_order_id != null);
     if (supportsShopGrouping) {
-      const response = await fetchBackendOrderPage({
+      const query = {
         ...(params?.tab && params.tab !== "all" ? { tab: params.tab } : {}),
         ...(params?.search?.trim() ? { search: params.search.trim() } : {}),
         group_by: "shop",
         page: params?.page ?? 1,
         limit: params?.pageSize ?? 6,
-      });
-      await refreshPendingBankTransfers(response.orders);
+      };
+      const initial = await fetchBackendOrderPage(query);
+      const response = await refreshPendingBankTransfers(initial.orders)
+        ? await fetchBackendOrderPage(query)
+        : initial;
       return {
         orders: response.orders.map(mapCustomerBackendOrder),
         total: response.pagination.total,

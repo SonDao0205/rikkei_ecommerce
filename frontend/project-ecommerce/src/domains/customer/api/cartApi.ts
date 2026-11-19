@@ -205,7 +205,7 @@ export const cartApi = {
   },
 
   async getPaymentStatus(orderId: number) {
-    const response = await axiosClient.get<ApiResponse<{ payment_id: number; amount: number; status: string; method: string; transaction_ref: string; checkout_url?: string; qr_code?: string }>>(`/api/v1/orders/${orderId}/payment`);
+    const response = await axiosClient.get<ApiResponse<{ payment_id: number; amount: number; status: string; method: string; transaction_ref: string; order_cancelled: boolean; expires_at?: string; link_expired?: boolean; checkout_url?: string; qr_code?: string }>>(`/api/v1/orders/${orderId}/payment`);
     return response.data.data;
   },
 };

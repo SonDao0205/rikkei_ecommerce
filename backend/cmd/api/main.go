@@ -16,6 +16,7 @@ import (
 	"rikkei-ecommerce/internal/app/migrations"
 	"rikkei-ecommerce/internal/app/server"
 	"rikkei-ecommerce/internal/domain/auth"
+	"rikkei-ecommerce/internal/domain/payment"
 	"rikkei-ecommerce/internal/platform/observability"
 )
 
@@ -47,6 +48,9 @@ func main() {
 			os.Exit(1)
 		}
 	}
+	stop, stopCancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stopCancel()
+	go payment.RunPayOSReconciliation(stop, db, cfg, legacyLogger)
 	srv := &http.Server{Addr: cfg.HTTPAddr, Handler: observability.Wrap(structuredLogger, server.NewHandler(cfg, db, legacyLogger)), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, WriteTimeout: 20 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 1 << 20}
 	go func() {
 		structuredLogger.Info("API listening", slog.String("addr", cfg.HTTPAddr), slog.String("environment", cfg.AppEnv))
@@ -55,8 +59,6 @@ func main() {
 			os.Exit(1)
 		}
 	}()
-	stop, stopCancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stopCancel()
 	<-stop.Done()
 	shutdown, done := context.WithTimeout(context.Background(), 10*time.Second)
 	defer done()

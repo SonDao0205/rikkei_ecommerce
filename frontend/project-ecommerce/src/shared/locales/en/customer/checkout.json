@@ -66,7 +66,7 @@
       },
       "bank_transfer": {
         "name": "Bank Transfer",
-        "desc": "Transfer via local bank or scan VietQR for automatic fast order confirmation."
+        "desc": "Scan VietQR and pay within 15 minutes of placing your order. Unpaid orders are cancelled when the payment window ends."
       },
       "cards_wallets": {
         "name": "Credit / Debit Card & E-Wallets (MoMo, VNPay-QR, ZaloPay)",

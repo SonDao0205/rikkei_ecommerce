@@ -3,7 +3,7 @@
 ## Supported methods
 
 - `COD`: checkout commits the order and stock reservation. Payment stays `PENDING` until delivery is completed/received, when the existing order flow marks **COD only** as paid.
-- `BANK_TRANSFER`: checkout commits order and pending payment first. The browser asks the API for a PayOS link, then redirects to PayOS. Browser return never marks the order paid.
+- `BANK_TRANSFER` orders have 15 minutes from checkout to pay via VietQR. PayOS confirmation moves pending shop orders to `PACKING`. If the link expires or PayOS confirms cancellation, the API marks the payment `FAILED`, cancels the unshipped shop orders, and releases their reserved stock.
 
 ## API contract
 
@@ -11,10 +11,10 @@ Customer routes require `CLIENT` and verify ownership through `orders.user_id`:
 
 - `POST /api/v1/checkout/orders` — idempotently creates order, shop orders, stock reservation, and pending payment.
 - `POST /api/v1/orders/{orderId}/payment` — creates/recovers a PayOS link; returns `data.checkout_url`, `data.qr_code`, and status.
-- `GET /api/v1/orders/{orderId}/payment` — authoritative payment state for polling after returning from PayOS.
+- `GET /api/v1/orders/{orderId}/payment` — payment state for polling after returning from PayOS, including `order_cancelled`, `link_expired`, and the bank transfer deadline in `expires_at`.
 - `POST /api/v1/webhooks/payos` — public provider callback. HMAC signature, stable provider order code, amount, and transaction reference are verified; duplicate references are idempotent.
 
-The signed webhook is the primary way to mark an online payment `PAID`. As a recovery path, `GET /api/v1/orders/{orderId}/payment` also checks a pending/failed transfer against PayOS's authenticated payment lookup and updates local state only when provider order code and amount match. This covers delayed/missed webhooks and lets the order-history screen refresh recent unpaid transfers. Browser return parameters alone never mark a payment paid.
+The signed webhook and the authenticated PayOS status lookup both apply payment and order updates in a single database transaction. A background worker checks expired transfers even if the customer closes PayOS. It cancels expired checkouts without a link and closes older active links through PayOS before releasing inventory. Temporary PayOS errors are retried on later scans. Late payments on cancelled orders are recorded for reconciliation without reopening fulfilment.
 
 ## Configuration
 
