@@ -18,7 +18,8 @@ export const OrderDetailFooterBar: React.FC<OrderDetailFooterBarProps> = ({
   onContactSupport,
 }) => {
   const { t } = useTranslation("customer");
-  const canDirectCancel = order.status === 'pending';
+  const shopStatus = order.shops[0]?.status ?? order.status;
+  const canDirectCancel = shopStatus === 'pending' || shopStatus === 'confirmed';
   const isDelivered = order.status === 'completed';
   const isCancelled = order.status === 'cancelled';
 

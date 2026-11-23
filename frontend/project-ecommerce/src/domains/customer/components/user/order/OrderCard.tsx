@@ -83,7 +83,7 @@ function OrderShopSection({
         <Link to={detailUrl} className={secondaryButton}>
           {t(status === "shipping" ? "profile.orders.card.track_order" : "profile.orders.card.order_details")}
         </Link>
-        {status === "pending" && shopOrderId && (
+        {(status === "pending" || status === "confirmed") && shopOrderId && (
           <button type="button" disabled={actionLoading} onClick={() => onCancelClick(target)} className={`${secondaryButton} text-error disabled:opacity-50`}>
             {t("profile.orders.card.cancel_order")}
           </button>

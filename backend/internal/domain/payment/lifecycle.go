@@ -103,15 +103,7 @@ func (h *Handler) applyPayOSStatus(ctx context.Context, p payOSPayment, status s
 		return err
 	}
 	if status == "PAID" {
-		if p.status == "PAID" {
-			if paymentStatus != "PAID" {
-				return nil
-			}
-			err = preparePaidShopOrders(ctx, tx, p.orderID)
-		} else {
-			err = h.recordPayOSPaid(ctx, tx, p.id, p.orderID, p.attemptID.Int64, paymentStatus, nil, nil)
-		}
-		if err != nil {
+		if err := h.recordPayOSPaid(ctx, tx, p.id, p.attemptID.Int64, paymentStatus, nil, nil); err != nil {
 			return err
 		}
 		return tx.Commit()
@@ -147,7 +139,7 @@ func (h *Handler) applyPayOSStatus(ctx context.Context, p payOSPayment, status s
 	return tx.Commit()
 }
 
-func (h *Handler) recordPayOSPaid(ctx context.Context, tx *sql.Tx, paymentID, orderID, attemptID int64, status string, ref, payload any) error {
+func (h *Handler) recordPayOSPaid(ctx context.Context, tx *sql.Tx, paymentID, attemptID int64, status string, ref, payload any) error {
 	if status == "REFUNDED" {
 		return nil
 	}
@@ -161,20 +153,8 @@ func (h *Handler) recordPayOSPaid(ctx context.Context, tx *sql.Tx, paymentID, or
 	}
 	if status == "FAILED" {
 		h.logger.Printf("late PayOS success requires reconciliation payment_id=%d", paymentID)
-		return nil
 	}
-	return preparePaidShopOrders(ctx, tx, orderID)
-}
-
-func preparePaidShopOrders(ctx context.Context, tx *sql.Tx, orderID int64) error {
-	if _, err := tx.ExecContext(ctx, `INSERT INTO order_status_history (shop_order_id,from_status,to_status,note)
-		SELECT id,status,'PACKING','PayOS đã xác nhận thanh toán' FROM shop_orders WHERE order_id=? AND status IN ('PENDING','CONFIRMED') FOR UPDATE`, orderID); err != nil {
-		return err
-	}
-	_, err := tx.ExecContext(ctx, `UPDATE shop_orders SET status='PACKING',confirmed_at=COALESCE(confirmed_at,UTC_TIMESTAMP()),
-		packed_at=COALESCE(packed_at,UTC_TIMESTAMP()),updated_at=UTC_TIMESTAMP()
-		WHERE order_id=? AND status IN ('PENDING','CONFIRMED')`, orderID)
-	return err
+	return nil
 }
 
 func cancelUnpaidShopOrders(ctx context.Context, tx *sql.Tx, orderID int64, reason string) error {
@@ -241,11 +221,7 @@ func (h *Handler) reconcilePayOSOrders(ctx context.Context) {
 		}
 		for _, p := range batch {
 			ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
-			if p.status == "PAID" {
-				err = h.applyPayOSStatus(ctx, p, "PAID")
-			} else {
-				err = h.refreshPayOSPayment(ctx, p)
-			}
+			err := h.refreshPayOSPayment(ctx, p)
 			cancel()
 			if err != nil {
 				h.logger.Printf("PayOS reconciliation deferred payment_id=%d: %v", p.id, err)
@@ -260,13 +236,10 @@ func (h *Handler) payOSReconciliationBatch(ctx context.Context, afterID int64) (
 		UNIX_TIMESTAMP(p.created_at)+?,a.id,a.provider_link_id IS NOT NULL
 		FROM payments p JOIN payment_methods pm ON pm.id=p.payment_method_id
 		LEFT JOIN payment_attempts a ON a.payment_id=p.id AND a.provider='PAYOS'
-		WHERE p.id>? AND pm.code='BANK_TRANSFER' AND (
-			(p.status='PENDING' AND p.created_at<=TIMESTAMPADD(SECOND,?,CURRENT_TIMESTAMP)
-				AND (a.id IS NULL OR a.status<>'CREATING' OR a.updated_at<=TIMESTAMPADD(SECOND,?,CURRENT_TIMESTAMP)))
-			OR (p.status='PAID'
-				AND EXISTS(SELECT 1 FROM shop_orders so WHERE so.order_id=p.order_id AND so.status IN ('PENDING','CONFIRMED'))
-				AND NOT EXISTS(SELECT 1 FROM shop_orders so WHERE so.order_id=p.order_id AND so.status IN ('CANCELLED','RETURNED')))
-		) ORDER BY p.id LIMIT 50`, payOSPaymentWindowSeconds, afterID, -payOSPaymentWindowSeconds, -int(payOSCreationLease/time.Second))
+		WHERE p.id>? AND pm.code='BANK_TRANSFER' AND p.status='PENDING'
+			AND p.created_at<=TIMESTAMPADD(SECOND,?,CURRENT_TIMESTAMP)
+			AND (a.id IS NULL OR a.status<>'CREATING' OR a.updated_at<=TIMESTAMPADD(SECOND,?,CURRENT_TIMESTAMP))
+		ORDER BY p.id LIMIT 50`, payOSPaymentWindowSeconds, afterID, -payOSPaymentWindowSeconds, -int(payOSCreationLease/time.Second))
 	if err != nil {
 		return nil, err
 	}
