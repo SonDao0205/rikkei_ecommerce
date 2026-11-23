@@ -11,6 +11,24 @@ import (
 	"rikkei-ecommerce/internal/platform/httpx"
 )
 
+// Reconcile the shared COD payment while the parent order is locked.
+func updatePendingCODPayment(ctx context.Context, tx *sql.Tx, orderID int64) error {
+	_, err := tx.ExecContext(ctx, `UPDATE payments p
+		JOIN payment_methods pm ON pm.id = p.payment_method_id
+		JOIN (
+			SELECT order_id,
+				COUNT(CASE WHEN status <> 'CANCELLED' THEN 1 END) AS remaining_count,
+				COUNT(CASE WHEN status NOT IN ('COMPLETED', 'CANCELLED', 'RETURNED') THEN 1 END) AS unfinished_count,
+				SUM(CASE WHEN status <> 'CANCELLED' THEN total_amount ELSE 0 END) AS amount
+			FROM shop_orders WHERE order_id = ? GROUP BY order_id
+		) order_totals ON order_totals.order_id = p.order_id
+		SET p.amount = order_totals.amount,
+			p.paid_at = CASE WHEN order_totals.remaining_count > 0 AND order_totals.unfinished_count = 0 THEN NOW() ELSE NULL END,
+			p.status = CASE WHEN order_totals.remaining_count = 0 THEN 'FAILED' WHEN order_totals.unfinished_count = 0 THEN 'PAID' ELSE 'PENDING' END
+		WHERE pm.code = 'COD' AND p.status = 'PENDING'`, orderID)
+	return err
+}
+
 func writeJSON(w http.ResponseWriter, status int, value any) {
 	httpx.WriteJSON(w, status, value)
 }

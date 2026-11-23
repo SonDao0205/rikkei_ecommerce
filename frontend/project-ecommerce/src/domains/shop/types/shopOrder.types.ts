@@ -72,6 +72,7 @@ export interface ShopOrderShipping {
 export interface ShopOrderItem {
   id: string; // e.g. "#ORD-9821"
   orderCode: string;
+  parentOrderCode?: string;
   createdAt: string;
   createdAtTime: string;
   timeAgo: string;

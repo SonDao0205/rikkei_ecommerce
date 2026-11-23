@@ -302,6 +302,7 @@
     },
     "statuses": {
       "pending": "CHỜ XÁC NHẬN",
+      "confirmed": "ĐÃ XÁC NHẬN",
       "packing": "SHOP ĐANG XỬ LÝ",
       "shipping": "ĐANG VẬN CHUYỂN",
       "completed": "HOÀN THÀNH",

@@ -1,5 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { ShopOrderStatusBadge } from "@/domains/order/components/ShopOrderStatusBadge";
+import type { ShopOrderStatus } from "@/domains/order/types";
 import { formatCurrencyVND } from "@/shared/utils/currency";
 
 export interface CompleteOrderItem {
@@ -18,7 +20,9 @@ export interface CompleteOrderItem {
 
 export interface CompleteOrderShopGroup {
   shopId: number;
+  shopOrderId?: number;
   shopName: string;
+  status?: ShopOrderStatus;
   shopBadge?: string;
   shopAvatarText?: string;
   warehouseLocation?: string;
@@ -99,11 +103,11 @@ export const OrderItemizedSummary: React.FC<OrderItemizedSummaryProps> = ({
       <div className="flex flex-col gap-6 mb-6">
         {groups.map((group) => (
           <div
-            key={group.shopId}
+            key={group.shopOrderId ?? group.shopId}
             className="rounded-xl border border-outline-variant/40 overflow-hidden bg-surface-container-lowest"
           >
             {/* Merchant Banner */}
-            <div className="flex items-center justify-between p-3.5 bg-surface-container-low border-b border-outline-variant/30">
+            <div className="flex flex-wrap items-center justify-between gap-2 p-3.5 bg-surface-container-low border-b border-outline-variant/30">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-inverse-surface text-inverse-on-surface flex items-center justify-center font-bold text-sm">
                   {group.shopAvatarText || group.shopName.charAt(0).toUpperCase()}
@@ -128,13 +132,16 @@ export const OrderItemizedSummary: React.FC<OrderItemizedSummaryProps> = ({
                 </div>
               </div>
 
-              <a
-                href={`/shop/${group.shopId}`}
-                className="text-xs text-primary hover:underline font-bold flex items-center gap-0.5"
-              >
-                <span>{t("order_complete.items.visit_shop")}</span>
-                <span className="material-symbols-outlined text-[16px]">chevron_right</span>
-              </a>
+              <div className="flex flex-wrap items-center gap-2">
+                {group.status && <ShopOrderStatusBadge status={group.status} />}
+                <a
+                  href={`/shop/${group.shopId}`}
+                  className="text-xs text-primary hover:underline font-bold flex items-center gap-0.5"
+                >
+                  <span>{t("order_complete.items.visit_shop")}</span>
+                  <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+                </a>
+              </div>
             </div>
 
             {/* Products in this Shop */}

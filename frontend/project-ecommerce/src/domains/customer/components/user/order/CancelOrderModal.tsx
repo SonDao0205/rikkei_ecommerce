@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { UserOrder } from "@/shared/types";
+import type { OrderActionTarget } from "@/domains/order/types";
 
 interface CancelOrderModalProps {
-  order: UserOrder | null;
+  order: OrderActionTarget | null;
   isOpen: boolean;
   onClose: () => void;
   onConfirmCancel: (orderId: number | string, reason: string) => void;
