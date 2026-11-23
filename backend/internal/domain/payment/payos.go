@@ -485,7 +485,7 @@ func (h *Handler) payOSWebhook(w http.ResponseWriter, r *http.Request) {
 	}
 	n, _ := res.RowsAffected()
 	if n > 0 && code == "00" && p.Success {
-		if e = h.recordPayOSPaid(r.Context(), tx, paymentID, orderID, attemptID, paymentStatus, ref, string(encoded)); e != nil {
+		if e = h.recordPayOSPaid(r.Context(), tx, paymentID, attemptID, paymentStatus, ref, string(encoded)); e != nil {
 			h.logger.Printf("PayOS webhook settlement failed payment_id=%d: %v", paymentID, e)
 			http.Error(w, "temporary failure", 500)
 			return

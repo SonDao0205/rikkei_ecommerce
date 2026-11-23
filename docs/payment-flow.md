@@ -3,7 +3,7 @@
 ## Supported methods
 
 - `COD`: checkout commits the order and stock reservation. Payment stays `PENDING` until delivery is completed/received, when the existing order flow marks **COD only** as paid.
-- `BANK_TRANSFER` orders have 15 minutes from checkout to pay via VietQR. PayOS confirmation moves pending shop orders to `PACKING`. If the link expires or PayOS confirms cancellation, the API marks the payment `FAILED`, cancels the unshipped shop orders, and releases their reserved stock.
+- `BANK_TRANSFER` orders have 15 minutes from checkout to pay via VietQR. PayOS confirmation sets the payment to `PAID`. Each pending shop order stays `PENDING` until the seller confirms it. If the link expires or PayOS confirms cancellation, the API marks the payment `FAILED`, cancels the unshipped shop orders, and releases their reserved stock.
 
 ## API contract
 
