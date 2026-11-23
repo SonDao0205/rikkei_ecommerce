@@ -130,7 +130,7 @@ export const ShopOrderDetail: React.FC = () => {
               Đơn hàng &amp; Giao vận
             </Link>
             <span className="material-symbols-outlined text-[16px]">chevron_right</span>
-            <span className="font-semibold text-on-surface">Chi tiết {order.id}</span>
+            <span className="font-semibold text-on-surface">Chi tiết {order.orderCode}</span>
           </div>
 
           <button
@@ -148,8 +148,11 @@ export const ShopOrderDetail: React.FC = () => {
           <div>
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="font-headline-xl text-headline-xl font-bold text-on-surface tracking-tight">
-                Chi tiết đơn hàng {order.id}
+                Chi tiết đơn hàng {order.orderCode}
               </h1>
+              {order.parentOrderCode && (
+                <p className="text-sm text-on-surface-variant">Đơn chính {order.parentOrderCode}</p>
+              )}
               <span className="px-3 py-1 rounded-full bg-primary/10 text-primary font-label-sm text-xs font-bold">
                 {order.statusLabel}
               </span>

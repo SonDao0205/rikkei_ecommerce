@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { UserOrder, ShopOrderGroup, OrderItem } from '@/domains/order/types';
 import { getShopDefaultLogo } from '@/shared/utils/avatar';
 import ReviewProductModal from '@/domains/customer/components/user/order/ReviewProductModal';
+import { ShopOrderStatusBadge } from '@/domains/order/components/ShopOrderStatusBadge';
 
 interface OrderDetailShopSectionProps {
   order: UserOrder;
@@ -38,14 +39,13 @@ export const OrderDetailShopSection: React.FC<OrderDetailShopSectionProps> = ({
         shopName: shop.shopName,
         shopAvatar: shop.logoUrl,
         status: shop.status,
-        statusLabel: shop.statusLabel,
-        shopOrderCode: shop.shopOrderCode,
+        shopOrderId: shop.shopOrderId,
         timeline: shop.timeline,
         isMall: shop.shopBadge === 'MALL',
         isArtisan: shop.shopBadge === 'ARTISAN',
         rating: 4.9,
         responseRate: 98,
-        items: itemMap.get(shop.shopId) || (order.items || []).filter((i) => i.shopId === shop.shopId),
+        items: shop.items ?? itemMap.get(shop.shopId) ?? [],
       }));
     }
 
@@ -77,30 +77,15 @@ export const OrderDetailShopSection: React.FC<OrderDetailShopSectionProps> = ({
     }
   };
 
-  const getStatusBadgeClass = (status?: UserOrder["status"]) => {
-    switch (status) {
-      case "pending": return "bg-amber-100 text-amber-900";
-      case "packing": return "bg-blue-100 text-blue-900";
-      case "shipping": return "bg-secondary-fixed text-on-secondary-fixed";
-      case "completed": return "bg-emerald-100 text-emerald-900";
-      case "cancelled": return "bg-surface-container-high text-on-surface-variant";
-      case "returned": return "bg-purple-100 text-purple-900";
-      default: return "bg-surface-container text-on-surface";
-    }
-  };
-
   return (
     <div className="flex flex-col gap-6">
-      {shopGroups.map((shop, sIdx) => {
-        const shopStatus = shop.status || order.status;
-        const shopStatusLabel = t(`profile.orders.statuses.${shopStatus}`, {
-          defaultValue: shop.statusLabel || order.statusLabel,
-        });
+      {shopGroups.map((shop) => {
+        const shopStatus = shop.status ?? (order.status === "all" ? "pending" : order.status);
         const isShopCompleted = shopStatus === "completed";
 
         return (
           <section
-            key={shop.shopId || sIdx}
+            key={shop.shopOrderId ?? shop.shopId}
             className="bg-surface-container-lowest rounded-2xl p-6 md:p-8 shadow-sm flex flex-col gap-6"
           >
             {/* Shop Header */}
@@ -147,10 +132,16 @@ export const OrderDetailShopSection: React.FC<OrderDetailShopSectionProps> = ({
               </div>
 
               {/* Shop Actions */}
-              <div className="flex items-center gap-2.5">
-                <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusBadgeClass(shopStatus)}`}>
-                  {shopStatusLabel}
-                </span>
+              <div className="flex flex-wrap items-center gap-2.5">
+                <ShopOrderStatusBadge status={shopStatus} />
+                {order.shops.length > 1 && shop.shopOrderId && (
+                  <Link
+                    to={`/profile/orders/${order.id}?shopOrderId=${shop.shopOrderId}`}
+                    className="px-3.5 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md"
+                  >
+                    {t("profile.orders.card.order_details")}
+                  </Link>
+                )}
                 <Link
                   to={`/shop/${shop.shopId}`}
                   className="px-3.5 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-colors flex items-center gap-1"
@@ -221,9 +212,6 @@ export const OrderDetailShopSection: React.FC<OrderDetailShopSectionProps> = ({
                         >
                           {item.productName}
                         </Link>
-                        <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold self-start ${getStatusBadgeClass(shopStatus)}`}>
-                          {shopStatusLabel}
-                        </span>
                         {item.variantName && (
                           <p className="font-body-md text-body-md text-outline">
                             {t("profile.orders.detail.shop_section.variant_prefix")}{' '}

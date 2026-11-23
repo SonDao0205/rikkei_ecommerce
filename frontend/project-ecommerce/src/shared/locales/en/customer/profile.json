@@ -302,6 +302,7 @@
     },
     "statuses": {
       "pending": "PENDING CONFIRMATION",
+      "confirmed": "CONFIRMED",
       "packing": "PROCESSING",
       "shipping": "SHIPPING",
       "completed": "COMPLETED",

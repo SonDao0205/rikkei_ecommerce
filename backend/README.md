@@ -565,13 +565,13 @@ Tạo đơn hàng từ giỏ hàng hoặc Mua ngay được bảo vệ bởi rol
   2. Kiểm tra trạng thái khả dụng và số lượng tồn kho `v.stock >= requested_quantity`.
   3. Trừ tồn kho nguyên tử bằng câu lệnh SQL `UPDATE product_variants SET stock = stock - ? WHERE id = ? AND stock >= ?`. Nếu không có dòng nào bị ảnh hưởng (`RowsAffected == 0`), transaction tự động rollback ngay lập tức và trả về `422 cart_item_unavailable`.
   4. Ràng buộc toàn vẹn MySQL `CONSTRAINT chk_variants_stock CHECK (stock >= 0)` bảo vệ tuyệt đối ở tầng engine.
-- **Tách đơn theo Shop (Multi-Shop Splitting):**
+- **Tách đơn theo dòng sản phẩm:**
   - Tạo 1 đơn hàng cha trong bảng `orders` (tính tổng tiền hàng, phí vận chuyển chung, voucher sàn, voucher shop, tổng thanh toán).
-  - Tạo $N$ đơn hàng con trong bảng `shop_orders` theo từng shop:
+  - Tạo một đơn con trong `shop_orders` cho mỗi dòng sản phẩm. Mỗi đơn con thuộc shop bán sản phẩm đó và có trạng thái riêng, kể cả khi nhiều dòng cùng shop:
     - Trạng thái khởi tạo: `PENDING`.
-    - Phân bổ tỷ lệ phí ship và voucher sàn theo giá trị đơn của từng shop, đảm bảo tổng các đơn con khớp chính xác 100% với đơn cha.
+    - Phân bổ phí vận chuyển, khuyến mãi của shop và khuyến mãi của sàn tới từng dòng, giữ tổng các khoản khớp với đơn cha.
     - Snapshot tỷ lệ hoa hồng (`commission_rate = 0`, `commission_amount = 0`).
-  - Lưu chi tiết sản phẩm vào `order_items` gắn với từng `shop_orders`.
+  - Lưu biến thể và số lượng của dòng sản phẩm trong `order_items` thuộc đơn con tương ứng.
   - Ghi log lịch sử trạng thái ban đầu vào `order_status_history` (`PENDING`).
 - **Thanh toán COD & Chuyển khoản (Bank Transfer):**
   - Khởi tạo bản ghi trong bảng `payments` với trạng thái `PENDING`.
@@ -656,7 +656,7 @@ Hệ thống cung cấp đầy đủ các API phục vụ luồng theo dõi đơ
    - `PATCH /api/v1/seller/orders/{id}/confirm`: Chuyển `PENDING` $\to$ `CONFIRMED`.
    - `PATCH /api/v1/seller/orders/{id}/pack`: Chuyển `CONFIRMED` $\to$ `PACKING`.
    - `PATCH /api/v1/seller/orders/{id}/ship`: Chuyển `PACKING` $\to$ `SHIPPING`. Yêu cầu body `carrier` (đơn vị vận chuyển) và `tracking_code` (mã vận đơn).
-   - `PATCH /api/v1/seller/orders/{id}/complete`: Chuyển `SHIPPING` $\to$ `COMPLETED` (giao thành công). Cập nhật thanh toán COD thành `PAID`.
+   - `PATCH /api/v1/seller/orders/{id}/complete`: Chuyển `SHIPPING` $\to$ `COMPLETED` (giao thành công). Thanh toán COD được xác nhận sau khi toàn bộ đơn con đã xử lý xong và còn đơn con chưa bị hủy.
    - `PATCH /api/v1/seller/orders/{id}/cancel`: Chủ shop hủy đơn khi hết hàng. Tự động hoàn lại tồn kho cho shop và xử lý hoàn tiền online nếu có.
 
 5. **Xử lý yêu cầu đổi trả (`return_requests`):**

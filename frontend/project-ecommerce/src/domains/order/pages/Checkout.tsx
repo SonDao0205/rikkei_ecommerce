@@ -536,7 +536,9 @@ export const Checkout: React.FC = () => {
   );
   const selectedPaymentCode = selectedPaymentMethod?.code || "COD";
 
-  const shopNames = groupedShopItems.map((g) => g.shopName);
+  const shopNames = createdOrder
+    ? [...new Map(createdOrder.shop_orders.map((shop) => [shop.shop_id, shop.shop_name])).values()]
+    : groupedShopItems.map((group) => group.shopName);
   const selectedShippingMethod = shippingMethods.find(
     (m) => m.id === selectedShippingId
   );
@@ -670,7 +672,7 @@ export const Checkout: React.FC = () => {
         isOpen={isSuccessModalOpen}
         orderCode={createdOrderCode}
         totalAmount={createdOrder?.total_amount ?? checkoutQuote?.total ?? fallbackTotal}
-        shopNames={createdOrder?.shop_orders.map((shopOrder) => shopOrder.shop_name) ?? shopNames}
+        shopNames={shopNames}
         shippingCarrier={selectedShippingMethod?.name}
         paymentMethodCode={createdOrder?.payment_method.code}
         paymentReference={createdOrder?.payment.transaction_ref}

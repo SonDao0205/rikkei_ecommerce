@@ -3,7 +3,6 @@ package checkout
 import (
 	"bytes"
 	"encoding/json"
-	"math"
 	"net/http"
 	"net/http/httptest"
 	"sort"
@@ -32,8 +31,8 @@ func TestGenerateOrderCode(t *testing.T) {
 		}
 		seen[code] = true
 
-		shopCode := generateShopOrderCode(code, 920001)
-		if !strings.HasPrefix(shopCode, code+"-S") {
+		shopCode := generateShopOrderCode(code, 100)
+		if !strings.HasPrefix(shopCode, code+"-L") {
 			t.Fatalf("unexpected shop order code format: %s", shopCode)
 		}
 		if len(shopCode) > 40 {
@@ -204,121 +203,78 @@ func TestCreateOrderValidation(t *testing.T) {
 	})
 }
 
-func TestMultiShopDistributionMath(t *testing.T) {
-	testCases := []struct {
-		name                  string
-		shopSubtotals         []int64
-		shopDiscounts         []int64
-		totalShippingCents    int64
-		platformDiscountCents int64
-	}{
-		{
-			name:                  "Single shop order",
-			shopSubtotals:         []int64{25000000},
-			shopDiscounts:         []int64{2500000},
-			totalShippingCents:    3000000,
-			platformDiscountCents: 5000000,
+func TestPlanShopOrdersSplitsSameShopLines(t *testing.T) {
+	voucherID := int64(31)
+	shops := map[int64]*shopCheckout{
+		11: {
+			SubtotalCents:     900,
+			ShopVoucherID:     &voucherID,
+			ShopDiscountCents: 900,
+			Items: []itemDetails{
+				{ShopID: 11, ProductID: 101, VariantID: 201, Quantity: 2, LineCents: 600},
+				{ShopID: 11, ProductID: 102, VariantID: 202, Quantity: 1, LineCents: 300},
+			},
 		},
-		{
-			name:                  "Two shops proportional split",
-			shopSubtotals:         []int64{25000000, 2999000000},
-			shopDiscounts:         []int64{2500000, 0},
-			totalShippingCents:    3000000,
-			platformDiscountCents: 5000000,
-		},
-		{
-			name:                  "Three shops with rounding odd cents",
-			shopSubtotals:         []int64{10000001, 20000003, 30000007},
-			shopDiscounts:         []int64{500000, 1000000, 1500000},
-			totalShippingCents:    3333333,
-			platformDiscountCents: 4444444,
-		},
-		{
-			name:                  "Zero discounts",
-			shopSubtotals:         []int64{5000000, 15000000},
-			shopDiscounts:         []int64{0, 0},
-			totalShippingCents:    2500000,
-			platformDiscountCents: 0,
+		12: {
+			SubtotalCents: 900,
+			Items: []itemDetails{
+				{ShopID: 12, ProductID: 103, VariantID: 203, Quantity: 1, LineCents: 900},
+			},
 		},
 	}
+	plans := planShopOrders([]int64{11, 12}, shops, 1800, 7, 900, 899)
+	if len(plans) != 3 {
+		t.Fatalf("got %d child orders for 3 lines across 2 shops", len(plans))
+	}
+	if plans[0].Item != shops[11].Items[0] || plans[1].Item != shops[11].Items[1] {
+		t.Fatalf("same-shop child orders did not keep their distinct lines and quantities: %+v", plans[:2])
+	}
+	if plans[0].ShopVoucherID != &voucherID || plans[1].ShopVoucherID != &voucherID || plans[2].ShopVoucherID != nil {
+		t.Fatal("voucher attribution should remain scoped to its shop")
+	}
 
-	for _, tc := range testCases {
+	var shipping, shopDiscount, platformDiscount, total int64
+	for _, plan := range plans {
+		if plan.ShopDiscountCents+plan.PlatformDiscountCents > plan.Item.LineCents || plan.ShippingCents < 0 {
+			t.Fatalf("invalid allocation: %+v", plan)
+		}
+		shipping += plan.ShippingCents
+		shopDiscount += plan.ShopDiscountCents
+		platformDiscount += plan.PlatformDiscountCents
+		total += plan.totalCents()
+	}
+	if shipping != 7 || shopDiscount != 900 || platformDiscount != 899 || total != 8 {
+		t.Errorf("child sums (shipping, shop discount, platform discount, total) = (%d, %d, %d, %d), want (7, 900, 899, 8)",
+			shipping, shopDiscount, platformDiscount, total)
+	}
+	if generateShopOrderCode("ORD-TEST", 1) == generateShopOrderCode("ORD-TEST", 2) {
+		t.Fatal("distinct lines of an order require distinct child order codes")
+	}
+}
+
+func TestProportionalAllocationPreservesCents(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		amount  int64
+		weights []int64
+		want    []int64
+	}{
+		{name: "rounding across small lines", amount: 2, weights: []int64{1, 1, 1, 1}, want: []int64{0, 1, 0, 1}},
+		{name: "zero discount on fully covered lines", amount: 0, weights: []int64{0, 0}, want: []int64{0, 0}},
+		{
+			name: "maximum supported amount", amount: maxAmountCents - 1,
+			weights: []int64{maxAmountCents - 1, 1}, want: []int64{maxAmountCents - 2, 1},
+		},
+	} {
 		t.Run(tc.name, func(t *testing.T) {
-			var totalSubtotalCents int64
-			for _, sub := range tc.shopSubtotals {
-				totalSubtotalCents += sub
+			allocation := proportionalAllocation{amount: tc.amount}
+			for _, weight := range tc.weights {
+				allocation.totalWeight += weight
 			}
-			var totalShopDiscountsCents int64
-			for _, d := range tc.shopDiscounts {
-				totalShopDiscountsCents += d
-			}
-
-			totalAmountCents := totalSubtotalCents + tc.totalShippingCents - (totalShopDiscountsCents + tc.platformDiscountCents)
-			if totalAmountCents < 0 {
-				totalAmountCents = 0
-			}
-
-			// Simulate distribution algorithm used in order.go
-			numShops := len(tc.shopSubtotals)
-			shopShipping := make([]int64, numShops)
-			shopPlatformDisc := make([]int64, numShops)
-			shopTotals := make([]int64, numShops)
-
-			var allocatedShipping int64
-			var allocatedPlatformDisc int64
-
-			for i := 0; i < numShops; i++ {
-				sub := tc.shopSubtotals[i]
-				isLast := i == numShops-1
-
-				if isLast {
-					shopShipping[i] = tc.totalShippingCents - allocatedShipping
-					shopPlatformDisc[i] = tc.platformDiscountCents - allocatedPlatformDisc
-				} else {
-					shopShipping[i] = int64(math.Round(float64(tc.totalShippingCents) * float64(sub) / float64(totalSubtotalCents)))
-					shopPlatformDisc[i] = int64(math.Round(float64(tc.platformDiscountCents) * float64(sub) / float64(totalSubtotalCents)))
-					allocatedShipping += shopShipping[i]
-					allocatedPlatformDisc += shopPlatformDisc[i]
+			for i, weight := range tc.weights {
+				if got := allocation.take(weight); got != tc.want[i] {
+					t.Errorf("line %d: got %d, want %d", i, got, tc.want[i])
 				}
-
-				if remaining := sub - tc.shopDiscounts[i]; shopPlatformDisc[i] > remaining {
-					shopPlatformDisc[i] = remaining
-				}
-				if shopPlatformDisc[i] < 0 {
-					shopPlatformDisc[i] = 0
-				}
-
-				shopTotals[i] = sub + shopShipping[i] - tc.shopDiscounts[i] - shopPlatformDisc[i]
-				if shopTotals[i] < 0 {
-					shopTotals[i] = 0
-				}
-			}
-
-			// Verify sum of shipping fees matches parent
-			var sumShipping int64
-			for _, s := range shopShipping {
-				sumShipping += s
-			}
-			if sumShipping != tc.totalShippingCents {
-				t.Errorf("sum(shopShipping)=%d != totalShippingCents=%d", sumShipping, tc.totalShippingCents)
-			}
-
-			// Verify sum of platform discounts matches parent
-			var sumPlatformDisc int64
-			for _, p := range shopPlatformDisc {
-				sumPlatformDisc += p
-			}
-			if sumPlatformDisc != tc.platformDiscountCents {
-				t.Errorf("sum(shopPlatformDisc)=%d != platformDiscountCents=%d", sumPlatformDisc, tc.platformDiscountCents)
-			}
-
-			// Verify sum of shop totals matches parent total
-			var sumShopTotals int64
-			for _, st := range shopTotals {
-				sumShopTotals += st
-			}
-			if sumShopTotals != totalAmountCents {
-				t.Errorf("sum(shopTotals)=%d != totalAmountCents=%d", sumShopTotals, totalAmountCents)
 			}
 		})
 	}

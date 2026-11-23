@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 	"unicode/utf8"
 
 	"rikkei-ecommerce/internal/domain/auth"
@@ -21,11 +20,51 @@ type CustomerHandler struct {
 	logger *log.Logger
 }
 
-type orderMeta struct {
-	id           int64
-	orderCode    string
-	createdAt    time.Time
-	shopStatuses []string
+type customerParentOrderRef struct {
+	id            int64
+	shopStatuses  []string
+	matchesSearch bool
+}
+
+func filterCustomerParentOrders(orders []customerParentOrderRef, tab string) (OrderStatusCounts, []int64) {
+	counts := OrderStatusCounts{All: int64(len(orders))}
+	var matchedOrderIDs []int64
+	for _, order := range orders {
+		statuses := make(map[string]bool, len(order.shopStatuses))
+		matchesTab := false
+		for _, status := range order.shopStatuses {
+			status = strings.ToLower(status)
+			statuses[status] = true
+			matchesTab = matchesTab || customerOrderTabMatches(tab, status)
+		}
+
+		if statuses["pending"] {
+			counts.Pending++
+		}
+		if statuses["confirmed"] {
+			counts.Confirmed++
+		}
+		if statuses["confirmed"] || statuses["packing"] {
+			counts.Packing++
+		}
+		if statuses["shipping"] {
+			counts.Shipping++
+		}
+		if statuses["completed"] {
+			counts.Completed++
+		}
+		if statuses["cancelled"] {
+			counts.Cancelled++
+		}
+		if statuses["returned"] {
+			counts.Returned++
+		}
+		if order.matchesSearch && matchesTab {
+			matchedOrderIDs = append(matchedOrderIDs, order.id)
+		}
+	}
+	counts.Preparing = counts.Packing
+	return counts, matchedOrderIDs
 }
 
 func (h *CustomerHandler) listCustomerOrders(w http.ResponseWriter, r *http.Request) {
@@ -59,94 +98,48 @@ func (h *CustomerHandler) listCustomerOrders(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	// 1. Fetch all parent orders for this user along with their shop orders to calculate counts and derive statuses
-	metaQuery := `SELECT o.id, o.order_code, o.created_at, so.status
+	search = strings.TrimPrefix(search, "#")
+	rows, err := h.db.QueryContext(r.Context(), `SELECT o.id, so.status,
+		(? = '' OR LOCATE(LOWER(?), LOWER(o.order_code)) > 0
+			OR LOCATE(LOWER(?), LOWER(so.shop_order_code)) > 0
+			OR LOCATE(LOWER(?), LOWER(s.name)) > 0)
 		FROM orders o
 		JOIN shop_orders so ON o.id = so.order_id
+		JOIN shops s ON s.id = so.shop_id
 		WHERE o.user_id = ?
-		ORDER BY o.created_at DESC, o.id DESC`
-
-	rows, err := h.db.QueryContext(r.Context(), metaQuery, uid)
+		ORDER BY o.created_at DESC, o.id DESC, so.id ASC`, search, search, search, search, uid)
 	if err != nil {
 		serverError(w, h.logger, err)
 		return
 	}
 	defer rows.Close()
 
-	orderMap := make(map[int64]*orderMeta)
-	var orderOrder []int64
-
+	var orders []customerParentOrderRef
+	orderIndexes := make(map[int64]int)
 	for rows.Next() {
-		var oID int64
-		var oCode string
-		var cAt time.Time
-		var sStatus string
-		if err := rows.Scan(&oID, &oCode, &cAt, &sStatus); err != nil {
+		var id int64
+		var status string
+		var matchesSearch bool
+		if err := rows.Scan(&id, &status, &matchesSearch); err != nil {
 			serverError(w, h.logger, err)
 			return
 		}
-
-		if meta, exists := orderMap[oID]; exists {
-			meta.shopStatuses = append(meta.shopStatuses, sStatus)
-		} else {
-			meta := &orderMeta{
-				id:           oID,
-				orderCode:    oCode,
-				createdAt:    cAt,
-				shopStatuses: []string{sStatus},
-			}
-			orderMap[oID] = meta
-			orderOrder = append(orderOrder, oID)
+		index, exists := orderIndexes[id]
+		if !exists {
+			index = len(orders)
+			orderIndexes[id] = index
+			orders = append(orders, customerParentOrderRef{id: id})
 		}
+		order := &orders[index]
+		order.shopStatuses = append(order.shopStatuses, status)
+		order.matchesSearch = order.matchesSearch || matchesSearch
 	}
 	if err := rows.Err(); err != nil {
 		serverError(w, h.logger, err)
 		return
 	}
 
-	// 2. Compute tab counts and filter orders
-	var counts OrderStatusCounts
-	var matchedOrderIDs []int64
-
-	for _, oID := range orderOrder {
-		meta := orderMap[oID]
-		derived, _ := deriveParentStatus(meta.shopStatuses)
-		derivedLower := strings.ToLower(derived)
-
-		counts.All++
-		switch derivedLower {
-		case "pending":
-			counts.Pending++
-		case "confirmed":
-			counts.Confirmed++
-			counts.Packing++ // customer-facing tab groups confirmed and packing orders
-		case "packing":
-			counts.Packing++
-		case "shipping":
-			counts.Shipping++
-		case "completed":
-			counts.Completed++
-		case "cancelled":
-			counts.Cancelled++
-		case "returned":
-			counts.Returned++
-		}
-
-		// Check filter
-		matchTab := customerOrderTabMatches(tab, derivedLower)
-
-		matchSearch := true
-		if search != "" {
-			if !strings.Contains(strings.ToLower(meta.orderCode), strings.ToLower(search)) {
-				matchSearch = false
-			}
-		}
-
-		if matchTab && matchSearch {
-			matchedOrderIDs = append(matchedOrderIDs, oID)
-		}
-	}
-	counts.Preparing = counts.Packing
+	counts, matchedOrderIDs := filterCustomerParentOrders(orders, tab)
 
 	total := len(matchedOrderIDs)
 	totalPages := 0
@@ -705,16 +698,15 @@ func (h *CustomerHandler) cancelCustomerOrder(w http.ResponseWriter, r *http.Req
 
 	// Handle Payment status & Refund policy message
 	var payID int64
-	var payAmount float64
 	var payStatus string
 	var pmCode string
 	err = tx.QueryRowContext(r.Context(),
-		`SELECT p.id, p.amount, p.status, pm.code
+		`SELECT p.id, p.status, pm.code
 		FROM payments p
 		JOIN payment_methods pm ON p.payment_method_id = pm.id
 		WHERE p.order_id = ? FOR UPDATE`,
 		orderID,
-	).Scan(&payID, &payAmount, &payStatus, &pmCode)
+	).Scan(&payID, &payStatus, &pmCode)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		serverError(w, h.logger, err)
 		return
@@ -727,15 +719,21 @@ func (h *CustomerHandler) cancelCustomerOrder(w http.ResponseWriter, r *http.Req
 		// No provider refund API is integrated yet. Keep the ledger truthful and flag manual reconciliation.
 		refundStatus = "REFUND_REQUIRES_MANUAL_REVIEW"
 		refundMessage = "Đơn hàng đã hủy. Khoản thanh toán đã thu chưa được hoàn tự động; yêu cầu hoàn tiền cần được xử lý và xác nhận riêng bởi quản trị viên."
-	} else {
-		if pmCode != "COD" {
-			refundStatus = "NOT_PAID"
-			refundMessage = "Đơn hàng đã hủy trước khi thanh toán; chưa phát sinh khoản tiền cần hoàn."
+	} else if pmCode == "COD" {
+		if err = updatePendingCODPayment(r.Context(), tx, orderID); err != nil {
+			serverError(w, h.logger, err)
+			return
 		}
-		_, _ = tx.ExecContext(r.Context(),
+	} else if payID > 0 {
+		refundStatus = "NOT_PAID"
+		refundMessage = "Đơn hàng đã hủy trước khi thanh toán; chưa phát sinh khoản tiền cần hoàn."
+		if _, err = tx.ExecContext(r.Context(),
 			`UPDATE payments SET status = 'FAILED', updated_at = NOW() WHERE id = ? AND status = 'PENDING'`,
 			payID,
-		)
+		); err != nil {
+			serverError(w, h.logger, err)
+			return
+		}
 	}
 
 	if err = tx.Commit(); err != nil {
@@ -848,20 +846,9 @@ func (h *CustomerHandler) confirmCustomerReceived(w http.ResponseWriter, r *http
 		}
 	}
 
-	// A split COD payment is complete only after every non-cancelled package is received.
-	var unfinished int
-	if err = tx.QueryRowContext(r.Context(),
-		`SELECT COUNT(*) FROM shop_orders WHERE order_id = ? AND status NOT IN ('COMPLETED', 'CANCELLED', 'RETURNED')`,
-		orderID,
-	).Scan(&unfinished); err != nil {
+	if err = updatePendingCODPayment(r.Context(), tx, orderID); err != nil {
 		serverError(w, h.logger, err)
 		return
-	}
-	if unfinished == 0 {
-		_, _ = tx.ExecContext(r.Context(),
-			`UPDATE payments p JOIN payment_methods pm ON pm.id=p.payment_method_id SET p.status='PAID',p.paid_at=NOW(),p.updated_at=NOW() WHERE p.order_id=? AND p.status='PENDING' AND pm.code='COD'`,
-			orderID,
-		)
 	}
 
 	if err = tx.Commit(); err != nil {

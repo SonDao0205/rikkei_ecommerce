@@ -10,6 +10,8 @@ export type UserOrderStatusTab =
   | "cancelled"
   | "returned";
 
+export type ShopOrderStatus = Exclude<UserOrderStatusTab, "all"> | "confirmed";
+
 export interface UserOrderShop {
   shopId: number;
   shopName: string;
@@ -17,7 +19,8 @@ export interface UserOrderShop {
   logoUrl?: string;
   shopOrderId?: number;
   shopOrderCode?: string;
-  status?: UserOrder["status"];
+  totalAmount?: number;
+  status?: ShopOrderStatus;
   statusLabel?: string;
   carrier?: string;
   trackingCode?: string;
@@ -74,6 +77,7 @@ export interface UserOrder {
   totalAmount: number;
   shippingCarrier?: string;
   paymentMethod: "COD" | "BANK_TRANSFER" | "MOMO" | "VISA" | "ZALOPAY";
+  paymentStatus?: string;
   paymentStatusText: string;
   shippingInfoText?: string;
   estimatedDeliveryDate?: string;
@@ -90,6 +94,8 @@ export interface UserOrder {
   timeline?: UserOrderTimelineLog[];
 }
 
+export type OrderActionTarget = Pick<UserOrder, "id" | "orderCode" | "shopOrderId">;
+
 export interface ShopOrderGroup {
   shopId: number;
   shopName: string;
@@ -99,9 +105,8 @@ export interface ShopOrderGroup {
   isArtisan?: boolean;
   rating?: number;
   responseRate?: number;
-  status?: UserOrder["status"];
-  statusLabel?: string;
-  shopOrderCode?: string;
+  status?: ShopOrderStatus;
+  shopOrderId?: number;
   timeline?: UserOrderTimelineLog[];
   items: UserOrderItem[];
 }

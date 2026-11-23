@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { UserOrder } from "@/shared/types";
+import { ShopOrderStatusBadge } from "@/domains/order/components/ShopOrderStatusBadge";
 
 export interface OrderDetailHeaderProps {
   order: UserOrder;
@@ -18,45 +19,7 @@ export const OrderDetailHeader: React.FC<OrderDetailHeaderProps> = ({
 }) => {
   const { t } = useTranslation("customer");
 
-  const getStatusBadge = () => {
-    if (order.shops.length > 1) return "bg-primary-fixed text-primary";
-    switch (order.status) {
-      case "pending":
-        return "bg-amber-100 text-amber-900";
-      case "packing":
-        return "bg-blue-100 text-blue-900";
-      case "shipping":
-        return "bg-secondary-fixed text-on-secondary-fixed";
-      case "completed":
-        return "bg-emerald-100 text-emerald-900";
-      case "cancelled":
-        return "bg-surface-container-high text-on-surface-variant";
-      case "returned":
-        return "bg-purple-100 text-purple-900";
-      default:
-        return "bg-surface-container text-on-surface";
-    }
-  };
-
-  const getStatusLabel = () => {
-    if (order.shops.length > 1) return t("profile.orders.detail.status_per_shop");
-    switch (order.status) {
-      case "pending":
-        return t("profile.orders.statuses.pending");
-      case "packing":
-        return t("profile.orders.statuses.packing");
-      case "shipping":
-        return t("profile.orders.statuses.shipping");
-      case "completed":
-        return t("profile.orders.statuses.completed");
-      case "cancelled":
-        return t("profile.orders.statuses.cancelled");
-      case "returned":
-        return t("profile.orders.statuses.returned");
-      default:
-        return order.statusLabel;
-    }
-  };
+  const status = order.shops[0]?.status ?? (order.status === "all" ? "pending" : order.status);
 
   return (
     <section className="flex flex-col gap-4">
@@ -93,13 +56,23 @@ export const OrderDetailHeader: React.FC<OrderDetailHeaderProps> = ({
           </span>
         </nav>
 
-        <Link
-          to="/profile/orders"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-all shadow-xs"
-        >
-          <span className="material-symbols-outlined text-[18px]">arrow_back</span>
-          <span>{t("profile.orders.detail.back_to_list")}</span>
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          {order.parentOrderCode && (
+            <Link
+              to={`/profile/orders/${order.id}`}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container-high font-label-md text-label-md"
+            >
+              {t("profile.orders.card.order_code_prefix")} {order.parentOrderCode}
+            </Link>
+          )}
+          <Link
+            to="/profile/orders"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-all shadow-xs"
+          >
+            <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+            <span>{t("profile.orders.detail.back_to_list")}</span>
+          </Link>
+        </div>
       </div>
 
       {/* Top Header Card */}
@@ -110,24 +83,7 @@ export const OrderDetailHeader: React.FC<OrderDetailHeaderProps> = ({
               {t("profile.orders.detail.page_title", { code: order.orderCode })}
             </h1>
 
-            {/* Status Badge */}
-            <div
-              className={`inline-flex items-center gap-2 px-3 py-1 rounded-full font-label-sm text-label-sm font-bold shadow-xs uppercase tracking-wider ${getStatusBadge()}`}
-            >
-              {order.shops.length <= 1 && order.status === "shipping" && (
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-secondary" />
-                </span>
-              )}
-              {order.status === "packing" && (
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600" />
-                </span>
-              )}
-              <span>{getStatusLabel()}</span>
-            </div>
+            {order.shops.length <= 1 && <ShopOrderStatusBadge status={status} />}
           </div>
 
           <p className="font-body-md text-body-md text-outline flex items-center gap-2 flex-wrap text-sm">
