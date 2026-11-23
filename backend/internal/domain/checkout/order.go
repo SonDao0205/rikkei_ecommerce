@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"math/bits"
 	"net/http"
 	"sort"
 	"strconv"
@@ -52,16 +53,68 @@ type selectedOrderItem struct {
 	Quantity   int64
 }
 
+type shopCheckout struct {
+	SubtotalCents     int64
+	ShopVoucherID     *int64
+	ShopDiscountCents int64
+	Items             []itemDetails
+}
+
 type shopOrderPlan struct {
-	ShopID                int64
-	ShopName              string
-	SubtotalCents         int64
+	Item                  itemDetails
 	ShippingCents         int64
 	ShopVoucherID         *int64
 	ShopDiscountCents     int64
 	PlatformDiscountCents int64
-	TotalCents            int64
-	Items                 []itemDetails
+}
+
+func (plan shopOrderPlan) totalCents() int64 {
+	return plan.Item.LineCents + plan.ShippingCents - plan.ShopDiscountCents - plan.PlatformDiscountCents
+}
+
+type proportionalAllocation struct {
+	amount      int64
+	totalWeight int64
+	usedWeight  int64
+	allocated   int64
+}
+
+func (allocation *proportionalAllocation) take(weight int64) int64 {
+	if allocation.amount == 0 || weight == 0 {
+		return 0
+	}
+
+	// Allocate the difference between cumulative shares so the last line gets
+	// any remaining cents. Use a wide product for DECIMAL(15,2) amounts.
+	allocation.usedWeight += weight
+	high, low := bits.Mul64(uint64(allocation.amount), uint64(allocation.usedWeight))
+	cumulative, _ := bits.Div64(high, low, uint64(allocation.totalWeight))
+	share := int64(cumulative) - allocation.allocated
+	allocation.allocated = int64(cumulative)
+	return share
+}
+
+func planShopOrders(shopIDs []int64, shops map[int64]*shopCheckout, subtotal, shippingFee, shopDiscount, platformDiscount int64) []shopOrderPlan {
+	shipping := proportionalAllocation{amount: shippingFee, totalWeight: subtotal}
+	platform := proportionalAllocation{amount: platformDiscount, totalWeight: subtotal - shopDiscount}
+	var plans []shopOrderPlan
+
+	for _, id := range shopIDs {
+		shop := shops[id]
+		voucher := proportionalAllocation{amount: shop.ShopDiscountCents, totalWeight: shop.SubtotalCents}
+		for _, item := range shop.Items {
+			lineDiscount := voucher.take(item.LineCents)
+			plans = append(plans, shopOrderPlan{
+				Item:                  item,
+				ShippingCents:         shipping.take(item.LineCents),
+				ShopVoucherID:         shop.ShopVoucherID,
+				ShopDiscountCents:     lineDiscount,
+				PlatformDiscountCents: platform.take(item.LineCents - lineDiscount),
+			})
+		}
+	}
+
+	return plans
 }
 
 func (h *Handler) createOrder(w http.ResponseWriter, r *http.Request) {
@@ -333,7 +386,7 @@ func (h *Handler) createOrder(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 7. Validate availability, calculate line totals, and group items by shop
-	shopPlans := make(map[int64]*shopOrderPlan)
+	shopPlans := make(map[int64]*shopCheckout)
 	var totalSubtotalCents int64
 	orderedItems := make([]itemDetails, 0, len(selectedItems))
 
@@ -376,11 +429,7 @@ func (h *Handler) createOrder(w http.ResponseWriter, r *http.Request) {
 
 		plan, exists := shopPlans[snap.shopID]
 		if !exists {
-			plan = &shopOrderPlan{
-				ShopID:   snap.shopID,
-				ShopName: snap.shopName,
-				Items:    make([]itemDetails, 0),
-			}
+			plan = &shopCheckout{}
 			shopPlans[snap.shopID] = plan
 		}
 		plan.SubtotalCents += lineCents
@@ -514,7 +563,7 @@ func (h *Handler) createOrder(w http.ResponseWriter, r *http.Request) {
 		platformVoucherApplied = &vRes
 	}
 
-	// 11. Calculate shipping fee and distribute discounts across shops
+	// 11. Calculate checkout totals and allocate charges to each order line.
 	totalShippingCents := int64(math.Round(ship.Fee * 100))
 	if totalShippingCents < 0 || totalSubtotalCents > maxAmountCents-totalShippingCents {
 		writeError(w, http.StatusUnprocessableEntity, "cart_total_exceeded", "Selected cart total exceeds the supported order amount")
@@ -526,35 +575,7 @@ func (h *Handler) createOrder(w http.ResponseWriter, r *http.Request) {
 		totalAmountCents = 0
 	}
 
-	var allocatedShipping int64
-	var allocatedPlatformDiscount int64
-	for i, sID := range shopIDs {
-		plan := shopPlans[sID]
-		isLast := i == len(shopIDs)-1
-
-		if isLast {
-			plan.ShippingCents = totalShippingCents - allocatedShipping
-			plan.PlatformDiscountCents = platformDiscountCents - allocatedPlatformDiscount
-		} else {
-			plan.ShippingCents = int64(math.Round(float64(totalShippingCents) * float64(plan.SubtotalCents) / float64(totalSubtotalCents)))
-			plan.PlatformDiscountCents = int64(math.Round(float64(platformDiscountCents) * float64(plan.SubtotalCents) / float64(totalSubtotalCents)))
-			allocatedShipping += plan.ShippingCents
-			allocatedPlatformDiscount += plan.PlatformDiscountCents
-		}
-
-		// Ensure platform discount on this shop does not exceed shop's remaining balance
-		if remainingShop := plan.SubtotalCents - plan.ShopDiscountCents; plan.PlatformDiscountCents > remainingShop {
-			plan.PlatformDiscountCents = remainingShop
-		}
-		if plan.PlatformDiscountCents < 0 {
-			plan.PlatformDiscountCents = 0
-		}
-
-		plan.TotalCents = plan.SubtotalCents + plan.ShippingCents - plan.ShopDiscountCents - plan.PlatformDiscountCents
-		if plan.TotalCents < 0 {
-			plan.TotalCents = 0
-		}
-	}
+	shopOrders := planShopOrders(shopIDs, shopPlans, totalSubtotalCents, totalShippingCents, totalShopDiscountCents, platformDiscountCents)
 
 	// 12. Generate unique order code
 	orderCode, codeErr := generateOrderCode()
@@ -631,11 +652,11 @@ func (h *Handler) createOrder(w http.ResponseWriter, r *http.Request) {
 		ItemCount        int     `json:"item_count"`
 	}
 
-	createdShopOrders := make([]createdShopOrderSummary, 0, len(shopIDs))
+	createdShopOrders := make([]createdShopOrderSummary, 0, len(shopOrders))
 
-	for _, sID := range shopIDs {
-		plan := shopPlans[sID]
-		shopOrderCode := generateShopOrderCode(orderCode, sID)
+	for index, plan := range shopOrders {
+		item := plan.Item
+		shopOrderCode := generateShopOrderCode(orderCode, index+1)
 
 		shopOrderRes, sErr := tx.ExecContext(r.Context(),
 			`INSERT INTO shop_orders (
@@ -643,10 +664,10 @@ func (h *Handler) createOrder(w http.ResponseWriter, r *http.Request) {
 				subtotal, shipping_fee, shop_voucher_id, shop_discount,
 				platform_discount, total_amount, commission_rate, commission_amount
 			) VALUES (?, ?, ?, 'PENDING', ?, ?, ?, ?, ?, ?, 0, 0)`,
-			parentOrderID, plan.ShopID, shopOrderCode,
-			float64(plan.SubtotalCents)/100, float64(plan.ShippingCents)/100,
+			parentOrderID, item.ShopID, shopOrderCode,
+			float64(item.LineCents)/100, float64(plan.ShippingCents)/100,
 			plan.ShopVoucherID, float64(plan.ShopDiscountCents)/100,
-			float64(plan.PlatformDiscountCents)/100, float64(plan.TotalCents)/100,
+			float64(plan.PlatformDiscountCents)/100, float64(plan.totalCents())/100,
 		)
 		if sErr != nil {
 			h.serverError(w, sErr)
@@ -668,44 +689,42 @@ func (h *Handler) createOrder(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Insert order items for this shop
-		for _, item := range plan.Items {
-			var varName *string
-			if item.VariantName.Valid && strings.TrimSpace(item.VariantName.String) != "" {
-				s := item.VariantName.String
-				varName = &s
-			}
-			var imgURL *string
-			if item.ImageURL.Valid && strings.TrimSpace(item.ImageURL.String) != "" {
-				s := item.ImageURL.String
-				imgURL = &s
-			}
+		// Keep the purchased quantity together on one independently managed line.
+		var varName *string
+		if item.VariantName.Valid && strings.TrimSpace(item.VariantName.String) != "" {
+			s := item.VariantName.String
+			varName = &s
+		}
+		var imgURL *string
+		if item.ImageURL.Valid && strings.TrimSpace(item.ImageURL.String) != "" {
+			s := item.ImageURL.String
+			imgURL = &s
+		}
 
-			if _, itmErr := tx.ExecContext(r.Context(),
-				`INSERT INTO order_items (
-					shop_order_id, product_id, variant_id, flash_sale_id, product_name, variant_name,
-					sku, image_url, unit_price, quantity, line_total
-				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-				shopOrderID, item.ProductID, item.VariantID, item.FlashSaleID, item.ProductName, varName,
-				item.SKU, imgURL, item.UnitPrice, item.Quantity, float64(item.LineCents)/100,
-			); itmErr != nil {
-				h.serverError(w, itmErr)
-				return
-			}
+		if _, itmErr := tx.ExecContext(r.Context(),
+			`INSERT INTO order_items (
+				shop_order_id, product_id, variant_id, flash_sale_id, product_name, variant_name,
+				sku, image_url, unit_price, quantity, line_total
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			shopOrderID, item.ProductID, item.VariantID, item.FlashSaleID, item.ProductName, varName,
+			item.SKU, imgURL, item.UnitPrice, item.Quantity, float64(item.LineCents)/100,
+		); itmErr != nil {
+			h.serverError(w, itmErr)
+			return
 		}
 
 		createdShopOrders = append(createdShopOrders, createdShopOrderSummary{
 			ID:               shopOrderID,
-			ShopID:           plan.ShopID,
-			ShopName:         plan.ShopName,
+			ShopID:           item.ShopID,
+			ShopName:         item.ShopName,
 			ShopOrderCode:    shopOrderCode,
 			Status:           "PENDING",
-			Subtotal:         float64(plan.SubtotalCents) / 100,
+			Subtotal:         float64(item.LineCents) / 100,
 			ShippingFee:      float64(plan.ShippingCents) / 100,
 			ShopDiscount:     float64(plan.ShopDiscountCents) / 100,
 			PlatformDiscount: float64(plan.PlatformDiscountCents) / 100,
-			TotalAmount:      float64(plan.TotalCents) / 100,
-			ItemCount:        len(plan.Items),
+			TotalAmount:      float64(plan.totalCents()) / 100,
+			ItemCount:        1,
 		})
 	}
 
@@ -855,6 +874,6 @@ func generateOrderCode() (string, error) {
 	return fmt.Sprintf("ORD%s-%X", time.Now().UTC().Format("060102150405"), b), nil
 }
 
-func generateShopOrderCode(orderCode string, shopID int64) string {
-	return fmt.Sprintf("%s-S%d", orderCode, shopID)
+func generateShopOrderCode(orderCode string, lineNumber int) string {
+	return fmt.Sprintf("%s-L%d", orderCode, lineNumber)
 }

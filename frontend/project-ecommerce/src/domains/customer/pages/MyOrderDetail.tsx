@@ -29,7 +29,7 @@ export const MyOrderDetail: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
 
-  const { currentOrderDetail: order, loading, actionLoading } = useAppSelector(
+  const { currentOrderDetail: order, detailLoading, actionLoading } = useAppSelector(
     (state) => state.userOrder
   );
 
@@ -116,7 +116,7 @@ export const MyOrderDetail: React.FC = () => {
       <div className="flex flex-col w-full bg-surface min-h-[calc(100vh-20rem)] py-6">
         <div className="max-w-[1440px] w-full mx-auto px-4 sm:px-6 lg:px-8 flex flex-col gap-6">
           {/* Loading Skeleton */}
-          {loading && !order && (
+          {detailLoading && !order && (
             <div className="flex flex-col gap-6 animate-pulse">
               <div className="h-10 bg-surface-container-high rounded-xl w-1/3" />
               <div className="h-28 bg-surface-container-lowest rounded-2xl p-6" />
@@ -131,7 +131,7 @@ export const MyOrderDetail: React.FC = () => {
           )}
 
           {/* Not Found State */}
-          {!loading && !order && (
+          {!detailLoading && !order && (
             <div className="bg-surface-container-lowest rounded-2xl p-12 text-center shadow-sm flex flex-col items-center justify-center gap-4 my-8">
               <div className="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center text-outline">
                 <span className="material-symbols-outlined text-[36px]">receipt_long</span>

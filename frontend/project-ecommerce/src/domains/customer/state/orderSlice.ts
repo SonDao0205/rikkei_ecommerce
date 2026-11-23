@@ -5,10 +5,10 @@ import {
 } from "@reduxjs/toolkit";
 import { userOrderApi } from "@/domains/customer/api/orderApi";
 import type {
+  OrderActionTarget,
   UserOrder,
   UserOrderStatusCounts,
   UserOrderStatusTab,
-  UserOrderFilterParams,
 } from "@/domains/order/types";
 
 interface UserOrderState {
@@ -20,9 +20,12 @@ interface UserOrderState {
   currentPage: number;
   pageSize: number;
   loading: boolean;
+  listRequestId?: string;
+  detailLoading: boolean;
+  detailRequestId?: string;
   actionLoading: boolean;
   error: string | null;
-  selectedOrderForCancel: UserOrder | null;
+  selectedOrderForCancel: OrderActionTarget | null;
   currentOrderDetail: UserOrder | null;
 }
 
@@ -43,6 +46,7 @@ const initialState: UserOrderState = {
   currentPage: 1,
   pageSize: 6,
   loading: false,
+  detailLoading: false,
   actionLoading: false,
   error: null,
   selectedOrderForCancel: null,
@@ -50,32 +54,24 @@ const initialState: UserOrderState = {
 };
 
 export const getUserOrders = createAsyncThunk<
-  { orders: UserOrder[]; total: number },
-  UserOrderFilterParams | undefined
->("userOrder/getUserOrders", async (params, { rejectWithValue }) => {
+  Awaited<ReturnType<typeof userOrderApi.fetchUserOrders>>,
+  void,
+  { state: { userOrder: UserOrderState }; rejectValue: string }
+>("userOrder/getUserOrders", async (_, { getState, rejectWithValue }) => {
+  const { currentTab, searchQuery, currentPage, pageSize } = getState().userOrder;
   try {
-    return await userOrderApi.fetchUserOrders(params);
+    return await userOrderApi.fetchUserOrders({
+      tab: currentTab,
+      search: searchQuery,
+      page: currentPage,
+      pageSize,
+    });
   } catch (err: unknown) {
     return rejectWithValue(
       err instanceof Error ? err.message : "Không thể tải danh sách đơn hàng",
     );
   }
 });
-
-export const getUserOrderCounts = createAsyncThunk<UserOrderStatusCounts>(
-  "userOrder/getUserOrderCounts",
-  async (_, { rejectWithValue }) => {
-    try {
-      return await userOrderApi.fetchUserOrderStatusCounts();
-    } catch (err: unknown) {
-      return rejectWithValue(
-        err instanceof Error
-          ? err.message
-          : "Không thể lấy số lượng trạng thái đơn",
-      );
-    }
-  },
-);
 
 export const cancelOrderAction = createAsyncThunk<
   UserOrder,
@@ -96,17 +92,6 @@ export const cancelOrderAction = createAsyncThunk<
     }
   },
 );
-
-// export const confirmReceivedAction = createAsyncThunk<UserOrder,{ orderId: number | string, shopOrderId?: number }>("userOrder/confirmReceived", async ({ orderId, shopOrderId }, { rejectWithValue }) => {
-//     try {
-//       return await userOrderApi.confirmOrderReceived(orderId, shopOrderId);
-//     } catch (err: unknown) {
-//       return rejectWithValue(
-//         err instanceof Error ? err.message : "Xác nhận nhận hàng thất bại"
-//       );
-//     }
-//   }
-// });
 
 export const confirmReceivedAction = createAsyncThunk<
   UserOrder,
@@ -156,7 +141,7 @@ export const userOrderSlice = createSlice({
     setCurrentPage: (state, action: PayloadAction<number>) => {
       state.currentPage = action.payload;
     },
-    openCancelModal: (state, action: PayloadAction<UserOrder>) => {
+    openCancelModal: (state, action: PayloadAction<OrderActionTarget>) => {
       state.selectedOrderForCancel = action.payload;
     },
     closeCancelModal: (state) => {
@@ -164,40 +149,52 @@ export const userOrderSlice = createSlice({
     },
     clearCurrentOrderDetail: (state) => {
       state.currentOrderDetail = null;
+      state.detailRequestId = undefined;
+      state.detailLoading = false;
     },
   },
   extraReducers: (builder) => {
     // getUserOrders
-    builder.addCase(getUserOrders.pending, (state) => {
+    builder.addCase(getUserOrders.pending, (state, action) => {
+      state.listRequestId = action.meta.requestId;
       state.loading = true;
       state.error = null;
     });
     builder.addCase(getUserOrders.fulfilled, (state, action) => {
+      if (state.listRequestId !== action.meta.requestId) return;
+      state.listRequestId = undefined;
       state.loading = false;
       state.orders = action.payload.orders;
       state.total = action.payload.total;
+      state.counts = action.payload.counts;
+      state.currentPage = Math.min(
+        state.currentPage,
+        Math.max(1, Math.ceil(state.total / state.pageSize)),
+      );
     });
     builder.addCase(getUserOrders.rejected, (state, action) => {
+      if (state.listRequestId !== action.meta.requestId) return;
+      state.listRequestId = undefined;
       state.loading = false;
       state.error = (action.payload as string) || "Lỗi tải đơn hàng";
     });
 
-    // getUserOrderCounts
-    builder.addCase(getUserOrderCounts.fulfilled, (state, action) => {
-      state.counts = action.payload;
-    });
-
     // getUserOrderDetail
-    builder.addCase(getUserOrderDetail.pending, (state) => {
-      state.loading = true;
+    builder.addCase(getUserOrderDetail.pending, (state, action) => {
+      state.detailRequestId = action.meta.requestId;
+      state.detailLoading = true;
       state.error = null;
     });
     builder.addCase(getUserOrderDetail.fulfilled, (state, action) => {
-      state.loading = false;
+      if (state.detailRequestId !== action.meta.requestId) return;
+      state.detailRequestId = undefined;
+      state.detailLoading = false;
       state.currentOrderDetail = action.payload;
     });
     builder.addCase(getUserOrderDetail.rejected, (state, action) => {
-      state.loading = false;
+      if (state.detailRequestId !== action.meta.requestId) return;
+      state.detailRequestId = undefined;
+      state.detailLoading = false;
       state.error = (action.payload as string) || "Lỗi tải chi tiết đơn hàng";
     });
 
@@ -207,29 +204,12 @@ export const userOrderSlice = createSlice({
     });
     builder.addCase(cancelOrderAction.fulfilled, (state, action) => {
       state.actionLoading = false;
-      const previous =
-        state.orders.find(
-          (o) =>
-            o.id === action.payload.id &&
-            o.shopOrderId === action.payload.shopOrderId,
-        ) || state.selectedOrderForCancel;
-      state.selectedOrderForCancel = null;
-      const index = state.orders.findIndex(
-        (o) =>
-          o.id === action.payload.id &&
-          o.shopOrderId === action.payload.shopOrderId,
-      );
-      if (index !== -1) {
-        state.orders[index] = action.payload;
-      }
-      if (state.currentOrderDetail?.id === action.payload.id) {
+      if (
+        state.currentOrderDetail?.id === action.payload.id &&
+        state.currentOrderDetail.shopOrderId === action.payload.shopOrderId
+      ) {
         state.currentOrderDetail = action.payload;
       }
-      if (previous?.status === "pending")
-        state.counts.pending = Math.max(0, state.counts.pending - 1);
-      if (previous?.status === "packing")
-        state.counts.packing = Math.max(0, state.counts.packing - 1);
-      state.counts.cancelled += 1;
     });
     builder.addCase(cancelOrderAction.rejected, (state, action) => {
       state.actionLoading = false;
@@ -242,19 +222,12 @@ export const userOrderSlice = createSlice({
     });
     builder.addCase(confirmReceivedAction.fulfilled, (state, action) => {
       state.actionLoading = false;
-      const index = state.orders.findIndex(
-        (o) =>
-          o.id === action.payload.id &&
-          o.shopOrderId === action.payload.shopOrderId,
-      );
-      if (index !== -1) {
-        state.orders[index] = action.payload;
-      }
-      if (state.currentOrderDetail?.id === action.payload.id) {
+      if (
+        state.currentOrderDetail?.id === action.payload.id &&
+        state.currentOrderDetail.shopOrderId === action.payload.shopOrderId
+      ) {
         state.currentOrderDetail = action.payload;
       }
-      state.counts.shipping = Math.max(0, state.counts.shipping - 1);
-      state.counts.completed += 1;
     });
     builder.addCase(confirmReceivedAction.rejected, (state, action) => {
       state.actionLoading = false;

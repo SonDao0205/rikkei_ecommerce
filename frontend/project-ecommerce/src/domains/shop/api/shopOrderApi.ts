@@ -110,6 +110,7 @@ export function mapBackendShopOrder(row: BackendShopOrder): ShopOrderItem {
   return {
     id: String(row.shop_order_id || row.id),
     orderCode: row.shop_order_code,
+    parentOrderCode: row.parent_order_code,
     createdAt: Number.isNaN(date.getTime()) ? row.created_at : date.toLocaleDateString("vi-VN"),
     createdAtTime: Number.isNaN(date.getTime())
       ? ""

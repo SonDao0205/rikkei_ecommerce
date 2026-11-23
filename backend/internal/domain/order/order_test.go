@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strings"
 	"testing"
 
@@ -82,6 +83,41 @@ func TestDeriveParentStatus(t *testing.T) {
 			}
 			if gotLabel != tt.wantLabel {
 				t.Errorf("deriveParentStatus() label = %v, want %v", gotLabel, tt.wantLabel)
+			}
+		})
+	}
+}
+
+func TestFilterCustomerParentOrdersByShopStatus(t *testing.T) {
+	orders := []customerParentOrderRef{
+		{id: 40, shopStatuses: []string{"PENDING", "PENDING", "SHIPPING"}, matchesSearch: true},
+		{id: 30, shopStatuses: []string{"CONFIRMED", "PACKING"}, matchesSearch: true},
+		{id: 20, shopStatuses: []string{"COMPLETED", "CANCELLED"}, matchesSearch: true},
+		{id: 10, shopStatuses: []string{"PENDING"}, matchesSearch: false},
+	}
+	wantCounts := OrderStatusCounts{
+		All: 4, Pending: 2, Confirmed: 1, Packing: 1, Preparing: 1,
+		Shipping: 1, Completed: 1, Cancelled: 1,
+	}
+	for _, tt := range []struct {
+		tab  string
+		want []int64
+	}{
+		{tab: "all", want: []int64{40, 30, 20}},
+		{tab: "pending", want: []int64{40}},
+		{tab: "packing", want: []int64{30}},
+		{tab: "shipping", want: []int64{40}},
+		{tab: "cancelled", want: []int64{20}},
+		{tab: "completed", want: []int64{20}},
+		{tab: "returned"},
+	} {
+		t.Run(tt.tab, func(t *testing.T) {
+			counts, ids := filterCustomerParentOrders(orders, tt.tab)
+			if !slices.Equal(ids, tt.want) {
+				t.Errorf("matched parent IDs = %v, want %v", ids, tt.want)
+			}
+			if counts != wantCounts {
+				t.Errorf("counts = %+v, want %+v", counts, wantCounts)
 			}
 		})
 	}

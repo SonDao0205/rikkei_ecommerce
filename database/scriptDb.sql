@@ -455,7 +455,7 @@ CREATE TABLE flash_sales (
 -- ---------------------------------------------------------------------
 -- 8. ĐƠN HÀNG
 --    orders      : đơn tổng khách đặt một lần (có thể nhiều shop)
---    shop_orders : đơn con theo từng shop, mang trạng thái xử lý
+--    shop_orders : đơn con của shop mang trạng thái xử lý độc lập theo dòng sản phẩm mới
 --    Không có cột status ở orders; trạng thái tổng hợp suy ra từ shop_orders để tránh phải đồng bộ hai nơi.
 -- ---------------------------------------------------------------------
 

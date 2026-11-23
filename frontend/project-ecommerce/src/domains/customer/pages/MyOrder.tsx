@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import CustomerLayout from "@/app/layout/CustomerLayout";
 import ProfileSidebar from "@/domains/customer/components/profile/ProfileSidebar";
@@ -11,7 +11,6 @@ import OrderToast from "@/domains/customer/components/user/order/OrderToast";
 import { useAppDispatch, useAppSelector } from "@/app/state/store";
 import {
   getUserOrders,
-  getUserOrderCounts,
   setCurrentTab,
   setSearchQuery,
   setCurrentPage,
@@ -21,12 +20,11 @@ import {
   confirmReceivedAction,
 } from "@/domains/customer/state/orderSlice";
 import { fetchUserProfile } from "@/domains/customer/state/profileSlice";
-import type { UserOrder, UserOrderStatusTab } from "@/domains/order/types";
+import type { OrderActionTarget, UserOrderStatusTab } from "@/domains/order/types";
 
 export const MyOrder: React.FC = () => {
   const { t } = useTranslation("customer");
   const dispatch = useAppDispatch();
-  const navigate = useNavigate();
 
   const {
     orders,
@@ -57,23 +55,15 @@ export const MyOrder: React.FC = () => {
     type: "success",
   });
 
-  // Fetch profile and order counts once & reset search on enter
+  // Fetch the profile and reset search on enter.
   useEffect(() => {
     dispatch(setSearchQuery(""));
     dispatch(fetchUserProfile());
-    dispatch(getUserOrderCounts());
   }, [dispatch]);
 
   // Fetch orders when tab, search, or page changes
   useEffect(() => {
-    dispatch(
-      getUserOrders({
-        tab: currentTab,
-        search: searchQuery,
-        page: currentPage,
-        pageSize,
-      })
-    );
+    dispatch(getUserOrders());
   }, [dispatch, currentTab, searchQuery, currentPage, pageSize]);
 
   const handleTabChange = (tab: UserOrderStatusTab) => {
@@ -84,7 +74,7 @@ export const MyOrder: React.FC = () => {
     dispatch(setSearchQuery(localSearch));
   };
 
-  const handleCancelClick = (order: UserOrder) => {
+  const handleCancelClick = (order: OrderActionTarget) => {
     dispatch(openCancelModal(order));
   };
 
@@ -97,8 +87,7 @@ export const MyOrder: React.FC = () => {
         shopOrderId: selectedOrderForCancel?.shopOrderId,
       })).unwrap();
       dispatch(closeCancelModal());
-      dispatch(getUserOrderCounts());
-      dispatch(getUserOrders({ tab: currentTab, search: searchQuery, page: currentPage, pageSize }));
+      dispatch(getUserOrders());
       setToastConfig({
         isOpen: true,
         title: t("profile.orders.toast.cancel_success_title"),
@@ -116,25 +105,16 @@ export const MyOrder: React.FC = () => {
     }
   };
 
-  const handleConfirmReceived = async (order: UserOrder) => {
+  const handleConfirmReceived = async (order: OrderActionTarget) => {
     if (window.confirm(t("profile.orders.dialog.confirm_received"))) {
       try {
         await dispatch(confirmReceivedAction({ orderId: order.id, shopOrderId: order.shopOrderId })).unwrap();
-        dispatch(getUserOrderCounts());
-        dispatch(getUserOrders({ tab: currentTab, search: searchQuery, page: currentPage, pageSize }));
+        dispatch(getUserOrders());
         alert(t("profile.orders.dialog.received_success"));
       } catch (err: unknown) {
         const msg = typeof err === "string" ? err : (err as Error)?.message || "Error";
         alert(msg);
       }
-    }
-  };
-
-  const handleRepurchase = (order: UserOrder) => {
-    if (order.items.length > 0) {
-      navigate(`/product/${order.items[0].productId}`);
-    } else {
-      navigate("/");
     }
   };
 
@@ -256,11 +236,10 @@ export const MyOrder: React.FC = () => {
                 <div className="flex flex-col gap-5">
                   {orders.map((order) => (
                     <OrderCard
-                      key={`${order.id}-${order.shopOrderId ?? "parent"}`}
+                      key={order.id}
                       order={order}
                       onCancelClick={handleCancelClick}
                       onConfirmReceived={handleConfirmReceived}
-                      onRepurchase={handleRepurchase}
                       actionLoading={actionLoading}
                     />
                   ))}

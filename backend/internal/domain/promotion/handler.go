@@ -225,7 +225,7 @@ func (h handler) sellerVoucherStats(w http.ResponseWriter, r *http.Request) {
 	var discountSpent, revenue float64
 	err = h.db.QueryRowContext(r.Context(), `SELECT
 		(SELECT COUNT(*) FROM vouchers WHERE shop_id=? AND is_active=1 AND start_at<=UTC_TIMESTAMP() AND end_at>UTC_TIMESTAMP()),
-		COUNT(vu.id),COALESCE(SUM(so.shop_discount),0),COALESCE(SUM(so.subtotal),0)
+		COUNT(DISTINCT vu.id),COALESCE(SUM(so.shop_discount),0),COALESCE(SUM(so.subtotal),0)
 		FROM vouchers v LEFT JOIN voucher_usages vu ON vu.voucher_id=v.id
 		LEFT JOIN shop_orders so ON so.order_id=vu.order_id AND so.shop_voucher_id=v.id
 		WHERE v.shop_id=?`, shopID, shopID).Scan(&active, &usage, &discountSpent, &revenue)

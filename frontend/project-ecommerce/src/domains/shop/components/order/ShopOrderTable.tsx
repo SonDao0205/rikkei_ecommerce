@@ -145,9 +145,12 @@ export const ShopOrderTable: React.FC<ShopOrderTableProps> = ({
                       to={`/shop/orders/${order.orderCode}`}
                       className="font-label-md text-label-md font-bold text-primary hover:underline flex items-center gap-1"
                     >
-                      <span>{order.id}</span>
+                      <span>{order.orderCode}</span>
                       <span className="material-symbols-outlined text-[14px]">open_in_new</span>
                     </Link>
+                    {order.parentOrderCode && (
+                      <span className="text-xs text-outline font-mono">Đơn chính {order.parentOrderCode}</span>
+                    )}
                     <span className="text-xs text-outline">{order.createdAt}</span>
                     <span className="text-[11px] text-outline-variant font-mono">
                       {order.timeAgo}

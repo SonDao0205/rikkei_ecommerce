@@ -49,7 +49,9 @@ function mapUserOrderToCompleteState(order: UserOrder): CompleteOrderState {
     const subtotal = shopItems.reduce((acc, it) => acc + it.unitPrice * it.quantity, 0);
     return {
       shopId: shop.shopId,
+      shopOrderId: shop.shopOrderId,
       shopName: shop.shopName,
+      status: shop.status,
       shopBadge: "Mall",
       shopAvatarText: shop.shopName.charAt(0).toUpperCase(),
       warehouseLocation: "Kho hàng người bán",
@@ -69,6 +71,19 @@ function mapUserOrderToCompleteState(order: UserOrder): CompleteOrderState {
     };
   });
 
+  const lineNameByEventId = new Map(
+    order.shops.flatMap((shop) => {
+      const lineName = shop.items?.length === 1 ? shop.items[0].productName : shop.shopName;
+      return (shop.timeline ?? []).map((event) => [event.id, lineName] as const);
+    }),
+  );
+  const timeline = (order.timeline ?? []).map((event) => {
+    const lineName = lineNameByEventId.get(event.id);
+    return order.shops.length > 1 && lineName
+      ? { ...event, title: `${lineName} · ${event.title}` }
+      : event;
+  });
+
   return {
     orderCode: order.orderCode,
     customerName: order.recipient?.name || "Quý khách",
@@ -79,7 +94,7 @@ function mapUserOrderToCompleteState(order: UserOrder): CompleteOrderState {
     trackingCode: order.trackingCode || "",
     currentStepIndex: orderStatusStep(order.status),
     estimatedDeliveryDate: order.estimatedDeliveryDate,
-    timeline: order.timeline || [],
+    timeline,
     orderTime: order.createdAt,
     paymentMethodName: order.paymentStatusText,
     paymentMethodCode: order.paymentMethod || "COD",

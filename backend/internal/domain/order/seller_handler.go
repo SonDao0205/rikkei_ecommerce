@@ -1,6 +1,7 @@
 package order
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -795,6 +796,22 @@ func (h *SellerHandler) shipSellerOrder(w http.ResponseWriter, r *http.Request) 
 	})
 }
 
+// Lock the parent before its child to serialize updates to their shared payment.
+func lockSellerOrderForSettlement(ctx context.Context, tx *sql.Tx, id int64, code string, shopID int64) (int64, int64, string, error) {
+	var orderID, shopOrderID int64
+	var status string
+	err := tx.QueryRowContext(ctx, `SELECT id FROM orders WHERE id = (
+		SELECT order_id FROM shop_orders WHERE (id = ? OR shop_order_code = ?) AND shop_id = ?
+	) FOR UPDATE`, id, code, shopID).Scan(&orderID)
+	if err != nil {
+		return 0, 0, "", err
+	}
+	err = tx.QueryRowContext(ctx, `SELECT id, status FROM shop_orders
+		WHERE order_id = ? AND (id = ? OR shop_order_code = ?) AND shop_id = ? FOR UPDATE`,
+		orderID, id, code, shopID).Scan(&shopOrderID, &status)
+	return shopOrderID, orderID, status, err
+}
+
 func (h *SellerHandler) completeSellerOrder(w http.ResponseWriter, r *http.Request) {
 	uidStr := auth.CurrentUser(r).ID
 	uid, _ := strconv.ParseInt(uidStr, 10, 64)
@@ -811,19 +828,14 @@ func (h *SellerHandler) completeSellerOrder(w http.ResponseWriter, r *http.Reque
 	param := strings.TrimSpace(r.PathValue("id"))
 	parsedID, _ := strconv.ParseInt(param, 10, 64)
 
-	tx, err := h.db.BeginTx(r.Context(), nil)
+	tx, err := h.db.BeginTx(r.Context(), &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		serverError(w, h.logger, err)
 		return
 	}
 	defer tx.Rollback()
 
-	var soID, orderID int64
-	var status string
-	err = tx.QueryRowContext(r.Context(),
-		`SELECT id, order_id, status FROM shop_orders WHERE (id = ? OR shop_order_code = ?) AND shop_id = ? FOR UPDATE`,
-		parsedID, param, shopID,
-	).Scan(&soID, &orderID, &status)
+	soID, orderID, status, err := lockSellerOrderForSettlement(r.Context(), tx, parsedID, param, shopID)
 	if errors.Is(err, sql.ErrNoRows) {
 		writeError(w, http.StatusNotFound, "order_not_found", "Không tìm thấy đơn hàng của gian hàng")
 		return
@@ -854,11 +866,10 @@ func (h *SellerHandler) completeSellerOrder(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// If COD, mark payment as PAID
-	_, _ = tx.ExecContext(r.Context(),
-		`UPDATE payments p JOIN payment_methods pm ON pm.id=p.payment_method_id SET p.status = 'PAID', p.paid_at = NOW(), p.updated_at = NOW() WHERE p.order_id = ? AND p.status = 'PENDING' AND pm.code = 'COD'`,
-		orderID,
-	)
+	if err = updatePendingCODPayment(r.Context(), tx, orderID); err != nil {
+		serverError(w, h.logger, err)
+		return
+	}
 
 	if err = tx.Commit(); err != nil {
 		serverError(w, h.logger, err)
@@ -915,19 +926,14 @@ func (h *SellerHandler) cancelSellerOrder(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	tx, err := h.db.BeginTx(r.Context(), nil)
+	tx, err := h.db.BeginTx(r.Context(), &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		serverError(w, h.logger, err)
 		return
 	}
 	defer tx.Rollback()
 
-	var soID, orderID int64
-	var status string
-	err = tx.QueryRowContext(r.Context(),
-		`SELECT id, order_id, status FROM shop_orders WHERE (id = ? OR shop_order_code = ?) AND shop_id = ? FOR UPDATE`,
-		parsedID, param, shopID,
-	).Scan(&soID, &orderID, &status)
+	soID, orderID, status, err := lockSellerOrderForSettlement(r.Context(), tx, parsedID, param, shopID)
 	if errors.Is(err, sql.ErrNoRows) {
 		writeError(w, http.StatusNotFound, "order_not_found", "Không tìm thấy đơn hàng của gian hàng")
 		return
@@ -1032,6 +1038,13 @@ func (h *SellerHandler) cancelSellerOrder(w http.ResponseWriter, r *http.Request
 	} else if pmCode != "COD" {
 		refundStatus = "NOT_PAID"
 		refundMessage = "Đơn hàng của shop đã hủy trước khi thanh toán; chưa phát sinh khoản tiền cần hoàn."
+	}
+
+	if pmCode == "COD" {
+		if err = updatePendingCODPayment(r.Context(), tx, orderID); err != nil {
+			serverError(w, h.logger, err)
+			return
+		}
 	}
 
 	if err = tx.Commit(); err != nil {

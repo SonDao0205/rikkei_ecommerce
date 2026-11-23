@@ -17,7 +17,13 @@ export const OrderDetailDeliveryGrid: React.FC<OrderDetailDeliveryGridProps> = (
     notes: rawRecipient?.notes || rawRecipient?.note || 'Giao giờ hành chính, gọi trước 15 phút. Cho kiểm tra hàng (Đồng kiểm COD).',
   };
 
-  const isPaid = order.paymentStatusText === 'PAID';
+  const isPaid = order.paymentStatus === 'PAID';
+  const cashDue = order.shops.reduce((amount, shop) => {
+    const status = shop.status ?? order.status;
+    return ['completed', 'cancelled', 'returned'].includes(status)
+      ? amount
+      : amount + (shop.totalAmount ?? 0);
+  }, 0);
   const formatCurrency = (val: number) => `${val.toLocaleString('vi-VN')} ₫`;
 
   const getPaymentMethodLabel = () => {
@@ -78,8 +84,8 @@ export const OrderDetailDeliveryGrid: React.FC<OrderDetailDeliveryGridProps> = (
           </div>
           <div className="flex flex-col gap-2 mt-2">
             {order.shops.length > 1 ? order.shops.map((shop) => (
-              <div key={shop.shopId} className="flex items-center justify-between gap-3 text-sm">
-                <span className="text-on-surface-variant">{shop.shopName}</span>
+              <div key={shop.shopOrderId ?? shop.shopId} className="flex items-center justify-between gap-3 text-sm">
+                <span className="text-on-surface-variant">{shop.items?.length === 1 ? shop.items[0].productName : shop.shopName}</span>
                 <span className="font-semibold text-on-surface">{shop.carrier || "Chưa có đơn vị vận chuyển"}</span>
               </div>
             )) : (
@@ -140,13 +146,13 @@ export const OrderDetailDeliveryGrid: React.FC<OrderDetailDeliveryGridProps> = (
                 ? t("profile.orders.detail.delivery_grid.cod_desc")
                 : t("profile.orders.detail.delivery_grid.online_desc")}
             </p>
-            {order.paymentMethod === 'COD' && (
+            {order.paymentMethod === 'COD' && !isPaid && cashDue > 0 && (
               <div className="mt-4 p-4 rounded-xl bg-surface-container-low flex flex-col gap-1">
                 <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider font-bold">
                   {t("profile.orders.detail.delivery_grid.prepare_cash_title")}
                 </span>
                 <span className="font-headline-lg text-headline-lg text-primary font-bold">
-                  {formatCurrency(order.totalAmount)}
+                  {formatCurrency(cashDue)}
                 </span>
                 <span className="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1">
                   <span className="material-symbols-outlined text-[15px] text-secondary">check_circle</span>
